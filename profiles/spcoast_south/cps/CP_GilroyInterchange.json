@@ -13,18 +13,6 @@
     {
       "name": "TK1",
       "dropoutDelayMs": 0
-    },
-    {
-      "name": "EA1",
-      "dropoutDelayMs": 0
-    },
-    {
-      "name": "TL",
-      "dropoutDelayMs": 0
-    },
-    {
-      "name": "TR",
-      "dropoutDelayMs": 0
     }
   ],
   "switches": [
