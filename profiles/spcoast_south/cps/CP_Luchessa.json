@@ -1,0 +1,99 @@
+{
+  "name": "CP_Luchessa",
+  "defaultAspectPolicy": "sp1969",
+  "trackCircuits": [
+    {
+      "name": "1T1",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "3T1",
+      "dropoutDelayMs": 0
+    }
+  ],
+  "switches": [
+    {
+      "name": "1"
+    },
+    {
+      "name": "3"
+    },
+    {
+      "name": "5"
+    }
+  ],
+  "crossovers": [],
+  "signalControls": [
+    {
+      "name": "2"
+    }
+  ],
+  "signalMasts": [
+    {
+      "name": "2SAB",
+      "type": "TWO_HEAD",
+      "aspectPolicy": "sp1969"
+    },
+    {
+      "name": "2NAB",
+      "type": "TWO_HEAD",
+      "aspectPolicy": "sp1969"
+    }
+  ],
+  "detectorLocks": [
+    {
+      "switch": "1",
+      "trackCircuit": "1T1"
+    },
+    {
+      "switch": "3",
+      "trackCircuit": "3T1"
+    }
+  ],
+  "routes": [
+    {
+      "name": "SB-MT1-STRAIGHT",
+      "governedBy": {
+        "signal": "2",
+        "direction": "RIGHT"
+      },
+      "displays": {
+        "mast": "2SAB",
+        "head": 0,
+        "maxIndication": "CLEAR"
+      },
+      "aligns": [
+        {
+          "switch": "1",
+          "position": "NORMAL"
+        }
+      ],
+      "clears": [
+        "1T1"
+      ],
+      "entrance": "1T1"
+    },
+    {
+      "name": "NB-MT1-STRAIGHT",
+      "governedBy": {
+        "signal": "2",
+        "direction": "LEFT"
+      },
+      "displays": {
+        "mast": "2NAB",
+        "head": 0,
+        "maxIndication": "CLEAR"
+      },
+      "aligns": [
+        {
+          "switch": "1",
+          "position": "NORMAL"
+        }
+      ],
+      "clears": [
+        "1T1"
+      ],
+      "entrance": "1T1"
+    }
+  ]
+}

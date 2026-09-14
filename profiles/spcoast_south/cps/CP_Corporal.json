@@ -1,0 +1,119 @@
+{
+  "name": "CP_Corporal",
+  "defaultAspectPolicy": "sp1969",
+  "trackCircuits": [
+    {
+      "name": "1EA",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "1T1",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "3T1",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "SDT",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "TL",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "TR",
+      "dropoutDelayMs": 0
+    }
+  ],
+  "switches": [
+    {
+      "name": "1"
+    },
+    {
+      "name": "3"
+    }
+  ],
+  "crossovers": [],
+  "signalControls": [
+    {
+      "name": "2"
+    }
+  ],
+  "signalMasts": [
+    {
+      "name": "2NAB",
+      "type": "TWO_HEAD",
+      "aspectPolicy": "sp1969"
+    },
+    {
+      "name": "2SA",
+      "type": "DWARF",
+      "aspectPolicy": "sp1969"
+    }
+  ],
+  "detectorLocks": [
+    {
+      "switch": "1",
+      "trackCircuit": "1T1"
+    },
+    {
+      "switch": "3",
+      "trackCircuit": "3T1"
+    }
+  ],
+  "routes": [
+    {
+      "name": "MT-NB",
+      "governedBy": {
+        "signal": "2",
+        "direction": "LEFT"
+      },
+      "displays": {
+        "mast": "2NAB",
+        "head": 0,
+        "maxIndication": "CLEAR"
+      },
+      "aligns": [
+        {
+          "switch": "1",
+          "position": "NORMAL"
+        },
+        {
+          "switch": "3",
+          "position": "NORMAL"
+        }
+      ],
+      "clears": [
+        "3T1",
+        "1T1",
+        "1EA"
+      ],
+      "entrance": "3T1"
+    },
+    {
+      "name": "SB-MT",
+      "governedBy": {
+        "signal": "2",
+        "direction": "RIGHT"
+      },
+      "displays": {
+        "mast": "2SA",
+        "head": 0,
+        "maxIndication": "CLEAR"
+      },
+      "aligns": [
+        {
+          "switch": "3",
+          "position": "REVERSE"
+        }
+      ],
+      "clears": [
+        "3T1",
+        "1EA"
+      ],
+      "entrance": "3T1"
+    }
+  ]
+}

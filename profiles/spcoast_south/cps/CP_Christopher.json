@@ -1,0 +1,145 @@
+{
+  "name": "CP_Christopher",
+  "defaultAspectPolicy": "sp1969",
+  "trackCircuits": [
+    {
+      "name": "1T1",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "1WA",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "2WA",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "3T1",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "3BT1",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "5T1",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "1EA",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "2EA",
+      "dropoutDelayMs": 0
+    }
+  ],
+  "switches": [
+    {
+      "name": "1"
+    },
+    {
+      "name": "3"
+    },
+    {
+      "name": "5"
+    }
+  ],
+  "crossovers": [],
+  "signalControls": [
+    {
+      "name": "2"
+    }
+  ],
+  "signalMasts": [
+    {
+      "name": "2Nab",
+      "type": "TWO_HEAD",
+      "aspectPolicy": "sp1969"
+    },
+    {
+      "name": "2Sab",
+      "type": "TWO_HEAD",
+      "aspectPolicy": "sp1969"
+    }
+  ],
+  "detectorLocks": [
+    {
+      "switch": "1",
+      "trackCircuit": "1T1"
+    },
+    {
+      "switch": "3",
+      "trackCircuit": "3T1"
+    },
+    {
+      "switch": "5",
+      "trackCircuit": "5T1"
+    }
+  ],
+  "routes": [
+    {
+      "name": "MT1-STRAIGHT",
+      "governedBy": {
+        "signal": "2",
+        "direction": "RIGHT"
+      },
+      "displays": {
+        "mast": "2Sab",
+        "head": 0,
+        "maxIndication": "CLEAR"
+      },
+      "aligns": [
+        {
+          "switch": "1",
+          "position": "NORMAL"
+        },
+        {
+          "switch": "3",
+          "position": "NORMAL"
+        },
+        {
+          "switch": "5",
+          "position": "NORMAL"
+        }
+      ],
+      "clears": [
+        "1T1",
+        "3T1",
+        "5T1",
+        "1EA"
+      ],
+      "entrance": "1T1"
+    },
+    {
+      "name": "MT2-MT1-CROSSOVER",
+      "governedBy": {
+        "signal": "2",
+        "direction": "LEFT"
+      },
+      "displays": {
+        "mast": "2Nab",
+        "head": 1,
+        "maxIndication": "DIVERGING_CLEAR"
+      },
+      "aligns": [
+        {
+          "switch": "1",
+          "position": "NORMAL"
+        },
+        {
+          "switch": "3",
+          "position": "REVERSE"
+        }
+      ],
+      "clears": [
+        "3BT1",
+        "3T1",
+        "1T1",
+        "1WA"
+      ],
+      "entrance": "3BT1"
+    }
+  ]
+}

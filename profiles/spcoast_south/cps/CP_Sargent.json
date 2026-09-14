@@ -1,0 +1,29 @@
+{
+  "name": "CP_Sargent",
+  "defaultAspectPolicy": "sp1969",
+  "trackCircuits": [
+    {
+      "name": "1T1",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "HBD",
+      "dropoutDelayMs": 0
+    }
+  ],
+  "switches": [
+    {
+      "name": "1"
+    }
+  ],
+  "crossovers": [],
+  "signalControls": [],
+  "signalMasts": [],
+  "detectorLocks": [
+    {
+      "switch": "1",
+      "trackCircuit": "1T1"
+    }
+  ],
+  "routes": []
+}

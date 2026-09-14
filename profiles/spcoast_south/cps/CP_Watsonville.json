@@ -1,0 +1,95 @@
+{
+  "name": "CP_Watsonville",
+  "defaultAspectPolicy": "sp1969",
+  "trackCircuits": [
+    {
+      "name": "ALT",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "EAT",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "SAT",
+      "dropoutDelayMs": 0
+    }
+  ],
+  "switches": [
+    {
+      "name": "1"
+    }
+  ],
+  "crossovers": [],
+  "signalControls": [
+    {
+      "name": "2"
+    }
+  ],
+  "signalMasts": [
+    {
+      "name": "2NA",
+      "type": "TWO_HEAD",
+      "aspectPolicy": "sp1969"
+    },
+    {
+      "name": "2SA",
+      "type": "TWO_HEAD",
+      "aspectPolicy": "sp1969"
+    }
+  ],
+  "detectorLocks": [
+    {
+      "switch": "1",
+      "trackCircuit": "ALT"
+    }
+  ],
+  "routes": [
+    {
+      "name": "YARD-DEPARTURE",
+      "governedBy": {
+        "signal": "2",
+        "direction": "RIGHT"
+      },
+      "displays": {
+        "mast": "2SA",
+        "head": 0,
+        "maxIndication": "CLEAR"
+      },
+      "aligns": [
+        {
+          "switch": "1",
+          "position": "NORMAL"
+        }
+      ],
+      "clears": [
+        "EAT",
+        "SAT"
+      ],
+      "entrance": "SAT"
+    },
+    {
+      "name": "YARD-ARRIVAL",
+      "governedBy": {
+        "signal": "2",
+        "direction": "LEFT"
+      },
+      "displays": {
+        "mast": "2NA",
+        "head": 0,
+        "maxIndication": "APPROACH"
+      },
+      "aligns": [
+        {
+          "switch": "1",
+          "position": "REVERSE"
+        }
+      ],
+      "clears": [
+        "ALT",
+        "EAT"
+      ],
+      "entrance": "ALT"
+    }
+  ]
+}

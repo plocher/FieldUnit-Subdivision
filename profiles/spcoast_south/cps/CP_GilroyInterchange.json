@@ -1,0 +1,52 @@
+{
+  "name": "CP_GilroyInterchange",
+  "defaultAspectPolicy": "sp1969",
+  "trackCircuits": [
+    {
+      "name": "1T1",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "3T1",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "TK1",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "EA1",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "TL",
+      "dropoutDelayMs": 0
+    },
+    {
+      "name": "TR",
+      "dropoutDelayMs": 0
+    }
+  ],
+  "switches": [
+    {
+      "name": "1"
+    },
+    {
+      "name": "3"
+    }
+  ],
+  "crossovers": [],
+  "signalControls": [],
+  "signalMasts": [],
+  "detectorLocks": [
+    {
+      "switch": "1",
+      "trackCircuit": "1T1"
+    },
+    {
+      "switch": "3",
+      "trackCircuit": "3T1"
+    }
+  ],
+  "routes": []
+}

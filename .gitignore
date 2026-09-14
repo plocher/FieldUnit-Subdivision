@@ -1,0 +1,21 @@
+# Binaries and build artifacts
+build/
+*.o
+*.obj
+*.so
+*.dylib
+*.bin
+spcoast_virtual_plant
+validate_plants
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+
+# IDE & OS
+.DS_Store
+.idea/
+.vscode/
