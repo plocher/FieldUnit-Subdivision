@@ -74,6 +74,64 @@
       "entrance": "1T1"
     },
     {
+      "name": "SB-MT2-DIV",
+      "governedBy": {
+        "signal": "2",
+        "direction": "RIGHT"
+      },
+      "displays": {
+        "mast": "2SAB",
+        "head": 1,
+        "maxIndication": "DIVERGING_CLEAR"
+      },
+      "aligns": [
+        {
+          "switch": "1",
+          "position": "REVERSE"
+        },
+        {
+          "switch": "3",
+          "position": "NORMAL"
+        },
+        {
+          "switch": "5",
+          "position": "NORMAL"
+        }
+      ],
+      "clears": [
+        "1T1",
+        "3T1"
+      ],
+      "entrance": "1T1"
+    },
+    {
+      "name": "SB-INDUSTRY-DIV",
+      "governedBy": {
+        "signal": "2",
+        "direction": "RIGHT"
+      },
+      "displays": {
+        "mast": "2SAB",
+        "head": 1,
+        "maxIndication": "RESTRICTING"
+      },
+      "aligns": [
+        {
+          "switch": "1",
+          "position": "REVERSE"
+        },
+        {
+          "switch": "3",
+          "position": "REVERSE"
+        }
+      ],
+      "clears": [
+        "1T1",
+        "3T1"
+      ],
+      "entrance": "1T1"
+    },
+    {
       "name": "NB-MT1-STRAIGHT",
       "governedBy": {
         "signal": "2",
@@ -94,6 +152,64 @@
         "1T1"
       ],
       "entrance": "1T1"
+    },
+    {
+      "name": "NB-MT2-DIV",
+      "governedBy": {
+        "signal": "2",
+        "direction": "LEFT"
+      },
+      "displays": {
+        "mast": "2NAB",
+        "head": 1,
+        "maxIndication": "DIVERGING_CLEAR"
+      },
+      "aligns": [
+        {
+          "switch": "1",
+          "position": "REVERSE"
+        },
+        {
+          "switch": "3",
+          "position": "NORMAL"
+        },
+        {
+          "switch": "5",
+          "position": "NORMAL"
+        }
+      ],
+      "clears": [
+        "1T1",
+        "3T1"
+      ],
+      "entrance": "1T1"
+    },
+    {
+      "name": "NB-INDUSTRY-DIV",
+      "governedBy": {
+        "signal": "2",
+        "direction": "LEFT"
+      },
+      "displays": {
+        "mast": "2NAB",
+        "head": 1,
+        "maxIndication": "RESTRICTING"
+      },
+      "aligns": [
+        {
+          "switch": "1",
+          "position": "REVERSE"
+        },
+        {
+          "switch": "3",
+          "position": "REVERSE"
+        }
+      ],
+      "clears": [
+        "1T1",
+        "3T1"
+      ],
+      "entrance": "3T1"
     }
   ]
 }

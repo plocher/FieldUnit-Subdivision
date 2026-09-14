@@ -24,15 +24,68 @@ void sigHandler(int) {
     g_running = false;
 }
 
+inline uint32_t getWallClockMs() {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return static_cast<uint32_t>(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+}
+
+// Simulates physical electro-mechanical switch machine transit (4.5s to 7.5s)
+class RealisticSwitchDriver : public ApplianceDriver {
+public:
+    RealisticSwitchDriver(Switch* sw, uint32_t minTravelMs = 4500, uint32_t maxTravelMs = 7500)
+        : sw_(sw), minTravelMs_(minTravelMs), maxTravelMs_(maxTravelMs),
+          currentTravelMs_(5000), moveStartMs_(0), inMotion_(false) {
+        randomize();
+    }
+
+    void randomize() {
+        uint32_t range = (maxTravelMs_ > minTravelMs_) ? (maxTravelMs_ - minTravelMs_) : 1000;
+        currentTravelMs_ = minTravelMs_ + (rand() % range);
+    }
+
+    void drive(uint32_t nowMs) override {
+        if (!sw_) return;
+        if (sw_->reportedPosition() != sw_->commandedPosition() && !inMotion_) {
+            inMotion_ = true;
+            moveStartMs_ = nowMs;
+            randomize();
+            printf("  [%s] Switch machine motor running (transit: %.1fs)...\n",
+                   sw_->name(), currentTravelMs_ / 1000.0);
+        }
+    }
+
+    void sample(uint32_t nowMs) override {
+        if (!sw_ || !inMotion_) return;
+        if (nowMs - moveStartMs_ >= currentTravelMs_) {
+            sw_->updateFeedback(sw_->commandedPosition());
+            inMotion_ = false;
+            printf("  [%s] Switch points locked in %s position.\n",
+                   sw_->name(),
+                   (sw_->commandedPosition() == SwitchPosition::NORMAL) ? "NORMAL" : "REVERSE");
+        }
+    }
+
+    bool inMotion() const { return inMotion_; }
+
+private:
+    Switch* sw_;
+    uint32_t minTravelMs_;
+    uint32_t maxTravelMs_;
+    uint32_t currentTravelMs_;
+    uint32_t moveStartMs_;
+    bool inMotion_;
+};
+
 // Single autonomous virtual bungalow managing one Control Point
 class VirtualBungalow {
 public:
-    VirtualBungalow(const std::string& name, const std::string& jsonPath)
+    VirtualBungalow(const std::string& name, const std::string& jsonPath, bool isTest = false)
         : name_(name), cp_(name.c_str()), lastTickMs_(0) {
         loadJson(jsonPath);
         clearAllTracks();
         setupCodec();
-        setupSwitchMocks();
+        setupSwitchMocks(isTest ? 800 : 4500, isTest ? 1200 : 7500);
     }
 
     void clearAllTracks() {
@@ -61,12 +114,12 @@ public:
         }
     }
 
-    void setupSwitchMocks(uint32_t travelTimeMs = 2000) {
+    void setupSwitchMocks(uint32_t minTravelMs = 4500, uint32_t maxTravelMs = 7500) {
         mockDrivers_.clear();
         for (uint8_t i = 0; i < cp_.switchCount(); ++i) {
             Switch* sw = cp_.getSwitch(i);
             if (sw) {
-                auto driver = std::make_unique<MockSwitchDriver>(sw, travelTimeMs);
+                auto driver = std::make_unique<RealisticSwitchDriver>(sw, minTravelMs, maxTravelMs);
                 cp_.overrideDriver(sw->name(), driver.get());
                 mockDrivers_.push_back(std::move(driver));
             }
@@ -172,7 +225,7 @@ private:
     std::string name_;
     ControlPoint cp_;
     AarTextCodec codec_;
-    std::vector<std::unique_ptr<MockSwitchDriver>> mockDrivers_;
+    std::vector<std::unique_ptr<RealisticSwitchDriver>> mockDrivers_;
     std::string lastPublishedIndication_;
     uint32_t lastTickMs_;
 };
@@ -180,7 +233,8 @@ private:
 // Manager holding all 7 virtual bungalows across the SPCoast South territory
 class SubdivisionPlantHost {
 public:
-    SubdivisionPlantHost(const std::string& profilesDir) : profilesDir_(profilesDir) {
+    SubdivisionPlantHost(const std::string& profilesDir, bool isTest = false)
+        : profilesDir_(profilesDir), isTest_(isTest) {
         loadStations();
     }
 
@@ -197,7 +251,7 @@ public:
 
         for (const auto& name : stationNames) {
             std::string path = profilesDir_ + "/" + name + ".json";
-            bungalows_.push_back(std::make_unique<VirtualBungalow>(name, path));
+            bungalows_.push_back(std::make_unique<VirtualBungalow>(name, path, isTest_));
             printf("[INIT] Loaded virtual bungalow: %s\n", name.c_str());
         }
     }
@@ -221,6 +275,7 @@ public:
 
 private:
     std::string profilesDir_;
+    bool isTest_;
     std::vector<std::unique_ptr<VirtualBungalow>> bungalows_;
 };
 
@@ -459,7 +514,7 @@ void on_message_cb(struct mosquitto* mosq, void* obj, const struct mosquitto_mes
     VirtualBungalow* b = ctx->host->findStation(stationName);
     if (!b) return;
 
-    uint32_t nowMs = static_cast<uint32_t>(clock());
+    uint32_t nowMs = getWallClockMs();
     b->handleControlMessage(payload.c_str(), nowMs);
     b->tick(nowMs);
 
@@ -478,15 +533,15 @@ int main(int argc, char* argv[]) {
     signal(SIGINT, sigHandler);
     signal(SIGTERM, sigHandler);
 
-    const std::string profilesDir = "/Users/jplocher/Dropbox/workspace/FieldUnit-Subdivision/profiles/spcoast_south/cps";
-    SubdivisionPlantHost host(profilesDir);
-
     bool testMode = false;
     for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "--test") == 0) {
             testMode = true;
         }
     }
+
+    const std::string profilesDir = "/Users/jplocher/Dropbox/workspace/FieldUnit-Subdivision/profiles/spcoast_south/cps";
+    SubdivisionPlantHost host(profilesDir, testMode);
 
     if (testMode) {
         return runSelfTest(host);
@@ -515,10 +570,10 @@ int main(int argc, char* argv[]) {
 
     printf("[HOST] Live Virtual Plant Daemon running for layout '%s'. Press Ctrl+C to exit.\n", layout.c_str());
 
-    uint32_t nowMs = 0;
+    srand(static_cast<unsigned>(time(nullptr)));
     while (g_running) {
         mosquitto_loop(mosq, 20, 1);
-        nowMs += 20;
+        uint32_t nowMs = getWallClockMs();
         host.tickAll(nowMs);
 
         // Only publish indications on state change!
