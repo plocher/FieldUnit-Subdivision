@@ -30,51 +30,75 @@ inline uint32_t getWallClockMs() {
     return static_cast<uint32_t>(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 }
 
-// Simulates physical electro-mechanical switch machine transit (4.5s to 7.5s)
+// Simulates prototype dual-control switch machine physics (US&S M-23 / GRS Model 5D):
+// Phase 1: Motor energizes, lock rod unlocks (350-500ms). Point contacts remain closed; existing lamp stays lit.
+// Phase 2: Lock cleared -> point detector contacts open (MOVING). Both lamps dark. Points travel across (1.8s-2.5s).
+// Phase 3: Points seat against opposite stock rail -> lock dog engages -> contacts close -> new lamp illuminates.
+// Total stroke duration: 2.2s to 3.0s (compressed for layout operations).
 class RealisticSwitchDriver : public ApplianceDriver {
 public:
-    RealisticSwitchDriver(Switch* sw, uint32_t minTravelMs = 4500, uint32_t maxTravelMs = 7500)
-        : sw_(sw), minTravelMs_(minTravelMs), maxTravelMs_(maxTravelMs),
-          currentTravelMs_(5000), moveStartMs_(0), inMotion_(false) {
-        randomize();
-    }
+    enum class MotorPhase {
+        IDLE,
+        UNLOCKING,
+        TRAVELING
+    };
 
-    void randomize() {
-        uint32_t range = (maxTravelMs_ > minTravelMs_) ? (maxTravelMs_ - minTravelMs_) : 1000;
-        currentTravelMs_ = minTravelMs_ + (rand() % range);
-    }
+    RealisticSwitchDriver(Switch* sw, uint32_t minTotalMs = 2200, uint32_t maxTotalMs = 3000)
+        : sw_(sw), minTotalMs_(minTotalMs), maxTotalMs_(maxTotalMs),
+          phase_(MotorPhase::IDLE), strokeStartMs_(0), unlockDurationMs_(400),
+          totalDurationMs_(2500) {}
 
     void drive(uint32_t nowMs) override {
         if (!sw_) return;
-        if (sw_->reportedPosition() != sw_->commandedPosition() && !inMotion_) {
-            inMotion_ = true;
-            moveStartMs_ = nowMs;
-            randomize();
-            printf("  [%s] Switch machine motor running (transit: %.1fs)...\n",
-                   sw_->name(), currentTravelMs_ / 1000.0);
+        if (sw_->reportedPosition() != sw_->commandedPosition() && phase_ == MotorPhase::IDLE) {
+            phase_ = MotorPhase::UNLOCKING;
+            strokeStartMs_ = nowMs;
+            // Mechanical unlock rod withdrawal delay: 350ms to 480ms
+            unlockDurationMs_ = 350 + (rand() % 130);
+            // Total stroke duration: 2.2s to 3.0s
+            uint32_t range = (maxTotalMs_ > minTotalMs_) ? (maxTotalMs_ - minTotalMs_) : 500;
+            totalDurationMs_ = minTotalMs_ + (rand() % range);
+            printf("  [%s] Switch motor energized: unlocking lock rod (stroke duration: %.2fs)...\n",
+                   sw_->name(), totalDurationMs_ / 1000.0);
         }
     }
 
     void sample(uint32_t nowMs) override {
-        if (!sw_ || !inMotion_) return;
-        if (nowMs - moveStartMs_ >= currentTravelMs_) {
-            sw_->updateFeedback(sw_->commandedPosition());
-            inMotion_ = false;
-            printf("  [%s] Switch points locked in %s position.\n",
-                   sw_->name(),
-                   (sw_->commandedPosition() == SwitchPosition::NORMAL) ? "NORMAL" : "REVERSE");
+        if (!sw_ || phase_ == MotorPhase::IDLE) return;
+
+        uint32_t elapsed = nowMs - strokeStartMs_;
+
+        if (phase_ == MotorPhase::UNLOCKING) {
+            // During unlocking, points have not moved yet; keep existing reported position.
+            if (elapsed >= unlockDurationMs_) {
+                phase_ = MotorPhase::TRAVELING;
+                // Lock rod clears notch -> point detector contacts open -> Out of Correspondence!
+                sw_->updateFeedback(SwitchPosition::MOVING);
+                printf("  [%s] Lock rod cleared: point detector contacts open (MOVING / OOC). Points in motion.\n",
+                       sw_->name());
+            }
+        } else if (phase_ == MotorPhase::TRAVELING) {
+            if (elapsed >= totalDurationMs_) {
+                phase_ = MotorPhase::IDLE;
+                // Points fully seated and lock dog engages -> full correspondence!
+                sw_->updateFeedback(sw_->commandedPosition());
+                printf("  [%s] Points locked in %s position and proven in correspondence.\n",
+                       sw_->name(),
+                       (sw_->commandedPosition() == SwitchPosition::NORMAL) ? "NORMAL" : "REVERSE");
+            }
         }
     }
 
-    bool inMotion() const { return inMotion_; }
+    bool inMotion() const { return phase_ != MotorPhase::IDLE; }
 
 private:
     Switch* sw_;
-    uint32_t minTravelMs_;
-    uint32_t maxTravelMs_;
-    uint32_t currentTravelMs_;
-    uint32_t moveStartMs_;
-    bool inMotion_;
+    uint32_t minTotalMs_;
+    uint32_t maxTotalMs_;
+    MotorPhase phase_;
+    uint32_t strokeStartMs_;
+    uint32_t unlockDurationMs_;
+    uint32_t totalDurationMs_;
 };
 
 // Single autonomous virtual bungalow managing one Control Point
@@ -92,6 +116,31 @@ public:
         for (uint8_t i = 0; i < cp_.trackCircuitCount(); ++i) {
             cp_.trackCircuit(i)->update(Occupancy::VACANT);
         }
+    }
+
+    void resetToNormative() {
+        // 1. All switches to NORMAL
+        for (uint8_t i = 0; i < cp_.switchCount(); ++i) {
+            Switch* sw = cp_.getSwitch(i);
+            if (sw) {
+                sw->throwSwitch(SwitchPosition::NORMAL, 0);
+                sw->updateFeedback(SwitchPosition::NORMAL);
+            }
+        }
+        // 2. All signals to STOP
+        for (uint8_t i = 0; i < cp_.authorityCount(); ++i) {
+            SignalControl* sc = cp_.authority(i);
+            if (sc) {
+                sc->updateCommand(DirectionAuthority::STOP, false, 0, false);
+            }
+        }
+        // 3. All tracks to VACANT
+        clearAllTracks();
+        // 4. All maintainers to OFF
+        for (uint8_t i = 0; i < MAX_APPLIANCES; ++i) {
+            cp_.setMaintainerCall(i, false);
+        }
+        lastPublishedIndication_.clear(); // force republication
     }
 
     const std::string& name() const { return name_; }
@@ -266,6 +315,12 @@ public:
     void tickAll(uint32_t nowMs) {
         for (auto& b : bungalows_) {
             b->tick(nowMs);
+        }
+    }
+
+    void resetAllToNormative() {
+        for (auto& b : bungalows_) {
+            b->resetToNormative();
         }
     }
 
@@ -534,14 +589,22 @@ int main(int argc, char* argv[]) {
     signal(SIGTERM, sigHandler);
 
     bool testMode = false;
+    bool resetMode = false;
     for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "--test") == 0) {
             testMode = true;
+        } else if (strcmp(argv[i], "--reset") == 0 || strcmp(argv[i], "--normative") == 0) {
+            resetMode = true;
         }
     }
 
     const std::string profilesDir = "/Users/jplocher/Dropbox/workspace/FieldUnit-Subdivision/profiles/spcoast_south/cps";
     SubdivisionPlantHost host(profilesDir, testMode);
+
+    if (resetMode) {
+        printf("[RESET] Setting all 7 stations to safe normative baseline (Switches NORMAL, Signals STOP, Tracks VACANT, MC OFF)...\n");
+        host.resetAllToNormative();
+    }
 
     if (testMode) {
         return runSelfTest(host);
