@@ -144,7 +144,7 @@ public:
     }
 
     const std::string& name() const { return name_; }
-    ControlPoint& cp() { return cp_; }
+    InterlockingPlant& cp() { return cp_; }
     AarTextCodec& codec() { return codec_; }
 
     void loadJson(const std::string& jsonPath) {
@@ -272,7 +272,7 @@ public:
 
 private:
     std::string name_;
-    ControlPoint cp_;
+    InterlockingPlant cp_;
     AarTextCodec codec_;
     std::vector<std::unique_ptr<RealisticSwitchDriver>> mockDrivers_;
     std::string lastPublishedIndication_;

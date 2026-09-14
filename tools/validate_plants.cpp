@@ -24,7 +24,7 @@ bool testStation(const char* name, const std::string& jsonPath) {
     buffer << file.rdbuf();
     std::string jsonStr = buffer.str();
 
-    ControlPoint cp("Blank");
+    InterlockingPlant cp("Blank");
     bool ok = cp.deserialize(jsonStr.c_str());
     if (!ok) {
         fprintf(stderr, "ERROR: deserialize failed for %s\n", name);
