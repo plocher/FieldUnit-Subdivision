@@ -53,12 +53,12 @@ public:
         if (sw_->reportedPosition() != sw_->commandedPosition() && phase_ == MotorPhase::IDLE) {
             phase_ = MotorPhase::UNLOCKING;
             strokeStartMs_ = nowMs;
-            // Mechanical unlock rod withdrawal delay: 350ms to 480ms
-            unlockDurationMs_ = 350 + (rand() % 130);
+            // Mechanical lock dog withdrawal delay: 100ms to 180ms
+            unlockDurationMs_ = 100 + (rand() % 80);
             // Total stroke duration: 2.2s to 3.0s
             uint32_t range = (maxTotalMs_ > minTotalMs_) ? (maxTotalMs_ - minTotalMs_) : 500;
             totalDurationMs_ = minTotalMs_ + (rand() % range);
-            printf("  [%s] Switch motor energized: unlocking lock rod (stroke duration: %.2fs)...\n",
+            printf("  [%s] Switch motor energized: withdrawing lock dog (total stroke: %.2fs)...\n",
                    sw_->name(), totalDurationMs_ / 1000.0);
         }
     }
@@ -109,7 +109,7 @@ public:
         loadJson(jsonPath);
         clearAllTracks();
         setupCodec();
-        setupSwitchMocks(isTest ? 800 : 4500, isTest ? 1200 : 7500);
+        setupSwitchMocks(isTest ? 800 : 2200, isTest ? 1200 : 3000);
     }
 
     void clearAllTracks() {
@@ -163,7 +163,7 @@ public:
         }
     }
 
-    void setupSwitchMocks(uint32_t minTravelMs = 4500, uint32_t maxTravelMs = 7500) {
+    void setupSwitchMocks(uint32_t minTravelMs = 2200, uint32_t maxTravelMs = 3000) {
         mockDrivers_.clear();
         for (uint8_t i = 0; i < cp_.switchCount(); ++i) {
             Switch* sw = cp_.getSwitch(i);
