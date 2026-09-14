@@ -96,6 +96,22 @@ public:
             codec_.addEncodeEntry(encodeSignal(sc));
         }
 
+        // Maintainer Calls matching the physical desk columns
+        if (name_ == "CP_GilroyInterchange") {
+            codec_.addDecodeEntry(decodeMaintainer(0, "MC1"));
+            codec_.addDecodeEntry(decodeMaintainer(1, "MC2"));
+            codec_.addEncodeEntry(encodeMaintainer(0, "MC1"));
+            codec_.addEncodeEntry(encodeMaintainer(1, "MC2"));
+        } else if (name_ == "CP_Luchessa" || name_ == "CP_Corporal" || name_ == "CP_Sargent") {
+            codec_.addDecodeEntry(decodeMaintainer(0, "MC1"));
+            codec_.addEncodeEntry(encodeMaintainer(0, "MC1"));
+        } else if (name_ == "CP_Christopher") {
+            codec_.addDecodeEntry(decodeMaintainer(0, "MC1"));
+            codec_.addDecodeEntry(decodeMaintainer(1, "MC2"));
+            codec_.addEncodeEntry(encodeMaintainer(0, "MC1"));
+            codec_.addEncodeEntry(encodeMaintainer(1, "MC2"));
+        }
+
         codec_.preallocateBuffers();
     }
 
