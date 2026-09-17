@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fieldunit.org/schema/v1/vital-payload.schema.json",
+  "title": "FieldUnit Vital Payload",
+  "description": "A lossy, deployable vital projection compiled from an Interlocking Plant source document. It cannot contain design or supervision members.",
+  "type": "object",
+  "required": ["kind", "version", "sourceDocumentId", "name"],
+  "properties": {
+    "kind": {
+      "const": "vital-payload"
+    },
+    "version": {
+      "const": "1.0.0"
+    },
+    "sourceDocumentId": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+    },
+    "defaultAspectPolicy": {
+      "type": "string"
+    },
+    "trackCircuits": {
+      "type": "array"
+    },
+    "switches": {
+      "type": "array"
+    },
+    "crossovers": {
+      "type": "array"
+    },
+    "signalControls": {
+      "type": "array"
+    },
+    "signalMasts": {
+      "type": "array"
+    },
+    "detectorLocks": {
+      "type": "array"
+    },
+    "routes": {
+      "type": "array"
+    }
+  },
+  "additionalProperties": false
+}

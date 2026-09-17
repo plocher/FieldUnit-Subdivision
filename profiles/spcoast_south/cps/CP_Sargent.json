@@ -1,5 +1,10 @@
 {
+  "$schema": "https://fieldunit.org/schema/v1/interlocking-plant.schema.json",
+  "version": "1.0.0",
   "name": "CP_Sargent",
+  "design": {
+    "status": "incomplete"
+  },
   "defaultAspectPolicy": "sp1969",
   "trackCircuits": [
     {

@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fieldunit.org/schema/v1/operating-topology.schema.json",
+  "title": "FieldUnit Operating Topology",
+  "type": "object",
+  "required": [
+    "kind",
+    "version",
+    "id",
+    "evidenceLedgerId",
+    "nodes",
+    "detectionBlocks",
+    "transitSegments",
+    "redactions"
+  ],
+  "properties": {
+    "kind": {
+      "const": "operating-topology"
+    },
+    "version": {
+      "const": "1.0.0"
+    },
+    "id": {
+      "$ref": "#/$defs/id"
+    },
+    "evidenceLedgerId": {
+      "$ref": "#/$defs/id"
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/node"
+      },
+      "uniqueItems": true
+    },
+    "detectionBlocks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/detectionBlock"
+      },
+      "uniqueItems": true
+    },
+    "transitSegments": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/transitSegment"
+      },
+      "uniqueItems": true
+    },
+    "redactions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/redaction"
+      },
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+    },
+    "entityRef": {
+      "type": "object",
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": {
+          "enum": ["interlockingPlant", "trackCircuit", "signalMast"]
+        },
+        "id": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "additionalProperties": false
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "kind", "disposition", "assertionIds"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": ["plantBoundary", "detectionEndpoint", "junction", "terminal"]
+        },
+        "plantRef": {
+          "$ref": "#/$defs/entityRef"
+        },
+        "disposition": {
+          "enum": ["accepted", "provisional", "rejected", "incomplete"]
+        },
+        "assertionIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "detectionBlock": {
+      "type": "object",
+      "required": [
+        "id",
+        "endpointIds",
+        "circuitRefs",
+        "directions",
+        "disposition",
+        "assertionIds"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "endpointIds": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "circuitRefs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/entityRef"
+          },
+          "uniqueItems": true
+        },
+        "directions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": ["left", "right"]
+          },
+          "uniqueItems": true
+        },
+        "disposition": {
+          "enum": ["accepted", "provisional", "rejected", "incomplete"]
+        },
+        "assertionIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "transitSegment": {
+      "type": "object",
+      "required": [
+        "id",
+        "fromNodeId",
+        "toNodeId",
+        "directions",
+        "disposition",
+        "assertionIds"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "fromNodeId": {
+          "$ref": "#/$defs/id"
+        },
+        "toNodeId": {
+          "$ref": "#/$defs/id"
+        },
+        "directions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": ["left", "right"]
+          },
+          "uniqueItems": true
+        },
+        "representedDistanceFeet": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "disposition": {
+          "enum": ["accepted", "provisional", "rejected", "incomplete"]
+        },
+        "assertionIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "redaction": {
+      "type": "object",
+      "required": ["id", "reason", "assertionIds"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "affectedArea": {
+          "type": "string"
+        },
+        "assertionIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

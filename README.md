@@ -2,11 +2,11 @@
 
 Operating-session runtime and virtual railroad simulator for the [FieldUnit](https://github.com/plocher/FieldUnit) ecosystem.
 
-`FieldUnit-Subdivision` connects multiple FieldUnit Interlocking Plants into a complete operating territory. It will combine live track-circuit state, train progression, autonomous traffic, crew interfaces, and an overhead model board while preserving the physical dispatcher cTc machine as the supervisory control source.
+`FieldUnit-Subdivision` connects multiple FieldUnit Interlocking Plants into a bounded dispatcher territory. It will combine live track-circuit state, train progression, autonomous traffic, crew interfaces, and an overhead model board while preserving the physical dispatcher cTc machine as the supervisory control source. It does not claim to model the complete geographic subdivision beyond that territory.
 
 ## Aspiration
 
-The target is a playable, operationally credible model railroad subdivision:
+The target is a playable, operationally credible dispatcher territory:
 - A physical or virtual cTc Machine dispatches a territory through the CodeLine Interface.
 - Native virtual Interlocking Plants apply FieldUnit vital safety rules and publish verified indications.
 - A simulation overlay moves trains through the defined topology, shunting real plant track circuits rather than reproducing vital rules.

@@ -1,0 +1,305 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fieldunit.org/schema/v1/track-diagram.schema.json",
+  "title": "FieldUnit Track Diagram Document",
+  "type": "object",
+  "required": ["kind", "version", "id", "subject", "sheets"],
+  "properties": {
+    "kind": {
+      "const": "track-diagram"
+    },
+    "version": {
+      "const": "1.0.0"
+    },
+    "id": {
+      "$ref": "#/$defs/id"
+    },
+    "subject": {
+      "$ref": "#/$defs/entityRef"
+    },
+    "sheets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/sheet"
+      },
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+    },
+    "entityRef": {
+      "type": "object",
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "interlockingPlant",
+            "controlledPoint",
+            "panelColumn",
+            "trackCircuit",
+            "switch",
+            "crossover",
+            "signalMast",
+            "topologyNode",
+            "detectionBlock",
+            "transitSegment",
+            "prototypeRedaction"
+          ]
+        },
+        "id": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "additionalProperties": false
+    },
+    "port": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "portRef": {
+      "type": "object",
+      "required": ["elementId", "portId"],
+      "properties": {
+        "elementId": {
+          "$ref": "#/$defs/id"
+        },
+        "portId": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "additionalProperties": false
+    },
+    "point": {
+      "type": "object",
+      "required": ["x", "y"],
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "style": {
+      "type": "object",
+      "properties": {
+        "trackClass": {
+          "enum": ["mainline", "side"]
+        },
+        "stroke": {
+          "enum": ["solid", "dashed"]
+        },
+        "visibility": {
+          "enum": ["visible", "editorHidden"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "kind", "position", "ports"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": ["anchor", "terminal", "sheetSeam"]
+        },
+        "position": {
+          "$ref": "#/$defs/point"
+        },
+        "ports": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/port"
+          },
+          "uniqueItems": true
+        },
+        "refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entityRef"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "junction": {
+      "type": "object",
+      "required": ["id", "kind", "position", "ports"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": [
+            "turnout",
+            "crossover",
+            "slip",
+            "diamond",
+            "turntable",
+            "traverser"
+          ]
+        },
+        "position": {
+          "$ref": "#/$defs/point"
+        },
+        "ports": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "$ref": "#/$defs/port"
+          },
+          "uniqueItems": true
+        },
+        "refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entityRef"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "segment": {
+      "type": "object",
+      "required": ["id", "from", "to"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "from": {
+          "$ref": "#/$defs/portRef"
+        },
+        "to": {
+          "$ref": "#/$defs/portRef"
+        },
+        "geometry": {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": {
+              "enum": ["straight", "arc", "bezier"]
+            },
+            "controlPoints": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/point"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "style": {
+          "$ref": "#/$defs/style"
+        },
+        "refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entityRef"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "overlay": {
+      "type": "object",
+      "required": ["id", "kind", "position"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": [
+            "label",
+            "signalGlyph",
+            "indicator",
+            "decoration",
+            "background",
+            "status"
+          ]
+        },
+        "position": {
+          "$ref": "#/$defs/point"
+        },
+        "text": {
+          "type": "string"
+        },
+        "displayLevel": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entityRef"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "sheet": {
+      "type": "object",
+      "required": ["id", "name", "nodes", "junctions", "segments", "overlays"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          },
+          "uniqueItems": true
+        },
+        "junctions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/junction"
+          },
+          "uniqueItems": true
+        },
+        "segments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/segment"
+          },
+          "uniqueItems": true
+        },
+        "overlays": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/overlay"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

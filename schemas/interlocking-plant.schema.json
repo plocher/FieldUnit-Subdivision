@@ -1,0 +1,327 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fieldunit.org/schema/v1/interlocking-plant.schema.json",
+  "title": "FieldUnit Interlocking Plant Source Document",
+  "description": "The complete design source. Root vital members form the FieldUnit projection; design and supervision are non-vital optional namespaces.",
+  "type": "object",
+  "required": ["name"],
+  "properties": {
+    "$schema": {
+      "const": "https://fieldunit.org/schema/v1/interlocking-plant.schema.json"
+    },
+    "version": {
+      "const": "1.0.0"
+    },
+    "name": {
+      "$ref": "#/$defs/id"
+    },
+    "defaultAspectPolicy": {
+      "type": "string"
+    },
+    "trackCircuits": {
+      "type": "array"
+    },
+    "switches": {
+      "type": "array"
+    },
+    "crossovers": {
+      "type": "array"
+    },
+    "signalControls": {
+      "type": "array"
+    },
+    "signalMasts": {
+      "type": "array"
+    },
+    "detectorLocks": {
+      "type": "array"
+    },
+    "routes": {
+      "type": "array"
+    },
+    "design": {
+      "$ref": "#/$defs/design"
+    },
+    "supervision": {
+      "$ref": "#/$defs/supervision"
+    },
+    "physical": {
+      "$ref": "#/$defs/physical"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]*$"
+    },
+    "design": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": ["draft", "incomplete", "review", "accepted"]
+        },
+        "diagram": {
+          "$ref": "track-diagram.schema.json"
+        },
+        "evidence": {
+          "$ref": "evidence-ledger.schema.json"
+        },
+        "historicalPresentation": {
+          "$ref": "#/$defs/historicalPresentation"
+        },
+        "review": {
+          "$ref": "#/$defs/review"
+        }
+      },
+      "additionalProperties": false
+    },
+    "review": {
+      "type": "object",
+      "properties": {
+        "routeFindings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["route", "disposition", "reason"],
+            "properties": {
+              "route": {
+                "type": "string"
+              },
+              "disposition": {
+                "enum": ["accepted", "provisional", "rejected", "incomplete"]
+              },
+              "reason": {
+                "type": "string"
+              },
+              "replacementRoute": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "supervision": {
+      "type": "object",
+      "properties": {
+        "controlledPointIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "deskAllocation": {
+          "$ref": "desk-allocation.schema.json"
+        },
+        "panelColumns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["number"],
+            "properties": {
+              "number": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "switchId": {
+                "type": "string"
+              },
+              "switchName": {
+                "type": "string"
+              },
+              "nameplate": {
+                "enum": ["SWITCH", "LOCK"]
+              },
+              "signalId": {
+                "type": "string"
+              },
+              "signalName": {
+                "type": "string"
+              },
+              "lockId": {
+                "type": "string"
+              },
+              "lockName": {
+                "type": "string"
+              },
+              "lockedPosition": {
+                "enum": ["NORMAL", "REVERSE"]
+              },
+              "unlockedControl": {
+                "enum": ["local"]
+              },
+              "trackLamps": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "maintainerCall": {
+                "type": "string"
+              },
+              "codeButton": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "historicalPresentation": {
+      "type": "object",
+      "required": ["officeSketch", "routeTable"],
+      "properties": {
+        "officeSketch": {
+          "type": "object",
+          "required": ["station", "columns"],
+          "properties": {
+            "station": {
+              "$ref": "#/$defs/id"
+            },
+            "columns": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["number"],
+                "properties": {
+                  "number": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "switch": {
+                    "type": "string"
+                  },
+                  "switchName": {
+                    "type": "string"
+                  },
+                  "nameplate": {
+                    "enum": ["SWITCH", "LOCK"]
+                  },
+                  "signal": {
+                    "type": "string"
+                  },
+                  "signalName": {
+                    "type": "string"
+                  },
+                  "trackLamps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "maintainerCall": {
+                    "type": "string"
+                  },
+                  "codeButton": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "routeTable": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["mast", "alignment"],
+            "properties": {
+              "mast": {
+                "type": "string"
+              },
+              "alignment": {
+                "type": "string"
+              },
+              "heads": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "requirements", "indication"],
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "requirements": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "indication": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "requirements": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "indication": {
+                "type": "string"
+              },
+              "note": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "physical": {
+      "type": "object",
+      "properties": {
+        "fieldNodeId": {
+          "$ref": "#/$defs/id"
+        },
+        "hardwareProfile": {
+          "type": "string"
+        },
+        "ioBindings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "direction"],
+            "properties": {
+              "name": {
+                "$ref": "#/$defs/id"
+              },
+              "direction": {
+                "enum": ["input", "output", "bidirectional"]
+              },
+              "device": {
+                "type": "string"
+              },
+              "bit": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "assertionIds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
