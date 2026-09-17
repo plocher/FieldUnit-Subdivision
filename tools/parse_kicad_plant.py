@@ -156,38 +156,19 @@ def render_text(graph: PlantGraph) -> str:
         lines.append("  (none)")
     for route in graph.routes:
         lines.append("  " + format_route_line(route))
-    lines.append("")
-    lines.append("Route combinatoric proof:")
+    # Internal completeness check only — do not present impossible pairs as product.
     proof = build_route_proof(graph)
-    lines.append(
-        f"  switches={proof['switches']}  full_combos={proof['combo_count']}  "
-        f"valid_routes={proof['valid_route_count']}"
-    )
-    lines.append("  Per face — reachable exits across all plant alignments; impossible exits never reached:")
-    for row in proof["faces"]:
+    valid_pair_set = set(tuple(p) for p in proof["valid_pairs"])
+    reachable_pair_set = set(tuple(p) for p in proof["reachable_pairs"])
+    if valid_pair_set != reachable_pair_set:
+        missing = sorted(reachable_pair_set - valid_pair_set)
+        extra = sorted(valid_pair_set - reachable_pair_set)
+        lines.append("")
+        lines.append("Route harvest completeness:")
         lines.append(
-            f"    {row['mast']:8} entry={row['entry']!r:20}  "
-            f"reachable={row['reachable_exits']}  "
-            f"IMPOSSIBLE={row['impossible_exits']}"
+            f"  WARNING harvest/proof mismatch "
+            f"(missing_from_harvest={missing}, extra_in_harvest={extra})"
         )
-    lines.append("  Impossible entry→exit pairs (geometry / switch plant forbids):")
-    if not proof["impossible_pairs"]:
-        lines.append("    (none)")
-    for mast, entry, exit_des in proof["impossible_pairs"]:
-        lines.append(f"    {mast:8}  {entry} → {exit_des}")
-    lines.append("  Locked-plant samples (alignment → exits); empty exits = dead plant for that face:")
-    for row in proof["faces"]:
-        lines.append(f"    {row['mast']} from {row['entry']}:")
-        # show only combos with exits, plus a couple empty for proof
-        nonempty = [c for c in row["combos"] if c["exits"]]
-        empty = [c for c in row["combos"] if not c["exits"]]
-        for c in nonempty:
-            lines.append(f"      {c['alignments']:16} -> {c['exits']}")
-        if empty:
-            lines.append(
-                f"      ({len(empty)} alignments reach no exit for this face, e.g. "
-                f"{empty[0]['alignments']})"
-            )
     lines.append("")
     lines.append("Diagnostics:")
     if not graph.diagnostics:
@@ -295,7 +276,13 @@ def render_json(graph: PlantGraph) -> str:
             }
             for n in graph.nets
         ],
-        "route_proof": build_route_proof(graph),
+        "route_completeness": (
+            lambda p: {
+                "ok": set(map(tuple, p["valid_pairs"])) == set(map(tuple, p["reachable_pairs"])),
+                "valid_route_count": p["valid_route_count"],
+                "full_switch_combos": p["combo_count"],
+            }
+        )(build_route_proof(graph)),
         "diagnostics": [
             {
                 "severity": d.severity.value,
