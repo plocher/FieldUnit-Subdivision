@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 import re
 from collections import defaultdict
 from typing import Iterable, Optional
@@ -362,6 +363,9 @@ class _TrackTopology:
                     continue
                 seen.add(key)
                 name = f"{entry_designation}-{exit_term.designation}"
+                clears = tuple(
+                    f"{sw}T1" for sw, _pos in switch_tuple
+                )
                 routes.append(
                     SignalRoute(
                         name=name,
@@ -378,6 +382,7 @@ class _TrackTopology:
                         exit_designation=exit_term.designation,
                         exit_rulebook=exit_term.rulebook,
                         switch_alignments=switch_tuple,
+                        clear_track_circuits=clears,
                         path_nets=tuple(path_nets),
                     )
                 )
@@ -432,6 +437,73 @@ class _TrackTopology:
                 stack.append((nxt, path + [nxt], new_nets, new_aligns))
 
         return results
+
+
+    def _walk_fixed(
+        self,
+        start: str,
+        alignments: dict[str, str],
+        switch_ref: dict[str, str],
+        forbidden_ports: set[str],
+        entry_irj: str,
+    ) -> Iterable[tuple[str, list[str], dict[str, str]]]:
+        """Walk with every switch locked to ``alignments`` (no branching)."""
+        ref_to_switch_name = {v: k for k, v in switch_ref.items()}
+        stack: list[tuple[str, list[str], list[str]]] = [(start, [start], [])]
+        results: list[tuple[str, list[str], dict[str, str]]] = []
+        while stack:
+            port, path, nets = stack.pop()
+            if port in self.terminal_by_port and port not in forbidden_ports:
+                results.append((port, nets, dict(alignments)))
+                continue
+            for nxt, via_net, _delta in self._neighbors_fixed(
+                port, alignments, ref_to_switch_name, entry_irj
+            ):
+                if nxt in path or nxt in forbidden_ports:
+                    continue
+                new_nets = list(nets)
+                if via_net and (not new_nets or new_nets[-1] != via_net):
+                    new_nets.append(via_net)
+                stack.append((nxt, path + [nxt], new_nets))
+        return results
+
+    def _neighbors_fixed(
+        self,
+        port: str,
+        aligns: dict[str, str],
+        ref_to_switch_name: dict[str, str],
+        entry_irj: str,
+    ) -> list[tuple[str, str, dict[str, str]]]:
+        """Neighbors under a fully specified switch plant."""
+        out: list[tuple[str, str, dict[str, str]]] = []
+        ref, pin = port.split(":", 1)
+        ent = self.graph.entities.get(ref)
+        for nb in self.net_neighbors.get(port, set()):
+            out.append((nb, self._shared_net(port, nb), {}))
+        for nb in self.joint_neighbors.get(port, set()):
+            if ref == entry_irj:
+                continue
+            out.append((nb, f"joint:{ref}", {}))
+        if ent and ent.kind in _SWITCH_KINDS:
+            sw_name = ent.canonical_name
+            pos = aligns.get(sw_name, "N")
+            c = self._port(ref, _PIN_C)
+            n = self._port(ref, _PIN_N)
+            r = self._port(ref, _PIN_R)
+            if pin == _PIN_C:
+                dest = n if pos == "N" else r
+                out.append((dest, f"switch:{sw_name}:{pos}", {}))
+            elif pin == _PIN_N and pos == "N":
+                out.append((c, f"switch:{sw_name}:N", {}))
+            elif pin == _PIN_R and pos == "R":
+                out.append((c, f"switch:{sw_name}:R", {}))
+        seen: set[str] = set()
+        uniq: list[tuple[str, str, dict[str, str]]] = []
+        for item in out:
+            if item[0] not in seen:
+                seen.add(item[0])
+                uniq.append(item)
+        return uniq
 
     def _neighbors_branching(
         self,
@@ -493,3 +565,173 @@ class _TrackTopology:
             return ""
         labeled = sorted(n for n in common if not n.startswith("Net-"))
         return labeled[0] if labeled else sorted(common)[0]
+
+
+def format_alignment(switch_alignments: tuple[tuple[str, str], ...]) -> str:
+    """Prototype alignment string: bare=Normal, (name)=Reverse, joined."""
+    parts: list[str] = []
+    for name, pos in switch_alignments:
+        if pos == "R":
+            parts.append(f"({name})")
+        else:
+            parts.append(str(name))
+    return "".join(parts) if parts else "-"
+
+
+def lever_direction(mast_direction: str) -> str:
+    """Map mast geographic face to cTc lever side (Luchessa/US&S desk habit)."""
+    if mast_direction == "S":
+        return "RIGHT"
+    if mast_direction == "N":
+        return "LEFT"
+    return mast_direction
+
+
+def format_route_line(route: SignalRoute, indication: str = "") -> str:
+    """Scannable prototype route line.
+
+    route  mast  alignment  signal(lever)  clears...  [indication]
+    """
+    align = format_alignment(route.switch_alignments)
+    lever = lever_direction(route.direction)
+    sig = f"{route.signal_name}{route.direction}({lever})"
+    clears = " ".join(route.clear_track_circuits) if route.clear_track_circuits else "-"
+    ind = indication if indication else "—"
+    return (
+        f"{route.name:28} {route.mast_name:8} {align:16} "
+        f"{sig:14} {clears:24} {ind}"
+    )
+
+
+def build_route_proof(graph: PlantGraph) -> dict:
+    """Full combinatoric proof of valid vs impossible face/exit pairs.
+
+    For each signal face and every full switch N/R assignment, walk with that
+    plant locked and record reachable exit terminals. Compare to the
+    harvested valid route set.
+    """
+    topo = _TrackTopology(graph)
+    # Rebuild indexes only — faces/terminals already on graph; use graph lists.
+    topo.terminals = list(graph.terminals)
+    topo.terminal_by_port = {
+        topo._port(t.reference, t.port_pin): t for t in graph.terminals
+    }
+    topo.signal_faces = list(graph.signal_faces)
+
+    switches = sorted(
+        {
+            ent.canonical_name
+            for ent in graph.entities.values()
+            if ent.kind in _SWITCH_KINDS and ent.canonical_name
+        }
+    )
+    switch_ref = {
+        ent.canonical_name: ent.reference
+        for ent in graph.entities.values()
+        if ent.kind in _SWITCH_KINDS and ent.canonical_name
+    }
+    all_exits = sorted({t.designation for t in graph.terminals})
+
+    # valid pairs from harvested routes
+    valid_pairs: set[tuple[str, str, str]] = set()
+    # (mast, entry_desig, exit_desig)
+    for r in graph.routes:
+        valid_pairs.add((r.mast_name, r.entry_designation, r.exit_designation))
+
+    face_rows: list[dict] = []
+    reachable_pairs: set[tuple[str, str, str]] = set()
+
+    if switches:
+        combos = list(itertools.product(("N", "R"), repeat=len(switches)))
+    else:
+        combos = [()]
+
+    for face in graph.signal_faces:
+        start = topo._port(face.irj_reference, face.plant_pin)
+        approach_port = topo._port(face.irj_reference, face.approach_pin)
+        entry_term = next(
+            (t for t in graph.terminals if t.reference == face.approach_terminal),
+            None,
+        )
+        entry_desig = entry_term.designation if entry_term else face.approach_net
+        forbidden = {approach_port}
+        if entry_term is not None:
+            forbidden.add(topo._port(entry_term.reference, entry_term.port_pin))
+
+        exits_by_combo: list[dict] = []
+        ever_exits: set[str] = set()
+        for combo in combos:
+            aligns = dict(zip(switches, combo)) if switches else {}
+            reached: set[str] = set()
+            for end_port, _nets, _al in topo._walk_fixed(
+                start=start,
+                alignments=aligns,
+                switch_ref=switch_ref,
+                forbidden_ports=forbidden,
+                entry_irj=face.irj_reference,
+            ):
+                term = topo.terminal_by_port.get(end_port)
+                if term is None:
+                    continue
+                if term.designation == entry_desig:
+                    continue
+                reached.add(term.designation)
+                ever_exits.add(term.designation)
+                reachable_pairs.add((face.mast_name, entry_desig, term.designation))
+            exits_by_combo.append(
+                {
+                    "alignments": format_alignment(tuple(sorted(aligns.items()))),
+                    "exits": sorted(reached),
+                }
+            )
+
+        impossible_exits = sorted(set(all_exits) - ever_exits - {entry_desig})
+        face_rows.append(
+            {
+                "mast": face.mast_name,
+                "signal": f"{face.signal_name}{face.direction}",
+                "entry": entry_desig,
+                "combo_count": len(combos),
+                "reachable_exits": sorted(ever_exits),
+                "impossible_exits": impossible_exits,
+                "combos": exits_by_combo,
+            }
+        )
+
+    impossible_pairs = sorted(
+        {
+            (m, e, x)
+            for _face in graph.signal_faces
+            for m, e in {
+                (
+                    f.mast_name,
+                    next(
+                        (
+                            t.designation
+                            for t in graph.terminals
+                            if t.reference == f.approach_terminal
+                        ),
+                        f.approach_net,
+                    ),
+                )
+                for f in graph.signal_faces
+            }
+            for x in all_exits
+            if x != e and (m, e, x) not in reachable_pairs
+        }
+    )
+    # simpler impossible pair list from face_rows
+    impossible_pairs = []
+    for row in face_rows:
+        for x in row["impossible_exits"]:
+            impossible_pairs.append((row["mast"], row["entry"], x))
+
+    return {
+        "switches": switches,
+        "combo_count": len(combos),
+        "valid_route_count": len(graph.routes),
+        "valid_pairs": sorted(valid_pairs),
+        "reachable_pairs": sorted(reachable_pairs),
+        "impossible_pairs": impossible_pairs,
+        "faces": face_rows,
+    }

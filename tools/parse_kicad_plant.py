@@ -29,6 +29,10 @@ from kicad_services.symbol_library_reader import (  # noqa: E402
     SymbolLibraryReader,
 )
 from plant_graph.compiler import PlantGraphCompiler  # noqa: E402
+from plant_graph.routes import (  # noqa: E402
+    build_route_proof,
+    format_route_line,
+)
 from plant_graph.types import DiagnosticSeverity, NetClass, PlantGraph  # noqa: E402
 
 
@@ -144,16 +148,46 @@ def render_text(graph: PlantGraph) -> str:
             f"term={face.approach_terminal}"
         )
     lines.append("")
-    lines.append("Routes:")
+    lines.append("Route table (valid):")
+    lines.append(
+        "  route                        mast     alignment        signal(lever)  clear TCs                 indication"
+    )
     if not graph.routes:
         lines.append("  (none)")
     for route in graph.routes:
-        aligns = ",".join(f"{n}={p}" for n, p in route.switch_alignments)
+        lines.append("  " + format_route_line(route))
+    lines.append("")
+    lines.append("Route combinatoric proof:")
+    proof = build_route_proof(graph)
+    lines.append(
+        f"  switches={proof['switches']}  full_combos={proof['combo_count']}  "
+        f"valid_routes={proof['valid_route_count']}"
+    )
+    lines.append("  Per face — reachable exits across all plant alignments; impossible exits never reached:")
+    for row in proof["faces"]:
         lines.append(
-            f"  {route.signal_name}{route.direction}  {route.name:28}  "
-            f"mast={route.mast_name}  switches=[{aligns}]  "
-            f"entry={route.entry_net} exit={route.exit_net}"
+            f"    {row['mast']:8} entry={row['entry']!r:20}  "
+            f"reachable={row['reachable_exits']}  "
+            f"IMPOSSIBLE={row['impossible_exits']}"
         )
+    lines.append("  Impossible entry→exit pairs (geometry / switch plant forbids):")
+    if not proof["impossible_pairs"]:
+        lines.append("    (none)")
+    for mast, entry, exit_des in proof["impossible_pairs"]:
+        lines.append(f"    {mast:8}  {entry} → {exit_des}")
+    lines.append("  Locked-plant samples (alignment → exits); empty exits = dead plant for that face:")
+    for row in proof["faces"]:
+        lines.append(f"    {row['mast']} from {row['entry']}:")
+        # show only combos with exits, plus a couple empty for proof
+        nonempty = [c for c in row["combos"] if c["exits"]]
+        empty = [c for c in row["combos"] if not c["exits"]]
+        for c in nonempty:
+            lines.append(f"      {c['alignments']:16} -> {c['exits']}")
+        if empty:
+            lines.append(
+                f"      ({len(empty)} alignments reach no exit for this face, e.g. "
+                f"{empty[0]['alignments']})"
+            )
     lines.append("")
     lines.append("Diagnostics:")
     if not graph.diagnostics:
@@ -196,7 +230,7 @@ def render_json(graph: PlantGraph) -> str:
             }
             for e in graph.entities.values()
         ],
-"derived_track_circuits": [
+        "derived_track_circuits": [
             {
                 "name": t.name,
                 "switch_name": t.switch_name,
@@ -245,7 +279,9 @@ def render_json(graph: PlantGraph) -> str:
                 "switch_alignments": [
                     {"switch": n, "position": p} for n, p in r.switch_alignments
                 ],
+                "clear_track_circuits": list(r.clear_track_circuits),
                 "path_nets": list(r.path_nets),
+                "presentation": format_route_line(r),
             }
             for r in graph.routes
         ],
@@ -259,6 +295,7 @@ def render_json(graph: PlantGraph) -> str:
             }
             for n in graph.nets
         ],
+        "route_proof": build_route_proof(graph),
         "diagnostics": [
             {
                 "severity": d.severity.value,

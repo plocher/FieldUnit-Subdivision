@@ -132,6 +132,7 @@ class SignalRoute:
     exit_designation: str
     exit_rulebook: str
     switch_alignments: tuple[tuple[str, str], ...]  # (switch_name, N|R)
+    clear_track_circuits: tuple[str, ...]  # OS circuits on path, e.g. 783T1
     path_nets: tuple[str, ...]
 
 
