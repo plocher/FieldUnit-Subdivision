@@ -69,6 +69,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional explicit path to kicad-cli",
     )
+    parser.add_argument(
+        "--aliases",
+        type=Path,
+        default=None,
+        help="Optional JSON object mapping graph identity strings to display/MP names",
+    )
     return parser
 
 
@@ -95,7 +101,15 @@ def load_graph(args: argparse.Namespace) -> PlantGraph:
             netlist_path = exporter.export(args.schematic, temp_net)
 
         netlist = NetlistReader().read(netlist_path)
-        return PlantGraphCompiler().compile(library, netlist)
+        graph = PlantGraphCompiler().compile(library, netlist)
+        if args.aliases is not None:
+            import json as _json
+
+            data = _json.loads(args.aliases.read_text(encoding="utf-8"))
+            if not isinstance(data, dict):
+                raise SystemExit("--aliases must be a JSON object of string:string")
+            graph.name_aliases = {str(k): str(v) for k, v in data.items()}
+        return graph
     finally:
         if temp_net is not None and temp_net.exists():
             temp_net.unlink(missing_ok=True)
@@ -150,7 +164,7 @@ def render_text(graph: PlantGraph) -> str:
     lines.append("")
     lines.append("Route table (valid):")
     lines.append(
-        "  route                        mast     alignment        signal(lever)  clear TCs                 indication"
+        "  route                        mast     alignment        signal(lever)  end              clear TCs                 indication"
     )
     if not graph.routes:
         lines.append("  (none)")
@@ -249,6 +263,11 @@ def render_json(graph: PlantGraph) -> str:
                 "direction": r.direction,
                 "mast_reference": r.mast_reference,
                 "mast_name": r.mast_name,
+                "head_letters": r.head_letters,
+                "end_kind": r.end_kind.value,
+                "exit_face_mast": r.exit_face_mast,
+                "exit_face_signal": r.exit_face_signal,
+                "exit_face_direction": r.exit_face_direction,
                 "entry_terminal": r.entry_terminal,
                 "entry_net": r.entry_net,
                 "entry_designation": r.entry_designation,
@@ -278,6 +297,7 @@ def render_json(graph: PlantGraph) -> str:
             }
             for n in graph.nets
         ],
+        "name_aliases": dict(graph.name_aliases),
         "route_completeness": (
             lambda p: {
                 "ok": set(map(tuple, p["valid_pairs"])) == set(map(tuple, p["reachable_pairs"])),

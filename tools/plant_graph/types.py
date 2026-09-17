@@ -55,6 +55,14 @@ class NetClass(str, Enum):
     OTHER = "other"
 
 
+class RouteEndKind(str, Enum):
+    """How a structural route ends (static enum; for later dynamic eval)."""
+
+    DEAD_END = "dead_end"
+    CP_LIMIT = "cp_limit"
+    NEXT_FACE = "next_face"
+
+
 @dataclass(frozen=True)
 class PlantEntity:
     """One placed railroad symbol instance in the plant graph."""
@@ -112,17 +120,24 @@ class SignalFace:
     plant_pin: str
     approach_net: str
     approach_terminal: str
+    head_letters: str = ""  # from mast Value grammar, e.g. AB
 
 
 @dataclass(frozen=True)
 class SignalRoute:
-    """One combinatoric plant route governed by a signal face."""
+    """One structural plant route equation governed by a signal face.
+
+    Rich enough for later dynamic evaluation: match on switch_alignments,
+    require clear_track_circuits vacant, cascade via exit_face_* when
+    end_kind is next_face, and resolve display names via PlantGraph.aliases.
+    """
 
     name: str
     signal_name: str
     direction: str
     mast_reference: str
     mast_name: str
+    head_letters: str
     entry_terminal: str
     entry_net: str
     entry_designation: str
@@ -131,10 +146,14 @@ class SignalRoute:
     exit_net: str
     exit_designation: str
     exit_rulebook: str
+    end_kind: RouteEndKind
+    exit_face_mast: str
+    exit_face_signal: str
+    exit_face_direction: str
     switch_alignments: tuple[tuple[str, str], ...]  # (switch_name, N|R)
-    clear_track_circuits: tuple[str, ...]  # OS + path TCs required clear for the route
+    clear_track_circuits: tuple[str, ...]  # OS + path TCs required clear
     os_track_circuits: tuple[str, ...]  # derived <switch>T1 on path
-    path_track_circuits: tuple[str, ...]  # labeled track nets on path (2NA, …)
+    path_track_circuits: tuple[str, ...]  # labeled track nets on path
     path_nets: tuple[str, ...]
 
 
@@ -149,6 +168,8 @@ class PlantGraph:
     signal_faces: list[SignalFace] = field(default_factory=list)
     routes: list[SignalRoute] = field(default_factory=list)
     diagnostics: list[Diagnostic] = field(default_factory=list)
+    # Optional local→display/MP name map (legend). Identity strings stay as drawn.
+    name_aliases: dict[str, str] = field(default_factory=dict)
 
     def errors(self) -> list[Diagnostic]:
         """Return syntax and semantic diagnostics."""
@@ -162,3 +183,7 @@ class PlantGraph:
     def has_errors(self) -> bool:
         """Return True if any blocking diagnostic exists."""
         return bool(self.errors())
+
+    def display_name(self, identity: str) -> str:
+        """Return alias if present, else the graph identity string."""
+        return self.name_aliases.get(identity, identity)

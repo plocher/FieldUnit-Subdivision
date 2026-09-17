@@ -58,6 +58,25 @@ A **signal face** is one directional protecting unit: typically one mast (or hea
 - One Signal IRJ may carry **two** faces (back-to-back bi-di main, crossover hold). Luchessa often uses one face per Signal IRJ; the contract must allow two.  
 - Mast Value carries the proper name (`784NAB`); Head Values are letters; Signal identity is the even number (`784`). Technical KiCad References stay editor IDs.
 
+### Facing authority (mast Value, not IRJ pins)
+
+**Facing / direction of travel for a face comes from the mast Value grammar** (`784N…` / `784S…`), not from IRJ track pin names and not from symbol rotation.
+
+| Concern | Authority |
+| --- | --- |
+| Track sides of the joint | IRJ pins **A** and **B** only (geometry) |
+| Where the mast attaches | **SIGNAL** pin(s) on IRJ-Signal / future dual-SIGNAL IRJ |
+| Which way the face protects | **Mast Value** direction letter (N/S), DRY across copies |
+| Approach vs plant track side | Topology inference (DoT/bumper vs switch) or rare instance override—not a global A→B law |
+
+Do **not** rename A/B to IN/OUT or FRONT/BACK. Dual-face joints and mirrored symbols make those names lie.
+
+Future two-signal IRJ: keep A/B for track; add two SIGNAL attachments (e.g. SIGNAL_N / SIGNAL_S or two SIGNAL pins each bound to a mast whose Value carries facing).
+
+### Drafting rule (human sheet, not netlist law)
+
+Place the mast on the side of the track where the engineer in the **right-hand seat** will see it. Mast base at the IRJ; mast/heads extend **away** from the approaching engineer’s viewpoint. That is drawing discipline for legibility. The compiler must not require coordinates to recover facing—Value grammar remains the machine-readable facing source.
+
 ## Structural route shape
 
 ### Start
@@ -70,7 +89,7 @@ End at the **next protection in the direction of travel**, or at a **dead end**:
 
 | End kind | Meaning | Spike status |
 | --- | --- | --- |
-| Next same-direction signal face | Opens a new route set ahead; this face’s structural routes cover steel only up to that face | **Not fully implemented** (see gaps) |
+| Next same-direction signal face | Opens a new route set ahead; this face’s structural routes cover steel only up to that face | Implemented (same mast-Value direction; end at other face **approach** pin) |
 | Dead end | Bumper, stub, industry end with no further same-direction protecting face | Implemented (bumper terminal) |
 | CP-limit placeholder | DoT + named exit net standing in for the **next CP entry signal** and ABS chain toward it | Implemented as DoT terminal |
 
@@ -171,18 +190,17 @@ Not implemented in the spike CLI beyond the empty indication column.
 - Library + schematic → clean diagnostics for the accepted drawing.  
 - **10** structural routes; matches historical 10-row table after name map (`2`→`784`, `1/3/5`→`783/795/799`, mast `2SAB`→`784SAB`, …).  
 - FieldUnit v1 `routes` in profile JSON remain a **lossy** ordinal projection, not the full design table.  
-- Ends today: **DoT terminals and bumper** (industry). Next-face ends not yet general.
+- Ends: **DoT (`cp_limit`)**, **bumper (`dead_end`)**, **next same-direction face (`next_face`)** via mast Value direction + approach-pin end. Luchessa: 8 limit + 2 dead-end.  
+- Eval-ready route fields: alignments, clears, head letters, end_kind, exit_face_*.  
+- Optional `--aliases` JSON for local→display/MP names (identity stays as drawn).
 
-## Gaps / next code slices
+## Gaps / next owner slices (after this spike)
 
-Ordered for least thrash:
-
-1. **Next same-direction face ends** in the walker, with fixtures (2→4 chain) and Luchessa regression (SC must not end inbound industry moves).  
-2. **Indication ceiling** policy (head grammar + clear/cascade hooks), still static ceilings on the table.  
-3. **Name alias** optional layer (legend / export only).  
-4. **Dual SIGNAL ports** on one IRJ when a real sheet needs it.  
-5. **Subdivision binding** of DoT ends to neighbor entry + ABS tumble-down (corridor model, not plant combinatorics).  
-6. **Shared KiCad Python API** lift (`TBD-shared-kicad-python-api.md`).
+1. **Indication ceiling** policy (head grammar + clear/cascade hooks); static rows already carry the inputs.  
+2. **Subdivision binding** of DoT ends to neighbor entry + ABS tumble-down.  
+3. **Dual SIGNAL ports** on one IRJ when a real sheet needs it (facing still from mast Value).  
+4. **Shared KiCad Python API** lift (`TBD-shared-kicad-python-api.md`).  
+5. Approach-side **instance override** if topology inference is ever ambiguous (no A/B rename).
 
 ## Author checklist (single CP)
 

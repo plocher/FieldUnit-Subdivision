@@ -320,6 +320,83 @@ class PlantGraphCompilerTests(unittest.TestCase):
         self.assertIn(("NORTH", "N"), exits)
         self.assertIn(("SOUTH", "R"), exits)
 
+    def test_next_face_end_stops_at_same_direction_approach(self) -> None:
+        """Two same-direction faces: route from first ends at second approach."""
+        from plant_graph.types import RouteEndKind
+
+        library = LibraryModel(path=Path("x.kicad_sym"))
+        library.symbols["Direction_BOTH"] = _direction_symbol()
+        library.symbols["IRJ-Signal"] = LibrarySymbol(
+            name="IRJ-Signal",
+            reference_prefix="B",
+            pins=(
+                SymbolPin("1", "A", "bidirectional"),
+                SymbolPin("2", "B", "bidirectional"),
+                SymbolPin("3", "SIGNAL", "passive"),
+            ),
+        )
+        library.symbols["Mast_Single"] = LibrarySymbol(
+            name="Mast_Single",
+            reference_prefix="S",
+            pins=(
+                SymbolPin("1", "SIGNAL", "passive"),
+                SymbolPin("2", "H", "passive"),
+            ),
+        )
+        library.symbols["Switch_Powered"] = LibrarySymbol(
+            name="Switch_Powered",
+            reference_prefix="SW",
+            pins=(
+                SymbolPin("1", "C", "passive"),
+                SymbolPin("2", "N", "passive"),
+                SymbolPin("3", "R", "passive"),
+            ),
+        )
+        netlist = NetlistModel(path=Path("x.net"))
+        netlist.components = {
+            "DOT_W": NetlistComponent(
+                "DOT_W", "WEST", "Railroad", "Direction_BOTH", fields={"Rulebook": "261"}
+            ),
+            "DOT_E": NetlistComponent(
+                "DOT_E", "EAST", "Railroad", "Direction_BOTH", fields={"Rulebook": "261"}
+            ),
+            "B2": NetlistComponent("B2", "~", "Railroad", "IRJ-Signal"),
+            "B4": NetlistComponent("B4", "~", "Railroad", "IRJ-Signal"),
+            "SW1": NetlistComponent("SW1", "~", "Railroad", "Switch_Powered"),
+            "S2S1": NetlistComponent("S2S1", "2SAB", "Railroad", "Mast_Single"),
+            "S4S1": NetlistComponent("S4S1", "4SAB", "Railroad", "Mast_Single"),
+        }
+        netlist.nets = [
+            Net("1", "/WEST", (NetNode("DOT_W", "2"), NetNode("B2", "2"))),
+            Net("2", "Net-(B2-A)", (NetNode("B2", "1"), NetNode("SW1", "1"))),
+            Net("3", "Net-(SW-N)", (NetNode("SW1", "2"), NetNode("B4", "1"))),
+            Net("4", "/EAST", (NetNode("B4", "2"), NetNode("DOT_E", "1"))),
+            Net("5", "Net-(SIG2)", (NetNode("B2", "3"), NetNode("S2S1", "1"))),
+            Net("6", "Net-(SIG4)", (NetNode("B4", "3"), NetNode("S4S1", "1"))),
+            Net(
+                "7",
+                "unconnected-(SW1-R)",
+                (NetNode("SW1", "3", pintype="passive+no_connect"),),
+            ),
+        ]
+        graph = PlantGraphCompiler().compile(library, netlist)
+        face2 = [r for r in graph.routes if r.mast_name == "2SAB"]
+        self.assertTrue(face2)
+        self.assertTrue(
+            any(
+                r.end_kind is RouteEndKind.NEXT_FACE and r.exit_face_mast == "4SAB"
+                for r in face2
+            )
+        )
+        self.assertFalse(
+            any(
+                r.mast_name == "2SAB"
+                and r.exit_designation == "EAST"
+                and r.end_kind is RouteEndKind.CP_LIMIT
+                for r in graph.routes
+            )
+        )
+
 
 class KicadCliExporterSmokeTests(unittest.TestCase):
     """Seam 3: exporter discovery (no required KiCad for unit suite)."""

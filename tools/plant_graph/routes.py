@@ -15,6 +15,7 @@ from plant_graph.types import (
     PlantGraph,
     PlantNet,
     PlantTerminal,
+    RouteEndKind,
     SignalFace,
     SignalRoute,
 )
@@ -58,6 +59,8 @@ class _TrackTopology:
         self.terminals: list[PlantTerminal] = []
         self.terminal_by_port: dict[str, PlantTerminal] = {}
         self.signal_faces: list[SignalFace] = []
+        # approach port "REF:PIN" -> face (for next-face ends in direction of travel)
+        self.face_by_approach_port: dict[str, SignalFace] = {}
         self._index_nets()
         self._index_irj_joints()
         self._index_terminals()
@@ -216,20 +219,21 @@ class _TrackTopology:
                 match = _MAST_VALUE_RE.match(mast.canonical_name or mast.value or "")
                 if not match:
                     continue
-                signal_name, direction, _heads = match.groups()
-                self.signal_faces.append(
-                    SignalFace(
-                        signal_name=signal_name,
-                        direction=direction,
-                        mast_reference=mast_ref,
-                        mast_name=mast.canonical_name,
-                        irj_reference=irj_ref,
-                        approach_pin=approach_pin,
-                        plant_pin=plant_pin,
-                        approach_net=approach_net,
-                        approach_terminal=approach_terminal,
-                    )
+                signal_name, direction, heads = match.groups()
+                face = SignalFace(
+                    signal_name=signal_name,
+                    direction=direction,
+                    mast_reference=mast_ref,
+                    mast_name=mast.canonical_name,
+                    irj_reference=irj_ref,
+                    approach_pin=approach_pin,
+                    plant_pin=plant_pin,
+                    approach_net=approach_net,
+                    approach_terminal=approach_terminal,
+                    head_letters=heads,
                 )
+                self.signal_faces.append(face)
+                self.face_by_approach_port[self._port(irj_ref, approach_pin)] = face
 
     def _irj_face_pins(self, irj_ref: str) -> tuple[Optional[str], Optional[str]]:
         """Return (approach_pin, plant_pin) for a Signal IRJ.
@@ -348,28 +352,43 @@ class _TrackTopology:
                 switch_ref=switch_ref,
                 forbidden_ports=forbidden,
                 entry_irj=face.irj_reference,
+                travel_direction=face.direction,
+                start_mast=face.mast_reference,
             ):
-                exit_term = self.terminal_by_port[end_port]
-                if exit_term.reference == entry_terminal_ref:
+                end_info = self._classify_end(end_port, face)
+                if end_info is None:
+                    continue
+                (
+                    end_kind,
+                    exit_desig,
+                    exit_net,
+                    exit_term_ref,
+                    exit_rulebook,
+                    exit_face_mast,
+                    exit_face_signal,
+                    exit_face_dir,
+                ) = end_info
+                if exit_desig == entry_designation and end_kind is not RouteEndKind.NEXT_FACE:
                     continue
                 switch_tuple = tuple(sorted(alignments.items()))
                 key = (
                     face.mast_reference,
                     entry_terminal_ref,
-                    exit_term.reference,
+                    end_kind.value,
+                    exit_desig,
+                    exit_face_mast,
                     switch_tuple,
                 )
                 if key in seen:
                     continue
                 seen.add(key)
-                name = f"{entry_designation}-{exit_term.designation}"
+                name = f"{entry_designation}-{exit_desig}"
                 os_tcs = tuple(f"{sw}T1" for sw, _pos in switch_tuple)
                 path_tcs = _labeled_path_track_circuits(
                     path_nets,
                     entry_net=entry_net,
-                    exit_net=exit_term.net_name,
+                    exit_net=exit_net,
                 )
-                # Product clear list: OS first (path order of switches), then path nets.
                 clears = tuple(dict.fromkeys([*os_tcs, *path_tcs]))
                 routes.append(
                     SignalRoute(
@@ -378,14 +397,19 @@ class _TrackTopology:
                         direction=face.direction,
                         mast_reference=face.mast_reference,
                         mast_name=face.mast_name,
+                        head_letters=face.head_letters,
                         entry_terminal=entry_terminal_ref,
                         entry_net=entry_net,
                         entry_designation=entry_designation,
                         entry_rulebook=entry_rulebook,
-                        exit_terminal=exit_term.reference,
-                        exit_net=exit_term.net_name,
-                        exit_designation=exit_term.designation,
-                        exit_rulebook=exit_term.rulebook,
+                        exit_terminal=exit_term_ref,
+                        exit_net=exit_net,
+                        exit_designation=exit_desig,
+                        exit_rulebook=exit_rulebook,
+                        end_kind=end_kind,
+                        exit_face_mast=exit_face_mast,
+                        exit_face_signal=exit_face_signal,
+                        exit_face_direction=exit_face_dir,
                         switch_alignments=switch_tuple,
                         clear_track_circuits=clears,
                         os_track_circuits=os_tcs,
@@ -412,14 +436,16 @@ class _TrackTopology:
         switch_ref: dict[str, str],
         forbidden_ports: set[str],
         entry_irj: str,
+        travel_direction: str,
+        start_mast: str,
     ) -> Iterable[tuple[str, list[str], dict[str, str]]]:
-        """DFS yielding (terminal_port, path_nets, used_alignments).
+        """DFS yielding (end_port, path_nets, used_alignments).
 
-        Switch N/R is chosen when the walk first arrives at that switch's C pin
-        (or needs a body edge). Only traversed switches appear in alignments.
+        Ends at: DoT/bumper terminals, or another face's approach pin that
+        protects the same direction of travel (next-face end). Opposite-facing
+        faces are not ends (e.g. industry dwarf does not end inbound moves).
         """
         ref_to_switch_name = {v: k for k, v in switch_ref.items()}
-        # port, path_ports, path_nets, alignments
         stack: list[tuple[str, list[str], list[str], dict[str, str]]] = [
             (start, [start], [], {})
         ]
@@ -427,7 +453,9 @@ class _TrackTopology:
 
         while stack:
             port, path, nets, aligns = stack.pop()
-            if port in self.terminal_by_port and port not in forbidden_ports:
+            if port != start and self._is_route_end(
+                port, travel_direction, start_mast, forbidden_ports
+            ):
                 results.append((port, nets, dict(aligns)))
                 continue
 
@@ -444,6 +472,69 @@ class _TrackTopology:
                 stack.append((nxt, path + [nxt], new_nets, new_aligns))
 
         return results
+
+    def _is_route_end(
+        self,
+        port: str,
+        travel_direction: str,
+        start_mast: str,
+        forbidden_ports: set[str],
+    ) -> bool:
+        if port in forbidden_ports:
+            return False
+        face = self.face_by_approach_port.get(port)
+        if face is not None:
+            if face.mast_reference == start_mast:
+                return False
+            # Same direction of travel => next protecting face in this move.
+            return face.direction == travel_direction
+        return port in self.terminal_by_port
+
+    def _classify_end(
+        self,
+        end_port: str,
+        start_face: SignalFace,
+    ) -> tuple[RouteEndKind, str, str, str, str, str, str, str] | None:
+        """Return end metadata or None if not a valid end."""
+        face = self.face_by_approach_port.get(end_port)
+        if face is not None and face.direction == start_face.direction:
+            if face.mast_reference == start_face.mast_reference:
+                return None
+            desig = face.mast_name
+            if face.approach_terminal:
+                term = next(
+                    (t for t in self.terminals if t.reference == face.approach_terminal),
+                    None,
+                )
+                if term is not None:
+                    desig = term.designation
+            return (
+                RouteEndKind.NEXT_FACE,
+                desig,
+                face.approach_net,
+                face.approach_terminal,
+                "",
+                face.mast_name,
+                face.signal_name,
+                face.direction,
+            )
+        term = self.terminal_by_port.get(end_port)
+        if term is None:
+            return None
+        if term.kind is EntityKind.BUMPER:
+            kind = RouteEndKind.DEAD_END
+        else:
+            kind = RouteEndKind.CP_LIMIT
+        return (
+            kind,
+            term.designation,
+            term.net_name,
+            term.reference,
+            term.rulebook,
+            "",
+            "",
+            "",
+        )
 
 
     def _walk_fixed(
@@ -632,16 +723,19 @@ def lever_direction(mast_direction: str) -> str:
 def format_route_line(route: SignalRoute, indication: str = "") -> str:
     """Scannable prototype route line.
 
-    route  mast  alignment  signal(lever)  clears...  [indication]
+    route  mast  alignment  signal(lever)  end  clears...  [indication]
     """
     align = format_alignment(route.switch_alignments)
     lever = lever_direction(route.direction)
     sig = f"{route.signal_name}{route.direction}({lever})"
     clears = " ".join(route.clear_track_circuits) if route.clear_track_circuits else "-"
     ind = indication if indication else "—"
+    end = route.end_kind.value
+    if route.end_kind is RouteEndKind.NEXT_FACE and route.exit_face_mast:
+        end = f"next:{route.exit_face_mast}"
     return (
         f"{route.name:28} {route.mast_name:8} {align:16} "
-        f"{sig:14} {clears:24} {ind}"
+        f"{sig:14} {end:16} {clears:24} {ind}"
     )
 
 
