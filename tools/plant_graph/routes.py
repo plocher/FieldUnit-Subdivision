@@ -363,9 +363,14 @@ class _TrackTopology:
                     continue
                 seen.add(key)
                 name = f"{entry_designation}-{exit_term.designation}"
-                clears = tuple(
-                    f"{sw}T1" for sw, _pos in switch_tuple
+                os_tcs = tuple(f"{sw}T1" for sw, _pos in switch_tuple)
+                path_tcs = _labeled_path_track_circuits(
+                    path_nets,
+                    entry_net=entry_net,
+                    exit_net=exit_term.net_name,
                 )
+                # Product clear list: OS first (path order of switches), then path nets.
+                clears = tuple(dict.fromkeys([*os_tcs, *path_tcs]))
                 routes.append(
                     SignalRoute(
                         name=name,
@@ -383,6 +388,8 @@ class _TrackTopology:
                         exit_rulebook=exit_term.rulebook,
                         switch_alignments=switch_tuple,
                         clear_track_circuits=clears,
+                        os_track_circuits=os_tcs,
+                        path_track_circuits=path_tcs,
                         path_nets=tuple(path_nets),
                     )
                 )
@@ -566,6 +573,41 @@ class _TrackTopology:
         labeled = sorted(n for n in common if not n.startswith("Net-"))
         return labeled[0] if labeled else sorted(common)[0]
 
+
+
+def _labeled_path_track_circuits(
+    path_nets: list[str],
+    entry_net: str = "",
+    exit_net: str = "",
+) -> tuple[str, ...]:
+    """Labeled track nets traversed on the route (schematic TC / net names).
+
+    Skips synthetic walker tags (joint:/switch:/Net-*). Entry and exit nets are
+    included when labeled. MP-style renames (780SA, …) are a schematic concern.
+    """
+    ordered: list[str] = []
+    seen: set[str] = set()
+
+    def add(name: str) -> None:
+        name = (name or "").strip()
+        if not name:
+            return
+        if name.startswith("joint:") or name.startswith("switch:"):
+            return
+        if name.startswith("Net-") or name.startswith("unconnected-"):
+            return
+        if name.startswith("/"):
+            name = name[1:]
+        if not name or name in seen:
+            return
+        seen.add(name)
+        ordered.append(name)
+
+    add(entry_net)
+    for net in path_nets:
+        add(net)
+    add(exit_net)
+    return tuple(ordered)
 
 def format_alignment(switch_alignments: tuple[tuple[str, str], ...]) -> str:
     """Prototype alignment string: bare=Normal, (name)=Reverse, joined."""

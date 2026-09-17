@@ -261,6 +261,8 @@ def render_json(graph: PlantGraph) -> str:
                     {"switch": n, "position": p} for n, p in r.switch_alignments
                 ],
                 "clear_track_circuits": list(r.clear_track_circuits),
+                "os_track_circuits": list(r.os_track_circuits),
+                "path_track_circuits": list(r.path_track_circuits),
                 "path_nets": list(r.path_nets),
                 "presentation": format_route_line(r),
             }
