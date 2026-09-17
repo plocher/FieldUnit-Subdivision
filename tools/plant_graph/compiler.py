@@ -68,7 +68,7 @@ _REQUIRED_PINS: dict[EntityKind, frozenset[str]] = {
     EntityKind.MAST_DOUBLE: frozenset({"1", "2", "3"}),
     EntityKind.MAST_DWARF: frozenset({"1", "2"}),
     EntityKind.SIGNAL_HEAD: frozenset({"1"}),
-    EntityKind.DIRECTION: frozenset({"1", "2"}),
+    # Direction is a plant terminal: exactly one live pin (enforced in routes).
 }
 
 _MAST_VALUE_RE = re.compile(r"^(\d+)([NS])([A-E]+)$")
@@ -102,6 +102,10 @@ class PlantGraphCompiler:
         self._derive_os_circuits(graph)
         self._check_track_net_labels(graph)
         self._check_library_coverage(graph, library)
+        # Topology + combinatoric signal routes (DoT terminals, switch N/R).
+        from plant_graph.routes import harvest_routes
+
+        harvest_routes(graph)
         return graph
 
     def _build_entities(

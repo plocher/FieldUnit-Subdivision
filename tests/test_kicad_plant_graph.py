@@ -218,7 +218,8 @@ class PlantGraphCompilerTests(unittest.TestCase):
         self.assertNotIn("direction_fully_unconnected", dot_codes)
         self.assertNotIn("unconnected_required_pin", dot_codes)
 
-    def test_direction_open_without_nc_warns(self) -> None:
+    def test_direction_terminal_one_live_pin_ok_without_nc_helper(self) -> None:
+        """Terminal DoT needs one live track pin; bare open other pin is fine."""
         library = LibraryModel(path=Path("x.kicad_sym"))
         library.symbols["Direction_BOTH"] = _direction_symbol()
         library.symbols["IRJ"] = _irj_symbol()
@@ -249,10 +250,75 @@ class PlantGraphCompilerTests(unittest.TestCase):
             ),
         ]
         graph = PlantGraphCompiler().compile(library, netlist)
-        matching = [
-            d for d in graph.diagnostics if d.code == "direction_open_pin_without_nc"
+        self.assertEqual(len(graph.terminals), 1)
+        self.assertEqual(graph.terminals[0].reference, "DOT1")
+        self.assertEqual(graph.terminals[0].designation, "MT")
+        codes = {d.code for d in graph.diagnostics if d.entity_ref == "DOT1"}
+        self.assertNotIn("direction_both_pins_live", codes)
+        self.assertNotIn("direction_fully_unconnected", codes)
+
+
+
+    def test_harvests_routes_for_signal_faces_on_minimal_switch(self) -> None:
+        """One switch between two DoT terminals yields N and R routes."""
+        library = LibraryModel(path=Path("x.kicad_sym"))
+        library.symbols["IRJ"] = _irj_symbol()
+        library.symbols["Direction_BOTH"] = _direction_symbol()
+        library.symbols["Switch_Powered"] = LibrarySymbol(
+            name="Switch_Powered",
+            reference_prefix="SW",
+            pins=(
+                SymbolPin("1", "C", "passive"),
+                SymbolPin("2", "N", "passive"),
+                SymbolPin("3", "R", "passive"),
+            ),
+        )
+        # Build netlist: DOT_E - B1 - SW C/N - B2 - DOT_X  and SW R - B3 - DOT_Y
+        # Use IRJ-Signal + mast so a signal face exists.
+        from kicad_services.types import LibrarySymbol as LS
+        library.symbols["IRJ-Signal"] = LibrarySymbol(
+            name="IRJ-Signal",
+            reference_prefix="B",
+            pins=(
+                SymbolPin("1", "A", "bidirectional"),
+                SymbolPin("2", "B", "bidirectional"),
+                SymbolPin("3", "SIGNAL", "passive"),
+            ),
+        )
+        library.symbols["Mast_Single"] = LibrarySymbol(
+            name="Mast_Single",
+            reference_prefix="S",
+            pins=(
+                SymbolPin("1", "SIGNAL", "passive"),
+                SymbolPin("2", "H", "passive"),
+            ),
+        )
+        netlist = NetlistModel(path=Path("x.net"))
+        netlist.components = {
+            "DOT_E": NetlistComponent("DOT_E", "EAST", "Railroad", "Direction_BOTH", fields={"Rulebook": "261"}),
+            "DOT_XN": NetlistComponent("DOT_XN", "NORTH", "Railroad", "Direction_BOTH", fields={"Rulebook": "261"}),
+            "DOT_XR": NetlistComponent("DOT_XR", "SOUTH", "Railroad", "Direction_BOTH", fields={"Rulebook": "261"}),
+            "B1": NetlistComponent("B1", "~", "Railroad", "IRJ-Signal"),
+            "B2": NetlistComponent("B2", "~", "Railroad", "IRJ"),
+            "B3": NetlistComponent("B3", "~", "Railroad", "IRJ"),
+            "SW1": NetlistComponent("SW1", "~", "Railroad", "Switch_Powered"),
+            "S2N1": NetlistComponent("S2N1", "2NAB", "Railroad", "Mast_Single"),
+        }
+        netlist.nets = [
+            Net("1", "/EAST", (NetNode("DOT_E", "2"), NetNode("B1", "2"))),
+            Net("2", "Net-(B1-A)", (NetNode("B1", "1"), NetNode("SW1", "1"))),
+            Net("3", "Net-(SW-N)", (NetNode("SW1", "2"), NetNode("B2", "1"))),
+            Net("4", "/NORTH", (NetNode("B2", "2"), NetNode("DOT_XN", "1"))),
+            Net("5", "Net-(SW-R)", (NetNode("SW1", "3"), NetNode("B3", "1"))),
+            Net("6", "/SOUTH", (NetNode("B3", "2"), NetNode("DOT_XR", "1"))),
+            Net("7", "Net-(SIG)", (NetNode("B1", "3"), NetNode("S2N1", "1"))),
         ]
-        self.assertEqual(len(matching), 1)
+        graph = PlantGraphCompiler().compile(library, netlist)
+        self.assertGreaterEqual(len(graph.signal_faces), 1)
+        self.assertGreaterEqual(len(graph.routes), 2)
+        exits = {(r.exit_designation, dict(r.switch_alignments).get("1")) for r in graph.routes}
+        self.assertIn(("NORTH", "N"), exits)
+        self.assertIn(("SOUTH", "R"), exits)
 
 
 class KicadCliExporterSmokeTests(unittest.TestCase):

@@ -124,6 +124,37 @@ def render_text(graph: PlantGraph) -> str:
             f"  [{net.net_class.value:18}] ({flag:5}) {net.name:24}  {nodes}"
         )
     lines.append("")
+    lines.append("Terminals:")
+    if not graph.terminals:
+        lines.append("  (none)")
+    for term in graph.terminals:
+        rb = f" rule={term.rulebook}" if term.rulebook else ""
+        lines.append(
+            f"  {term.reference:8}  {term.kind.value:12}  "
+            f"desig={term.designation!r}  net={term.net_name!r}{rb}"
+        )
+    lines.append("")
+    lines.append("Signal faces:")
+    if not graph.signal_faces:
+        lines.append("  (none)")
+    for face in graph.signal_faces:
+        lines.append(
+            f"  signal {face.signal_name}{face.direction}  mast={face.mast_name}  "
+            f"irj={face.irj_reference}  approach={face.approach_net}  "
+            f"term={face.approach_terminal}"
+        )
+    lines.append("")
+    lines.append("Routes:")
+    if not graph.routes:
+        lines.append("  (none)")
+    for route in graph.routes:
+        aligns = ",".join(f"{n}={p}" for n, p in route.switch_alignments)
+        lines.append(
+            f"  {route.signal_name}{route.direction}  {route.name:28}  "
+            f"mast={route.mast_name}  switches=[{aligns}]  "
+            f"entry={route.entry_net} exit={route.exit_net}"
+        )
+    lines.append("")
     lines.append("Diagnostics:")
     if not graph.diagnostics:
         lines.append("  (none)")
@@ -143,6 +174,8 @@ def render_text(graph: PlantGraph) -> str:
     lines.append(
         f"Summary: {len(graph.entities)} entities, {len(graph.nets)} nets "
         f"({labeled}/{track} track labeled, {switch_os} switch_os), "
+        f"{len(graph.terminals)} terminals, {len(graph.signal_faces)} faces, "
+        f"{len(graph.routes)} routes, "
         f"{len(graph.errors())} errors, "
         f"{sum(1 for d in graph.diagnostics if d.severity is DiagnosticSeverity.WARNING)} warnings"
     )
@@ -163,13 +196,58 @@ def render_json(graph: PlantGraph) -> str:
             }
             for e in graph.entities.values()
         ],
-        "derived_track_circuits": [
+"derived_track_circuits": [
             {
                 "name": t.name,
                 "switch_name": t.switch_name,
                 "reason": t.reason,
             }
             for t in graph.derived_track_circuits
+        ],
+        "terminals": [
+            {
+                "reference": t.reference,
+                "kind": t.kind.value,
+                "designation": t.designation,
+                "rulebook": t.rulebook,
+                "net_name": t.net_name,
+                "port_pin": t.port_pin,
+            }
+            for t in graph.terminals
+        ],
+        "signal_faces": [
+            {
+                "signal_name": f.signal_name,
+                "direction": f.direction,
+                "mast_reference": f.mast_reference,
+                "mast_name": f.mast_name,
+                "irj_reference": f.irj_reference,
+                "approach_net": f.approach_net,
+                "approach_terminal": f.approach_terminal,
+            }
+            for f in graph.signal_faces
+        ],
+        "routes": [
+            {
+                "name": r.name,
+                "signal_name": r.signal_name,
+                "direction": r.direction,
+                "mast_reference": r.mast_reference,
+                "mast_name": r.mast_name,
+                "entry_terminal": r.entry_terminal,
+                "entry_net": r.entry_net,
+                "entry_designation": r.entry_designation,
+                "entry_rulebook": r.entry_rulebook,
+                "exit_terminal": r.exit_terminal,
+                "exit_net": r.exit_net,
+                "exit_designation": r.exit_designation,
+                "exit_rulebook": r.exit_rulebook,
+                "switch_alignments": [
+                    {"switch": n, "position": p} for n, p in r.switch_alignments
+                ],
+                "path_nets": list(r.path_nets),
+            }
+            for r in graph.routes
         ],
         "nets": [
             {

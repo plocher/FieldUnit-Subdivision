@@ -87,6 +87,54 @@ class DerivedTrackCircuit:
     reason: str
 
 
+@dataclass(frozen=True)
+class PlantTerminal:
+    """Plant entry/exit terminal (DoT or Bumper)."""
+
+    reference: str
+    kind: EntityKind
+    port_pin: str
+    net_name: str
+    designation: str
+    rulebook: str
+
+
+@dataclass(frozen=True)
+class SignalFace:
+    """One mast face of a signal at a Signal IRJ."""
+
+    signal_name: str
+    direction: str
+    mast_reference: str
+    mast_name: str
+    irj_reference: str
+    approach_pin: str
+    plant_pin: str
+    approach_net: str
+    approach_terminal: str
+
+
+@dataclass(frozen=True)
+class SignalRoute:
+    """One combinatoric plant route governed by a signal face."""
+
+    name: str
+    signal_name: str
+    direction: str
+    mast_reference: str
+    mast_name: str
+    entry_terminal: str
+    entry_net: str
+    entry_designation: str
+    entry_rulebook: str
+    exit_terminal: str
+    exit_net: str
+    exit_designation: str
+    exit_rulebook: str
+    switch_alignments: tuple[tuple[str, str], ...]  # (switch_name, N|R)
+    path_nets: tuple[str, ...]
+
+
 @dataclass
 class PlantGraph:
     """In-memory plant graph projection for one interlocking schematic."""
@@ -94,6 +142,9 @@ class PlantGraph:
     entities: dict[str, PlantEntity] = field(default_factory=dict)
     nets: list[PlantNet] = field(default_factory=list)
     derived_track_circuits: list[DerivedTrackCircuit] = field(default_factory=list)
+    terminals: list[PlantTerminal] = field(default_factory=list)
+    signal_faces: list[SignalFace] = field(default_factory=list)
+    routes: list[SignalRoute] = field(default_factory=list)
     diagnostics: list[Diagnostic] = field(default_factory=list)
 
     def errors(self) -> list[Diagnostic]:
