@@ -29,7 +29,7 @@ from plant_graph.routes import (
     format_alignment,
     format_route_line,
 )
-from plant_graph.types import CircuitRole, EntityKind, NetClass
+from plant_graph.types import CircuitRole, EntityKind, Indication, NetClass
 
 
 def _irj_symbol() -> LibrarySymbol:
@@ -126,6 +126,22 @@ class PlantGraphCompilerTests(unittest.TestCase):
         self.assertEqual(
             [tc.name for tc in self.graph.derived_track_circuits],
             ["783T1"],
+        )
+
+    def test_invalid_switch_indications_are_semantic_errors(self) -> None:
+        self.netlist.components["SW783"] = NetlistComponent(
+            "SW783",
+            "~",
+            "Railroad",
+            "Switch_Powered",
+            fields={"Indications": "CLEAR/NOT_AN_INDICATION"},
+        )
+
+        graph = PlantGraphCompiler().compile(self.library, self.netlist)
+
+        self.assertIn(
+            "invalid_switch_indications",
+            {diagnostic.code for diagnostic in graph.diagnostics},
         )
 
     def test_mast_uses_value_as_proper_name(self) -> None:
@@ -322,7 +338,13 @@ class PlantGraphCompilerTests(unittest.TestCase):
             "B1": NetlistComponent("B1", "~", "Railroad", "IRJ-Signal"),
             "B2": NetlistComponent("B2", "~", "Railroad", "IRJ-Signal"),
             "B3": NetlistComponent("B3", "~", "Railroad", "IRJ"),
-            "SW1": NetlistComponent("SW1", "~", "Railroad", "Switch_Powered"),
+            "SW1": NetlistComponent(
+                "SW1",
+                "~",
+                "Railroad",
+                "Switch_Powered",
+                fields={"Indications": "CLEAR/DIVERGING_CLEAR"},
+            ),
             "S2N1": NetlistComponent("S2N1", "2NA", "Railroad", "Mast_Single"),
             "S4S1": NetlistComponent("S4S1", "4SA", "Railroad", "Mast_Single"),
             "H2": NetlistComponent("H2", "A", "Railroad", "Signal Head - CL"),
@@ -361,12 +383,17 @@ class PlantGraphCompilerTests(unittest.TestCase):
         self.assertIn("entrance=EAST", north_line)
         self.assertIn("home-clear=1T1", north_line)
         self.assertIn("downstream=NORTH", north_line)
+        self.assertEqual(north_route.static_indication, Indication.CLEAR)
 
         south_route = next(route for route in graph.routes if route.exit_net == "SOUTH")
         south_roles = dict(south_route.circuit_roles)
         self.assertEqual(south_roles["EAST"], CircuitRole.ENTRANCE)
         self.assertEqual(south_roles["1T1"], CircuitRole.HOME_CLEAR)
         self.assertEqual(south_roles["SOUTH"], CircuitRole.UNRESOLVED)
+        self.assertEqual(
+            south_route.static_indication,
+            Indication.DIVERGING_CLEAR,
+        )
         self.assertIn("unresolved=SOUTH", format_route_line(south_route))
         self.assertEqual(
             north_route.head_names,

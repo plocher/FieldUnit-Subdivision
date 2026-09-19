@@ -79,6 +79,24 @@ class RouteEndKind(str, Enum):
     NEXT_FACE = "next_face"
     DARK_EXIT = "dark_exit"
 
+class Indication(str, Enum):
+    """Standard route indication, independent of physical signal aspects."""
+
+    STOP = "STOP"
+    UNLIT = "UNLIT"
+    RESTRICTING = "RESTRICTING"
+    APPROACH = "APPROACH"
+    ADVANCED_APPROACH = "ADVANCED_APPROACH"
+    DIVERGING_CLEAR = "DIVERGING_CLEAR"
+    DIVERGING_ADVANCED_APPROACH = "DIVERGING_ADVANCED_APPROACH"
+    DIVERGING_APPROACH = "DIVERGING_APPROACH"
+    SECONDARY_DIVERGING_CLEAR = "SECONDARY_DIVERGING_CLEAR"
+    SECONDARY_DIVERGING_ADVANCED_APPROACH = (
+        "SECONDARY_DIVERGING_ADVANCED_APPROACH"
+    )
+    SECONDARY_DIVERGING_APPROACH = "SECONDARY_DIVERGING_APPROACH"
+    CLEAR = "CLEAR"
+
 
 @dataclass(frozen=True)
 class PlantEntity:
@@ -175,6 +193,7 @@ class SignalRoute:
     path_track_circuits: tuple[str, ...]  # all labeled track nets traversed
     path_nets: tuple[str, ...]
     head_names: tuple[str, ...] = ()
+    static_indication: Indication | None = None
 
 @dataclass(frozen=True)
 class MastHead:

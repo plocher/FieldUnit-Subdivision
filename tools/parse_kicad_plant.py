@@ -29,6 +29,7 @@ from kicad_services.symbol_library_reader import (  # noqa: E402
     SymbolLibraryReader,
 )
 from plant_graph.compiler import PlantGraphCompiler  # noqa: E402
+from plant_graph.indications import RouteSignalingPolicy  # noqa: E402
 from plant_graph.routes import (  # noqa: E402
     build_route_proof,
     format_route_line,
@@ -117,6 +118,7 @@ def load_graph(args: argparse.Namespace) -> PlantGraph:
 
 def render_text(graph: PlantGraph) -> str:
     """Render a human-readable inventory."""
+    indication_policy = RouteSignalingPolicy()
     lines: list[str] = []
     lines.append("Plant Graph Inventory")
     lines.append("=====================")
@@ -170,7 +172,8 @@ def render_text(graph: PlantGraph) -> str:
     if not graph.routes:
         lines.append("  (none)")
     for route in graph.routes:
-        lines.append("  " + format_route_line(route))
+        indication = indication_policy.static_indication(route, graph).value
+        lines.append("  " + format_route_line(route, indication))
     # Internal completeness check only — do not present impossible pairs as product.
     proof = build_route_proof(graph)
     valid_pair_set = set(tuple(p) for p in proof["valid_pairs"])
@@ -214,6 +217,7 @@ def render_text(graph: PlantGraph) -> str:
 
 def render_json(graph: PlantGraph) -> str:
     """Render a debug JSON projection (stdout only)."""
+    indication_policy = RouteSignalingPolicy()
     payload: dict[str, Any] = {
         "entities": [
             {
@@ -299,7 +303,13 @@ def render_json(graph: PlantGraph) -> str:
                 "os_track_circuits": list(r.os_track_circuits),
                 "path_track_circuits": list(r.path_track_circuits),
                 "path_nets": list(r.path_nets),
-                "presentation": format_route_line(r),
+                "static_indication": indication_policy.static_indication(
+                    r, graph
+                ).value,
+                "presentation": format_route_line(
+                    r,
+                    indication_policy.static_indication(r, graph).value,
+                ),
             }
             for r in graph.routes
         ],

@@ -14,6 +14,48 @@ This note is **Subdivision-local**: what the spike implements, what Luchessa pro
 | `docs/review/TBD-shared-kicad-python-api.md` | Later lift of `tools/kicad_services/` toward jBOM / shared KiCad API |
 
 If this note and the FieldUnit CTC document disagree, **prefer the FieldUnit document** for domain rules, then fix this note.
+## Glossary
+### Signal-system definition
+A versioned rulebook/aspect-chart profile that maps route-level standard
+Indications to permitted physical mast aspects and appearances. It is selected
+by railroad, territory, and era; it does not change the plant's structural
+route equations.
+
+### AAR-1946
+Association of American Railroads 1946 standard rule-book aspect definition.
+
+### Amtrak-2010
+Amtrak Northeast Corridor Color Position Light (CPL) signal definition.
+
+### BNSF-1996
+Modern BNSF definition covering searchlight and semaphore aspect rules.
+
+### Other prototype definitions
+The reference catalogue also contains historical and regional implementations,
+including B&O, PRR, Southern Pacific, NYC, and international standards. These
+are candidate signal-system definitions, not an implicit default for this
+subdivision.
+
+### JMRI signal-system catalogue
+`docs/review/JMRI-Signal System Definitions.html` is the locally captured JMRI
+catalogue consulted for the regime names and scope above. It is reference
+material only: select and validate a particular regime before using it for
+aspect composition.
+
+### MVP indication vocabulary
+`docs/review/Table of simple signal indications.html` is the source for the
+initial canonical identifiers accepted on KiCad `Indications` properties:
+`CLEAR`, `ADVANCED_APPROACH`, `APPROACH`, `DIVERGING_CLEAR`,
+`DIVERGING_ADVANCED_APPROACH`, `DIVERGING_APPROACH`,
+`SECONDARY_DIVERGING_CLEAR`, `SECONDARY_DIVERGING_ADVANCED_APPROACH`,
+`SECONDARY_DIVERGING_APPROACH`, `STOP`, and `UNLIT`. `RESTRICTING` remains
+supported for the existing Rule 6.28 dark-exit policy. Southern Pacific
+diverging movements use `DIVERGING_CLEAR`, not `MEDIUM_CLEAR`. The static
+compiler uses a deliberately conservative temporary cap order; a selected
+signal-system definition later provides the authoritative aspect/speed mapping.
+`UNLIT` is accepted now for approach-lit signal definitions, but its
+block-dependent lighting predicate is profile/runtime behavior rather than a
+static route cap.
 ## Current implementation checkpoint
 
 This checkpoint supersedes earlier spike text in this note where it describes

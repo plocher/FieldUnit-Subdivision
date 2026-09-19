@@ -130,11 +130,15 @@ class PlantGraphCompiler:
         self._derive_os_circuits(graph)
         self._check_track_net_labels(graph)
         self._check_cp_allocations(graph)
+        self._check_switch_indications(graph)
         self._check_library_coverage(graph, library)
         # Topology + combinatoric signal routes (DoT terminals, switch N/R).
         from plant_graph.routes import harvest_routes
 
         harvest_routes(graph)
+        from plant_graph.indications import RouteSignalingPolicy
+
+        graph.routes = RouteSignalingPolicy().compile_static_indications(graph)
         return graph
 
     def _build_entities(
@@ -740,6 +744,33 @@ class PlantGraphCompiler:
                         message=(
                             f"{entity.kind.value} '{entity.reference}' references "
                             f"unknown Main House Value '{cp_name}'"
+                        ),
+                        entity_ref=entity.reference,
+                    )
+                )
+    def _check_switch_indications(self, graph: PlantGraph) -> None:
+        """Require a valid NORMAL/REVERSE pair when a switch overrides caps."""
+        from plant_graph.indications import parse_switch_indications
+
+        for entity in graph.entities.values():
+            if entity.kind not in {
+                EntityKind.SWITCH_POWERED,
+                EntityKind.SWITCH_LOCK,
+            }:
+                continue
+            value = (entity.fields.get("Indications") or "").strip()
+            if not value:
+                continue
+            try:
+                parse_switch_indications(value)
+            except ValueError as exc:
+                graph.diagnostics.append(
+                    Diagnostic(
+                        severity=DiagnosticSeverity.SEMANTIC,
+                        code="invalid_switch_indications",
+                        message=(
+                            f"Switch '{entity.reference}' Indications "
+                            f"'{value}' is invalid: {exc}"
                         ),
                         entity_ref=entity.reference,
                     )
