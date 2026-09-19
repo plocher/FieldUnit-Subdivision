@@ -164,7 +164,8 @@ def render_text(graph: PlantGraph) -> str:
     lines.append("")
     lines.append("Route table (valid):")
     lines.append(
-        "  route                        mast     alignment        signal(lever)  end              clear TCs                 indication"
+        "  route                        mast     heads    alignment        demand         end              "
+        "entrance      home-clear               downstream       unresolved       indication"
     )
     if not graph.routes:
         lines.append("  (none)")
@@ -256,6 +257,16 @@ def render_json(graph: PlantGraph) -> str:
             }
             for f in graph.signal_faces
         ],
+        "mast_heads": [
+            {
+                "mast_reference": attachment.mast_reference,
+                "mast_name": attachment.mast_name,
+                "mast_pin": attachment.mast_pin,
+                "head_reference": attachment.head_reference,
+                "head_name": attachment.head_name,
+            }
+            for attachment in graph.mast_heads
+        ],
         "routes": [
             {
                 "name": r.name,
@@ -264,6 +275,7 @@ def render_json(graph: PlantGraph) -> str:
                 "mast_reference": r.mast_reference,
                 "mast_name": r.mast_name,
                 "head_letters": r.head_letters,
+                "head_names": list(r.head_names),
                 "end_kind": r.end_kind.value,
                 "exit_face_mast": r.exit_face_mast,
                 "exit_face_signal": r.exit_face_signal,
@@ -278,6 +290,10 @@ def render_json(graph: PlantGraph) -> str:
                 "exit_rulebook": r.exit_rulebook,
                 "switch_alignments": [
                     {"switch": n, "position": p} for n, p in r.switch_alignments
+                ],
+                "circuit_roles": [
+                    {"track_circuit": circuit, "role": role.value}
+                    for circuit, role in r.circuit_roles
                 ],
                 "clear_track_circuits": list(r.clear_track_circuits),
                 "os_track_circuits": list(r.os_track_circuits),

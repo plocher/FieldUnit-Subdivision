@@ -14,6 +14,52 @@ This note is **Subdivision-local**: what the spike implements, what Luchessa pro
 | `docs/review/TBD-shared-kicad-python-api.md` | Later lift of `tools/kicad_services/` toward jBOM / shared KiCad API |
 
 If this note and the FieldUnit CTC document disagree, **prefer the FieldUnit document** for domain rules, then fix this note.
+## Current implementation checkpoint
+
+This checkpoint supersedes earlier spike text in this note where it describes
+two-pin DoT terminals, net labels as circuit identity, N/S-only mast grammar,
+or bumper-based Industry route ends.
+
+### KiCad source-of-truth rules
+
+- A one-pin **Track Circuit** marker supplies the authoritative name of a
+  controlled rail segment. Its `Value` is the circuit name; a KiCad net label
+  is optional presentation and must agree when present.
+- Switch OS legs remain derived `<SwitchName>T1` circuits and do not receive
+  Track Circuit markers.
+- A Rule 6.28 marker identifies a dark segment outside plant control. The
+  preceding IRJ is a `dark_exit`; route harvest stops there and does not
+  traverse the dark segment or its bumper.
+- `NextCP` is the CP-limit terminal. It derives its local CP from the Track
+  Circuit on its net.
+- Main House `Value` is the authoritative CP name. Switches, Signal IRJs, and
+  Track Circuit markers carry `CP` with that exact Value. Masts inherit CP from
+  their Signal IRJ; heads inherit CP from their mast.
+- Mast suffixes `N`/`W` normalize to `LEFT`; `S`/`E` normalize to `RIGHT` by
+  default. The compiler accepts an override for another railroad convention.
+
+### Route table snapshot: CP Luchessa
+
+```text
+route                        mast     heads    alignment        demand         end              entrance      home-clear               downstream       unresolved       indication
+MT1-MT                       784WAB   A/B       783             784(LEFT)      cp_limit         entrance=1NA          home-clear=783T1                    downstream=1SA              unresolved=-                —
+MT2-Industry                 784WCD   C/D      (795) 799        784(LEFT)      dark_exit        entrance=2NA          home-clear=2NAA 2SA 795T1 799T1     downstream=-                unresolved=-                —
+MT2-MT                       784WCD   C/D      (783) 795  799   784(LEFT)      cp_limit         entrance=2NA          home-clear=2NAA 783T1 795T1 799T1   downstream=1SA              unresolved=-                —
+Branch-Industry              784WE    E        (795)(799)       784(LEFT)      dark_exit        entrance=3NA          home-clear=2NAA 2SA 795T1 799T1     downstream=-                unresolved=-                —
+Branch-MT                    784WE    E        (783) 795 (799)  784(LEFT)      cp_limit         entrance=3NA          home-clear=2NAA 783T1 795T1 799T1   downstream=1SA              unresolved=-                —
+MT-Branch                    784EAB   A/B      (783) 795 (799)  784(RIGHT)     cp_limit         entrance=1SA          home-clear=2NAA 783T1 795T1 799T1   downstream=3NA              unresolved=-                —
+MT-MT1                       784EAB   A/B       783             784(RIGHT)     cp_limit         entrance=1SA          home-clear=783T1                    downstream=1NA              unresolved=-                —
+MT-MT2                       784EAB   A/B      (783) 795  799   784(RIGHT)     cp_limit         entrance=1SA          home-clear=2NAA 783T1 795T1 799T1   downstream=2NA              unresolved=-                —
+2SA-Branch                   784EC    C        (795)(799)       784(RIGHT)     cp_limit         entrance=2SA          home-clear=2NAA 795T1 799T1         downstream=3NA              unresolved=-                —
+2SA-MT2                      784EC    C        (795) 799        784(RIGHT)     cp_limit         entrance=2SA          home-clear=2NAA 795T1 799T1         downstream=2NA              unresolved=-                —
+```
+
+### Current validation warning
+
+The compiler reports a non-blocking `unknown_cp_allocation` warning for
+`TC5`: its `CP` value is `CP Carnadaro`, while the canonical Main House Value
+is `CP Carnadero`. Correct the schematic spelling; warnings remain visible so
+pre-construction allocation mistakes do not silently become construction data.
 
 ## Purpose
 

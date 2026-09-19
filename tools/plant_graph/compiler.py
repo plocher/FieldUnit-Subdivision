@@ -27,11 +27,20 @@ _PART_KIND: dict[str, EntityKind] = {
     "Mast_Double": EntityKind.MAST_DOUBLE,
     "Mast_Dwarf": EntityKind.MAST_DWARF,
     "Signal Head - CL": EntityKind.SIGNAL_HEAD,
+    "Track Circuit": EntityKind.TRACK_CIRCUIT,
     "Direction_L": EntityKind.DIRECTION,
     "Direction_R": EntityKind.DIRECTION,
     "Direction_BOTH": EntityKind.DIRECTION,
+    "Rule251-DoT-Left": EntityKind.OPERATING_POLICY,
+    "Rule251-DoT-Right": EntityKind.OPERATING_POLICY,
+    "Rule261-DoT-BiDirectional": EntityKind.OPERATING_POLICY,
+    "Rule6.28-OtherThanMain": EntityKind.OPERATING_POLICY,
+    "NextCP": EntityKind.NEXT_CP,
     "Bumper": EntityKind.BUMPER,
+    "MAIN HOUSE": EntityKind.MAIN_HOUSE,
     "Maintainer": EntityKind.MAINTAINER,
+    "MaintainerCall": EntityKind.MAINTAINER_CALL,
+    "Route": EntityKind.ROUTE,
     "Milepost": EntityKind.MILEPOST,
 }
 
@@ -41,7 +50,10 @@ _TRACK_PINS: dict[EntityKind, frozenset[str]] = {
     EntityKind.SWITCH_LOCK: frozenset({"1", "2", "3"}),
     EntityKind.IRJ: frozenset({"1", "2"}),  # A/B
     EntityKind.IRJ_SIGNAL: frozenset({"1", "2"}),  # A/B only; 3 is SIGNAL
+    EntityKind.TRACK_CIRCUIT: frozenset({"1"}),
     EntityKind.DIRECTION: frozenset({"1", "2"}),
+    EntityKind.OPERATING_POLICY: frozenset({"1"}),
+    EntityKind.NEXT_CP: frozenset({"1"}),
     EntityKind.BUMPER: frozenset({"2"}),  # B
 }
 
@@ -71,14 +83,30 @@ _REQUIRED_PINS: dict[EntityKind, frozenset[str]] = {
     # Direction is a plant terminal: exactly one live pin (enforced in routes).
 }
 
-_MAST_VALUE_RE = re.compile(r"^(\d+)([NS])([A-E]+)$")
+_MAST_VALUE_RE = re.compile(r"^(\d+)([NSEW])([A-E]+)$")
 _HEAD_VALUE_RE = re.compile(r"^[A-E]$")
 _SWITCH_REF_RE = re.compile(r"^SW(.+)$")
-_MAST_REF_RE = re.compile(r"^S(\d+)([NS])(\d+)$")
+_MAST_REF_RE = re.compile(r"^S(\d+)([NSEW])(\d+)$")
+_DEFAULT_MAST_DIRECTION_MAP: dict[str, str] = {
+    "N": "LEFT",
+    "W": "LEFT",
+    "S": "RIGHT",
+    "E": "RIGHT",
+}
 
 
 class PlantGraphCompiler:
     """Railroad domain compiler over generic KiCad models."""
+    def __init__(self, mast_direction_map: Optional[dict[str, str]] = None) -> None:
+        """Configure mast-suffix normalization for one railroad convention."""
+        self._mast_direction_map = dict(_DEFAULT_MAST_DIRECTION_MAP)
+        if mast_direction_map is not None:
+            self._mast_direction_map.update(
+                {
+                    suffix.upper(): direction.upper()
+                    for suffix, direction in mast_direction_map.items()
+                }
+            )
 
     def compile(
         self,
@@ -95,12 +123,13 @@ class PlantGraphCompiler:
             In-memory PlantGraph. Callers inspect ``has_errors()`` before
             any downstream projection.
         """
-        graph = PlantGraph()
+        graph = PlantGraph(mast_direction_map=dict(self._mast_direction_map))
         self._build_entities(graph, library, netlist)
         self._classify_nets(graph, netlist)
         self._check_required_pins(graph, netlist)
         self._derive_os_circuits(graph)
         self._check_track_net_labels(graph)
+        self._check_cp_allocations(graph)
         self._check_library_coverage(graph, library)
         # Topology + combinatoric signal routes (DoT terminals, switch N/R).
         from plant_graph.routes import harvest_routes
@@ -235,6 +264,18 @@ class PlantGraphCompiler:
                 )
             return value or ref, diags
 
+        if kind is EntityKind.TRACK_CIRCUIT:
+            if not value:
+                diags.append(
+                    Diagnostic(
+                        severity=DiagnosticSeverity.SEMANTIC,
+                        code="missing_track_circuit_name",
+                        message=f"Track Circuit '{ref}' needs a Value name",
+                        entity_ref=ref,
+                    )
+                )
+            return value or ref, diags
+
         if kind is EntityKind.DIRECTION:
             if not value:
                 diags.append(
@@ -256,6 +297,41 @@ class PlantGraphCompiler:
                         entity_ref=ref,
                     )
                 )
+            return value or ref, diags
+
+        if kind is EntityKind.OPERATING_POLICY:
+            if not value:
+                diags.append(
+                    Diagnostic(
+                        severity=DiagnosticSeverity.SEMANTIC,
+                        code="missing_policy_track_name",
+                        message=(
+                            f"Operating policy marker '{ref}' needs a track-name Value"
+                        ),
+                        entity_ref=ref,
+                    )
+                )
+            for field_name in ("Rulebook", "Direction"):
+                if not (comp.fields.get(field_name) or "").strip():
+                    diags.append(
+                        Diagnostic(
+                            severity=DiagnosticSeverity.SEMANTIC,
+                            code=f"missing_policy_{field_name.lower()}",
+                            message=(
+                                f"Operating policy marker '{ref}' needs a "
+                                f"{field_name} field"
+                            ),
+                            entity_ref=ref,
+                        )
+                    )
+            return value or ref, diags
+
+        if kind in (
+            EntityKind.NEXT_CP,
+            EntityKind.MAIN_HOUSE,
+            EntityKind.MAINTAINER_CALL,
+            EntityKind.ROUTE,
+        ):
             return value or ref, diags
 
         if kind in (EntityKind.IRJ, EntityKind.IRJ_SIGNAL, EntityKind.BUMPER):
@@ -298,20 +374,80 @@ class PlantGraphCompiler:
                 )
             )
 
+    def _track_circuits_on_net(
+        self,
+        graph: PlantGraph,
+        net: Net,
+    ) -> list[PlantEntity]:
+        """Return Track Circuit marker entities attached to one rail net."""
+        return [
+            entity
+            for node in net.nodes
+            if (entity := graph.entities.get(node.reference)) is not None
+            and entity.kind is EntityKind.TRACK_CIRCUIT
+        ]
+
     def _classify_nets(self, graph: PlantGraph, netlist: NetlistModel) -> None:
         for net in netlist.nets:
             net_class = self._classify_one_net(graph, net)
+            if net_class is NetClass.TRACK and self._has_dark_track_marker(
+                graph,
+                net,
+            ):
+                net_class = NetClass.DARK_TRACK
             label = self._authoritative_label(net.name)
-            display = label if label is not None else net.name
+            track_circuits = self._track_circuits_on_net(graph, net)
+            if len(track_circuits) > 1:
+                graph.diagnostics.append(
+                    Diagnostic(
+                        severity=DiagnosticSeverity.SEMANTIC,
+                        code="multiple_track_circuits_on_net",
+                        message=(
+                            f"Rail net '{net.name}' has multiple Track Circuit "
+                            f"markers: {[tc.reference for tc in track_circuits]}"
+                        ),
+                        entity_ref=",".join(tc.reference for tc in track_circuits),
+                    )
+                )
+            track_circuit = track_circuits[0] if len(track_circuits) == 1 else None
+            if track_circuit is not None:
+                display = track_circuit.canonical_name
+                authoritative = True
+                if label is not None and label != display:
+                    graph.diagnostics.append(
+                        Diagnostic(
+                            severity=DiagnosticSeverity.SEMANTIC,
+                            code="track_label_circuit_mismatch",
+                            message=(
+                                f"Rail net label '{label}' disagrees with Track "
+                                f"Circuit '{display}'"
+                            ),
+                            entity_ref=track_circuit.reference,
+                        )
+                    )
+            else:
+                display = label if label is not None else net.name
+                authoritative = label is not None
             graph.nets.append(
                 PlantNet(
                     name=display,
                     net_class=net_class,
                     raw_name=net.name,
                     nodes=tuple((n.reference, n.pin) for n in net.nodes),
-                    authoritative_label=label is not None,
+                    authoritative_label=authoritative,
                 )
             )
+
+    def _has_dark_track_marker(self, graph: PlantGraph, net: Net) -> bool:
+        """Return True when a Rule 6.28 marker defines an untracked segment."""
+        for node in net.nodes:
+            entity = graph.entities.get(node.reference)
+            if entity is None or entity.kind is not EntityKind.OPERATING_POLICY:
+                continue
+            rulebook = (entity.fields.get("Rulebook") or "").lower()
+            if rulebook.replace("rule", "").strip().startswith("6.28"):
+                return True
+        return False
 
     def _classify_one_net(self, graph: PlantGraph, net: Net) -> NetClass:
         if net.name.startswith("unconnected-"):
@@ -543,9 +679,11 @@ class PlantGraphCompiler:
         - switch_os (C/N/R legs covered by derived ``<switch>T1``)
         """
         for net in graph.nets:
-            if net.net_class is not NetClass.TRACK:
+            if net.net_class not in (NetClass.TRACK, NetClass.DARK_TRACK):
                 continue
             if net.authoritative_label:
+                continue
+            if net.net_class is NetClass.DARK_TRACK:
                 continue
             severity = (
                 DiagnosticSeverity.WARNING
@@ -562,6 +700,50 @@ class PlantGraphCompiler:
                     entity_ref=",".join(f"{r}:{p}" for r, p in net.nodes),
                 )
             )
+
+    def _check_cp_allocations(self, graph: PlantGraph) -> None:
+        """Warn when allocated appliances do not resolve to a Main House Value."""
+        main_house_names = {
+            entity.canonical_name
+            for entity in graph.entities.values()
+            if entity.kind is EntityKind.MAIN_HOUSE and entity.canonical_name
+        }
+        allocated_kinds = frozenset(
+            {
+                EntityKind.SWITCH_POWERED,
+                EntityKind.SWITCH_LOCK,
+                EntityKind.IRJ_SIGNAL,
+                EntityKind.TRACK_CIRCUIT,
+            }
+        )
+        for entity in graph.entities.values():
+            if entity.kind not in allocated_kinds:
+                continue
+            cp_name = (entity.fields.get("CP") or "").strip()
+            if not cp_name:
+                graph.diagnostics.append(
+                    Diagnostic(
+                        severity=DiagnosticSeverity.WARNING,
+                        code="missing_cp_allocation",
+                        message=(
+                            f"{entity.kind.value} '{entity.reference}' has no CP "
+                            "allocation"
+                        ),
+                        entity_ref=entity.reference,
+                    )
+                )
+            elif cp_name not in main_house_names:
+                graph.diagnostics.append(
+                    Diagnostic(
+                        severity=DiagnosticSeverity.WARNING,
+                        code="unknown_cp_allocation",
+                        message=(
+                            f"{entity.kind.value} '{entity.reference}' references "
+                            f"unknown Main House Value '{cp_name}'"
+                        ),
+                        entity_ref=entity.reference,
+                    )
+                )
 
     def _check_library_coverage(
         self,

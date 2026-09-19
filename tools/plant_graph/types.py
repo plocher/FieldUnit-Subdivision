@@ -37,9 +37,15 @@ class EntityKind(str, Enum):
     MAST_DOUBLE = "mast_double"
     MAST_DWARF = "mast_dwarf"
     SIGNAL_HEAD = "signal_head"
+    TRACK_CIRCUIT = "track_circuit"
     DIRECTION = "direction"
+    OPERATING_POLICY = "operating_policy"
+    NEXT_CP = "next_cp"
     BUMPER = "bumper"
+    MAIN_HOUSE = "main_house"
     MAINTAINER = "maintainer"
+    MAINTAINER_CALL = "maintainer_call"
+    ROUTE = "route"
     MILEPOST = "milepost"
     UNKNOWN = "unknown"
 
@@ -48,11 +54,21 @@ class NetClass(str, Enum):
     """Plant-level classification of a KiCad net."""
 
     TRACK = "track"
+    DARK_TRACK = "dark_track"
     SWITCH_OS = "switch_os"  # C/N/R legs covered by derived <switch>T1
     SIGNAL_ATTACHMENT = "signal_attachment"
     HEAD_ATTACHMENT = "head_attachment"
     UNCONNECTED = "unconnected"
     OTHER = "other"
+
+
+class CircuitRole(str, Enum):
+    """A route circuit's operational relationship to its governing mast."""
+
+    ENTRANCE = "entrance"
+    HOME_CLEAR = "home_clear"
+    DOWNSTREAM = "downstream"
+    UNRESOLVED = "unresolved"
 
 
 class RouteEndKind(str, Enum):
@@ -61,6 +77,7 @@ class RouteEndKind(str, Enum):
     DEAD_END = "dead_end"
     CP_LIMIT = "cp_limit"
     NEXT_FACE = "next_face"
+    DARK_EXIT = "dark_exit"
 
 
 @dataclass(frozen=True)
@@ -113,6 +130,7 @@ class SignalFace:
 
     signal_name: str
     direction: str
+    mast_direction: str
     mast_reference: str
     mast_name: str
     irj_reference: str
@@ -151,10 +169,23 @@ class SignalRoute:
     exit_face_signal: str
     exit_face_direction: str
     switch_alignments: tuple[tuple[str, str], ...]  # (switch_name, N|R)
-    clear_track_circuits: tuple[str, ...]  # OS + path TCs required clear
+    circuit_roles: tuple[tuple[str, CircuitRole], ...]
+    clear_track_circuits: tuple[str, ...]  # home-clear OS + track circuits
     os_track_circuits: tuple[str, ...]  # derived <switch>T1 on path
-    path_track_circuits: tuple[str, ...]  # labeled track nets on path
+    path_track_circuits: tuple[str, ...]  # all labeled track nets traversed
     path_nets: tuple[str, ...]
+    head_names: tuple[str, ...] = ()
+
+@dataclass(frozen=True)
+class MastHead:
+    """One Signal Head attached to a Signal Mast through the netlist."""
+
+    mast_reference: str
+    mast_name: str
+    mast_pin: str
+    head_reference: str
+    head_name: str
+
 
 
 @dataclass
@@ -167,6 +198,15 @@ class PlantGraph:
     terminals: list[PlantTerminal] = field(default_factory=list)
     signal_faces: list[SignalFace] = field(default_factory=list)
     routes: list[SignalRoute] = field(default_factory=list)
+    mast_heads: list[MastHead] = field(default_factory=list)
+    mast_direction_map: dict[str, str] = field(
+        default_factory=lambda: {
+            "N": "LEFT",
+            "W": "LEFT",
+            "S": "RIGHT",
+            "E": "RIGHT",
+        }
+    )
     diagnostics: list[Diagnostic] = field(default_factory=list)
     # Optional local→display/MP name map (legend). Identity strings stay as drawn.
     name_aliases: dict[str, str] = field(default_factory=dict)
