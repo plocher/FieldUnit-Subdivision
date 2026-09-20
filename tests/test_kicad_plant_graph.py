@@ -22,10 +22,25 @@ from kicad_services.types import (
     NetlistComponent,
     NetlistModel,
     NetNode,
+    SchematicPlacement,
+    SchematicPlacementModel,
     SymbolPin,
 )
 from plant_graph.compiler import PlantGraphCompiler
-from plant_graph.types import EntityKind, NetClass
+from plant_graph.picture import render_layout_overview_svg, render_model_board_svg
+from plant_graph.routes import (
+    format_alignment,
+    format_route_line,
+)
+from plant_graph.types import (
+    CircuitRole,
+    EntityKind,
+    Indication,
+    NetClass,
+    PointTraversal,
+    SchematicHeading,
+    TurnoutHand,
+)
 
 
 def _irj_symbol() -> LibrarySymbol:
@@ -124,6 +139,87 @@ class PlantGraphCompilerTests(unittest.TestCase):
             ["783T1"],
         )
 
+    def test_derives_switch_hand_and_heading_from_source_geometry(self) -> None:
+        placements = SchematicPlacementModel(path=Path("minimal_plant.kicad_sch"))
+        placements.placements["SW783"] = SchematicPlacement(
+            reference="SW783",
+            lib_id="Railroad:Switch_Powered",
+            x=100.0,
+            y=100.0,
+            rotation=0.0,
+        )
+
+        graph = PlantGraphCompiler().compile(self.library, self.netlist, placements)
+
+        geometry = graph.switch_geometries["783"]
+        self.assertEqual(geometry.cn_heading, SchematicHeading.LEFT)
+        self.assertEqual(geometry.reverse_side, TurnoutHand.RIGHT)
+    def test_compiles_layout_primitives_for_record_only_renderers(self) -> None:
+        """Placed source compiles bases and terminals before either board renders."""
+        placements = SchematicPlacementModel(path=Path("minimal_plant.kicad_sch"))
+        placements.placements.update(
+            {
+                "DOT1": SchematicPlacement(
+                    "DOT1",
+                    "Railroad:Direction_BOTH",
+                    10.0,
+                    100.0,
+                    0.0,
+                ),
+                "B1": SchematicPlacement(
+                    "B1",
+                    "Railroad:IRJ-Signal",
+                    50.0,
+                    100.0,
+                    0.0,
+                ),
+                "SW783": SchematicPlacement(
+                    "SW783",
+                    "Railroad:Switch_Powered",
+                    100.0,
+                    100.0,
+                    0.0,
+                ),
+                "S784S1": SchematicPlacement(
+                    "S784S1",
+                    "Railroad:Mast_Double",
+                    50.0,
+                    110.0,
+                    0.0,
+                ),
+            }
+        )
+
+        graph = PlantGraphCompiler().compile(self.library, self.netlist, placements)
+
+        self.assertTrue(graph.rail_rows)
+        self.assertEqual(
+            [(base.mast_name, base.irj_reference) for base in graph.signal_bases],
+            [("784SAB", "B1")],
+        )
+        self.assertEqual(
+            [(terminal.name, terminal.side) for terminal in graph.board_terminals],
+            [("MT", "left")],
+        )
+        self.assertIn('class="overview-background"', render_model_board_svg(graph))
+        self.assertIn("Controlled Point", render_layout_overview_svg(graph))
+
+    def test_invalid_switch_indications_are_semantic_errors(self) -> None:
+        self.netlist.components["SW783"] = NetlistComponent(
+            "SW783",
+            "~",
+            "Railroad",
+            "Switch_Powered",
+            fields={"Indications": "CLEAR/NOT_AN_INDICATION"},
+        )
+
+        graph = PlantGraphCompiler().compile(self.library, self.netlist)
+
+        self.assertIn(
+            "invalid_switch_indications",
+            {diagnostic.code for diagnostic in graph.diagnostics},
+        )
+
     def test_mast_uses_value_as_proper_name(self) -> None:
         mast = self.graph.entities["S784S1"]
         self.assertEqual(mast.kind, EntityKind.MAST_DOUBLE)
@@ -131,6 +227,17 @@ class PlantGraphCompilerTests(unittest.TestCase):
         head = self.graph.entities["H1"]
         self.assertEqual(head.kind, EntityKind.SIGNAL_HEAD)
         self.assertEqual(head.canonical_name, "A")
+        self.assertEqual(
+            [
+                (attachment.mast_reference, attachment.head_name)
+                for attachment in self.graph.mast_heads
+            ],
+            [("S784S1", "A")],
+        )
+        self.assertIn(
+            "mast_head_grammar_mismatch",
+            {diagnostic.code for diagnostic in self.graph.diagnostics},
+        )
 
     def test_classifies_track_vs_attachment_and_switch_os(self) -> None:
         by_raw = {n.raw_name: n for n in self.graph.nets}
@@ -273,8 +380,9 @@ class PlantGraphCompilerTests(unittest.TestCase):
                 SymbolPin("3", "R", "passive"),
             ),
         )
-        # Build netlist: DOT_E - B1 - SW C/N - B2 - DOT_X  and SW R - B3 - DOT_Y
-        # Use IRJ-Signal + mast so a signal face exists.
+        # Build netlist: DOT_E - B1 - SW C/N - B2 - DOT_X and SW R - B3 - DOT_Y.
+        # B2 carries an opposing mast, so NORTH is downstream of the source
+        # mast's far interlocking limit. SOUTH has no such boundary evidence.
         from kicad_services.types import LibrarySymbol as LS
         library.symbols["IRJ-Signal"] = LibrarySymbol(
             name="IRJ-Signal",
@@ -293,16 +401,30 @@ class PlantGraphCompilerTests(unittest.TestCase):
                 SymbolPin("2", "H", "passive"),
             ),
         )
+        library.symbols["Signal Head - CL"] = LibrarySymbol(
+            name="Signal Head - CL",
+            reference_prefix="H",
+            pins=(SymbolPin("1", "M", "passive"),),
+        )
         netlist = NetlistModel(path=Path("x.net"))
         netlist.components = {
             "DOT_E": NetlistComponent("DOT_E", "EAST", "Railroad", "Direction_BOTH", fields={"Rulebook": "261"}),
             "DOT_XN": NetlistComponent("DOT_XN", "NORTH", "Railroad", "Direction_BOTH", fields={"Rulebook": "261"}),
             "DOT_XR": NetlistComponent("DOT_XR", "SOUTH", "Railroad", "Direction_BOTH", fields={"Rulebook": "261"}),
             "B1": NetlistComponent("B1", "~", "Railroad", "IRJ-Signal"),
-            "B2": NetlistComponent("B2", "~", "Railroad", "IRJ"),
+            "B2": NetlistComponent("B2", "~", "Railroad", "IRJ-Signal"),
             "B3": NetlistComponent("B3", "~", "Railroad", "IRJ"),
-            "SW1": NetlistComponent("SW1", "~", "Railroad", "Switch_Powered"),
-            "S2N1": NetlistComponent("S2N1", "2NAB", "Railroad", "Mast_Single"),
+            "SW1": NetlistComponent(
+                "SW1",
+                "~",
+                "Railroad",
+                "Switch_Powered",
+                fields={"Indications": "CLEAR/DIVERGING_CLEAR"},
+            ),
+            "S2N1": NetlistComponent("S2N1", "2NA", "Railroad", "Mast_Single"),
+            "S4S1": NetlistComponent("S4S1", "4SA", "Railroad", "Mast_Single"),
+            "H2": NetlistComponent("H2", "A", "Railroad", "Signal Head - CL"),
+            "H4": NetlistComponent("H4", "A", "Railroad", "Signal Head - CL"),
         }
         netlist.nets = [
             Net("1", "/EAST", (NetNode("DOT_E", "2"), NetNode("B1", "2"))),
@@ -312,6 +434,9 @@ class PlantGraphCompilerTests(unittest.TestCase):
             Net("5", "Net-(SW-R)", (NetNode("SW1", "3"), NetNode("B3", "1"))),
             Net("6", "/SOUTH", (NetNode("B3", "2"), NetNode("DOT_XR", "1"))),
             Net("7", "Net-(SIG)", (NetNode("B1", "3"), NetNode("S2N1", "1"))),
+            Net("8", "Net-(SIG4)", (NetNode("B2", "3"), NetNode("S4S1", "1"))),
+            Net("9", "Net-(H2-M)", (NetNode("S2N1", "2"), NetNode("H2", "1"))),
+            Net("10", "Net-(H4-M)", (NetNode("S4S1", "2"), NetNode("H4", "1"))),
         ]
         graph = PlantGraphCompiler().compile(library, netlist)
         self.assertGreaterEqual(len(graph.signal_faces), 1)
@@ -319,6 +444,292 @@ class PlantGraphCompilerTests(unittest.TestCase):
         exits = {(r.exit_designation, dict(r.switch_alignments).get("1")) for r in graph.routes}
         self.assertIn(("NORTH", "N"), exits)
         self.assertIn(("SOUTH", "R"), exits)
+        north_route = next(route for route in graph.routes if route.exit_net == "NORTH")
+        north_roles = dict(north_route.circuit_roles)
+        self.assertEqual(north_roles["EAST"], CircuitRole.ENTRANCE)
+        self.assertEqual(north_roles["1T1"], CircuitRole.HOME_CLEAR)
+        self.assertEqual(north_roles["NORTH"], CircuitRole.DOWNSTREAM)
+        north_line = format_route_line(north_route)
+        self.assertEqual(
+            format_alignment((("799", "N"), ("783", "N"), ("795", "R"))),
+            " 783 (795) 799 ",
+        )
+        self.assertIn("2(LEFT)", north_line)
+        self.assertNotIn("2N(LEFT)", north_line)
+        self.assertIn("entrance=EAST", north_line)
+        self.assertIn("home-clear=1T1", north_line)
+        self.assertIn("downstream=NORTH", north_line)
+        self.assertEqual(north_route.static_indication, Indication.CLEAR)
+        self.assertEqual(
+            tuple(
+                (
+                    traversal.switch_name,
+                    traversal.entry_pin,
+                    traversal.exit_pin,
+                    traversal.alignment,
+                    traversal.point_traversal,
+                )
+                for traversal in north_route.switch_traversals
+            ),
+            (("1", "1", "2", "N", PointTraversal.FACING),),
+        )
+
+        south_route = next(route for route in graph.routes if route.exit_net == "SOUTH")
+        south_roles = dict(south_route.circuit_roles)
+        self.assertEqual(south_roles["EAST"], CircuitRole.ENTRANCE)
+        self.assertEqual(south_roles["1T1"], CircuitRole.HOME_CLEAR)
+        self.assertEqual(south_roles["SOUTH"], CircuitRole.UNRESOLVED)
+        self.assertEqual(
+            south_route.static_indication,
+            Indication.DIVERGING_CLEAR,
+        )
+        self.assertEqual(
+            tuple(
+                (
+                    traversal.switch_name,
+                    traversal.entry_pin,
+                    traversal.exit_pin,
+                    traversal.alignment,
+                    traversal.point_traversal,
+                )
+                for traversal in south_route.switch_traversals
+            ),
+            (("1", "1", "3", "R", PointTraversal.FACING),),
+        )
+        self.assertIn("unresolved=SOUTH", format_route_line(south_route))
+        self.assertEqual(
+            north_route.head_names,
+            ("A",),
+        )
+
+    def test_one_pin_policy_markers_and_next_cp_define_route_limits(self) -> None:
+        """Policy markers annotate nets; NextCP symbols form route endpoints."""
+        library = LibraryModel(path=Path("x.kicad_sym"))
+        library.symbols["NextCP"] = LibrarySymbol(
+            name="NextCP",
+            reference_prefix="CP",
+            pins=(SymbolPin("1", "To", "passive"),),
+        )
+        library.symbols["Rule261-DoT-BiDirectional"] = LibrarySymbol(
+            name="Rule261-DoT-BiDirectional",
+            reference_prefix="DOT",
+            pins=(SymbolPin("1", "To", "passive"),),
+        )
+        library.symbols["Track Circuit"] = LibrarySymbol(
+            name="Track Circuit",
+            reference_prefix="TC",
+            pins=(SymbolPin("1", "To", "passive"),),
+        )
+        library.symbols["MAIN HOUSE"] = LibrarySymbol(
+            name="MAIN HOUSE",
+            reference_prefix="HOUSE",
+            pins=(),
+        )
+        library.symbols["IRJ-Signal"] = LibrarySymbol(
+            name="IRJ-Signal",
+            reference_prefix="B",
+            pins=(
+                SymbolPin("1", "A", "bidirectional"),
+                SymbolPin("2", "B", "bidirectional"),
+                SymbolPin("3", "SIGNAL", "passive"),
+            ),
+        )
+        library.symbols["Switch_Powered"] = LibrarySymbol(
+            name="Switch_Powered",
+            reference_prefix="SW",
+            pins=(
+                SymbolPin("1", "C", "passive"),
+                SymbolPin("2", "N", "passive"),
+                SymbolPin("3", "R", "passive"),
+            ),
+        )
+        library.symbols["Mast_Single"] = LibrarySymbol(
+            name="Mast_Single",
+            reference_prefix="S",
+            pins=(
+                SymbolPin("1", "SIGNAL", "passive"),
+                SymbolPin("2", "H", "passive"),
+            ),
+        )
+        library.symbols["Signal Head - CL"] = LibrarySymbol(
+            name="Signal Head - CL",
+            reference_prefix="H",
+            pins=(SymbolPin("1", "M", "passive"),),
+        )
+        netlist = NetlistModel(path=Path("x.net"))
+        netlist.components = {
+            "HOUSE_W": NetlistComponent(
+                "HOUSE_W", "CP West", "Railroad", "MAIN HOUSE"
+            ),
+            "HOUSE_E": NetlistComponent(
+                "HOUSE_E", "CP East", "Railroad", "MAIN HOUSE"
+            ),
+            "CP_W": NetlistComponent("CP_W", "CP West", "Railroad", "NextCP"),
+            "CP_E": NetlistComponent("CP_E", "CP East", "Railroad", "NextCP"),
+            "DOT_W": NetlistComponent(
+                "DOT_W", "MT", "Railroad", "Rule261-DoT-BiDirectional",
+                fields={"Rulebook": "261", "Direction": "BOTH"},
+            ),
+            "DOT_E": NetlistComponent(
+                "DOT_E", "MT", "Railroad", "Rule261-DoT-BiDirectional",
+                fields={"Rulebook": "261", "Direction": "BOTH"},
+            ),
+            "B1": NetlistComponent(
+                "B1", "~", "Railroad", "IRJ-Signal", fields={"CP": "CP West"}
+            ),
+            "B2": NetlistComponent(
+                "B2", "~", "Railroad", "IRJ-Signal", fields={"CP": "CP East"}
+            ),
+            "SW1": NetlistComponent(
+                "SW1", "~", "Railroad", "Switch_Powered", fields={"CP": "CP West"}
+            ),
+            "S2E1": NetlistComponent("S2E1", "2EA", "Railroad", "Mast_Single"),
+            "S2W1": NetlistComponent("S2W1", "2WA", "Railroad", "Mast_Single"),
+            "H_E": NetlistComponent("H_E", "A", "Railroad", "Signal Head - CL"),
+            "H_W": NetlistComponent("H_W", "A", "Railroad", "Signal Head - CL"),
+            "TC_W": NetlistComponent(
+                "TC_W", "MT_W", "Railroad", "Track Circuit", fields={"CP": "CP West"}
+            ),
+            "TC_E": NetlistComponent(
+                "TC_E", "MT_E", "Railroad", "Track Circuit", fields={"CP": "CP East"}
+            ),
+        }
+        netlist.nets = [
+            Net("1", "Net-(WEST)", (NetNode("CP_W", "1"), NetNode("DOT_W", "1"), NetNode("B1", "2"), NetNode("TC_W", "1"))),
+            Net("2", "Net-(B1-A)", (NetNode("B1", "1"), NetNode("SW1", "1"))),
+            Net("3", "Net-(SW-N)", (NetNode("SW1", "2"), NetNode("B2", "1"))),
+            Net("4", "Net-(EAST)", (NetNode("B2", "2"), NetNode("DOT_E", "1"), NetNode("CP_E", "1"), NetNode("TC_E", "1"))),
+            Net("5", "Net-(SIG-E)", (NetNode("B1", "3"), NetNode("S2E1", "1"))),
+            Net("6", "Net-(SIG-W)", (NetNode("B2", "3"), NetNode("S2W1", "1"))),
+            Net("7", "Net-(H-E)", (NetNode("S2E1", "2"), NetNode("H_E", "1"))),
+            Net("8", "Net-(H-W)", (NetNode("S2W1", "2"), NetNode("H_W", "1"))),
+            Net("9", "unconnected-(SW1-R)", (NetNode("SW1", "3", pintype="passive+no_connect"),)),
+        ]
+        graph = PlantGraphCompiler().compile(library, netlist)
+        self.assertFalse(graph.has_errors(), graph.diagnostics)
+        self.assertTrue(
+            graph.routes,
+            {
+                "terminals": graph.terminals,
+                "signal_faces": graph.signal_faces,
+                "nets": graph.nets,
+            },
+        )
+        self.assertEqual(graph.entities["DOT_W"].kind, EntityKind.OPERATING_POLICY)
+        self.assertEqual(graph.entities["CP_E"].kind, EntityKind.NEXT_CP)
+        self.assertEqual(graph.entities["TC_W"].kind, EntityKind.TRACK_CIRCUIT)
+        eastbound = next(route for route in graph.routes if route.mast_name == "2EA")
+        self.assertEqual(eastbound.direction, "RIGHT")
+        self.assertEqual(eastbound.entry_terminal, "CP_W")
+        self.assertEqual(eastbound.exit_terminal, "CP_E")
+        self.assertEqual(eastbound.head_names, ("A",))
+        self.assertEqual(
+            dict(eastbound.circuit_roles),
+            {
+                "1T1": CircuitRole.HOME_CLEAR,
+                "MT_E": CircuitRole.DOWNSTREAM,
+                "MT_W": CircuitRole.ENTRANCE,
+            },
+        )
+        reversed_convention = PlantGraphCompiler(
+            mast_direction_map={"E": "LEFT", "W": "RIGHT"}
+        ).compile(library, netlist)
+        reversed_eastbound = next(
+            route
+            for route in reversed_convention.routes
+            if route.mast_name == "2EA"
+        )
+        self.assertEqual(reversed_eastbound.direction, "LEFT")
+
+    def test_rule_628_marker_defines_an_untracked_dark_segment(self) -> None:
+        """A Rule 6.28 marker names dark track without creating a circuit."""
+        library = LibraryModel(path=Path("x.kicad_sym"))
+        library.symbols["Bumper"] = LibrarySymbol(
+            name="Bumper",
+            reference_prefix="B",
+            pins=(SymbolPin("2", "B", "passive"),),
+        )
+        library.symbols["Rule6.28-OtherThanMain"] = LibrarySymbol(
+            name="Rule6.28-OtherThanMain",
+            reference_prefix="DOT",
+            pins=(SymbolPin("1", "To", "passive"),),
+        )
+        netlist = NetlistModel(path=Path("x.net"))
+        netlist.components = {
+            "B1": NetlistComponent("B1", "~", "Railroad", "Bumper"),
+            "DOT5": NetlistComponent(
+                "DOT5", "Industry", "Railroad", "Rule6.28-OtherThanMain",
+                fields={"Rulebook": "Rule 6.28", "Direction": "BOTH"},
+            ),
+        }
+        netlist.nets = [
+            Net("1", "Net-(B1-B)", (NetNode("B1", "2"), NetNode("DOT5", "1")))
+        ]
+        graph = PlantGraphCompiler().compile(library, netlist)
+        self.assertEqual(graph.nets[0].net_class, NetClass.DARK_TRACK)
+        self.assertNotIn(
+            "unlabeled_track_net",
+            {diagnostic.code for diagnostic in graph.diagnostics},
+        )
+
+    def test_rule_628_segment_terminates_route_at_preceding_irj(self) -> None:
+        """Dark track beyond an IRJ is outside the controlling route."""
+        from plant_graph.types import RouteEndKind
+
+        library = LibraryModel(path=Path("x.kicad_sym"))
+        library.symbols["NextCP"] = LibrarySymbol(
+            name="NextCP", reference_prefix="CP", pins=(SymbolPin("1", "To", "passive"),)
+        )
+        library.symbols["Rule261-DoT-BiDirectional"] = LibrarySymbol(
+            name="Rule261-DoT-BiDirectional", reference_prefix="DOT", pins=(SymbolPin("1", "To", "passive"),)
+        )
+        library.symbols["Rule6.28-OtherThanMain"] = LibrarySymbol(
+            name="Rule6.28-OtherThanMain", reference_prefix="DOT", pins=(SymbolPin("1", "To", "passive"),)
+        )
+        library.symbols["Track Circuit"] = LibrarySymbol(
+            name="Track Circuit", reference_prefix="TC", pins=(SymbolPin("1", "To", "passive"),)
+        )
+        library.symbols["IRJ"] = _irj_symbol()
+        library.symbols["IRJ-Signal"] = LibrarySymbol(
+            name="IRJ-Signal", reference_prefix="B",
+            pins=(SymbolPin("1", "A", "bidirectional"), SymbolPin("2", "B", "bidirectional"), SymbolPin("3", "SIGNAL", "passive")),
+        )
+        library.symbols["Bumper"] = LibrarySymbol(
+            name="Bumper", reference_prefix="B", pins=(SymbolPin("2", "B", "passive"),)
+        )
+        library.symbols["Mast_Single"] = LibrarySymbol(
+            name="Mast_Single", reference_prefix="S", pins=(SymbolPin("1", "SIGNAL", "passive"), SymbolPin("2", "H", "passive")),
+        )
+        library.symbols["Signal Head - CL"] = LibrarySymbol(
+            name="Signal Head - CL", reference_prefix="H", pins=(SymbolPin("1", "M", "passive"),)
+        )
+        netlist = NetlistModel(path=Path("x.net"))
+        netlist.components = {
+            "CP_W": NetlistComponent("CP_W", "CP West", "Railroad", "NextCP"),
+            "DOT_W": NetlistComponent("DOT_W", "MT", "Railroad", "Rule261-DoT-BiDirectional", fields={"Rulebook": "261", "Direction": "BOTH"}),
+            "TC_W": NetlistComponent("TC_W", "MT", "Railroad", "Track Circuit"),
+            "TC_LOCAL": NetlistComponent("TC_LOCAL", "LOCAL", "Railroad", "Track Circuit"),
+            "DOT_DARK": NetlistComponent("DOT_DARK", "Industry", "Railroad", "Rule6.28-OtherThanMain", fields={"Rulebook": "Rule 6.28", "Direction": "BOTH"}),
+            "B1": NetlistComponent("B1", "~", "Railroad", "IRJ-Signal"),
+            "B2": NetlistComponent("B2", "~", "Railroad", "IRJ"),
+            "BUMP": NetlistComponent("BUMP", "~", "Railroad", "Bumper"),
+            "S2E1": NetlistComponent("S2E1", "2EA", "Railroad", "Mast_Single"),
+            "H1": NetlistComponent("H1", "A", "Railroad", "Signal Head - CL"),
+        }
+        netlist.nets = [
+            Net("1", "Net-(APP)", (NetNode("CP_W", "1"), NetNode("DOT_W", "1"), NetNode("TC_W", "1"), NetNode("B1", "2"))),
+            Net("2", "Net-(LOCAL)", (NetNode("B1", "1"), NetNode("B2", "1"), NetNode("TC_LOCAL", "1"))),
+            Net("3", "Net-(DARK)", (NetNode("B2", "2"), NetNode("DOT_DARK", "1"), NetNode("BUMP", "2"))),
+            Net("4", "Net-(SIG)", (NetNode("B1", "3"), NetNode("S2E1", "1"))),
+            Net("5", "Net-(HEAD)", (NetNode("S2E1", "2"), NetNode("H1", "1"))),
+        ]
+        graph = PlantGraphCompiler().compile(library, netlist)
+        route = next(route for route in graph.routes if route.mast_name == "2EA")
+        self.assertEqual(route.end_kind, RouteEndKind.DARK_EXIT)
+        self.assertEqual(route.exit_designation, "Industry")
+        self.assertEqual(route.exit_terminal, "B2")
+        self.assertEqual(route.clear_track_circuits, ("LOCAL",))
+        self.assertNotIn("Industry", route.path_track_circuits)
 
     def test_next_face_end_stops_at_same_direction_approach(self) -> None:
         """Two same-direction faces: route from first ends at second approach."""
@@ -438,6 +849,12 @@ class CliSmokeTests(unittest.TestCase):
         self.assertIn("783T1", text)
         self.assertIn("signal_attachment", text)
         self.assertIn("switch_os", text)
+        self.assertIn("demand", text)
+        self.assertNotIn("signal(lever)", text)
+        self.assertIn("entrance", text)
+        self.assertIn("home-clear", text)
+        self.assertIn("downstream", text)
+        self.assertIn("unresolved", text)
 
 
 if __name__ == "__main__":

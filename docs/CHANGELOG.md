@@ -1,0 +1,22 @@
+# Changelog
+## Unreleased
+- Added a separate static route-validation board projection with selectable structural-route overlays. Its embedded SVG route list exposes each harvested path and indication-table aspect colors without modifying the accepted route-free model board or implementing dispatcher/runtime logic.
+- Mapped two-head route aspects to the physical H1/H2 display order rather than alphabetic head-name order, preserving the source-derived single- versus double-head mast realization.
+- Applied switch Reverse indication caps only to facing C→R traversals; trailing R→C traversals default to Approach pending any future explicit override.
+- Added `DIVERGING_RESTRICTING` for dark-exit routes that include a facing C→R divergence, with static red-over-flashing-red validation presentation.
+- Replaced renderer-side turnout and rail endpoint corrections with compiler-resolved board components, canonical C/N/R and inline-IRJ ports, and validated one-to-one track connections shared by both model-board SVG projections.
+- Added a fixed-width one-dimensional semantic layout solver plus derived Track Circuit lamp, turnout frog-lamp, and powered-switch/lock actuator realizations for the CTC model board.
+- Added compiler-derived rail-layout records for topology rows, ordered spans, turnout ports, signal bases, logical Main House width, and physical board terminals; dispatcher and overview SVG projections now consume those records without a source-coordinate rendering path. NextCP terminals are marked as composable plant edges, while local terminal tracks retain local anchors.
+- Added KiCad harvest support for one-pin Track Circuit markers, one-pin Rule 251/261/6.28 policy markers, NextCP terminals, Main House, Maintainer Call, Route, and E/W mast suffixes.
+- Made Track Circuit Value the authoritative controlled-segment name and added warning-level CP allocation validation against Main House Values.
+- Added `dark_exit` routes at the IRJ before Rule 6.28 dark track; dark track and its bumper no longer enter route traversal or route-clear requirements.
+- Added mast-head attachment validation from the netlist and route-level attached-head output without duplicating structural routes.
+- Expanded the route table with heads, normalized LEFT/RIGHT demand, circuit roles, natural ordering, and updated Luchessa validation coverage.
+- Added static route-indication evaluation with per-switch Normal/Reverse overrides, dark-exit caps, and fail-closed demand, correspondence, lock, occupancy, and circuit-health gates.
+- Documented the signal-system glossary and the locally captured JMRI definition catalogue used to select future aspect profiles.
+- Added the documented MVP indication vocabulary, including `ADVANCED_APPROACH` and diverging indication variants, to switch-property validation.
+- Normalized switch indication input across case and space, hyphen, or underscore word separators.
+- Added a static DOT/SVG topology-picture probe with selected-route highlighting, without adopting KiCad coordinates as model data.
+- Added schematic-placement and C/N/R pin provenance adapters that compile source-derived switch C→N heading and reverse-leg hand without persisting source coordinates.
+- Added ordered route switch crossings with facing/trailing classification and a six-lane portrait SVG route projection driven by those derived facts.
+- Added a shared-scale all-route SVG model-board projection with colored structural-route overlays, legend, aligned entry/exit edges, and simplified track, turnout, IRJ, and mast glyphs.

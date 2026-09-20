@@ -5,22 +5,29 @@ from __future__ import annotations
 import itertools
 import re
 from collections import defaultdict
+from dataclasses import replace
 from typing import Iterable, Optional
 
 from plant_graph.types import (
+    CircuitRole,
     Diagnostic,
     DiagnosticSeverity,
     EntityKind,
+    MastHead,
     NetClass,
+    PlantEntity,
     PlantGraph,
     PlantNet,
     PlantTerminal,
     RouteEndKind,
     SignalFace,
     SignalRoute,
+    PointTraversal,
+    SwitchTraversal,
 )
 
-_MAST_VALUE_RE = re.compile(r"^(\d+)([NS])([A-E]+)$")
+_MAST_VALUE_RE = re.compile(r"^(\d+)([NSEW])([A-E]+)$")
+_NATURAL_PARTS_RE = re.compile(r"(\d+)")
 
 # Switch pin numbers in the Railroad library.
 _PIN_C = "1"
@@ -32,7 +39,9 @@ _IRJ_KINDS = frozenset({EntityKind.IRJ, EntityKind.IRJ_SIGNAL})
 _MAST_KINDS = frozenset(
     {EntityKind.MAST_SINGLE, EntityKind.MAST_DOUBLE, EntityKind.MAST_DWARF}
 )
-_TRACK_NET_CLASSES = frozenset({NetClass.TRACK, NetClass.SWITCH_OS})
+_TRACK_NET_CLASSES = frozenset(
+    {NetClass.TRACK, NetClass.DARK_TRACK, NetClass.SWITCH_OS}
+)
 
 
 def harvest_routes(graph: PlantGraph) -> None:
@@ -41,7 +50,97 @@ def harvest_routes(graph: PlantGraph) -> None:
     graph.terminals = topo.terminals
     graph.signal_faces = topo.signal_faces
     graph.routes = topo.enumerate_routes()
+    graph.mast_heads = _harvest_mast_heads(graph)
+    graph.routes = _assign_route_heads(graph)
     graph.diagnostics.extend(topo.diagnostics)
+def _harvest_mast_heads(graph: PlantGraph) -> list[MastHead]:
+    """Return netlist-attached heads and validate each mast's naming grammar."""
+    attachments: list[MastHead] = []
+    seen: set[tuple[str, str]] = set()
+    for net in graph.nets:
+        if net.net_class is not NetClass.HEAD_ATTACHMENT:
+            continue
+        masts = [
+            (reference, pin)
+            for reference, pin in net.nodes
+            if graph.entities[reference].kind in _MAST_KINDS
+        ]
+        heads = [
+            reference
+            for reference, _pin in net.nodes
+            if graph.entities[reference].kind is EntityKind.SIGNAL_HEAD
+        ]
+        for mast_reference, mast_pin in masts:
+            mast = graph.entities[mast_reference]
+            for head_reference in heads:
+                head = graph.entities[head_reference]
+                key = (mast_reference, head_reference)
+                if key in seen:
+                    continue
+                seen.add(key)
+                attachments.append(
+                    MastHead(
+                        mast_reference=mast_reference,
+                        mast_name=mast.canonical_name,
+                        mast_pin=mast_pin,
+                        head_reference=head_reference,
+                        head_name=head.canonical_name,
+                    )
+                )
+    attachments.sort(
+        key=lambda attachment: (
+            attachment.mast_name,
+            attachment.head_name,
+            attachment.head_reference,
+        )
+    )
+    _validate_mast_heads(graph, attachments)
+    return attachments
+
+def _validate_mast_heads(
+    graph: PlantGraph,
+    attachments: list[MastHead],
+) -> None:
+    """Report masts whose netlist-attached heads disagree with their Value."""
+    heads_by_mast: dict[str, list[str]] = defaultdict(list)
+    for attachment in attachments:
+        heads_by_mast[attachment.mast_reference].append(attachment.head_name)
+    for mast in graph.entities.values():
+        if mast.kind not in _MAST_KINDS:
+            continue
+        match = _MAST_VALUE_RE.match(mast.canonical_name)
+        if match is None:
+            continue
+        expected = tuple(match.group(3))
+        actual = tuple(sorted(heads_by_mast.get(mast.reference, [])))
+        if actual != expected:
+            graph.diagnostics.append(
+                Diagnostic(
+                    severity=DiagnosticSeverity.SEMANTIC,
+                    code="mast_head_grammar_mismatch",
+                    message=(
+                        f"Mast '{mast.canonical_name}' expects heads "
+                        f"{list(expected)}, but netlist attaches {list(actual)}"
+                    ),
+                    entity_ref=mast.reference,
+                )
+            )
+
+def _assign_route_heads(graph: PlantGraph) -> list[SignalRoute]:
+    """Return structural routes annotated with their netlist-attached heads."""
+    heads_by_mast: dict[str, list[MastHead]] = defaultdict(list)
+    for attachment in graph.mast_heads:
+        heads_by_mast[attachment.mast_reference].append(attachment)
+    return [
+        replace(
+            route,
+            head_names=tuple(
+                attachment.head_name
+                for attachment in heads_by_mast[route.mast_reference]
+            ),
+        )
+        for route in graph.routes
+    ]
 
 
 class _TrackTopology:
@@ -61,9 +160,12 @@ class _TrackTopology:
         self.signal_faces: list[SignalFace] = []
         # approach port "REF:PIN" -> face (for next-face ends in direction of travel)
         self.face_by_approach_port: dict[str, SignalFace] = {}
+        # plant-side IRJ port -> (designation, policy net, rulebook)
+        self.dark_exit_by_port: dict[str, tuple[str, str, str]] = {}
         self._index_nets()
         self._index_irj_joints()
         self._index_terminals()
+        self._index_dark_exits()
         self._index_signal_faces()
 
     def _port(self, ref: str, pin: str) -> str:
@@ -80,7 +182,7 @@ class _TrackTopology:
                     continue
                 if ent.kind in _SWITCH_KINDS or ent.kind in _IRJ_KINDS:
                     ports.append(self._port(ref, pin))
-                elif ent.kind is EntityKind.DIRECTION:
+                elif ent.kind in (EntityKind.DIRECTION, EntityKind.NEXT_CP):
                     # Live DoT pin only (unconnected NC nets are not TRACK/OS).
                     ports.append(self._port(ref, pin))
                 elif ent.kind is EntityKind.BUMPER:
@@ -143,22 +245,95 @@ class _TrackTopology:
                 )
                 self.terminals.append(term)
                 self.terminal_by_port[self._port(ref, pin)] = term
+            elif ent.kind is EntityKind.NEXT_CP:
+                pin = "1"
+                port = self._port(ref, pin)
+                if port not in self.port_nets and port not in self.net_neighbors:
+                    continue
+                net_name = self._primary_net(port)
+                policy = self._policy_on_port(port)
+                term = PlantTerminal(
+                    reference=ref,
+                    kind=ent.kind,
+                    port_pin=pin,
+                    net_name=net_name,
+                    designation=(
+                        policy.canonical_name
+                        if policy is not None
+                        else ent.canonical_name
+                    ),
+                    rulebook=(
+                        (policy.fields.get("Rulebook") or "").strip()
+                        if policy is not None
+                        else ""
+                    ),
+                )
+                self.terminals.append(term)
+                self.terminal_by_port[port] = term
             elif ent.kind is EntityKind.BUMPER:
                 pin = "2"
                 port = self._port(ref, pin)
                 if port not in self.port_nets and port not in self.net_neighbors:
                     continue
                 net_name = self._primary_net(port)
+                policy = self._policy_on_port(port)
                 term = PlantTerminal(
                     reference=ref,
                     kind=ent.kind,
                     port_pin=pin,
                     net_name=net_name,
-                    designation=net_name if net_name else ref,
-                    rulebook="",
+                    designation=(
+                        policy.canonical_name
+                        if policy is not None
+                        else net_name if net_name else ref
+                    ),
+                    rulebook=(
+                        (policy.fields.get("Rulebook") or "").strip()
+                        if policy is not None
+                        else ""
+                    ),
                 )
                 self.terminals.append(term)
                 self.terminal_by_port[port] = term
+
+    def _policy_on_port(self, port: str) -> PlantEntity | None:
+        """Return the operating-policy marker attached to a track port's net."""
+        for net_name in self.port_nets.get(port, set()):
+            net = self._net_by_name(net_name)
+            if net is None:
+                continue
+            for reference, _pin in net.nodes:
+                entity = self.graph.entities.get(reference)
+                if entity is not None and entity.kind is EntityKind.OPERATING_POLICY:
+                    return entity
+        return None
+
+    def _index_dark_exits(self) -> None:
+        """Stop routes at an IRJ immediately before a Rule 6.28 segment."""
+        for net in self.graph.nets:
+            if net.net_class is not NetClass.DARK_TRACK:
+                continue
+            policy = next(
+                (
+                    self.graph.entities[reference]
+                    for reference, _pin in net.nodes
+                    if self.graph.entities[reference].kind
+                    is EntityKind.OPERATING_POLICY
+                ),
+                None,
+            )
+            if policy is None:
+                continue
+            for reference, pin in net.nodes:
+                entity = self.graph.entities[reference]
+                if entity.kind not in _IRJ_KINDS or pin not in ("1", "2"):
+                    continue
+                plant_pin = "1" if pin == "2" else "2"
+                self.dark_exit_by_port[self._port(reference, plant_pin)] = (
+                    policy.canonical_name,
+                    net.name,
+                    (policy.fields.get("Rulebook") or "").strip(),
+                )
 
     def _live_direction_pins(self, ref: str) -> set[str]:
         live: set[str] = set()
@@ -219,10 +394,15 @@ class _TrackTopology:
                 match = _MAST_VALUE_RE.match(mast.canonical_name or mast.value or "")
                 if not match:
                     continue
-                signal_name, direction, heads = match.groups()
+                signal_name, mast_direction, heads = match.groups()
+                direction = self.graph.mast_direction_map.get(
+                    mast_direction,
+                    mast_direction,
+                )
                 face = SignalFace(
                     signal_name=signal_name,
                     direction=direction,
+                    mast_direction=mast_direction,
                     mast_reference=mast_ref,
                     mast_name=mast.canonical_name,
                     irj_reference=irj_ref,
@@ -253,7 +433,7 @@ class _TrackTopology:
                     continue
                 if ent.kind in _SWITCH_KINDS:
                     pin_roles[pin].add("switch")
-                elif ent.kind is EntityKind.DIRECTION:
+                elif ent.kind in (EntityKind.DIRECTION, EntityKind.NEXT_CP):
                     pin_roles[pin].add("terminal")
                 elif ent.kind is EntityKind.BUMPER:
                     pin_roles[pin].add("terminal")
@@ -262,11 +442,15 @@ class _TrackTopology:
             # Also: follow only TRACK (labeled) net to a terminal one hop away.
             for net_name in self.port_nets.get(port, set()):
                 net = self._net_by_name(net_name)
-                if net is None or net.net_class is not NetClass.TRACK:
+                if net is None or net.net_class not in _TRACK_NET_CLASSES:
                     continue
                 for ref, _p in net.nodes:
                     ent = self.graph.entities.get(ref)
-                    if ent and ent.kind in (EntityKind.DIRECTION, EntityKind.BUMPER):
+                    if ent and ent.kind in (
+                        EntityKind.DIRECTION,
+                        EntityKind.NEXT_CP,
+                        EntityKind.BUMPER,
+                    ):
                         pin_roles[pin].add("terminal")
 
         approach = None
@@ -347,7 +531,7 @@ class _TrackTopology:
                     self._port(entry_term_obj.reference, entry_term_obj.port_pin)
                 )
 
-            for end_port, path_nets, alignments in self._walk(
+            for end_port, path_nets, alignments, switch_traversals in self._walk(
                 start=start,
                 switch_ref=switch_ref,
                 forbidden_ports=forbidden,
@@ -368,14 +552,23 @@ class _TrackTopology:
                     exit_face_signal,
                     exit_face_dir,
                 ) = end_info
-                if exit_desig == entry_designation and end_kind is not RouteEndKind.NEXT_FACE:
+                if (
+                    exit_term_ref == entry_terminal_ref
+                    and end_kind is not RouteEndKind.NEXT_FACE
+                ):
                     continue
-                switch_tuple = tuple(sorted(alignments.items()))
+                switch_tuple = tuple(
+                    sorted(
+                        alignments.items(),
+                        key=lambda item: _natural_sort_key(item[0]),
+                    )
+                )
                 key = (
                     face.mast_reference,
                     entry_terminal_ref,
                     end_kind.value,
                     exit_desig,
+                    exit_term_ref,
                     exit_face_mast,
                     switch_tuple,
                 )
@@ -384,12 +577,35 @@ class _TrackTopology:
                 seen.add(key)
                 name = f"{entry_designation}-{exit_desig}"
                 os_tcs = tuple(f"{sw}T1" for sw, _pos in switch_tuple)
-                path_tcs = _labeled_path_track_circuits(
-                    path_nets,
+                path_tcs = tuple(
+                    sorted(
+                        _labeled_path_track_circuits(
+                            path_nets,
+                            entry_net=entry_net,
+                            exit_net=exit_net,
+                        ),
+                        key=_natural_sort_key,
+                    )
+                )
+                circuit_roles = self._classify_circuit_roles(
+                    face=face,
+                    path_nets=path_nets,
                     entry_net=entry_net,
                     exit_net=exit_net,
+                    end_kind=end_kind,
+                    os_track_circuits=os_tcs,
                 )
-                clears = tuple(dict.fromkeys([*os_tcs, *path_tcs]))
+                home_path_circuits = tuple(
+                    circuit
+                    for circuit, role in circuit_roles
+                    if role is CircuitRole.HOME_CLEAR and circuit not in os_tcs
+                )
+                clears = tuple(
+                    sorted(
+                        dict.fromkeys([*os_tcs, *home_path_circuits]),
+                        key=_natural_sort_key,
+                    )
+                )
                 routes.append(
                     SignalRoute(
                         name=name,
@@ -411,10 +627,12 @@ class _TrackTopology:
                         exit_face_signal=exit_face_signal,
                         exit_face_direction=exit_face_dir,
                         switch_alignments=switch_tuple,
+                        circuit_roles=circuit_roles,
                         clear_track_circuits=clears,
                         os_track_circuits=os_tcs,
                         path_track_circuits=path_tcs,
                         path_nets=tuple(path_nets),
+                        switch_traversals=tuple(switch_traversals),
                     )
                 )
 
@@ -430,6 +648,83 @@ class _TrackTopology:
         )
         return routes
 
+    def _classify_circuit_roles(
+        self,
+        face: SignalFace,
+        path_nets: list[str],
+        entry_net: str,
+        exit_net: str,
+        end_kind: RouteEndKind,
+        os_track_circuits: tuple[str, ...],
+    ) -> tuple[tuple[str, CircuitRole], ...]:
+        """Classify each route circuit relative to its governing mast.
+
+        The approach-side net is an entrance circuit. OS circuits are local
+        home-clear circuits. For a CP-limit route, a crossed Signal IRJ
+        carrying an opposing mast marks the far interlocking limit; labeled
+        circuits after it are downstream. A DoT-ended route without that
+        evidence leaves its exit circuit unresolved rather than treating the
+        DoT as a boundary.
+        """
+        roles: dict[str, CircuitRole] = {}
+
+        def add(circuit: str, role: CircuitRole) -> None:
+            name = _labeled_track_circuit_name(circuit)
+            if name:
+                roles[name] = role
+
+        add(entry_net, CircuitRole.ENTRANCE)
+        past_exit_mast = False
+        for step in path_nets:
+            if step.startswith("joint:"):
+                irj_reference = step.split(":", 1)[1]
+                if (
+                    end_kind is RouteEndKind.CP_LIMIT
+                    and self._is_opposing_mast_boundary(
+                        irj_reference,
+                        face.direction,
+                    )
+                ):
+                    past_exit_mast = True
+                continue
+            add(
+                step,
+                CircuitRole.DOWNSTREAM
+                if past_exit_mast
+                else CircuitRole.HOME_CLEAR,
+            )
+
+        add(
+            exit_net,
+            CircuitRole.DOWNSTREAM
+            if past_exit_mast
+            else CircuitRole.HOME_CLEAR,
+        )
+        if end_kind is RouteEndKind.CP_LIMIT and not past_exit_mast:
+            name = _labeled_track_circuit_name(exit_net)
+            if name:
+                roles[name] = CircuitRole.UNRESOLVED
+        for circuit in os_track_circuits:
+            add(circuit, CircuitRole.HOME_CLEAR)
+        return tuple(
+            sorted(
+                roles.items(),
+                key=lambda item: _natural_sort_key(item[0]),
+            )
+        )
+
+    def _is_opposing_mast_boundary(
+        self,
+        irj_reference: str,
+        travel_direction: str,
+    ) -> bool:
+        """Return whether a crossed Signal IRJ has a mast facing against travel."""
+        return any(
+            face.irj_reference == irj_reference
+            and face.direction != travel_direction
+            for face in self.signal_faces
+        )
+
     def _walk(
         self,
         start: str,
@@ -438,25 +733,29 @@ class _TrackTopology:
         entry_irj: str,
         travel_direction: str,
         start_mast: str,
-    ) -> Iterable[tuple[str, list[str], dict[str, str]]]:
-        """DFS yielding (end_port, path_nets, used_alignments).
+    ) -> Iterable[tuple[str, list[str], dict[str, str], list[SwitchTraversal]]]:
+        """DFS yielding end, nets, alignments, and ordered switch crossings.
 
         Ends at: DoT/bumper terminals, or another face's approach pin that
         protects the same direction of travel (next-face end). Opposite-facing
         faces are not ends (e.g. industry dwarf does not end inbound moves).
         """
         ref_to_switch_name = {v: k for k, v in switch_ref.items()}
-        stack: list[tuple[str, list[str], list[str], dict[str, str]]] = [
-            (start, [start], [], {})
+        stack: list[
+            tuple[str, list[str], list[str], dict[str, str], list[SwitchTraversal]]
+        ] = [
+            (start, [start], [], {}, [])
         ]
-        results: list[tuple[str, list[str], dict[str, str]]] = []
+        results: list[
+            tuple[str, list[str], dict[str, str], list[SwitchTraversal]]
+        ] = []
 
         while stack:
-            port, path, nets, aligns = stack.pop()
+            port, path, nets, aligns, traversals = stack.pop()
             if port != start and self._is_route_end(
                 port, travel_direction, start_mast, forbidden_ports
             ):
-                results.append((port, nets, dict(aligns)))
+                results.append((port, nets, dict(aligns), list(traversals)))
                 continue
 
             for nxt, via_net, align_add in self._neighbors_branching(
@@ -469,9 +768,41 @@ class _TrackTopology:
                 new_nets = list(nets)
                 if via_net and (not new_nets or new_nets[-1] != via_net):
                     new_nets.append(via_net)
-                stack.append((nxt, path + [nxt], new_nets, new_aligns))
+                new_traversals = list(traversals)
+                traversal = self._switch_traversal(port, nxt, via_net)
+                if traversal is not None:
+                    new_traversals.append(traversal)
+                stack.append(
+                    (nxt, path + [nxt], new_nets, new_aligns, new_traversals)
+                )
 
         return results
+
+    def _switch_traversal(
+        self,
+        entry_port: str,
+        exit_port: str,
+        via_net: str,
+    ) -> SwitchTraversal | None:
+        """Return a typed turnout crossing when one walker step crosses it."""
+        if not via_net.startswith("switch:"):
+            return None
+        _prefix, switch_name, alignment = via_net.split(":", 2)
+        entry_ref, entry_pin = entry_port.split(":", 1)
+        exit_ref, exit_pin = exit_port.split(":", 1)
+        if entry_ref != exit_ref:
+            return None
+        return SwitchTraversal(
+            switch_name=switch_name,
+            entry_pin=entry_pin,
+            exit_pin=exit_pin,
+            alignment=alignment,
+            point_traversal=(
+                PointTraversal.FACING
+                if entry_pin == _PIN_C
+                else PointTraversal.TRAILING
+            ),
+        )
 
     def _is_route_end(
         self,
@@ -482,6 +813,8 @@ class _TrackTopology:
     ) -> bool:
         if port in forbidden_ports:
             return False
+        if port in self.dark_exit_by_port:
+            return True
         face = self.face_by_approach_port.get(port)
         if face is not None:
             if face.mast_reference == start_mast:
@@ -496,6 +829,19 @@ class _TrackTopology:
         start_face: SignalFace,
     ) -> tuple[RouteEndKind, str, str, str, str, str, str, str] | None:
         """Return end metadata or None if not a valid end."""
+        dark_exit = self.dark_exit_by_port.get(end_port)
+        if dark_exit is not None:
+            designation, _dark_net, rulebook = dark_exit
+            return (
+                RouteEndKind.DARK_EXIT,
+                designation,
+                "",
+                end_port.split(":", 1)[0],
+                rulebook,
+                "",
+                "",
+                "",
+            )
         face = self.face_by_approach_port.get(end_port)
         if face is not None and face.direction == start_face.direction:
             if face.mast_reference == start_face.mast_reference:
@@ -551,7 +897,13 @@ class _TrackTopology:
         results: list[tuple[str, list[str], dict[str, str]]] = []
         while stack:
             port, path, nets = stack.pop()
-            if port in self.terminal_by_port and port not in forbidden_ports:
+            if (
+                port not in forbidden_ports
+                and (
+                    port in self.terminal_by_port
+                    or port in self.dark_exit_by_port
+                )
+            ):
                 results.append((port, nets, dict(alignments)))
                 continue
             for nxt, via_net, _delta in self._neighbors_fixed(
@@ -665,6 +1017,27 @@ class _TrackTopology:
         return labeled[0] if labeled else sorted(common)[0]
 
 
+def _labeled_track_circuit_name(name: str) -> str:
+    """Return a labeled track-circuit name, excluding traversal internals."""
+    name = (name or "").strip()
+    if (
+        not name
+        or name.startswith("joint:")
+        or name.startswith("switch:")
+        or name.startswith("Net-")
+        or name.startswith("unconnected-")
+    ):
+        return ""
+    return name[1:] if name.startswith("/") else name
+
+def _natural_sort_key(value: str) -> tuple[tuple[int, int | str], ...]:
+    """Return a natural sort key for human-facing plant identity strings."""
+    return tuple(
+        (0, int(part)) if part.isdigit() else (1, part.casefold())
+        for part in _NATURAL_PARTS_RE.split(value)
+        if part
+    )
+
 
 def _labeled_path_track_circuits(
     path_nets: list[str],
@@ -680,15 +1053,7 @@ def _labeled_path_track_circuits(
     seen: set[str] = set()
 
     def add(name: str) -> None:
-        name = (name or "").strip()
-        if not name:
-            return
-        if name.startswith("joint:") or name.startswith("switch:"):
-            return
-        if name.startswith("Net-") or name.startswith("unconnected-"):
-            return
-        if name.startswith("/"):
-            name = name[1:]
+        name = _labeled_track_circuit_name(name)
         if not name or name in seen:
             return
         seen.add(name)
@@ -700,19 +1065,27 @@ def _labeled_path_track_circuits(
     add(exit_net)
     return tuple(ordered)
 
+
 def format_alignment(switch_alignments: tuple[tuple[str, str], ...]) -> str:
     """Prototype alignment string: bare=Normal, (name)=Reverse, joined."""
+    ordered = sorted(
+        switch_alignments,
+        key=lambda item: _natural_sort_key(item[0]),
+    )
+    width = max((len(name) for name, _position in ordered), default=0)
     parts: list[str] = []
-    for name, pos in switch_alignments:
+    for name, pos in ordered:
         if pos == "R":
-            parts.append(f"({name})")
+            parts.append(f"({name:>{width}})")
         else:
-            parts.append(str(name))
+            parts.append(f" {name:>{width}} ")
     return "".join(parts) if parts else "-"
 
 
 def lever_direction(mast_direction: str) -> str:
     """Map mast geographic face to cTc lever side (Luchessa/US&S desk habit)."""
+    if mast_direction in ("LEFT", "RIGHT"):
+        return mast_direction
     if mast_direction == "S":
         return "RIGHT"
     if mast_direction == "N":
@@ -720,23 +1093,43 @@ def lever_direction(mast_direction: str) -> str:
     return mast_direction
 
 
-def format_route_line(route: SignalRoute, indication: str = "") -> str:
-    """Scannable prototype route line.
-
-    route  mast  alignment  signal(lever)  end  clears...  [indication]
-    """
+def _format_route_conditions(route: SignalRoute, indication: str) -> str:
+    """Return the shared route-condition portion of a table row."""
     align = format_alignment(route.switch_alignments)
     lever = lever_direction(route.direction)
-    sig = f"{route.signal_name}{route.direction}({lever})"
-    clears = " ".join(route.clear_track_circuits) if route.clear_track_circuits else "-"
+    demand = f"{route.signal_name}({lever})"
+    entrance = _format_role_circuits(route, CircuitRole.ENTRANCE)
+    home_clear = _format_role_circuits(route, CircuitRole.HOME_CLEAR)
+    downstream = _format_role_circuits(route, CircuitRole.DOWNSTREAM)
+    unresolved = _format_role_circuits(route, CircuitRole.UNRESOLVED)
     ind = indication if indication else "—"
     end = route.end_kind.value
     if route.end_kind is RouteEndKind.NEXT_FACE and route.exit_face_mast:
         end = f"next:{route.exit_face_mast}"
     return (
-        f"{route.name:28} {route.mast_name:8} {align:16} "
-        f"{sig:14} {end:16} {clears:24} {ind}"
+        f"{align:16} "
+        f"{demand:14} {end:16} entrance={entrance:12} "
+        f"home-clear={home_clear:24} downstream={downstream:16} "
+        f"unresolved={unresolved:16} {ind}"
     )
+def format_route_line(route: SignalRoute, indication: str = "") -> str:
+    """Render one mast-level structural route inventory row."""
+    heads = "/".join(route.head_names) if route.head_names else "-"
+    return (
+        f"{route.name:28} {route.mast_name:8} {heads:8} "
+        f"{_format_route_conditions(route, indication)}"
+    )
+
+
+
+def _format_role_circuits(route: SignalRoute, role: CircuitRole) -> str:
+    """Return the compact route-table rendering for one circuit role."""
+    circuits = [
+        circuit
+        for circuit, circuit_role in route.circuit_roles
+        if circuit_role is role
+    ]
+    return " ".join(sorted(circuits, key=_natural_sort_key)) if circuits else "-"
 
 
 def build_route_proof(graph: PlantGraph) -> dict:
@@ -806,14 +1199,15 @@ def build_route_proof(graph: PlantGraph) -> dict:
                 forbidden_ports=forbidden,
                 entry_irj=face.irj_reference,
             ):
-                term = topo.terminal_by_port.get(end_port)
-                if term is None:
+                end_info = topo._classify_end(end_port, face)
+                if end_info is None:
                     continue
-                if term.designation == entry_desig:
+                _kind, designation, _net, _ref, _rulebook, *_face = end_info
+                if designation == entry_desig:
                     continue
-                reached.add(term.designation)
-                ever_exits.add(term.designation)
-                reachable_pairs.add((face.mast_name, entry_desig, term.designation))
+                reached.add(designation)
+                ever_exits.add(designation)
+                reachable_pairs.add((face.mast_name, entry_desig, designation))
             exits_by_combo.append(
                 {
                     "alignments": format_alignment(tuple(sorted(aligns.items()))),

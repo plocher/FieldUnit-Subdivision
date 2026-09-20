@@ -14,6 +14,8 @@ class SymbolPin:
     number: str
     name: str
     electrical_type: str
+    x: float = 0.0
+    y: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -81,3 +83,23 @@ class NetlistModel:
     source: str = ""
     components: dict[str, NetlistComponent] = field(default_factory=dict)
     nets: list[Net] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class SchematicPlacement:
+    """One placed schematic symbol's source-space transform."""
+
+    reference: str
+    lib_id: str
+    x: float
+    y: float
+    rotation: float
+    mirror: str = ""
+
+
+@dataclass
+class SchematicPlacementModel:
+    """Source-derived placed-symbol transforms for one schematic."""
+
+    path: Path
+    placements: dict[str, SchematicPlacement] = field(default_factory=dict)

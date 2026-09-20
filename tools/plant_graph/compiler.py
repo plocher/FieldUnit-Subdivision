@@ -2,10 +2,22 @@
 
 from __future__ import annotations
 
+import math
 import re
 from typing import Optional
 
-from kicad_services.types import LibraryModel, Net, NetlistComponent, NetlistModel
+from kicad_services.types import (
+    LibraryModel,
+    Net,
+    NetlistComponent,
+    NetlistModel,
+    SchematicPlacementModel,
+)
+from plant_graph.layout import (
+    LongitudinalInterval,
+    LongitudinalLayoutSolver,
+    resolve_board_components,
+)
 from plant_graph.types import (
     DerivedTrackCircuit,
     Diagnostic,
@@ -15,6 +27,17 @@ from plant_graph.types import (
     PlantEntity,
     PlantGraph,
     PlantNet,
+    SchematicHeading,
+    RailRow,
+    RailSpan,
+    TurnoutLayout,
+    SignalBase,
+    BoardTerminal,
+    BoardSection,
+    SwitchGeometry,
+    TrackCircuitLamp,
+    TurnoutActuatorKind,
+    TurnoutHand,
 )
 
 # Railroad part name → entity kind.
@@ -27,11 +50,20 @@ _PART_KIND: dict[str, EntityKind] = {
     "Mast_Double": EntityKind.MAST_DOUBLE,
     "Mast_Dwarf": EntityKind.MAST_DWARF,
     "Signal Head - CL": EntityKind.SIGNAL_HEAD,
+    "Track Circuit": EntityKind.TRACK_CIRCUIT,
     "Direction_L": EntityKind.DIRECTION,
     "Direction_R": EntityKind.DIRECTION,
     "Direction_BOTH": EntityKind.DIRECTION,
+    "Rule251-DoT-Left": EntityKind.OPERATING_POLICY,
+    "Rule251-DoT-Right": EntityKind.OPERATING_POLICY,
+    "Rule261-DoT-BiDirectional": EntityKind.OPERATING_POLICY,
+    "Rule6.28-OtherThanMain": EntityKind.OPERATING_POLICY,
+    "NextCP": EntityKind.NEXT_CP,
     "Bumper": EntityKind.BUMPER,
+    "MAIN HOUSE": EntityKind.MAIN_HOUSE,
     "Maintainer": EntityKind.MAINTAINER,
+    "MaintainerCall": EntityKind.MAINTAINER_CALL,
+    "Route": EntityKind.ROUTE,
     "Milepost": EntityKind.MILEPOST,
 }
 
@@ -41,7 +73,10 @@ _TRACK_PINS: dict[EntityKind, frozenset[str]] = {
     EntityKind.SWITCH_LOCK: frozenset({"1", "2", "3"}),
     EntityKind.IRJ: frozenset({"1", "2"}),  # A/B
     EntityKind.IRJ_SIGNAL: frozenset({"1", "2"}),  # A/B only; 3 is SIGNAL
+    EntityKind.TRACK_CIRCUIT: frozenset({"1"}),
     EntityKind.DIRECTION: frozenset({"1", "2"}),
+    EntityKind.OPERATING_POLICY: frozenset({"1"}),
+    EntityKind.NEXT_CP: frozenset({"1"}),
     EntityKind.BUMPER: frozenset({"2"}),  # B
 }
 
@@ -71,19 +106,46 @@ _REQUIRED_PINS: dict[EntityKind, frozenset[str]] = {
     # Direction is a plant terminal: exactly one live pin (enforced in routes).
 }
 
-_MAST_VALUE_RE = re.compile(r"^(\d+)([NS])([A-E]+)$")
+_MAST_VALUE_RE = re.compile(r"^(\d+)([NSEW])([A-E]+)$")
 _HEAD_VALUE_RE = re.compile(r"^[A-E]$")
 _SWITCH_REF_RE = re.compile(r"^SW(.+)$")
-_MAST_REF_RE = re.compile(r"^S(\d+)([NS])(\d+)$")
+_MAST_REF_RE = re.compile(r"^S(\d+)([NSEW])(\d+)$")
+_DEFAULT_MAST_DIRECTION_MAP: dict[str, str] = {
+    "N": "LEFT",
+    "W": "LEFT",
+    "S": "RIGHT",
+    "E": "RIGHT",
+}
+_LAYOUT_ANCHOR_KINDS = frozenset(
+    {
+        EntityKind.SWITCH_POWERED,
+        EntityKind.SWITCH_LOCK,
+        EntityKind.IRJ,
+        EntityKind.IRJ_SIGNAL,
+        EntityKind.DIRECTION,
+        EntityKind.NEXT_CP,
+    }
+)
 
 
 class PlantGraphCompiler:
     """Railroad domain compiler over generic KiCad models."""
+    def __init__(self, mast_direction_map: Optional[dict[str, str]] = None) -> None:
+        """Configure mast-suffix normalization for one railroad convention."""
+        self._mast_direction_map = dict(_DEFAULT_MAST_DIRECTION_MAP)
+        if mast_direction_map is not None:
+            self._mast_direction_map.update(
+                {
+                    suffix.upper(): direction.upper()
+                    for suffix, direction in mast_direction_map.items()
+                }
+            )
 
     def compile(
         self,
         library: LibraryModel,
         netlist: NetlistModel,
+        placements: SchematicPlacementModel | None = None,
     ) -> PlantGraph:
         """Build a PlantGraph and diagnostics from library + netlist.
 
@@ -95,18 +157,643 @@ class PlantGraphCompiler:
             In-memory PlantGraph. Callers inspect ``has_errors()`` before
             any downstream projection.
         """
-        graph = PlantGraph()
+        graph = PlantGraph(mast_direction_map=dict(self._mast_direction_map))
         self._build_entities(graph, library, netlist)
         self._classify_nets(graph, netlist)
         self._check_required_pins(graph, netlist)
         self._derive_os_circuits(graph)
+        if placements is not None:
+            self._derive_switch_geometries(graph, library, netlist, placements)
         self._check_track_net_labels(graph)
+        self._check_cp_allocations(graph)
+        self._check_switch_indications(graph)
         self._check_library_coverage(graph, library)
         # Topology + combinatoric signal routes (DoT terminals, switch N/R).
         from plant_graph.routes import harvest_routes
 
         harvest_routes(graph)
+        from plant_graph.indications import RouteSignalingPolicy
+
+        graph.routes = RouteSignalingPolicy().compile_static_indications(graph)
+        if placements is not None:
+            self._derive_board_layout(graph, placements)
         return graph
+
+    def _derive_board_layout(
+        self,
+        graph: PlantGraph,
+        placements: SchematicPlacementModel,
+    ) -> None:
+        """Compile coordinate-free board facts from placed source appliances."""
+        main_houses = sorted(
+            (
+                (placements.placements[entity.reference].x, entity.canonical_name)
+                for entity in graph.entities.values()
+                if entity.kind is EntityKind.MAIN_HOUSE
+                and entity.reference in placements.placements
+            )
+        )
+        graph.board_width_units = max(1, len(main_houses))
+        if len(main_houses) == 1:
+            section_centers = (graph.board_width_units / 2.0,)
+        elif main_houses:
+            left_margin = 0.45
+            right_margin = 0.75
+            spacing = (
+                graph.board_width_units - left_margin - right_margin
+            ) / (len(main_houses) - 1)
+            section_centers = tuple(
+                left_margin + index * spacing
+                for index in range(len(main_houses))
+            )
+        else:
+            section_centers = ()
+        graph.board_sections = [
+            BoardSection(
+                name=name,
+                index=index,
+                center_units=section_centers[index],
+            )
+            for index, (_x, name) in enumerate(main_houses)
+        ]
+        x_values = self._layout_x_values(graph, placements)
+
+        ordered_nets = sorted(
+            (
+                net
+                for net in graph.nets
+                if net.net_class
+                in {NetClass.TRACK, NetClass.DARK_TRACK, NetClass.SWITCH_OS}
+            ),
+            key=lambda net: min(
+                (
+                    placements.placements[reference].x
+                    for reference, _pin in net.nodes
+                    if reference in placements.placements
+                ),
+                default=0.0,
+            ),
+        )
+        for net in ordered_nets:
+            endpoints = tuple(sorted({reference for reference, _pin in net.nodes}))
+            layout_endpoints = tuple(
+                endpoint
+                for endpoint in endpoints
+                if endpoint in placements.placements
+                and graph.entities[endpoint].kind in _LAYOUT_ANCHOR_KINDS
+            )
+            endpoint_anchors = tuple(
+                sorted(
+                    (
+                        endpoint,
+                        min(
+                            (
+                                placements.placements[endpoint].x
+                                for _reference, _pin in net.nodes
+                                if _reference == endpoint
+                                and endpoint in placements.placements
+                            ),
+                            default=0.0,
+                        ),
+                    )
+                    for endpoint in layout_endpoints
+                )
+            )
+            start_x = min((anchor for _endpoint, anchor in endpoint_anchors), default=0.0)
+            end_x = max((anchor for _endpoint, anchor in endpoint_anchors), default=0.0)
+            start_anchor = x_values.index(start_x) if start_x in x_values else 0
+            end_anchor = x_values.index(end_x) if end_x in x_values else 0
+            endpoint_anchor_by_reference = {
+                endpoint: x_values.index(anchor) if anchor in x_values else 0
+                for endpoint, anchor in endpoint_anchors
+            }
+            circuit = next(
+                (
+                    graph.entities[item].canonical_name
+                    for item in endpoints
+                    if graph.entities[item].kind is EntityKind.TRACK_CIRCUIT
+                ),
+                "",
+            )
+            bumper_x = [
+                placements.placements[reference].x
+                for reference in endpoints
+                if graph.entities[reference].kind is EntityKind.BUMPER
+                and reference in placements.placements
+            ]
+            is_local_stub = (
+                net.net_class is NetClass.DARK_TRACK and bool(bumper_x)
+            )
+            local_stub_direction = (
+                "left"
+                if is_local_stub and min(bumper_x) < start_x
+                else "right"
+                if is_local_stub
+                else ""
+            )
+            graph.rail_spans.append(
+                RailSpan(
+                    net.name,
+                    "",
+                    endpoints,
+                    circuit,
+                    start_anchor,
+                    start_anchor,
+                    end_anchor,
+                    tuple(
+                        (
+                            endpoint,
+                            endpoint_anchor_by_reference[endpoint],
+                        )
+                        for endpoint, anchor in endpoint_anchors
+                    ),
+                    tuple(
+                        endpoint
+                        for endpoint in endpoints
+                        if graph.entities[endpoint].kind
+                        in {EntityKind.IRJ, EntityKind.IRJ_SIGNAL}
+                    ),
+                    tuple(
+                        (
+                            graph.entities[reference].canonical_name,
+                            {"1": "C", "2": "N", "3": "R"}[pin],
+                            endpoint_anchor_by_reference[reference],
+                        )
+                        for reference, pin in net.nodes
+                        if graph.entities[reference].kind
+                        in {EntityKind.SWITCH_POWERED, EntityKind.SWITCH_LOCK}
+                        and pin in {"1", "2", "3"}
+                    ),
+                    net.net_class is NetClass.DARK_TRACK,
+                    is_local_stub,
+                    local_stub_direction,
+                )
+            )
+        self._derive_topology_rows(graph)
+        self._derive_layout_attachments(graph, placements)
+        self._solve_longitudinal_positions(graph)
+        resolve_board_components(graph)
+
+    def _derive_topology_rows(self, graph: PlantGraph) -> None:
+        """Assign rail rows by C/N/R and IRJ topology, anchored at main track."""
+        port_net = {
+            (reference, pin): net.name
+            for net in graph.nets
+            if net.net_class
+            in {NetClass.TRACK, NetClass.DARK_TRACK, NetClass.SWITCH_OS}
+            for reference, pin in net.nodes
+        }
+        adjacent: dict[str, list[tuple[str, int]]] = {}
+        if not graph.turnout_layouts:
+            graph.turnout_layouts = [
+                TurnoutLayout(
+                    entity.canonical_name,
+                    graph.switch_geometries[entity.canonical_name].cn_heading,
+                    "",
+                    "",
+                    "",
+                    order,
+                )
+                for order, entity in enumerate(
+                    sorted(
+                        (
+                            entity
+                            for entity in graph.entities.values()
+                            if entity.kind
+                            in {EntityKind.SWITCH_POWERED, EntityKind.SWITCH_LOCK}
+                            and entity.canonical_name in graph.switch_geometries
+                        ),
+                        key=lambda entity: entity.canonical_name,
+                    )
+                )
+            ]
+
+        def connect(first: str, second: str, delta: int) -> None:
+            if not first or not second:
+                return
+            adjacent.setdefault(first, []).append((second, delta))
+            adjacent.setdefault(second, []).append((first, -delta))
+
+        for entity in graph.entities.values():
+            if entity.kind in {EntityKind.IRJ, EntityKind.IRJ_SIGNAL}:
+                connect(
+                    port_net.get((entity.reference, "1"), ""),
+                    port_net.get((entity.reference, "2"), ""),
+                    0,
+                )
+            elif entity.kind in {EntityKind.SWITCH_POWERED, EntityKind.SWITCH_LOCK}:
+                c_net = port_net.get((entity.reference, "1"), "")
+                n_net = port_net.get((entity.reference, "2"), "")
+                r_net = port_net.get((entity.reference, "3"), "")
+                connect(c_net, n_net, 0)
+                geometry = graph.switch_geometries.get(entity.canonical_name)
+                reverse_delta = self._layout_reverse_delta(geometry)
+                connect(c_net, r_net, reverse_delta)
+
+        lanes: dict[str, int] = {}
+        pending = [
+            terminal.net_name
+            for terminal in graph.terminals
+            if terminal.designation == "MT" and terminal.net_name in adjacent
+        ]
+        if not pending:
+            pending = [name for name in ("1SA",) if name in adjacent]
+        if not pending:
+            pending = sorted(adjacent)
+        for seed in pending:
+            lanes[seed] = 0
+        while pending:
+            current = pending.pop(0)
+            if current not in lanes:
+                continue
+            for neighbor, delta in adjacent.get(current, []):
+                proposed = lanes[current] + delta
+                if neighbor not in lanes:
+                    lanes[neighbor] = proposed
+                    pending.append(neighbor)
+        if not lanes:
+            return
+        grouped: dict[int, list[str]] = {}
+        for net_name, lane in lanes.items():
+            grouped.setdefault(lane, []).append(net_name)
+        graph.rail_rows = [
+            RailRow(
+                name=f"rail-{lane:+d}",
+                lane=lane + 1,
+                priority=abs(lane),
+                circuits=tuple(sorted(names)),
+            )
+            for lane, names in sorted(grouped.items())
+        ]
+        row_for_net = {
+            name: f"rail-{lane:+d}"
+            for name, lane in lanes.items()
+        }
+        graph.rail_spans = [
+            RailSpan(
+                span.name,
+                row_for_net.get(span.name, span.row_name),
+                span.endpoints,
+                span.circuit_name,
+                span.order,
+                span.start_anchor,
+                span.end_anchor,
+                span.endpoint_anchors,
+                span.irj_endpoints,
+                span.turnout_ports,
+                span.is_dark,
+                span.is_local_stub,
+                span.local_stub_direction,
+            )
+            for span in graph.rail_spans
+        ]
+        graph.turnout_layouts = [
+            TurnoutLayout(
+                turnout.switch_name,
+                turnout.cn_heading,
+                row_for_net.get(port_net.get((f"SW{turnout.switch_name}", "1"), ""), turnout.c_row),
+                row_for_net.get(port_net.get((f"SW{turnout.switch_name}", "2"), ""), turnout.n_row),
+                row_for_net.get(port_net.get((f"SW{turnout.switch_name}", "3"), ""), turnout.r_row),
+                turnout.order,
+            )
+            for turnout in graph.turnout_layouts
+        ]
+
+    def _derive_layout_attachments(
+        self,
+        graph: PlantGraph,
+        placements: SchematicPlacementModel,
+    ) -> None:
+        """Attach turnouts, signal bases, and terminals to solved layout rows."""
+        port_net = {
+            (reference, pin): net.name
+            for net in graph.nets
+            if net.net_class
+            in {NetClass.TRACK, NetClass.DARK_TRACK, NetClass.SWITCH_OS}
+            for reference, pin in net.nodes
+        }
+        row_for_net = {
+            span.name: span.row_name
+            for span in graph.rail_spans
+        }
+
+        def row_for_reference(reference: str) -> str:
+            rows = {
+                row_for_net[net_name]
+                for (net_reference, _pin), net_name in port_net.items()
+                if net_reference == reference and net_name in row_for_net
+            }
+            return sorted(rows)[0] if rows else ""
+
+        x_values = self._layout_x_values(graph, placements)
+
+        def anchor_for_reference(reference: str) -> int:
+            placement = placements.placements.get(reference)
+            if placement is None or not x_values:
+                return 0
+            if placement.x in x_values:
+                return x_values.index(placement.x)
+            return min(
+                range(len(x_values)),
+                key=lambda index: abs(x_values[index] - placement.x),
+            )
+
+        turnouts = sorted(
+            (
+                entity
+                for entity in graph.entities.values()
+                if entity.kind in {EntityKind.SWITCH_POWERED, EntityKind.SWITCH_LOCK}
+                and entity.canonical_name in graph.switch_geometries
+            ),
+            key=lambda entity: (
+                anchor_for_reference(entity.reference),
+                entity.canonical_name,
+            ),
+        )
+        section_by_name = {
+            section.name: section
+            for section in graph.board_sections
+        }
+        graph.turnout_layouts = [
+            TurnoutLayout(
+                switch_name=entity.canonical_name,
+                cn_heading=graph.switch_geometries[entity.canonical_name].cn_heading,
+                c_row=row_for_net.get(port_net.get((entity.reference, "1"), ""), ""),
+                n_row=row_for_net.get(port_net.get((entity.reference, "2"), ""), ""),
+                r_row=row_for_net.get(port_net.get((entity.reference, "3"), ""), ""),
+                order=anchor_for_reference(entity.reference),
+                actuator_kind=(
+                    TurnoutActuatorKind.LOCK
+                    if entity.kind is EntityKind.SWITCH_LOCK
+                    else TurnoutActuatorKind.SWITCH
+                ),
+                actuator_flipped=(
+                    placements.placements[entity.reference].mirror == "y"
+                ),
+                section_index=(
+                    section_by_name[
+                        (entity.fields.get("CP") or "").strip()
+                    ].index
+                    if (entity.fields.get("CP") or "").strip()
+                    in section_by_name
+                    else None
+                ),
+            )
+            for entity in turnouts
+        ]
+        graph.signal_bases = [
+            SignalBase(
+                mast_name=face.mast_name,
+                mast_reference=face.mast_reference,
+                irj_reference=face.irj_reference,
+                row_name=row_for_reference(face.irj_reference),
+                direction=face.direction,
+                anchor=anchor_for_reference(face.irj_reference),
+            )
+            for face in graph.signal_faces
+        ]
+        if not placements.placements:
+            return
+        terminal_placements = [
+            placements.placements[terminal.reference]
+            for terminal in graph.terminals
+            if terminal.reference in placements.placements
+        ]
+        if not terminal_placements:
+            return
+        left_x = min(placement.x for placement in terminal_placements)
+        right_x = max(placement.x for placement in terminal_placements)
+        graph.board_terminals = [
+            BoardTerminal(
+                name=terminal.designation,
+                row_name=row_for_net.get(terminal.net_name, ""),
+                side=(
+                    "left"
+                    if abs(placements.placements[terminal.reference].x - left_x)
+                    <= abs(placements.placements[terminal.reference].x - right_x)
+                    else "right"
+                ),
+                anchor=anchor_for_reference(terminal.reference),
+                is_plant_edge=terminal.kind is EntityKind.NEXT_CP,
+                span_name=terminal.net_name,
+            )
+            for terminal in graph.terminals
+            if terminal.reference in placements.placements
+        ]
+        graph.track_circuit_lamps = [
+            TrackCircuitLamp(
+                circuit_name=span.circuit_name,
+                span_name=span.name,
+                row_name=span.row_name,
+                start_anchor=span.start_anchor,
+                end_anchor=span.end_anchor,
+            )
+            for span in graph.rail_spans
+            if span.circuit_name and not span.is_dark
+        ]
+
+    @staticmethod
+    def _solve_longitudinal_positions(graph: PlantGraph) -> None:
+        """Resolve board anchors with protected signal doglegs and dark-track slack."""
+        anchors = {
+            anchor
+            for span in graph.rail_spans
+            for anchor in (span.start_anchor, span.end_anchor)
+        }
+        anchors.update(turnout.order for turnout in graph.turnout_layouts)
+        anchors.update(signal.anchor for signal in graph.signal_bases)
+        anchors.update(terminal.anchor for terminal in graph.board_terminals)
+        if len(anchors) < 2:
+            graph.longitudinal_positions = {0: 0.0}
+            return
+        anchor_count = max(anchors) + 1
+        dark_intervals = {
+            interval
+            for span in graph.rail_spans
+            if span.is_dark
+            for interval in range(span.start_anchor, span.end_anchor)
+        }
+        signal_anchors = {
+            signal.irj_reference: signal.anchor
+            for signal in graph.signal_bases
+        }
+        dogleg_intervals = {
+            min(signal_anchors[reference], turnout_anchor)
+            for span in graph.rail_spans
+            for reference, _anchor in span.endpoint_anchors
+            if reference in signal_anchors
+            for _switch_name, _port, turnout_anchor in span.turnout_ports
+            if abs(signal_anchors[reference] - turnout_anchor) == 1
+        }
+        edge_circuit_intervals = {
+            interval
+            for span in graph.rail_spans
+            if span.circuit_name
+            and (span.start_anchor == 0 or span.end_anchor == anchor_count - 1)
+            for interval in range(span.start_anchor, span.end_anchor)
+        }
+        intervals = tuple(
+            LongitudinalInterval(
+                start_anchor=index,
+                end_anchor=index + 1,
+                minimum_units=(
+                    0.25
+                    if index in dogleg_intervals
+                    else 0.18
+                    if index in edge_circuit_intervals
+                    else 0.06
+                ),
+                flexibility_weight=(
+                    2.0
+                    if index in dogleg_intervals
+                    else 3.0
+                    if index in edge_circuit_intervals
+                    else 0.15
+                    if index in dark_intervals
+                    else 1.0
+                ),
+            )
+            for index in range(anchor_count - 1)
+        )
+        fixed_positions = {
+            turnout.order: graph.board_sections[turnout.section_index].center_units
+            for turnout in graph.turnout_layouts
+            if turnout.section_index is not None
+        }
+        section_turnouts = sorted(
+            (
+                turnout
+                for turnout in graph.turnout_layouts
+                if turnout.section_index is not None
+            ),
+            key=lambda turnout: turnout.order,
+        )
+        for span in graph.rail_spans:
+            if not span.circuit_name:
+                continue
+            for left, right in zip(section_turnouts, section_turnouts[1:]):
+                if not (
+                    left.order < span.start_anchor < span.end_anchor < right.order
+                ):
+                    continue
+                midpoint = (
+                    fixed_positions[left.order] + fixed_positions[right.order]
+                ) / 2.0
+                fixed_positions[span.start_anchor] = midpoint - 0.20
+                fixed_positions[span.end_anchor] = midpoint + 0.20
+        graph.longitudinal_positions = LongitudinalLayoutSolver().solve(
+            anchor_count=anchor_count,
+            width_units=float(graph.board_width_units),
+            intervals=intervals,
+            fixed_positions=fixed_positions,
+        )
+
+    @staticmethod
+    def _layout_x_values(
+        graph: PlantGraph,
+        placements: SchematicPlacementModel,
+    ) -> list[float]:
+        """Return source positions for semantic model-board anchor devices."""
+        return sorted(
+            {
+                placements.placements[entity.reference].x
+                for entity in graph.entities.values()
+                if entity.kind in _LAYOUT_ANCHOR_KINDS
+                and entity.reference in placements.placements
+            }
+        )
+
+    @staticmethod
+    def _layout_reverse_delta(geometry: SwitchGeometry | None) -> int:
+        """Return the global board-row delta for a turnout C-to-R crossing."""
+        if geometry is None:
+            return -1
+        delta = 1 if geometry.reverse_side is TurnoutHand.LEFT else -1
+        if geometry.cn_heading in {SchematicHeading.LEFT, SchematicHeading.DOWN}:
+            delta *= -1
+        return delta
+
+    def _derive_switch_geometries(
+        self,
+        graph: PlantGraph,
+        library: LibraryModel,
+        netlist: NetlistModel,
+        placements: SchematicPlacementModel,
+    ) -> None:
+        """Derive C-to-N heading and reverse-leg hand from source symbol geometry."""
+        for reference, entity in graph.entities.items():
+            if entity.kind not in {
+                EntityKind.SWITCH_POWERED,
+                EntityKind.SWITCH_LOCK,
+            }:
+                continue
+            placement = placements.placements.get(reference)
+            component = netlist.components.get(reference)
+            if placement is None or component is None or not entity.canonical_name:
+                continue
+            symbol = library.get(component.part)
+            if symbol is None:
+                continue
+            by_name = {pin.name.upper(): pin for pin in symbol.pins}
+            if not {"C", "N", "R"} <= by_name.keys():
+                continue
+            c = self._transform_pin(
+                by_name["C"].x, by_name["C"].y, placement.rotation, placement.mirror
+            )
+            n = self._transform_pin(
+                by_name["N"].x, by_name["N"].y, placement.rotation, placement.mirror
+            )
+            r = self._transform_pin(
+                by_name["R"].x, by_name["R"].y, placement.rotation, placement.mirror
+            )
+            cn_x, cn_y = n[0] - c[0], n[1] - c[1]
+            cr_x, cr_y = r[0] - c[0], r[1] - c[1]
+            cross = cn_x * cr_y - cn_y * cr_x
+            if (
+                (math.isclose(cn_x, 0.0) and math.isclose(cn_y, 0.0))
+                or math.isclose(cross, 0.0)
+            ):
+                continue
+            graph.switch_geometries[entity.canonical_name] = SwitchGeometry(
+                switch_name=entity.canonical_name,
+                cn_heading=self._schematic_heading(cn_x, cn_y),
+                # KiCad schematic coordinates increase downward, so positive
+                # screen-space cross product means the R leg is to the right.
+                reverse_side=(
+                    TurnoutHand.RIGHT if cross > 0.0 else TurnoutHand.LEFT
+                ),
+            )
+
+    @staticmethod
+    def _rotate_pin(x: float, y: float, rotation: float) -> tuple[float, float]:
+        """Return a library pin vector after its placed-symbol rotation."""
+        radians = math.radians(rotation)
+        return (
+            x * math.cos(radians) - y * math.sin(radians),
+            x * math.sin(radians) + y * math.cos(radians),
+        )
+
+    @classmethod
+    def _transform_pin(
+        cls,
+        x: float,
+        y: float,
+        rotation: float,
+        mirror: str,
+    ) -> tuple[float, float]:
+        """Return a pin vector after KiCad reflection and rotation."""
+        if mirror == "y":
+            x = -x
+        elif mirror == "x":
+            y = -y
+        return cls._rotate_pin(x, y, rotation)
+
+    @staticmethod
+    def _schematic_heading(x: float, y: float) -> SchematicHeading:
+        """Return the dominant page-axis direction for a C-to-N vector."""
+        if abs(x) >= abs(y):
+            return SchematicHeading.RIGHT if x > 0 else SchematicHeading.LEFT
+        return SchematicHeading.DOWN if y > 0 else SchematicHeading.UP
 
     def _build_entities(
         self,
@@ -235,6 +922,18 @@ class PlantGraphCompiler:
                 )
             return value or ref, diags
 
+        if kind is EntityKind.TRACK_CIRCUIT:
+            if not value:
+                diags.append(
+                    Diagnostic(
+                        severity=DiagnosticSeverity.SEMANTIC,
+                        code="missing_track_circuit_name",
+                        message=f"Track Circuit '{ref}' needs a Value name",
+                        entity_ref=ref,
+                    )
+                )
+            return value or ref, diags
+
         if kind is EntityKind.DIRECTION:
             if not value:
                 diags.append(
@@ -256,6 +955,41 @@ class PlantGraphCompiler:
                         entity_ref=ref,
                     )
                 )
+            return value or ref, diags
+
+        if kind is EntityKind.OPERATING_POLICY:
+            if not value:
+                diags.append(
+                    Diagnostic(
+                        severity=DiagnosticSeverity.SEMANTIC,
+                        code="missing_policy_track_name",
+                        message=(
+                            f"Operating policy marker '{ref}' needs a track-name Value"
+                        ),
+                        entity_ref=ref,
+                    )
+                )
+            for field_name in ("Rulebook", "Direction"):
+                if not (comp.fields.get(field_name) or "").strip():
+                    diags.append(
+                        Diagnostic(
+                            severity=DiagnosticSeverity.SEMANTIC,
+                            code=f"missing_policy_{field_name.lower()}",
+                            message=(
+                                f"Operating policy marker '{ref}' needs a "
+                                f"{field_name} field"
+                            ),
+                            entity_ref=ref,
+                        )
+                    )
+            return value or ref, diags
+
+        if kind in (
+            EntityKind.NEXT_CP,
+            EntityKind.MAIN_HOUSE,
+            EntityKind.MAINTAINER_CALL,
+            EntityKind.ROUTE,
+        ):
             return value or ref, diags
 
         if kind in (EntityKind.IRJ, EntityKind.IRJ_SIGNAL, EntityKind.BUMPER):
@@ -298,20 +1032,80 @@ class PlantGraphCompiler:
                 )
             )
 
+    def _track_circuits_on_net(
+        self,
+        graph: PlantGraph,
+        net: Net,
+    ) -> list[PlantEntity]:
+        """Return Track Circuit marker entities attached to one rail net."""
+        return [
+            entity
+            for node in net.nodes
+            if (entity := graph.entities.get(node.reference)) is not None
+            and entity.kind is EntityKind.TRACK_CIRCUIT
+        ]
+
     def _classify_nets(self, graph: PlantGraph, netlist: NetlistModel) -> None:
         for net in netlist.nets:
             net_class = self._classify_one_net(graph, net)
+            if net_class is NetClass.TRACK and self._has_dark_track_marker(
+                graph,
+                net,
+            ):
+                net_class = NetClass.DARK_TRACK
             label = self._authoritative_label(net.name)
-            display = label if label is not None else net.name
+            track_circuits = self._track_circuits_on_net(graph, net)
+            if len(track_circuits) > 1:
+                graph.diagnostics.append(
+                    Diagnostic(
+                        severity=DiagnosticSeverity.SEMANTIC,
+                        code="multiple_track_circuits_on_net",
+                        message=(
+                            f"Rail net '{net.name}' has multiple Track Circuit "
+                            f"markers: {[tc.reference for tc in track_circuits]}"
+                        ),
+                        entity_ref=",".join(tc.reference for tc in track_circuits),
+                    )
+                )
+            track_circuit = track_circuits[0] if len(track_circuits) == 1 else None
+            if track_circuit is not None:
+                display = track_circuit.canonical_name
+                authoritative = True
+                if label is not None and label != display:
+                    graph.diagnostics.append(
+                        Diagnostic(
+                            severity=DiagnosticSeverity.SEMANTIC,
+                            code="track_label_circuit_mismatch",
+                            message=(
+                                f"Rail net label '{label}' disagrees with Track "
+                                f"Circuit '{display}'"
+                            ),
+                            entity_ref=track_circuit.reference,
+                        )
+                    )
+            else:
+                display = label if label is not None else net.name
+                authoritative = label is not None
             graph.nets.append(
                 PlantNet(
                     name=display,
                     net_class=net_class,
                     raw_name=net.name,
                     nodes=tuple((n.reference, n.pin) for n in net.nodes),
-                    authoritative_label=label is not None,
+                    authoritative_label=authoritative,
                 )
             )
+
+    def _has_dark_track_marker(self, graph: PlantGraph, net: Net) -> bool:
+        """Return True when a Rule 6.28 marker defines an untracked segment."""
+        for node in net.nodes:
+            entity = graph.entities.get(node.reference)
+            if entity is None or entity.kind is not EntityKind.OPERATING_POLICY:
+                continue
+            rulebook = (entity.fields.get("Rulebook") or "").lower()
+            if rulebook.replace("rule", "").strip().startswith("6.28"):
+                return True
+        return False
 
     def _classify_one_net(self, graph: PlantGraph, net: Net) -> NetClass:
         if net.name.startswith("unconnected-"):
@@ -543,9 +1337,11 @@ class PlantGraphCompiler:
         - switch_os (C/N/R legs covered by derived ``<switch>T1``)
         """
         for net in graph.nets:
-            if net.net_class is not NetClass.TRACK:
+            if net.net_class not in (NetClass.TRACK, NetClass.DARK_TRACK):
                 continue
             if net.authoritative_label:
+                continue
+            if net.net_class is NetClass.DARK_TRACK:
                 continue
             severity = (
                 DiagnosticSeverity.WARNING
@@ -562,6 +1358,77 @@ class PlantGraphCompiler:
                     entity_ref=",".join(f"{r}:{p}" for r, p in net.nodes),
                 )
             )
+
+    def _check_cp_allocations(self, graph: PlantGraph) -> None:
+        """Warn when allocated appliances do not resolve to a Main House Value."""
+        main_house_names = {
+            entity.canonical_name
+            for entity in graph.entities.values()
+            if entity.kind is EntityKind.MAIN_HOUSE and entity.canonical_name
+        }
+        allocated_kinds = frozenset(
+            {
+                EntityKind.SWITCH_POWERED,
+                EntityKind.SWITCH_LOCK,
+                EntityKind.IRJ_SIGNAL,
+                EntityKind.TRACK_CIRCUIT,
+            }
+        )
+        for entity in graph.entities.values():
+            if entity.kind not in allocated_kinds:
+                continue
+            cp_name = (entity.fields.get("CP") or "").strip()
+            if not cp_name:
+                graph.diagnostics.append(
+                    Diagnostic(
+                        severity=DiagnosticSeverity.WARNING,
+                        code="missing_cp_allocation",
+                        message=(
+                            f"{entity.kind.value} '{entity.reference}' has no CP "
+                            "allocation"
+                        ),
+                        entity_ref=entity.reference,
+                    )
+                )
+            elif cp_name not in main_house_names:
+                graph.diagnostics.append(
+                    Diagnostic(
+                        severity=DiagnosticSeverity.WARNING,
+                        code="unknown_cp_allocation",
+                        message=(
+                            f"{entity.kind.value} '{entity.reference}' references "
+                            f"unknown Main House Value '{cp_name}'"
+                        ),
+                        entity_ref=entity.reference,
+                    )
+                )
+    def _check_switch_indications(self, graph: PlantGraph) -> None:
+        """Require a valid NORMAL/REVERSE pair when a switch overrides caps."""
+        from plant_graph.indications import parse_switch_indications
+
+        for entity in graph.entities.values():
+            if entity.kind not in {
+                EntityKind.SWITCH_POWERED,
+                EntityKind.SWITCH_LOCK,
+            }:
+                continue
+            value = (entity.fields.get("Indications") or "").strip()
+            if not value:
+                continue
+            try:
+                parse_switch_indications(value)
+            except ValueError as exc:
+                graph.diagnostics.append(
+                    Diagnostic(
+                        severity=DiagnosticSeverity.SEMANTIC,
+                        code="invalid_switch_indications",
+                        message=(
+                            f"Switch '{entity.reference}' Indications "
+                            f"'{value}' is invalid: {exc}"
+                        ),
+                        entity_ref=entity.reference,
+                    )
+                )
 
     def _check_library_coverage(
         self,
