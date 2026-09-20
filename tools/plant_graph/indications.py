@@ -11,6 +11,7 @@ from plant_graph.types import (
     Indication,
     PlantEntity,
     PlantGraph,
+    PointTraversal,
     RouteEndKind,
     SignalRoute,
 )
@@ -22,6 +23,7 @@ _RESTRICTIVENESS: dict[Indication, int] = {
     Indication.STOP: 0,
     Indication.UNLIT: 0,
     Indication.RESTRICTING: 1,
+    Indication.DIVERGING_RESTRICTING: 1,
     Indication.APPROACH: 2,
     Indication.DIVERGING_APPROACH: 2,
     Indication.SECONDARY_DIVERGING_APPROACH: 2,
@@ -31,6 +33,9 @@ _RESTRICTIVENESS: dict[Indication, int] = {
     Indication.SECONDARY_DIVERGING_ADVANCED_APPROACH: 3,
     Indication.ADVANCED_APPROACH: 4,
     Indication.CLEAR: 5,
+}
+_SWITCH_CAP_INDICATIONS = frozenset(Indication) - {
+    Indication.DIVERGING_RESTRICTING,
 }
 
 
@@ -71,6 +76,7 @@ class RouteEvaluation:
     blockers: tuple[str, ...] = ()
 
 
+
 def parse_switch_indications(value: str) -> tuple[Indication, Indication]:
     """Parse a switch's ``NORMAL/REVERSE`` indication property.
 
@@ -82,11 +88,16 @@ def parse_switch_indications(value: str) -> tuple[Indication, Indication]:
     if len(values) != 2 or any(not part for part in values):
         raise ValueError("Indications must be NORMAL/REVERSE")
     try:
-        return Indication(values[0]), Indication(values[1])
+        normal, reverse = Indication(values[0]), Indication(values[1])
     except ValueError as exc:
         raise ValueError(
             "Indications must contain supported standard Indications"
         ) from exc
+    if normal not in _SWITCH_CAP_INDICATIONS or reverse not in _SWITCH_CAP_INDICATIONS:
+        raise ValueError(
+            "Indications cannot contain derived route-only Indications"
+        )
+    return normal, reverse
 
 
 def _normalize_indication_name(value: str) -> str:
@@ -121,18 +132,39 @@ class RouteSignalingPolicy:
         graph: PlantGraph,
     ) -> Indication:
         """Return the most restrictive static cap for an uncompiled route.
-        A dark exit always caps the route at Restricting. Every lined switch
-        contributes its configured Normal/Reverse cap when present; otherwise
-        normal geometry defaults to Clear and reverse geometry to Approach.
+        A dark exit always caps the route at Restricting. Facing traversals
+        contribute their configured Normal/Reverse cap; trailing R→C
+        traversals default to Approach. Otherwise normal geometry defaults to
+        Clear and reverse geometry to Approach.
         Invalid source data fails closed to Stop; the compiler separately
         diagnoses the malformed property at data intake.
         """
         caps: list[Indication] = []
         if route.end_kind is RouteEndKind.DARK_EXIT:
-            caps.append(Indication.RESTRICTING)
+            caps.append(
+                Indication.DIVERGING_RESTRICTING
+                if any(
+                    traversal.alignment == "R"
+                    and traversal.point_traversal is PointTraversal.FACING
+                    for traversal in route.switch_traversals
+                )
+                else Indication.RESTRICTING
+            )
 
         switches = self._switches_by_name(graph)
+        traversal_by_switch = {
+            traversal.switch_name: traversal
+            for traversal in route.switch_traversals
+        }
         for switch_name, position in route.switch_alignments:
+            traversal = traversal_by_switch.get(switch_name)
+            if (
+                position == "R"
+                and traversal is not None
+                and traversal.point_traversal is PointTraversal.TRAILING
+            ):
+                caps.append(Indication.APPROACH)
+                continue
             cap = self._switch_cap(switches.get(switch_name), position)
             if cap is Indication.STOP:
                 return Indication.STOP
@@ -151,6 +183,7 @@ class RouteSignalingPolicy:
         if blockers:
             return RouteEvaluation(Indication.STOP, tuple(blockers))
         return RouteEvaluation(self.static_indication(route, graph))
+
 
     def _switches_by_name(self, graph: PlantGraph) -> dict[str, PlantEntity]:
         """Return powered or locked switches keyed by canonical switch name."""

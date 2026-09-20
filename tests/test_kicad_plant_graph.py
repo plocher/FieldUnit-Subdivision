@@ -22,14 +22,25 @@ from kicad_services.types import (
     NetlistComponent,
     NetlistModel,
     NetNode,
+    SchematicPlacement,
+    SchematicPlacementModel,
     SymbolPin,
 )
 from plant_graph.compiler import PlantGraphCompiler
+from plant_graph.picture import render_layout_overview_svg, render_model_board_svg
 from plant_graph.routes import (
     format_alignment,
     format_route_line,
 )
-from plant_graph.types import CircuitRole, EntityKind, Indication, NetClass
+from plant_graph.types import (
+    CircuitRole,
+    EntityKind,
+    Indication,
+    NetClass,
+    PointTraversal,
+    SchematicHeading,
+    TurnoutHand,
+)
 
 
 def _irj_symbol() -> LibrarySymbol:
@@ -127,6 +138,71 @@ class PlantGraphCompilerTests(unittest.TestCase):
             [tc.name for tc in self.graph.derived_track_circuits],
             ["783T1"],
         )
+
+    def test_derives_switch_hand_and_heading_from_source_geometry(self) -> None:
+        placements = SchematicPlacementModel(path=Path("minimal_plant.kicad_sch"))
+        placements.placements["SW783"] = SchematicPlacement(
+            reference="SW783",
+            lib_id="Railroad:Switch_Powered",
+            x=100.0,
+            y=100.0,
+            rotation=0.0,
+        )
+
+        graph = PlantGraphCompiler().compile(self.library, self.netlist, placements)
+
+        geometry = graph.switch_geometries["783"]
+        self.assertEqual(geometry.cn_heading, SchematicHeading.LEFT)
+        self.assertEqual(geometry.reverse_side, TurnoutHand.RIGHT)
+    def test_compiles_layout_primitives_for_record_only_renderers(self) -> None:
+        """Placed source compiles bases and terminals before either board renders."""
+        placements = SchematicPlacementModel(path=Path("minimal_plant.kicad_sch"))
+        placements.placements.update(
+            {
+                "DOT1": SchematicPlacement(
+                    "DOT1",
+                    "Railroad:Direction_BOTH",
+                    10.0,
+                    100.0,
+                    0.0,
+                ),
+                "B1": SchematicPlacement(
+                    "B1",
+                    "Railroad:IRJ-Signal",
+                    50.0,
+                    100.0,
+                    0.0,
+                ),
+                "SW783": SchematicPlacement(
+                    "SW783",
+                    "Railroad:Switch_Powered",
+                    100.0,
+                    100.0,
+                    0.0,
+                ),
+                "S784S1": SchematicPlacement(
+                    "S784S1",
+                    "Railroad:Mast_Double",
+                    50.0,
+                    110.0,
+                    0.0,
+                ),
+            }
+        )
+
+        graph = PlantGraphCompiler().compile(self.library, self.netlist, placements)
+
+        self.assertTrue(graph.rail_rows)
+        self.assertEqual(
+            [(base.mast_name, base.irj_reference) for base in graph.signal_bases],
+            [("784SAB", "B1")],
+        )
+        self.assertEqual(
+            [(terminal.name, terminal.side) for terminal in graph.board_terminals],
+            [("MT", "left")],
+        )
+        self.assertIn('class="overview-background"', render_model_board_svg(graph))
+        self.assertIn("Controlled Point", render_layout_overview_svg(graph))
 
     def test_invalid_switch_indications_are_semantic_errors(self) -> None:
         self.netlist.components["SW783"] = NetlistComponent(
@@ -384,6 +460,19 @@ class PlantGraphCompilerTests(unittest.TestCase):
         self.assertIn("home-clear=1T1", north_line)
         self.assertIn("downstream=NORTH", north_line)
         self.assertEqual(north_route.static_indication, Indication.CLEAR)
+        self.assertEqual(
+            tuple(
+                (
+                    traversal.switch_name,
+                    traversal.entry_pin,
+                    traversal.exit_pin,
+                    traversal.alignment,
+                    traversal.point_traversal,
+                )
+                for traversal in north_route.switch_traversals
+            ),
+            (("1", "1", "2", "N", PointTraversal.FACING),),
+        )
 
         south_route = next(route for route in graph.routes if route.exit_net == "SOUTH")
         south_roles = dict(south_route.circuit_roles)
@@ -393,6 +482,19 @@ class PlantGraphCompilerTests(unittest.TestCase):
         self.assertEqual(
             south_route.static_indication,
             Indication.DIVERGING_CLEAR,
+        )
+        self.assertEqual(
+            tuple(
+                (
+                    traversal.switch_name,
+                    traversal.entry_pin,
+                    traversal.exit_pin,
+                    traversal.alignment,
+                    traversal.point_traversal,
+                )
+                for traversal in south_route.switch_traversals
+            ),
+            (("1", "1", "3", "R", PointTraversal.FACING),),
         )
         self.assertIn("unresolved=SOUTH", format_route_line(south_route))
         self.assertEqual(

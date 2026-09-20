@@ -80,6 +80,41 @@ or bumper-based Industry route ends.
 - Mast suffixes `N`/`W` normalize to `LEFT`; `S`/`E` normalize to `RIGHT` by
   default. The compiler accepts an override for another railroad convention.
 
+### Static topology-picture probe
+
+`tools/render_plant_picture.py` renders the compiled graph as DOT, Graphviz
+SVG, a six-lane portrait route SVG (`--format swim-svg --route NAME`), or a
+shared-scale model-board SVG (`--format board-svg`). The DOT view draws typed
+track and OS spans, IRJs, switches, masts with attached heads, terminals, and
+an optional structural-route overlay. The board view renders every structural
+route in a deterministic color with a matching legend; all entries share the
+left boundary and all exits share the right boundary. It renders one shared
+turnout per switch identity, white track on a black background, IRJ gaps,
+reverse-leg doglegs, and simplified mast/head glyphs; the single-route view
+retains larger multiline diagnostic labels.
+
+The schematic remains the geometry authority. The placement adapter reads a
+switch instance rotation and the library reader supplies its C/N/R pin
+positions; the compiler retains only derived `switch_geometries`: C→N page
+heading and the side of the reverse leg. It does not retain source x/y
+coordinates. Route harvest records each switch's entry and exit pins, line
+position, and facing/trailing point traversal. The swim-lane projection first
+solves persistent terminal channels across every structural route, then uses
+these public facts: C→N stays in lane; C→R shifts one lane to the derived
+reverse side, and a trailing R→C shift is inverted. Anonymous electrical legs
+are omitted from the visual grid, not from route topology.
+
+Luchessa derives `C→N=right` and `R=right` for 783, 795, and 799. The
+portrait lane convention displays a source-right reverse branch one channel
+up. Therefore the `MT-Branch` review route steps from lane 3 to 2 at facing
+reverse 783, remains at lane 2 through trailing normal 795, then steps from
+lane 2 to 1 at facing reverse 799. This validates switch geometry and
+traversal. The reciprocal `MT2-Industry` route begins at lane 2, traverses
+normal 799 at lane 2, then moves to lane 1 at facing reverse 795. This
+establishes MT/MT1 at lane 3, MT2 at lane 2, and Branch/Industry at lane 1
+without inferring parallel-track IRJ/mast alignment; add a narrow semantic
+row/group relation only if later human review proves it necessary.
+
 ### Route table snapshot: CP Luchessa
 
 ```text

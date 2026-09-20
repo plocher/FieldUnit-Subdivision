@@ -28,6 +28,7 @@ from kicad_services.symbol_library_reader import (  # noqa: E402
     SymbolLibraryParseError,
     SymbolLibraryReader,
 )
+from kicad_services.schematic_reader import SchematicPlacementReader  # noqa: E402
 from plant_graph.compiler import PlantGraphCompiler  # noqa: E402
 from plant_graph.indications import RouteSignalingPolicy  # noqa: E402
 from plant_graph.routes import (  # noqa: E402
@@ -102,7 +103,12 @@ def load_graph(args: argparse.Namespace) -> PlantGraph:
             netlist_path = exporter.export(args.schematic, temp_net)
 
         netlist = NetlistReader().read(netlist_path)
-        graph = PlantGraphCompiler().compile(library, netlist)
+        placements = (
+            SchematicPlacementReader().read(args.schematic)
+            if args.schematic is not None
+            else None
+        )
+        graph = PlantGraphCompiler().compile(library, netlist, placements)
         if args.aliases is not None:
             import json as _json
 
@@ -238,6 +244,17 @@ def render_json(graph: PlantGraph) -> str:
             }
             for t in graph.derived_track_circuits
         ],
+        "switch_geometries": [
+            {
+                "switch": geometry.switch_name,
+                "cn_heading": geometry.cn_heading.value,
+                "reverse_side": geometry.reverse_side.value,
+            }
+            for geometry in sorted(
+                graph.switch_geometries.values(),
+                key=lambda item: item.switch_name,
+            )
+        ],
         "terminals": [
             {
                 "reference": t.reference,
@@ -271,6 +288,141 @@ def render_json(graph: PlantGraph) -> str:
             }
             for attachment in graph.mast_heads
         ],
+        "rail_layout": {
+            "width_units": graph.board_width_units,
+            "anchor_positions": dict(graph.longitudinal_positions),
+            "components": [
+                {
+                    "identifier": component.identifier,
+                    "kind": component.kind.value,
+                    "label": component.label,
+                    "x_units": component.x_units,
+                    "row_name": component.row_name,
+                    "mirror_x": component.mirror_x,
+                    "mirror_y": component.mirror_y,
+                    "actuator_kind": (
+                        component.actuator_kind.value
+                        if component.actuator_kind is not None
+                        else None
+                    ),
+                    "has_frog_lamp": component.has_frog_lamp,
+                    "ports": [
+                        {
+                            "identifier": port.identifier,
+                            "name": port.name,
+                            "x_units": port.x_units,
+                            "row_name": port.row_name,
+                        }
+                        for port in component.ports
+                    ],
+                }
+                for component in graph.board_components
+            ],
+            "connections": [
+                {
+                    "identifier": connection.identifier,
+                    "row_name": connection.row_name,
+                    "start_port_id": connection.start_port_id,
+                    "end_port_id": connection.end_port_id,
+                    "circuit_name": connection.circuit_name,
+                    "is_dark": connection.is_dark,
+                    "is_local_stub": connection.is_local_stub,
+                }
+                for connection in graph.board_connections
+            ],
+            "sections": [
+                {
+                    "name": section.name,
+                    "index": section.index,
+                    "center_units": section.center_units,
+                }
+                for section in graph.board_sections
+            ],
+            "rows": [
+                {
+                    "name": row.name,
+                    "lane": row.lane,
+                    "priority": row.priority,
+                    "circuits": list(row.circuits),
+                }
+                for row in graph.rail_rows
+            ],
+            "spans": [
+                {
+                    "name": span.name,
+                    "row_name": span.row_name,
+                    "endpoints": list(span.endpoints),
+                    "circuit_name": span.circuit_name,
+                    "order": span.order,
+                    "start_anchor": span.start_anchor,
+                    "end_anchor": span.end_anchor,
+                    "endpoint_anchors": [
+                        {"reference": reference, "anchor": anchor}
+                        for reference, anchor in span.endpoint_anchors
+                    ],
+                    "irj_endpoints": list(span.irj_endpoints),
+                    "is_dark": span.is_dark,
+                    "is_local_stub": span.is_local_stub,
+                    "local_stub_direction": span.local_stub_direction,
+                    "turnout_ports": [
+                        {
+                            "switch_name": switch_name,
+                            "port": port,
+                            "anchor": anchor,
+                        }
+                        for switch_name, port, anchor in span.turnout_ports
+                    ],
+                }
+                for span in graph.rail_spans
+            ],
+            "turnouts": [
+                {
+                    "switch_name": turnout.switch_name,
+                    "cn_heading": turnout.cn_heading.value,
+                    "c_row": turnout.c_row,
+                    "n_row": turnout.n_row,
+                    "r_row": turnout.r_row,
+                    "anchor": turnout.order,
+                    "actuator_kind": turnout.actuator_kind.value,
+                    "has_frog_lamp": turnout.has_frog_lamp,
+                    "actuator_flipped": turnout.actuator_flipped,
+                    "section_index": turnout.section_index,
+                }
+                for turnout in graph.turnout_layouts
+            ],
+            "track_circuit_lamps": [
+                {
+                    "circuit_name": lamp.circuit_name,
+                    "span_name": lamp.span_name,
+                    "row_name": lamp.row_name,
+                    "start_anchor": lamp.start_anchor,
+                    "end_anchor": lamp.end_anchor,
+                }
+                for lamp in graph.track_circuit_lamps
+            ],
+            "signal_bases": [
+                {
+                    "mast_name": base.mast_name,
+                    "mast_reference": base.mast_reference,
+                    "irj_reference": base.irj_reference,
+                    "row_name": base.row_name,
+                    "direction": base.direction,
+                    "anchor": base.anchor,
+                }
+                for base in graph.signal_bases
+            ],
+            "terminals": [
+                {
+                    "name": terminal.name,
+                    "row_name": terminal.row_name,
+                    "side": terminal.side,
+                    "anchor": terminal.anchor,
+                    "is_plant_edge": terminal.is_plant_edge,
+                    "span_name": terminal.span_name,
+                }
+                for terminal in graph.board_terminals
+            ],
+        },
         "routes": [
             {
                 "name": r.name,
@@ -303,6 +455,16 @@ def render_json(graph: PlantGraph) -> str:
                 "os_track_circuits": list(r.os_track_circuits),
                 "path_track_circuits": list(r.path_track_circuits),
                 "path_nets": list(r.path_nets),
+                "switch_traversals": [
+                    {
+                        "switch": traversal.switch_name,
+                        "entry_pin": traversal.entry_pin,
+                        "exit_pin": traversal.exit_pin,
+                        "alignment": traversal.alignment,
+                        "point_traversal": traversal.point_traversal.value,
+                    }
+                    for traversal in r.switch_traversals
+                ],
                 "static_indication": indication_policy.static_indication(
                     r, graph
                 ).value,

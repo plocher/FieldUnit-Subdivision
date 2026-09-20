@@ -22,6 +22,8 @@ from plant_graph.types import (
     RouteEndKind,
     SignalFace,
     SignalRoute,
+    PointTraversal,
+    SwitchTraversal,
 )
 
 _MAST_VALUE_RE = re.compile(r"^(\d+)([NSEW])([A-E]+)$")
@@ -529,7 +531,7 @@ class _TrackTopology:
                     self._port(entry_term_obj.reference, entry_term_obj.port_pin)
                 )
 
-            for end_port, path_nets, alignments in self._walk(
+            for end_port, path_nets, alignments, switch_traversals in self._walk(
                 start=start,
                 switch_ref=switch_ref,
                 forbidden_ports=forbidden,
@@ -630,6 +632,7 @@ class _TrackTopology:
                         os_track_circuits=os_tcs,
                         path_track_circuits=path_tcs,
                         path_nets=tuple(path_nets),
+                        switch_traversals=tuple(switch_traversals),
                     )
                 )
 
@@ -730,25 +733,29 @@ class _TrackTopology:
         entry_irj: str,
         travel_direction: str,
         start_mast: str,
-    ) -> Iterable[tuple[str, list[str], dict[str, str]]]:
-        """DFS yielding (end_port, path_nets, used_alignments).
+    ) -> Iterable[tuple[str, list[str], dict[str, str], list[SwitchTraversal]]]:
+        """DFS yielding end, nets, alignments, and ordered switch crossings.
 
         Ends at: DoT/bumper terminals, or another face's approach pin that
         protects the same direction of travel (next-face end). Opposite-facing
         faces are not ends (e.g. industry dwarf does not end inbound moves).
         """
         ref_to_switch_name = {v: k for k, v in switch_ref.items()}
-        stack: list[tuple[str, list[str], list[str], dict[str, str]]] = [
-            (start, [start], [], {})
+        stack: list[
+            tuple[str, list[str], list[str], dict[str, str], list[SwitchTraversal]]
+        ] = [
+            (start, [start], [], {}, [])
         ]
-        results: list[tuple[str, list[str], dict[str, str]]] = []
+        results: list[
+            tuple[str, list[str], dict[str, str], list[SwitchTraversal]]
+        ] = []
 
         while stack:
-            port, path, nets, aligns = stack.pop()
+            port, path, nets, aligns, traversals = stack.pop()
             if port != start and self._is_route_end(
                 port, travel_direction, start_mast, forbidden_ports
             ):
-                results.append((port, nets, dict(aligns)))
+                results.append((port, nets, dict(aligns), list(traversals)))
                 continue
 
             for nxt, via_net, align_add in self._neighbors_branching(
@@ -761,9 +768,41 @@ class _TrackTopology:
                 new_nets = list(nets)
                 if via_net and (not new_nets or new_nets[-1] != via_net):
                     new_nets.append(via_net)
-                stack.append((nxt, path + [nxt], new_nets, new_aligns))
+                new_traversals = list(traversals)
+                traversal = self._switch_traversal(port, nxt, via_net)
+                if traversal is not None:
+                    new_traversals.append(traversal)
+                stack.append(
+                    (nxt, path + [nxt], new_nets, new_aligns, new_traversals)
+                )
 
         return results
+
+    def _switch_traversal(
+        self,
+        entry_port: str,
+        exit_port: str,
+        via_net: str,
+    ) -> SwitchTraversal | None:
+        """Return a typed turnout crossing when one walker step crosses it."""
+        if not via_net.startswith("switch:"):
+            return None
+        _prefix, switch_name, alignment = via_net.split(":", 2)
+        entry_ref, entry_pin = entry_port.split(":", 1)
+        exit_ref, exit_pin = exit_port.split(":", 1)
+        if entry_ref != exit_ref:
+            return None
+        return SwitchTraversal(
+            switch_name=switch_name,
+            entry_pin=entry_pin,
+            exit_pin=exit_pin,
+            alignment=alignment,
+            point_traversal=(
+                PointTraversal.FACING
+                if entry_pin == _PIN_C
+                else PointTraversal.TRAILING
+            ),
+        )
 
     def _is_route_end(
         self,

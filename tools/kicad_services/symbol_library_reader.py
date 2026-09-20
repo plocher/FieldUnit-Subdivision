@@ -143,6 +143,8 @@ class SymbolLibraryReader:
                 electrical = str(item[1])
             pin_name = ""
             pin_number = ""
+            x = 0.0
+            y = 0.0
             for child in item[1:]:
                 if not (isinstance(child, list) and child):
                     continue
@@ -152,12 +154,17 @@ class SymbolLibraryReader:
                     child[1], str
                 ):
                     pin_number = child[1]
+                elif child[0] == Symbol("at") and len(child) >= 3:
+                    x = float(child[1])
+                    y = float(child[2])
             if pin_number:
                 pins.append(
                     ktypes.SymbolPin(
                         number=pin_number,
                         name=pin_name,
                         electrical_type=electrical,
+                        x=x,
+                        y=y,
                     )
                 )
         return pins
