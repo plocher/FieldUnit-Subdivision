@@ -258,6 +258,31 @@ def resolve_board_components(graph: PlantGraph) -> None:
                     ),
                 )
             )
+        elif entity.kind is EntityKind.DERAIL:
+            component_id = f"derail:{reference}"
+            add_component(
+                BoardComponent(
+                    identifier=component_id,
+                    kind=BoardComponentKind.DERAIL,
+                    label=entity.canonical_name or reference,
+                    x_units=x_units,
+                    row_name=row_name,
+                    ports=(
+                        add_port(
+                            component_id,
+                            "C",
+                            x_units - _INLINE_GAP_HALF_UNITS,
+                            row_name,
+                        ),
+                        add_port(
+                            component_id,
+                            "N",
+                            x_units + _INLINE_GAP_HALF_UNITS,
+                            row_name,
+                        ),
+                    ),
+                )
+            )
         elif entity.kind not in {
             EntityKind.SWITCH_POWERED,
             EntityKind.SWITCH_LOCK,
@@ -333,6 +358,15 @@ def resolve_board_components(graph: PlantGraph) -> None:
                 if component.identifier == component_id
             )
             side = "right" if other_x >= center else "left"
+            return f"{component_id}:{side}"
+        if entity.kind is EntityKind.DERAIL:
+            component_id = f"derail:{reference}"
+            center = next(
+                component.x_units
+                for component in components
+                if component.identifier == component_id
+            )
+            side = "N" if other_x >= center else "C"
             return f"{component_id}:{side}"
         component_id = f"anchor:{reference}"
         if f"{component_id}:track" in ports:

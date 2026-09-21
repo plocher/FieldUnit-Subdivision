@@ -1,0 +1,636 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fieldunit.dev/schema/interlocking-plant/v1.json",
+  "title": "FieldUnit Interlocking Plant Model",
+  "description": "Editor-neutral, static semantic definition of an Interlocking Plant. Runtime state, source-tool provenance, and realization bindings are separate contracts.",
+  "type": "object",
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "document",
+    "profile",
+    "identity",
+    "appliances",
+    "topology",
+    "terminals",
+    "routes"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://fieldunit.dev/schema/interlocking-plant/v1.json"
+    },
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "document": {
+      "$ref": "#/$defs/document"
+    },
+    "profile": {
+      "$ref": "#/$defs/profile"
+    },
+    "identity": {
+      "$ref": "#/$defs/identity"
+    },
+    "appliances": {
+      "$ref": "#/$defs/appliances"
+    },
+    "topology": {
+      "$ref": "#/$defs/topology"
+    },
+    "terminals": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/terminal"
+      }
+    },
+    "routes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/route"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "identity": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "derail": {
+      "type": "object",
+      "required": [
+        "id",
+        "controlMode",
+        "controllingSwitch",
+        "trackCircuit"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "controlMode": {
+          "enum": [
+            "dispatcher",
+            "dependent"
+          ]
+        },
+        "controllingSwitch": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "trackCircuit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "controlGroup": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "members",
+        "commandMode",
+        "correspondenceRule"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "const": "crossover"
+        },
+        "members": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "commandMode": {
+          "const": "ganged"
+        },
+        "correspondenceRule": {
+          "const": "all_members"
+        }
+      },
+      "additionalProperties": false
+    },
+    "document": {
+      "type": "object",
+      "required": [
+        "title",
+        "revision",
+        "date",
+        "company",
+        "status"
+      ],
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "company": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "profile": {
+      "type": "object",
+      "required": [
+        "railroad",
+        "division",
+        "era",
+        "ctc"
+      ],
+      "properties": {
+        "railroad": {
+          "type": "string"
+        },
+        "division": {
+          "type": "string"
+        },
+        "era": {
+          "type": "string"
+        },
+        "ctc": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "controlledPointMember": {
+      "type": "object",
+      "required": [
+        "kind",
+        "id"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "switch",
+            "derail",
+            "trackCircuit",
+            "mast"
+          ]
+        },
+        "id": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "additionalProperties": false
+    },
+    "controlledPoint": {
+      "type": "object",
+      "required": [
+        "id",
+        "members"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/controlledPointMember"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "signal": {
+      "type": "object",
+      "required": [
+        "id",
+        "masts"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "masts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "switch": {
+      "type": "object",
+      "required": [
+        "id",
+        "osTrackCircuit"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "osTrackCircuit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "trackCircuit": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "additionalProperties": false
+    },
+    "mast": {
+      "type": "object",
+      "required": [
+        "id",
+        "signal",
+        "direction",
+        "mast",
+        "kind",
+        "heads",
+        "headLetters",
+        "approachTerminal"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "signal": {
+          "$ref": "#/$defs/id"
+        },
+        "direction": {
+          "enum": [
+            "LEFT",
+            "RIGHT"
+          ]
+        },
+        "mast": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": [
+            "single",
+            "double",
+            "dwarf"
+          ]
+        },
+        "heads": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "headLetters": {
+          "type": "string"
+        },
+        "approachTerminal": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "appliances": {
+      "type": "object",
+      "required": [
+        "switches",
+        "controlledPoints",
+        "derails",
+        "controlGroups",
+        "trackCircuits",
+        "signals",
+        "masts"
+      ],
+      "properties": {
+        "switches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/switch"
+          }
+        },
+        "derails": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/derail"
+          }
+        },
+        "controlGroups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/controlGroup"
+          }
+        },
+        "controlledPoints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/controlledPoint"
+          }
+        },
+        "trackCircuits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/trackCircuit"
+          }
+        },
+        "signals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/signal"
+          }
+        },
+        "masts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/mast"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "segment": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "trackCircuit",
+        "endpoints"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": [
+            "track",
+            "dark_track",
+            "switch_os"
+          ]
+        },
+        "trackCircuit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "internalNode": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": [
+            "irj",
+            "signal_irj",
+            "bumper"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "topology": {
+      "type": "object",
+      "required": [
+        "segments",
+        "internalNodes"
+      ],
+      "properties": {
+        "segments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/segment"
+          }
+        },
+        "internalNodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/internalNode"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "terminal": {
+      "type": "object",
+      "required": [
+        "id",
+        "designation",
+        "kind",
+        "rulebook"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "designation": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": [
+            "direction",
+            "next_cp",
+            "bumper"
+          ]
+        },
+        "rulebook": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "exitFace": {
+      "type": "object",
+      "required": [
+        "signal",
+        "direction",
+        "mast"
+      ],
+      "properties": {
+        "signal": {
+          "$ref": "#/$defs/id"
+        },
+        "direction": {
+          "enum": [
+            "LEFT",
+            "RIGHT"
+          ]
+        },
+        "mast": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "additionalProperties": false
+    },
+    "route": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "signal",
+        "direction",
+        "mast",
+        "entryTerminal",
+        "exitTerminal",
+        "endKind",
+        "exitFace",
+        "alignments",
+        "clearTrackCircuits",
+        "staticIndication",
+        "entrance",
+        "approaching"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "name": {
+          "$ref": "#/$defs/id"
+        },
+        "signal": {
+          "$ref": "#/$defs/id"
+        },
+        "direction": {
+          "enum": [
+            "LEFT",
+            "RIGHT"
+          ]
+        },
+        "mast": {
+          "$ref": "#/$defs/id"
+        },
+        "entryTerminal": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "exitTerminal": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "endKind": {
+          "enum": [
+            "dead_end",
+            "cp_limit",
+            "next_face",
+            "dark_exit"
+          ]
+        },
+        "exitFace": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/exitFace"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "alignments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "appliance",
+              "position"
+            ],
+            "properties": {
+              "appliance": {
+                "$ref": "#/$defs/id"
+              },
+              "position": {
+                "enum": [
+                  "NORMAL",
+                  "REVERSE"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "clearTrackCircuits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "entrance": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "approaching": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "staticIndication": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

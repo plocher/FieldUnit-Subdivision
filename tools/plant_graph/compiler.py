@@ -19,11 +19,13 @@ from plant_graph.layout import (
     resolve_board_components,
 )
 from plant_graph.types import (
+    CircuitRole,
     DerivedTrackCircuit,
     Diagnostic,
     DiagnosticSeverity,
     EntityKind,
     NetClass,
+    PlantDocument,
     PlantEntity,
     PlantGraph,
     PlantNet,
@@ -44,6 +46,7 @@ from plant_graph.types import (
 _PART_KIND: dict[str, EntityKind] = {
     "Switch_Powered": EntityKind.SWITCH_POWERED,
     "Switch_Lock": EntityKind.SWITCH_LOCK,
+    "Switch_Powered_Derail": EntityKind.DERAIL,
     "IRJ": EntityKind.IRJ,
     "IRJ-Signal": EntityKind.IRJ_SIGNAL,
     "Mast_Single": EntityKind.MAST_SINGLE,
@@ -71,6 +74,7 @@ _PART_KIND: dict[str, EntityKind] = {
 _TRACK_PINS: dict[EntityKind, frozenset[str]] = {
     EntityKind.SWITCH_POWERED: frozenset({"1", "2", "3"}),  # C/N/R
     EntityKind.SWITCH_LOCK: frozenset({"1", "2", "3"}),
+    EntityKind.DERAIL: frozenset({"1", "2"}),  # C/N; derailing end is ballast
     EntityKind.IRJ: frozenset({"1", "2"}),  # A/B
     EntityKind.IRJ_SIGNAL: frozenset({"1", "2"}),  # A/B only; 3 is SIGNAL
     EntityKind.TRACK_CIRCUIT: frozenset({"1"}),
@@ -97,6 +101,7 @@ _HEAD_ATTACH_PINS: dict[EntityKind, frozenset[str]] = {
 _REQUIRED_PINS: dict[EntityKind, frozenset[str]] = {
     EntityKind.SWITCH_POWERED: frozenset({"1", "2", "3"}),
     EntityKind.SWITCH_LOCK: frozenset({"1", "2", "3"}),
+    EntityKind.DERAIL: frozenset({"1", "2"}),
     EntityKind.IRJ: frozenset({"1", "2"}),
     EntityKind.IRJ_SIGNAL: frozenset({"1", "2", "3"}),
     EntityKind.MAST_SINGLE: frozenset({"1", "2"}),
@@ -120,6 +125,7 @@ _LAYOUT_ANCHOR_KINDS = frozenset(
     {
         EntityKind.SWITCH_POWERED,
         EntityKind.SWITCH_LOCK,
+        EntityKind.DERAIL,
         EntityKind.IRJ,
         EntityKind.IRJ_SIGNAL,
         EntityKind.DIRECTION,
@@ -158,6 +164,14 @@ class PlantGraphCompiler:
             any downstream projection.
         """
         graph = PlantGraph(mast_direction_map=dict(self._mast_direction_map))
+        if placements is not None:
+            graph.document = PlantDocument(
+                title=placements.title_block.title,
+                revision=placements.title_block.revision,
+                date=placements.title_block.date,
+                company=placements.title_block.company,
+                comments=dict(placements.title_block.comments),
+            )
         self._build_entities(graph, library, netlist)
         self._classify_nets(graph, netlist)
         self._check_required_pins(graph, netlist)
@@ -166,12 +180,31 @@ class PlantGraphCompiler:
             self._derive_switch_geometries(graph, library, netlist, placements)
         self._check_track_net_labels(graph)
         self._check_cp_allocations(graph)
+        self._check_dependent_derail_allocations(graph)
         self._check_switch_indications(graph)
         self._check_library_coverage(graph, library)
         # Topology + combinatoric signal routes (DoT terminals, switch N/R).
         from plant_graph.routes import harvest_routes
 
         harvest_routes(graph)
+        for route in graph.routes:
+            unresolved = [
+                circuit
+                for circuit, role in route.circuit_roles
+                if role is CircuitRole.UNRESOLVED
+            ]
+            if unresolved:
+                graph.diagnostics.append(
+                    Diagnostic(
+                        severity=DiagnosticSeverity.SEMANTIC,
+                        code="unresolved_route_circuit",
+                        message=(
+                            f"Route '{route.name}' has unresolved circuit role(s): "
+                            f"{unresolved}"
+                        ),
+                        entity_ref=route.mast_reference,
+                    )
+                )
         from plant_graph.indications import RouteSignalingPolicy
 
         graph.routes = RouteSignalingPolicy().compile_static_indications(graph)
@@ -389,6 +422,12 @@ class PlantGraphCompiler:
                 geometry = graph.switch_geometries.get(entity.canonical_name)
                 reverse_delta = self._layout_reverse_delta(geometry)
                 connect(c_net, r_net, reverse_delta)
+            elif entity.kind is EntityKind.DERAIL:
+                connect(
+                    port_net.get((entity.reference, "1"), ""),
+                    port_net.get((entity.reference, "2"), ""),
+                    0,
+                )
 
         lanes: dict[str, int] = {}
         pending = [
@@ -862,6 +901,23 @@ class PlantGraphCompiler:
                 return ref, diags
             return match.group(1), diags
 
+        if kind is EntityKind.DERAIL:
+            match = re.fullmatch(r"(\d+)(D)?", value.upper())
+            if match is None:
+                diags.append(
+                    Diagnostic(
+                        severity=DiagnosticSeverity.SEMANTIC,
+                        code="bad_derail_value",
+                        message=(
+                            f"DERAIL '{ref}' Value '{value}' must be a unique "
+                            "numeric control ID or <switch>D"
+                        ),
+                        entity_ref=ref,
+                    )
+                )
+                return value or ref, diags
+            return f"{match.group(1)}{'D' if match.group(2) else ''}", diags
+
         if kind in (
             EntityKind.MAST_SINGLE,
             EntityKind.MAST_DOUBLE,
@@ -1312,14 +1368,23 @@ class PlantGraphCompiler:
 
     def _derive_os_circuits(self, graph: PlantGraph) -> None:
         for entity in graph.entities.values():
-            if entity.kind not in (
+            if entity.kind not in {
                 EntityKind.SWITCH_POWERED,
                 EntityKind.SWITCH_LOCK,
-            ):
+                EntityKind.DERAIL,
+            }:
                 continue
             if not entity.canonical_name:
                 continue
-            name = f"{entity.canonical_name}T1"
+            source_value = entity.fields.get("TC")
+            if source_value is None:
+                if entity.kind is EntityKind.DERAIL:
+                    continue
+                name = f"{entity.canonical_name}T1"
+            else:
+                name = source_value.strip()
+                if not name:
+                    continue
             graph.derived_track_circuits.append(
                 DerivedTrackCircuit(
                     name=name,
@@ -1338,6 +1403,12 @@ class PlantGraphCompiler:
         """
         for net in graph.nets:
             if net.net_class not in (NetClass.TRACK, NetClass.DARK_TRACK):
+                continue
+            if any(
+                graph.entities[reference].kind is EntityKind.DERAIL
+                for reference, _pin in net.nodes
+                if reference in graph.entities
+            ):
                 continue
             if net.authoritative_label:
                 continue
@@ -1402,6 +1473,52 @@ class PlantGraphCompiler:
                         entity_ref=entity.reference,
                     )
                 )
+    def _check_dependent_derail_allocations(self, graph: PlantGraph) -> None:
+        """Warn when a ``<switch>D`` derail is assigned outside its switch CP."""
+
+        switches = {
+            entity.canonical_name: entity
+            for entity in graph.entities.values()
+            if entity.kind in {EntityKind.SWITCH_POWERED, EntityKind.SWITCH_LOCK}
+            and entity.canonical_name
+        }
+        for derail in graph.entities.values():
+            if (
+                derail.kind is not EntityKind.DERAIL
+                or not derail.canonical_name.endswith("D")
+            ):
+                continue
+            switch_name = derail.canonical_name[:-1]
+            switch = switches.get(switch_name)
+            if switch is None:
+                graph.diagnostics.append(
+                    Diagnostic(
+                        severity=DiagnosticSeverity.SEMANTIC,
+                        code="dependent_derail_unknown_switch",
+                        message=(
+                            f"Dependent DERAIL '{derail.reference}' references "
+                            f"unknown controlling switch '{switch_name}'"
+                        ),
+                        entity_ref=derail.reference,
+                    )
+                )
+                continue
+            derail_cp = (derail.fields.get("CP") or "").strip()
+            switch_cp = (switch.fields.get("CP") or "").strip()
+            if derail_cp and switch_cp and derail_cp != switch_cp:
+                graph.diagnostics.append(
+                    Diagnostic(
+                        severity=DiagnosticSeverity.WARNING,
+                        code="dependent_derail_cp_mismatch",
+                        message=(
+                            f"Dependent DERAIL '{derail.reference}' is allocated "
+                            f"to '{derail_cp}', but switch '{switch.reference}' "
+                            f"is allocated to '{switch_cp}'"
+                        ),
+                        entity_ref=derail.reference,
+                    )
+                )
+
     def _check_switch_indications(self, graph: PlantGraph) -> None:
         """Require a valid NORMAL/REVERSE pair when a switch overrides caps."""
         from plant_graph.indications import parse_switch_indications

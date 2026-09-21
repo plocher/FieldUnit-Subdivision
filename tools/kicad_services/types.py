@@ -95,6 +95,15 @@ class SchematicPlacement:
     y: float
     rotation: float
     mirror: str = ""
+@dataclass(frozen=True)
+class SchematicTitleBlock:
+    """Title-block metadata extracted from one KiCad schematic."""
+
+    title: str = ""
+    revision: str = ""
+    date: str = ""
+    company: str = ""
+    comments: dict[int, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -103,3 +112,4 @@ class SchematicPlacementModel:
 
     path: Path
     placements: dict[str, SchematicPlacement] = field(default_factory=dict)
+    title_block: SchematicTitleBlock = field(default_factory=SchematicTitleBlock)

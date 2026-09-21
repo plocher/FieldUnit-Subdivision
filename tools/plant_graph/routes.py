@@ -35,6 +35,7 @@ _PIN_N = "2"
 _PIN_R = "3"
 
 _SWITCH_KINDS = frozenset({EntityKind.SWITCH_POWERED, EntityKind.SWITCH_LOCK})
+_DERAIL_KINDS = frozenset({EntityKind.DERAIL})
 _IRJ_KINDS = frozenset({EntityKind.IRJ, EntityKind.IRJ_SIGNAL})
 _MAST_KINDS = frozenset(
     {EntityKind.MAST_SINGLE, EntityKind.MAST_DOUBLE, EntityKind.MAST_DWARF}
@@ -180,7 +181,7 @@ class _TrackTopology:
                 ent = self.graph.entities.get(ref)
                 if ent is None:
                     continue
-                if ent.kind in _SWITCH_KINDS or ent.kind in _IRJ_KINDS:
+                if ent.kind in _SWITCH_KINDS | _DERAIL_KINDS | _IRJ_KINDS:
                     ports.append(self._port(ref, pin))
                 elif ent.kind in (EntityKind.DIRECTION, EntityKind.NEXT_CP):
                     # Live DoT pin only (unconnected NC nets are not TRACK/OS).
@@ -577,6 +578,17 @@ class _TrackTopology:
                 seen.add(key)
                 name = f"{entry_designation}-{exit_desig}"
                 os_tcs = tuple(f"{sw}T1" for sw, _pos in switch_tuple)
+                derail_requirements = tuple(
+                    sorted(
+                        {
+                            step.split(":", 1)[1]
+                            for step in path_nets
+                            if step.startswith("derail:")
+                        },
+                        key=_natural_sort_key,
+                    )
+                )
+                derail_tcs = self._derail_track_circuits(derail_requirements)
                 path_tcs = tuple(
                     sorted(
                         _labeled_path_track_circuits(
@@ -602,7 +614,7 @@ class _TrackTopology:
                 )
                 clears = tuple(
                     sorted(
-                        dict.fromkeys([*os_tcs, *home_path_circuits]),
+                        dict.fromkeys([*os_tcs, *derail_tcs, *home_path_circuits]),
                         key=_natural_sort_key,
                     )
                 )
@@ -633,6 +645,7 @@ class _TrackTopology:
                         path_track_circuits=path_tcs,
                         path_nets=tuple(path_nets),
                         switch_traversals=tuple(switch_traversals),
+                        derail_requirements=derail_requirements,
                     )
                 )
 
@@ -947,6 +960,11 @@ class _TrackTopology:
                 out.append((c, f"switch:{sw_name}:N", {}))
             elif pin == _PIN_R and pos == "R":
                 out.append((c, f"switch:{sw_name}:R", {}))
+        elif ent and ent.kind in _DERAIL_KINDS:
+            if pin == _PIN_C:
+                out.append((self._port(ref, _PIN_N), f"derail:{ent.canonical_name}", {}))
+            elif pin == _PIN_N:
+                out.append((self._port(ref, _PIN_C), f"derail:{ent.canonical_name}", {}))
         seen: set[str] = set()
         uniq: list[tuple[str, str, dict[str, str]]] = []
         for item in out:
@@ -976,7 +994,6 @@ class _TrackTopology:
             if ref == entry_irj:
                 continue
             out.append((nb, f"joint:{ref}", {}))
-
         if ent and ent.kind in _SWITCH_KINDS:
             sw_name = ent.canonical_name
             c = self._port(ref, _PIN_C)
@@ -998,6 +1015,11 @@ class _TrackTopology:
                 if aligns.get(sw_name, "R") == "R":
                     delta = {} if sw_name in aligns else {sw_name: "R"}
                     out.append((c, f"switch:{sw_name}:R", delta))
+        elif ent and ent.kind in _DERAIL_KINDS:
+            if pin == _PIN_C:
+                out.append((self._port(ref, _PIN_N), f"derail:{ent.canonical_name}", {}))
+            elif pin == _PIN_N:
+                out.append((self._port(ref, _PIN_C), f"derail:{ent.canonical_name}", {}))
 
         seen: set[str] = set()
         uniq: list[tuple[str, str, dict[str, str]]] = []
@@ -1006,6 +1028,25 @@ class _TrackTopology:
                 seen.add(item[0])
                 uniq.append(item)
         return uniq
+
+    def _derail_track_circuits(
+        self,
+        derail_requirements: tuple[str, ...],
+    ) -> tuple[str, ...]:
+        """Return optional T1 circuits declared by derails on one route."""
+
+        by_derail = {
+            entity.canonical_name: (
+                entity.fields.get("TC") or ""
+            ).strip()
+            for entity in self.graph.entities.values()
+            if entity.kind is EntityKind.DERAIL
+        }
+        return tuple(
+            by_derail[derail]
+            for derail in derail_requirements
+            if by_derail.get(derail)
+        )
 
     def _shared_net(self, a: str, b: str) -> str:
         sa = self.port_nets.get(a, set())
@@ -1024,6 +1065,7 @@ def _labeled_track_circuit_name(name: str) -> str:
         not name
         or name.startswith("joint:")
         or name.startswith("switch:")
+        or name.startswith("derail:")
         or name.startswith("Net-")
         or name.startswith("unconnected-")
     ):

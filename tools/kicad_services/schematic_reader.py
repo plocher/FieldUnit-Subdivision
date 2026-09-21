@@ -33,12 +33,32 @@ class SchematicPlacementReader:
             ) from exc
         if not isinstance(root, list) or not root or root[0] != Symbol("kicad_sch"):
             raise NetlistParseError(f"Root node is not kicad_sch: {schematic_path}")
-        model = ktypes.SchematicPlacementModel(path=schematic_path)
+        model = ktypes.SchematicPlacementModel(
+            path=schematic_path,
+            title_block=self._read_title_block(schematic_path),
+        )
         for node in root[1:]:
             placement = self._parse_symbol(node)
             if placement is not None:
                 model.placements[placement.reference] = placement
         return model
+
+    def _read_title_block(
+        self,
+        schematic_path: Path,
+    ) -> ktypes.SchematicTitleBlock:
+        """Read document metadata through jBOM's established schematic service."""
+
+        from jbom.services.schematic_reader import SchematicReader
+
+        metadata = SchematicReader().read_metadata(schematic_path)
+        return ktypes.SchematicTitleBlock(
+            title=metadata.title,
+            revision=metadata.revision,
+            date=metadata.date,
+            company=metadata.company,
+            comments=dict(metadata.comments),
+        )
 
     def _parse_symbol(self, node: Any) -> ktypes.SchematicPlacement | None:
         """Parse one placed top-level symbol record."""

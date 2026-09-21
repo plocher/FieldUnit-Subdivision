@@ -24,9 +24,16 @@ from kicad_services.types import (
     NetNode,
     SchematicPlacement,
     SchematicPlacementModel,
+    SchematicTitleBlock,
     SymbolPin,
 )
 from plant_graph.compiler import PlantGraphCompiler
+from plant_graph.model import (
+    SCHEMA_ID,
+    SCHEMA_VERSION,
+    compile_interlocking_plant_model,
+    validate_interlocking_plant_model,
+)
 from plant_graph.picture import render_layout_overview_svg, render_model_board_svg
 from plant_graph.routes import (
     format_alignment,
@@ -37,6 +44,7 @@ from plant_graph.types import (
     EntityKind,
     Indication,
     NetClass,
+    PlantEntity,
     PointTraversal,
     SchematicHeading,
     TurnoutHand,
@@ -137,6 +145,199 @@ class PlantGraphCompilerTests(unittest.TestCase):
         self.assertEqual(
             [tc.name for tc in self.graph.derived_track_circuits],
             ["783T1"],
+        )
+
+    def test_projects_versioned_portable_model_without_kicad_evidence(self) -> None:
+        model = compile_interlocking_plant_model(
+            self.graph,
+            plant_name="Fixture Plant",
+            plant_id="fixture-plant",
+        )
+        payload = model.to_dict()
+        rendered = model.to_json()
+
+        self.assertEqual(payload["$schema"], SCHEMA_ID)
+        self.assertEqual(payload["schemaVersion"], SCHEMA_VERSION)
+        self.assertEqual(
+            payload["identity"],
+            {"id": "fixture-plant", "name": "Fixture Plant"},
+        )
+        self.assertEqual(
+            payload["appliances"]["switches"],
+            [{"id": "783", "osTrackCircuit": "783T1"}],
+        )
+        self.assertEqual(payload["appliances"]["controlGroups"], [])
+        self.assertEqual(
+            payload["appliances"]["trackCircuits"],
+            [{"id": "783T1"}],
+        )
+        self.assertIn("segments", payload["topology"])
+        self.assertNotIn("diagnostics", payload)
+        self.assertNotIn("rail_layout", payload)
+        self.assertNotIn("raw_name", rendered)
+        self.assertNotIn("lib_id", rendered)
+        self.assertNotIn("\"reference\"", rendered)
+        self.assertEqual(validate_interlocking_plant_model(model), ())
+    def test_projects_title_block_document_and_profile_metadata(self) -> None:
+        placements = SchematicPlacementModel(
+            path=Path("fixture.kicad_sch"),
+            placements={
+                "DOT1": SchematicPlacement(
+                    "DOT1",
+                    "Railroad:Direction_BOTH",
+                    10.0,
+                    100.0,
+                    0.0,
+                ),
+                "B1": SchematicPlacement(
+                    "B1",
+                    "Railroad:IRJ-Signal",
+                    50.0,
+                    100.0,
+                    0.0,
+                ),
+                "SW783": SchematicPlacement(
+                    "SW783",
+                    "Railroad:Switch_Powered",
+                    100.0,
+                    100.0,
+                    0.0,
+                ),
+                "S784S1": SchematicPlacement(
+                    "S784S1",
+                    "Railroad:Mast_Double",
+                    50.0,
+                    110.0,
+                    0.0,
+                ),
+            },
+            title_block=SchematicTitleBlock(
+                title="CP Luchessa",
+                revision="1.0",
+                date="2026.09",
+                company="SPCoast",
+                comments={
+                    4: "Southern Pacific Railroad",
+                    5: "Coast Division",
+                    6: "Era: 1942 until 1985",
+                    7: "cTc: US&S 506",
+                    9: "active",
+                },
+            ),
+        )
+        graph = PlantGraphCompiler().compile(self.library, self.netlist, placements)
+
+        payload = compile_interlocking_plant_model(
+            graph,
+            plant_name="CP Luchessa",
+            plant_id="spcoast.luchessa",
+        ).to_dict()
+
+        self.assertEqual(
+            payload["document"],
+            {
+                "title": "CP Luchessa",
+                "revision": "1.0",
+                "date": "2026.09",
+                "company": "SPCoast",
+                "status": "active",
+            },
+        )
+        self.assertEqual(
+            payload["profile"],
+            {
+                "railroad": "Southern Pacific Railroad",
+                "division": "Coast Division",
+                "era": "1942 until 1985",
+                "ctc": "US&S 506",
+            },
+        )
+
+    def test_projects_dependent_derail_from_d_suffix_value(self) -> None:
+        self.netlist.components["SW795"] = NetlistComponent(
+            "SW795",
+            "",
+            "Railroad",
+            "Switch_Powered",
+            fields={"CP": "CP Gilroy"},
+        )
+        self.library.symbols["Switch_Powered_Derail"] = LibrarySymbol(
+            name="Switch_Powered_Derail",
+            reference_prefix="DERAIL",
+            pins=(
+                SymbolPin("1", "C", "passive"),
+                SymbolPin("2", "N", "passive"),
+            ),
+        )
+        self.netlist.components["DERAIL795"] = NetlistComponent(
+            "DERAIL795",
+            "795D",
+            "Railroad",
+            "Switch_Powered_Derail",
+            fields={"CP": "CP Luchessa"},
+        )
+
+        graph = PlantGraphCompiler().compile(self.library, self.netlist)
+        payload = compile_interlocking_plant_model(graph).to_dict()
+
+        self.assertEqual(
+            payload["appliances"]["derails"],
+            [
+                {
+                    "id": "795D",
+                    "controlMode": "dependent",
+                    "controllingSwitch": "795",
+                    "trackCircuit": None,
+                }
+            ],
+        )
+        self.assertNotIn(
+            {"id": "795DT1"},
+            payload["appliances"]["trackCircuits"],
+        )
+        self.assertIn(
+            "dependent_derail_cp_mismatch",
+            {diagnostic.code for diagnostic in graph.diagnostics},
+        )
+
+    def test_derives_crossover_group_from_primary_and_b_member_names(self) -> None:
+        self.graph.entities["SW783B"] = PlantEntity(
+            reference="SW783B",
+            kind=EntityKind.SWITCH_POWERED,
+            lib_id="Railroad:Switch_Powered",
+            value="",
+            canonical_name="783B",
+        )
+
+        model = compile_interlocking_plant_model(self.graph)
+        self.assertEqual(
+            model.to_dict()["appliances"]["controlGroups"],
+            [
+                {
+                    "id": "783",
+                    "kind": "crossover",
+                    "members": ["783", "783B"],
+                    "commandMode": "ganged",
+                    "correspondenceRule": "all_members",
+                }
+            ],
+        )
+        self.assertEqual(validate_interlocking_plant_model(model), ())
+
+    def test_reports_orphan_b_switch_member(self) -> None:
+        self.graph.entities.pop("SW783")
+        self.graph.entities["SW783B"] = PlantEntity(
+            reference="SW783B",
+            kind=EntityKind.SWITCH_POWERED,
+            lib_id="Railroad:Switch_Powered",
+            value="",
+            canonical_name="783B",
+        )
+
+        model = compile_interlocking_plant_model(self.graph)
+        self.assertIn(
+            "crossover_orphan_member:783B",
+            validate_interlocking_plant_model(model),
         )
 
     def test_derives_switch_hand_and_heading_from_source_geometry(self) -> None:
