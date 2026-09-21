@@ -324,6 +324,46 @@ assert "raw_name" not in json.dumps(model)
 assert "lib_id" not in json.dumps(model)
 print("Luchessa portable model OK")
 PY
+echo '== Luchessa FieldUnit projection =='
+FIELDUNIT_JSON="$(mktemp -t plant_graph_fieldunit)"
+python3 tools/parse_kicad_plant.py \
+  --library "$LIB" \
+  --schematic "$SCH" \
+  --format fieldunit-json \
+  --plant-name "CP Luchessa" \
+  --plant-id spcoast.luchessa \
+  --output "$FIELDUNIT_JSON"
+python3 - "$FIELDUNIT_JSON" <<'PY'
+import json
+import sys
+
+plant = json.load(open(sys.argv[1]))
+assert plant["name"] == "CP Luchessa"
+assert len(plant["routes"]) == 10
+assert {item["name"] for item in plant["switches"]} == {
+    "783", "795", "795D", "799",
+}
+assert {
+    item["type"] for item in plant["signalMasts"]
+} <= {"ONE_HEAD", "TWO_HEAD", "THREE_HEAD", "DWARF"}
+for route in plant["routes"]:
+    assert set(route) >= {
+        "name", "governedBy", "displays", "aligns", "clears",
+    }, route
+    assert "headIndex" not in route["displays"], route
+deferred = plant["projectionDeferred"]
+assert deferred["document"]["title"] == "CP Luchessa"
+assert deferred["profile"]["ctc"] == "US&S 506"
+assert deferred["controlledPoints"]
+assert deferred["derails"] == [{
+    "id": "795D",
+    "controlMode": "dependent",
+    "controllingSwitch": "795",
+    "trackCircuit": None,
+}]
+assert len(deferred["routeTopology"]) == len(plant["routes"])
+print("Luchessa FieldUnit projection OK")
+PY
 echo '== Luchessa route overlays =='
 ROUTE_SVG="$(mktemp -t plant_graph_route_overlay)"
 python3 tools/render_plant_picture.py \

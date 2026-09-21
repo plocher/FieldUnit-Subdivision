@@ -30,6 +30,7 @@ from kicad_services.symbol_library_reader import (  # noqa: E402
 )
 from kicad_services.schematic_reader import SchematicPlacementReader  # noqa: E402
 from plant_graph.compiler import PlantGraphCompiler  # noqa: E402
+from plant_graph.fieldunit_projection import project_fieldunit_json  # noqa: E402
 from plant_graph.indications import RouteSignalingPolicy  # noqa: E402
 from plant_graph.model import (  # noqa: E402
     compile_interlocking_plant_model,
@@ -65,7 +66,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--format",
-        choices=("text", "json", "plant-model-json"),
+        choices=("text", "json", "plant-model-json", "fieldunit-json"),
         default="text",
         help="Stdout format (default: text)",
     )
@@ -573,6 +574,24 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 1
         output = model.to_json()
+    elif args.format == "fieldunit-json":
+        if graph.has_errors():
+            return 1
+        source = args.schematic or args.netlist
+        assert source is not None
+        model = compile_interlocking_plant_model(
+            graph,
+            plant_name=args.plant_name or source.stem,
+            plant_id=args.plant_id,
+        )
+        errors = validate_interlocking_plant_model(model)
+        if errors:
+            print(
+                "portable model semantic errors: " + ", ".join(errors),
+                file=sys.stderr,
+            )
+            return 1
+        output = project_fieldunit_json(model.to_dict())
     else:
         output = render_text(graph)
 
