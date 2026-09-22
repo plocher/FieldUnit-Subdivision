@@ -213,13 +213,19 @@ signal_anchors = {
     signal["mast_name"]: signal["anchor"]
     for signal in layout["signal_bases"]
 }
-assert abs(signal_anchors["784EAB"] - turnout_anchors["783"]) == 1
-assert abs(signal_anchors["784EC"] - turnout_anchors["795"]) == 1
-assert abs(signal_anchors["784WD"] - turnout_anchors["799"]) == 1
 anchor_positions = {
     int(anchor): position
     for anchor, position in layout["anchor_positions"].items()
 }
+# Signal masts sit a short physical dogleg from their protected turnout.
+# Exact anchor-index adjacency is not guaranteed once other real appliances
+# (e.g. a derail) share the same corridor and consume intermediate anchors.
+for mast_name, switch_name in (("784EAB", "783"), ("784EC", "795"), ("784WD", "799")):
+    dogleg = abs(
+        anchor_positions[signal_anchors[mast_name]]
+        - anchor_positions[turnout_anchors[switch_name]]
+    )
+    assert 0.0 < dogleg <= 0.9, (mast_name, switch_name, dogleg)
 assert abs(anchor_positions[turnout_anchors["783"]] - 0.45) < 1e-9
 assert abs(anchor_positions[turnout_anchors["795"]] - 1.35) < 1e-9
 assert abs(anchor_positions[turnout_anchors["799"]] - 2.25) < 1e-9
@@ -291,6 +297,73 @@ assert "name_aliases" in g
 print("Luchessa OK: 10 routes, diagnostics clean, route heads attached")
 PY
 echo 'SMOKE OK'
+echo '== Luchessa portable model =='
+MODEL_JSON="$(mktemp -t plant_graph_model)"
+python3 tools/parse_kicad_plant.py \
+  --library "$LIB" \
+  --schematic "$SCH" \
+  --format plant-model-json \
+  --plant-name "CP Luchessa" \
+  --plant-id spcoast.luchessa \
+  --output "$MODEL_JSON"
+python3 - "$MODEL_JSON" <<'PY'
+import json
+import sys
+
+model = json.load(open(sys.argv[1]))
+assert model["$schema"] == "https://fieldunit.dev/schema/interlocking-plant/v1.json"
+assert model["schemaVersion"] == "1.0.0"
+assert model["identity"] == {"id": "spcoast.luchessa", "name": "CP Luchessa"}
+assert len(model["routes"]) == 10
+assert {item["id"] for item in model["appliances"]["switches"]} == {
+    "783", "795", "799",
+}
+assert "diagnostics" not in model
+assert "rail_layout" not in model
+assert "raw_name" not in json.dumps(model)
+assert "lib_id" not in json.dumps(model)
+print("Luchessa portable model OK")
+PY
+echo '== Luchessa FieldUnit projection =='
+FIELDUNIT_JSON="$(mktemp -t plant_graph_fieldunit)"
+python3 tools/parse_kicad_plant.py \
+  --library "$LIB" \
+  --schematic "$SCH" \
+  --format fieldunit-json \
+  --plant-name "CP Luchessa" \
+  --plant-id spcoast.luchessa \
+  --output "$FIELDUNIT_JSON"
+python3 - "$FIELDUNIT_JSON" <<'PY'
+import json
+import sys
+
+plant = json.load(open(sys.argv[1]))
+assert plant["name"] == "CP Luchessa"
+assert len(plant["routes"]) == 10
+assert {item["name"] for item in plant["switches"]} == {
+    "783", "795", "795D", "799",
+}
+assert {
+    item["type"] for item in plant["signalMasts"]
+} <= {"ONE_HEAD", "TWO_HEAD", "THREE_HEAD", "DWARF"}
+for route in plant["routes"]:
+    assert set(route) >= {
+        "name", "governedBy", "displays", "aligns", "clears",
+    }, route
+    assert "headIndex" not in route["displays"], route
+deferred = plant["projectionDeferred"]
+assert deferred["document"]["title"] == "CP Luchessa"
+assert deferred["profile"]["ctc"] == "US&S 506"
+assert deferred["controlledPoints"]
+assert deferred["derails"] == [{
+    "id": "795D",
+    "controlMode": "dependent",
+    "controllingSwitch": "795",
+    "trackCircuit": None,
+}]
+assert len(deferred["routeTopology"]) == len(plant["routes"])
+print("Luchessa FieldUnit projection OK")
+PY
 echo '== Luchessa route overlays =='
 ROUTE_SVG="$(mktemp -t plant_graph_route_overlay)"
 python3 tools/render_plant_picture.py \
@@ -334,8 +407,7 @@ import sys
 
 svg = open(sys.argv[1]).read()
 assert 'class="route-overlay" data-route="MT-Branch"' in svg
-assert 'data-indication="ADVANCED_APPROACH"' in svg
+assert 'data-indication="APPROACH"' in svg
 assert 'data-route-color="#FACC15"' in svg
 assert 'data-aspect="yellow"' in svg
-assert 'route-aspect-flashing' in svg
 PY

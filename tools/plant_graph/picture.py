@@ -235,6 +235,24 @@ def _render_turnout(
     return lines
 
 
+def _render_derail(
+    component: BoardComponent,
+    y_by_row: dict[str, float],
+) -> list[str]:
+    """Render one two-pin derail as an inline non-branching board marker."""
+    ports = _component_ports(component)
+    c_port, n_port = ports["C"], ports["N"]
+    c_x, y = _port_x(c_port), y_by_row[getattr(c_port, "row_name")]
+    n_x = _port_x(n_port)
+    return [
+        f'<g class="derail" data-derail="{escape(component.label)}">',
+        f'<line class="derail-gap" x1="{c_x:.0f}" y1="{y - 6:.0f}" x2="{n_x:.0f}" y2="{y + 6:.0f}"/>',
+        f'<text class="derail-label" x="{(c_x + n_x) / 2:.0f}" y="{y - 10:.0f}">'
+        f"{escape(component.label)}</text>",
+        "</g>",
+    ]
+
+
 def _resolved_ports(graph: PlantGraph) -> dict[str, object]:
     """Return every canonical board port indexed by its stable identifier."""
     return {
@@ -544,6 +562,8 @@ def _render_resolved_layout_svg(
     for component in graph.board_components:
         if component.kind is BoardComponentKind.TURNOUT:
             lines.extend(_render_turnout(component, y_by_row, include_label=True))
+        elif component.kind is BoardComponentKind.DERAIL:
+            lines.extend(_render_derail(component, y_by_row))
         elif component.kind is BoardComponentKind.SIGNAL:
             y = y_by_row[component.row_name]
             x = _BOARD_MARGIN + component.x_units * _LOGICAL_COLUMN_WIDTH

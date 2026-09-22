@@ -14,6 +14,15 @@ class DiagnosticSeverity(str, Enum):
     SEMANTIC = "semantic"
     WARNING = "warning"
     INFO = "info"
+@dataclass(frozen=True)
+class PlantDocument:
+    """Design-document metadata retained independently of source references."""
+
+    title: str = ""
+    revision: str = ""
+    date: str = ""
+    company: str = ""
+    comments: dict[int, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -31,6 +40,7 @@ class EntityKind(str, Enum):
 
     SWITCH_POWERED = "switch_powered"
     SWITCH_LOCK = "switch_lock"
+    DERAIL = "derail"
     IRJ = "irj"
     IRJ_SIGNAL = "irj_signal"
     MAST_SINGLE = "mast_single"
@@ -110,6 +120,7 @@ class BoardComponentKind(str, Enum):
     """Physical primitive kinds used by the resolved model-board layout."""
 
     TURNOUT = "turnout"
+    DERAIL = "derail"
     IRJ = "irj"
     SIGNAL = "signal"
     TERMINAL = "terminal"
@@ -379,6 +390,7 @@ class SignalRoute:
     head_names: tuple[str, ...] = ()
     static_indication: Indication | None = None
     switch_traversals: tuple[SwitchTraversal, ...] = ()
+    derail_requirements: tuple[str, ...] = ()
 
 @dataclass(frozen=True)
 class MastHead:
@@ -397,6 +409,7 @@ class PlantGraph:
     """In-memory plant graph projection for one interlocking schematic."""
 
     entities: dict[str, PlantEntity] = field(default_factory=dict)
+    document: PlantDocument = field(default_factory=PlantDocument)
     nets: list[PlantNet] = field(default_factory=list)
     derived_track_circuits: list[DerivedTrackCircuit] = field(default_factory=list)
     switch_geometries: dict[str, SwitchGeometry] = field(default_factory=dict)

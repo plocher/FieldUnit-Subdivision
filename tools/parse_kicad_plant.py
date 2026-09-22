@@ -30,7 +30,12 @@ from kicad_services.symbol_library_reader import (  # noqa: E402
 )
 from kicad_services.schematic_reader import SchematicPlacementReader  # noqa: E402
 from plant_graph.compiler import PlantGraphCompiler  # noqa: E402
+from plant_graph.fieldunit_projection import project_fieldunit_json  # noqa: E402
 from plant_graph.indications import RouteSignalingPolicy  # noqa: E402
+from plant_graph.model import (  # noqa: E402
+    compile_interlocking_plant_model,
+    validate_interlocking_plant_model,
+)
 from plant_graph.routes import (  # noqa: E402
     build_route_proof,
     format_route_line,
@@ -61,7 +66,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--format",
-        choices=("text", "json"),
+        choices=("text", "json", "plant-model-json", "fieldunit-json"),
         default="text",
         help="Stdout format (default: text)",
     )
@@ -76,6 +81,22 @@ def build_arg_parser() -> argparse.ArgumentParser:
         type=Path,
         default=None,
         help="Optional JSON object mapping graph identity strings to display/MP names",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="Optional output file; defaults to stdout",
+    )
+    parser.add_argument(
+        "--plant-name",
+        default=None,
+        help="Portable plant display name; defaults to schematic/netlist filename",
+    )
+    parser.add_argument(
+        "--plant-id",
+        default=None,
+        help="Portable stable plant identity; defaults to a slug of --plant-name",
     )
     return parser
 
@@ -506,6 +527,20 @@ def render_json(graph: PlantGraph) -> str:
     return json.dumps(payload, indent=2, sort_keys=True) + "\n"
 
 
+def render_plant_model_json(
+    graph: PlantGraph,
+    *,
+    plant_name: str,
+    plant_id: str | None,
+) -> str:
+    """Render the versioned portable InterlockingPlantModel contract."""
+    return compile_interlocking_plant_model(
+        graph,
+        plant_name=plant_name,
+        plant_id=plant_id,
+    ).to_json()
+
+
 def main(argv: list[str] | None = None) -> int:
     """CLI entry point."""
     parser = build_arg_parser()
@@ -520,9 +555,50 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     if args.format == "json":
-        sys.stdout.write(render_json(graph))
+        output = render_json(graph)
+    elif args.format == "plant-model-json":
+        if graph.has_errors():
+            return 1
+        source = args.schematic or args.netlist
+        assert source is not None
+        model = compile_interlocking_plant_model(
+            graph,
+            plant_name=args.plant_name or source.stem,
+            plant_id=args.plant_id,
+        )
+        errors = validate_interlocking_plant_model(model)
+        if errors:
+            print(
+                "portable model semantic errors: " + ", ".join(errors),
+                file=sys.stderr,
+            )
+            return 1
+        output = model.to_json()
+    elif args.format == "fieldunit-json":
+        if graph.has_errors():
+            return 1
+        source = args.schematic or args.netlist
+        assert source is not None
+        model = compile_interlocking_plant_model(
+            graph,
+            plant_name=args.plant_name or source.stem,
+            plant_id=args.plant_id,
+        )
+        errors = validate_interlocking_plant_model(model)
+        if errors:
+            print(
+                "portable model semantic errors: " + ", ".join(errors),
+                file=sys.stderr,
+            )
+            return 1
+        output = project_fieldunit_json(model.to_dict())
     else:
-        sys.stdout.write(render_text(graph))
+        output = render_text(graph)
+
+    if args.output is None:
+        sys.stdout.write(output)
+    else:
+        args.output.write_text(output, encoding="utf-8")
 
     return 1 if graph.has_errors() else 0
 
