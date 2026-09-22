@@ -1,0 +1,369 @@
+{
+  "name": "CP_Luchessa",
+  "trackCircuits": [
+    {
+      "name": "1NA"
+    },
+    {
+      "name": "1SA"
+    },
+    {
+      "name": "2NA"
+    },
+    {
+      "name": "2NAA"
+    },
+    {
+      "name": "2SA"
+    },
+    {
+      "name": "3NA"
+    },
+    {
+      "name": "783T1"
+    },
+    {
+      "name": "795T1"
+    },
+    {
+      "name": "799T1"
+    }
+  ],
+  "switches": [
+    {
+      "name": "783",
+      "os": "783T1"
+    },
+    {
+      "name": "795",
+      "os": "795T1"
+    },
+    {
+      "name": "799",
+      "os": "799T1"
+    }
+  ],
+  "derails": [
+    {
+      "name": "795D"
+    }
+  ],
+  "crossovers": [],
+  "signalControls": [
+    {
+      "name": "784"
+    }
+  ],
+  "signalMasts": [
+    {
+      "name": "784WA",
+      "type": "ONE_HEAD"
+    },
+    {
+      "name": "784WBC",
+      "type": "TWO_HEAD"
+    },
+    {
+      "name": "784WD",
+      "type": "ONE_HEAD"
+    },
+    {
+      "name": "784EAB",
+      "type": "TWO_HEAD"
+    },
+    {
+      "name": "784EC",
+      "type": "DWARF"
+    }
+  ],
+  "routes": [
+    {
+      "name": "2SA-Branch",
+      "governedBy": {
+        "signal": "784",
+        "direction": "RIGHT"
+      },
+      "displays": {
+        "mast": "784EC",
+        "maxIndication": "APPROACH"
+      },
+      "aligns": [
+        {
+          "switch": "795",
+          "position": "REVERSE"
+        },
+        {
+          "switch": "799",
+          "position": "REVERSE"
+        }
+      ],
+      "clears": [
+        "2NAA",
+        "795T1",
+        "799T1"
+      ],
+      "entrance": "2SA",
+      "approaching": "3NA"
+    },
+    {
+      "name": "2SA-MT1",
+      "governedBy": {
+        "signal": "784",
+        "direction": "RIGHT"
+      },
+      "displays": {
+        "mast": "784EC",
+        "maxIndication": "APPROACH"
+      },
+      "aligns": [
+        {
+          "switch": "795",
+          "position": "REVERSE"
+        },
+        {
+          "switch": "799",
+          "position": "NORMAL"
+        }
+      ],
+      "clears": [
+        "2NAA",
+        "795T1",
+        "799T1"
+      ],
+      "entrance": "2SA",
+      "approaching": "2NA"
+    },
+    {
+      "name": "Branch-Industry",
+      "governedBy": {
+        "signal": "784",
+        "direction": "LEFT"
+      },
+      "displays": {
+        "mast": "784WD",
+        "maxIndication": "DIVERGING_RESTRICTING"
+      },
+      "aligns": [
+        {
+          "switch": "795",
+          "position": "REVERSE"
+        },
+        {
+          "switch": "799",
+          "position": "REVERSE"
+        }
+      ],
+      "clears": [
+        "2NAA",
+        "2SA",
+        "795T1",
+        "799T1"
+      ],
+      "entrance": "3NA"
+    },
+    {
+      "name": "Branch-MT",
+      "governedBy": {
+        "signal": "784",
+        "direction": "LEFT"
+      },
+      "displays": {
+        "mast": "784WD",
+        "maxIndication": "APPROACH"
+      },
+      "aligns": [
+        {
+          "switch": "783",
+          "position": "NORMAL"
+        },
+        {
+          "switch": "795",
+          "position": "NORMAL"
+        },
+        {
+          "switch": "799",
+          "position": "REVERSE"
+        }
+      ],
+      "clears": [
+        "2NAA",
+        "783T1",
+        "795T1",
+        "799T1"
+      ],
+      "entrance": "3NA",
+      "approaching": "1SA"
+    },
+    {
+      "name": "MT-Branch",
+      "governedBy": {
+        "signal": "784",
+        "direction": "RIGHT"
+      },
+      "displays": {
+        "mast": "784EAB",
+        "maxIndication": "APPROACH"
+      },
+      "aligns": [
+        {
+          "switch": "783",
+          "position": "NORMAL"
+        },
+        {
+          "switch": "795",
+          "position": "NORMAL"
+        },
+        {
+          "switch": "799",
+          "position": "REVERSE"
+        }
+      ],
+      "clears": [
+        "2NAA",
+        "783T1",
+        "795T1",
+        "799T1"
+      ],
+      "entrance": "1SA",
+      "approaching": "3NA"
+    },
+    {
+      "name": "MT-MT1",
+      "governedBy": {
+        "signal": "784",
+        "direction": "RIGHT"
+      },
+      "displays": {
+        "mast": "784EAB",
+        "maxIndication": "CLEAR"
+      },
+      "aligns": [
+        {
+          "switch": "783",
+          "position": "NORMAL"
+        },
+        {
+          "switch": "795",
+          "position": "NORMAL"
+        },
+        {
+          "switch": "799",
+          "position": "NORMAL"
+        }
+      ],
+      "clears": [
+        "2NAA",
+        "783T1",
+        "795T1",
+        "799T1"
+      ],
+      "entrance": "1SA",
+      "approaching": "2NA"
+    },
+    {
+      "name": "MT-MT2",
+      "governedBy": {
+        "signal": "784",
+        "direction": "RIGHT"
+      },
+      "displays": {
+        "mast": "784EAB",
+        "maxIndication": "APPROACH"
+      },
+      "aligns": [
+        {
+          "switch": "783",
+          "position": "REVERSE"
+        }
+      ],
+      "clears": [
+        "783T1"
+      ],
+      "entrance": "1SA",
+      "approaching": "1NA"
+    },
+    {
+      "name": "MT1-Industry",
+      "governedBy": {
+        "signal": "784",
+        "direction": "LEFT"
+      },
+      "displays": {
+        "mast": "784WBC",
+        "maxIndication": "DIVERGING_RESTRICTING"
+      },
+      "aligns": [
+        {
+          "switch": "795",
+          "position": "REVERSE"
+        },
+        {
+          "switch": "799",
+          "position": "NORMAL"
+        }
+      ],
+      "clears": [
+        "2NAA",
+        "2SA",
+        "795T1",
+        "799T1"
+      ],
+      "entrance": "2NA"
+    },
+    {
+      "name": "MT1-MT",
+      "governedBy": {
+        "signal": "784",
+        "direction": "LEFT"
+      },
+      "displays": {
+        "mast": "784WBC",
+        "maxIndication": "CLEAR"
+      },
+      "aligns": [
+        {
+          "switch": "783",
+          "position": "NORMAL"
+        },
+        {
+          "switch": "795",
+          "position": "NORMAL"
+        },
+        {
+          "switch": "799",
+          "position": "NORMAL"
+        }
+      ],
+      "clears": [
+        "2NAA",
+        "783T1",
+        "795T1",
+        "799T1"
+      ],
+      "entrance": "2NA",
+      "approaching": "1SA"
+    },
+    {
+      "name": "MT2-MT",
+      "governedBy": {
+        "signal": "784",
+        "direction": "LEFT"
+      },
+      "displays": {
+        "mast": "784WA",
+        "maxIndication": "APPROACH"
+      },
+      "aligns": [
+        {
+          "switch": "783",
+          "position": "REVERSE"
+        }
+      ],
+      "clears": [
+        "783T1"
+      ],
+      "entrance": "1NA",
+      "approaching": "1SA"
+    }
+  ]
+}
