@@ -35,20 +35,33 @@ def project_fieldunit_plant(model: dict[str, Any]) -> dict[str, Any]:
     """Return one FieldUnit PlantSerializer-compatible interlocking payload.
 
     The projection keeps the complete geographic interlocking in one FieldUnit
-    plant. Controlled Point allocation and dependent-derail linkage remain
-    explicit deferred facts until FieldUnit has native deployment bindings.
+    plant. Switches and derails use native FieldUnit arrays with optional OS
+    bindings. Dependent ``*D`` derails are declared after their base switch and
+    are omitted from route ``aligns`` (master alignment + combined KR only).
+    Controlled Point allocation remains deferred until FieldUnit has native
+    deployment bindings.
     """
 
     appliances = model["appliances"]
-    switches = [{"name": item["id"]} for item in appliances["switches"]]
-    switches.extend({"name": item["id"]} for item in appliances["derails"])
+    dependent_derail_ids = {
+        item["id"]
+        for item in appliances["derails"]
+        if item["controlMode"] == "dependent"
+    }
     return {
         "name": model["identity"]["name"],
         "trackCircuits": [
             {"name": item["id"]}
             for item in appliances["trackCircuits"]
         ],
-        "switches": switches,
+        "switches": [
+            _appliance_with_optional_os(item["id"], item.get("osTrackCircuit"))
+            for item in appliances["switches"]
+        ],
+        "derails": [
+            _appliance_with_optional_os(item["id"], item.get("trackCircuit"))
+            for item in appliances["derails"]
+        ],
         "crossovers": [
             {
                 "name": item["id"],
@@ -69,7 +82,10 @@ def project_fieldunit_plant(model: dict[str, Any]) -> dict[str, Any]:
             }
             for item in appliances["masts"]
         ],
-        "routes": [_project_route(route) for route in model["routes"]],
+        "routes": [
+            _project_route(route, dependent_derail_ids=dependent_derail_ids)
+            for route in model["routes"]
+        ],
         "projectionDeferred": {
             "document": model["document"],
             "profile": model["profile"],
@@ -101,7 +117,23 @@ def project_fieldunit_json(model: dict[str, Any]) -> str:
     ) + "\n"
 
 
-def _project_route(route: dict[str, Any]) -> dict[str, Any]:
+def _appliance_with_optional_os(
+    name: str,
+    os_track_circuit: str | None,
+) -> dict[str, str]:
+    """Return one switch/derail object with optional FieldUnit ``os`` binding."""
+
+    item: dict[str, str] = {"name": name}
+    if os_track_circuit:
+        item["os"] = os_track_circuit
+    return item
+
+
+def _project_route(
+    route: dict[str, Any],
+    *,
+    dependent_derail_ids: set[str],
+) -> dict[str, Any]:
     """Project one portable route to the revised FieldUnit route vocabulary."""
 
     result: dict[str, Any] = {
@@ -120,6 +152,7 @@ def _project_route(route: dict[str, Any]) -> dict[str, Any]:
                 "position": item["position"],
             }
             for item in route["alignments"]
+            if item["appliance"] not in dependent_derail_ids
         ],
         "clears": route["clearTrackCircuits"],
     }
@@ -128,6 +161,8 @@ def _project_route(route: dict[str, Any]) -> dict[str, Any]:
     if route["approaching"] is not None:
         result["approaching"] = route["approaching"]
     return result
+
+
 def _fieldunit_indication(indication: str) -> str:
     """Return a FieldUnit spelling or reject an unsafe indication downgrade."""
 
@@ -145,6 +180,7 @@ def _fieldunit_indication(indication: str) -> str:
 
 def _mast_type(mast: dict[str, Any]) -> str:
     """Return the FieldUnit mast type corresponding to portable mast facts."""
+
     if mast["kind"] == "dwarf":
         return "DWARF"
     heads = mast["heads"]

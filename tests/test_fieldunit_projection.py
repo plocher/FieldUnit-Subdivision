@@ -54,7 +54,11 @@ class FieldUnitProjectionTests(unittest.TestCase):
         projected = project_fieldunit_plant(self._model())
 
         self.assertEqual(projected["name"], "Fixture Plant")
-        self.assertEqual(projected["switches"], [{"name": "783"}])
+        self.assertEqual(
+            projected["switches"],
+            [{"name": "783", "os": "783T1"}],
+        )
+        self.assertEqual(projected["derails"], [])
         self.assertEqual(projected["trackCircuits"], [{"name": "783T1"}])
         self.assertEqual(projected["crossovers"], [])
         self.assertEqual(projected["projectionDeferred"]["controlledPoints"], [])
@@ -108,7 +112,7 @@ class FieldUnitProjectionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             project_fieldunit_plant(model)
 
-    def test_projects_dependent_derail_as_switch_like_appliance(self) -> None:
+    def test_projects_dependent_derail_natively_without_route_align(self) -> None:
         self.library.symbols["Switch_Powered_Derail"] = LibrarySymbol(
             name="Switch_Powered_Derail",
             reference_prefix="DERAIL",
@@ -130,10 +134,36 @@ class FieldUnitProjectionTests(unittest.TestCase):
             plant_name="Fixture Plant",
             plant_id="fixture-plant",
         ).to_dict()
+        model["routes"] = [
+            {
+                "id": "industry",
+                "name": "Industry",
+                "signal": "784",
+                "mast": model["appliances"]["masts"][0]["id"],
+                "direction": model["appliances"]["masts"][0]["direction"],
+                "alignments": [
+                    {"appliance": "783", "position": "REVERSE"},
+                    {"appliance": "783D", "position": "NORMAL"},
+                ],
+                "clearTrackCircuits": ["783T1"],
+                "staticIndication": "CLEAR",
+                "entrance": None,
+                "approaching": None,
+                "entryTerminal": None,
+                "exitTerminal": None,
+                "endKind": "dead_end",
+                "exitFace": None,
+            }
+        ]
 
         projected = project_fieldunit_plant(model)
 
-        self.assertIn({"name": "783D"}, projected["switches"])
+        self.assertEqual(projected["derails"], [{"name": "783D"}])
+        self.assertNotIn({"name": "783D"}, projected["switches"])
+        self.assertEqual(
+            projected["routes"][0]["aligns"],
+            [{"switch": "783", "position": "REVERSE"}],
+        )
         self.assertEqual(
             projected["projectionDeferred"]["derails"],
             [
@@ -144,6 +174,29 @@ class FieldUnitProjectionTests(unittest.TestCase):
                     "trackCircuit": None,
                 }
             ],
+        )
+
+    def test_projects_independent_dispatcher_derail_with_os(self) -> None:
+        model = self._model()
+        model["appliances"]["derails"] = [
+            {
+                "id": "5",
+                "controlMode": "dispatcher",
+                "controllingSwitch": None,
+                "trackCircuit": "5T1",
+            }
+        ]
+        model["appliances"]["trackCircuits"].append({"id": "5T1"})
+
+        projected = project_fieldunit_plant(model)
+
+        self.assertEqual(
+            projected["derails"],
+            [{"name": "5", "os": "5T1"}],
+        )
+        self.assertEqual(
+            projected["switches"],
+            [{"name": "783", "os": "783T1"}],
         )
 
     def test_projects_controlled_points_as_deferred_binding(self) -> None:

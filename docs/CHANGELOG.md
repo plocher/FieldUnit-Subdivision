@@ -1,7 +1,8 @@
 # Changelog
 ## Unreleased
 - Added the editor-neutral InterlockingPlantModel v1 schema and compiler projection from the KiCad plant graph, including title-block metadata, derail topology, mast/head hierarchy, and semantic validation (`plant-model-json`).
-- Added FieldUnit runtime projection from the portable model, with dependent derails as switch-like appliances, deferred topology/profile facts, and indication compatibility guards (`fieldunit-json`).
+- Project FieldUnit plants with native `derails[]`, optional switch/derail `os` bindings, and route aligns that omit dependent `*D` derails (master KR only). Document the PlantSerializer contract and desk-cutover next step.
+- Added FieldUnit runtime projection from the portable model, with deferred topology/profile facts and indication compatibility guards (`fieldunit-json`).
 - Rewrote the README as an ecosystem entry point and documented the plant artifact developer workflow.
 - Added a separate static route-validation board projection with selectable structural-route overlays. Its embedded SVG route list exposes each harvested path and indication-table aspect colors without modifying the accepted route-free model board or implementing dispatcher/runtime logic.
 - Mapped two-head route aspects to the physical H1/H2 display order rather than alphabetic head-name order, preserving the source-derived single- versus double-head mast realization.
