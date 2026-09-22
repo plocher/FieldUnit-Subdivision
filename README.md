@@ -28,7 +28,7 @@ Portable InterlockingPlantModel
 FieldUnit plant JSON projection
   tools/plant_graph/fieldunit_projection.py
         |
-        +--> FieldUnit InterlockingPlant (vital safety)
+        +--> FieldUnit ControlPoint (vital safety)
         |
         v
 Subdivision runtime consumers
@@ -40,7 +40,7 @@ Subdivision runtime consumers
 | **KiCad + Railroad library** | Human plant design, topology drawing, title-block metadata | Runtime state, MQTT, desk wiring |
 | **Plant graph compiler** | Source parse, diagnostics, route harvest, board picture inputs | FieldUnit execution payload |
 | **Portable model** | Editor-neutral plant definition and static route equations | KiCad refs, runtime occupancy, desk columns |
-| **FieldUnit projection** | Lossy map into FieldUnit plant JSON plus deferred facts | Reinterpretation of routes at runtime |
+| **FieldUnit projection** | Map into FieldUnit plant JSON (switches, derails, OS, routes) plus deferred facts | Reinterpretation of routes at runtime |
 | **Subdivision runtime** | Hosting plants, train progression, board/crew views | Vital safety rules (those stay in FieldUnit) |
 
 Design detail lives in:
@@ -60,7 +60,7 @@ Design detail lives in:
   US&S Model 503, one column is one 15-step controlled point.
 
 The runtime must remain a user of FieldUnit. It must not copy vital logic from
-`InterlockingPlant`.
+`ControlPoint` / the interlocking engine.
 
 ## Developer workflow: plant artifacts
 
@@ -122,8 +122,11 @@ python3 tools/parse_kicad_plant.py \
   --output /tmp/luchessa.fieldunit.json
 ```
 
-The projection keeps unsupported facts under `projectionDeferred`. It fails on
-unsupported indications instead of silent degradation to `STOP`.
+Native FieldUnit facts include switches with optional `os`, `derails[]`
+(dependent `*D` after the base switch), and route aligns that name the master
+only for dependent derails. Remaining portable facts (CP allocation, topology,
+terminals) stay under `projectionDeferred`. Unsupported indications fail the
+projection instead of silent degradation to `STOP`.
 
 ### 6. Model board SVG
 
@@ -144,7 +147,7 @@ FieldUnit build available.
 ## Subdivision runtime layout
 
 - **`runtime/plant_host/`**: Headless native C++ host. Runs FieldUnit
-  `InterlockingPlant` logic and bridges it to MQTT.
+  `ControlPoint` logic and bridges it to MQTT.
 - **`runtime/graph/`**: Topology and block-progression primitives. These map
   train position into track-circuit shunts.
 - **`runtime/traffic/`**: Train entities and optional NPC crew behavior.
@@ -200,10 +203,11 @@ delays.
 ### In progress: portable design source path
 
 - Hand-authored KiCad gold plant: Luchessa.
-- Compiler emits portable model v1 and FieldUnit projection.
-- Live playtest of generated Luchessa JSON against FieldUnit/cTc is the next
-  acceptance gate.
-- After Luchessa acceptance: Christopher, then Corporal (DERAIL / Rule 251).
+- Compiler emits portable model v1 and FieldUnit projection (native derails/OS).
+- Generated Luchessa JSON loads in FieldUnit `PlantSerializer` / `ControlPoint`.
+- Desk cutover is next: host profile + `configureDesk()` field numbers (`783` /
+  `784`), not a new faceplate image.
+- After Luchessa desk acceptance: Christopher, then Corporal.
 - Legacy XML bootstrap stays later work. See
   `docs/review/legacy-xml-kicad-bootstrap.md`.
 

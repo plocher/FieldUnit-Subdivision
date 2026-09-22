@@ -16,7 +16,7 @@ The KiCad adapter retains references, library IDs, raw nets, pins, placement, sy
 ### InterlockingPlantDefinition
 The portable, versioned definition contains:
 - plant identity;
-- switches, derived OS circuit identities, and naming-derived ganged crossover groups;
+- switches, derived OS circuit identities, derails (dispatcher or dependent `*D`), and naming-derived ganged crossover groups;
 - explicit track circuits;
 - signal faces, mast/head facts, and direction;
 - semantic topology segments and unnamed internal nodes;
@@ -105,8 +105,12 @@ The overhead display, diagnostics, model board, cTc console, train simulation, a
 - Operating track designations such as `MT`, `MT1`, and `MT2` are not automatically treated as Track Circuit identities.
 - Unnamed IRJ and bumper nodes receive opaque compiler-generated IDs; their KiCad references remain source provenance only.
 - Plant identity is compiler input (`--plant-name`, `--plant-id`), never inferred from `MAIN HOUSE` board sections.
+## FieldUnit projection notes
+- FieldUnit plant JSON is the public PlantSerializer contract: `switches[]` / `derails[]` with optional `os`, then routes. Dependence is the `*D` name; route `aligns` name the master switch only.
+- Derail polarity matches FieldUnit: NORMAL = clear (off-rail); REVERSE = on-rail.
+- Portable derail control-mode facts remain available under projection deferred metadata for tooling that is not the vital engine.
 ## Known Gaps
-- FieldUnit `PlantSerializer` cannot yet express all definition facts, especially route end kinds, circuit roles, topology segments, and terminal semantics. Projection to FieldUnit is intentionally lossy until that execution schema evolves.
+- FieldUnit `PlantSerializer` cannot yet express all definition facts, especially route end kinds, circuit roles, topology segments, and terminal semantics. Projection remains intentionally lossy for those.
 - cTc Panel Column, Controlled Point, and CODE-group bindings are not yet a portable realization artifact.
 - Territory links between `cp_limit` terminals are not yet defined.
 - Runtime event serialization and state snapshots are not yet formalized.
