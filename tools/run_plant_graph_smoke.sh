@@ -341,8 +341,10 @@ plant = json.load(open(sys.argv[1]))
 assert plant["name"] == "CP Luchessa"
 assert len(plant["routes"]) == 10
 assert {item["name"] for item in plant["switches"]} == {
-    "783", "795", "795D", "799",
+    "783", "795", "799",
 }
+assert all("os" in item for item in plant["switches"]), plant["switches"]
+assert plant["derails"] == [{"name": "795D"}]
 assert {
     item["type"] for item in plant["signalMasts"]
 } <= {"ONE_HEAD", "TWO_HEAD", "THREE_HEAD", "DWARF"}
@@ -351,6 +353,9 @@ for route in plant["routes"]:
         "name", "governedBy", "displays", "aligns", "clears",
     }, route
     assert "headIndex" not in route["displays"], route
+    assert all(
+        alignment["switch"] != "795D" for alignment in route["aligns"]
+    ), route
 deferred = plant["projectionDeferred"]
 assert deferred["document"]["title"] == "CP Luchessa"
 assert deferred["profile"]["ctc"] == "US&S 506"
