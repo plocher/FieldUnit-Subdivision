@@ -20,3 +20,6 @@ venv/
 .DS_Store
 .idea/
 .vscode/
+
+# Local secrets (never commit; ship secrets.h.example instead)
+**/secrets.h
