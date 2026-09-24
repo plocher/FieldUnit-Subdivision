@@ -28,7 +28,7 @@ Portable InterlockingPlantModel
 FieldUnit plant JSON projection
   tools/plant_graph/fieldunit_projection.py
         |
-        +--> FieldUnit ControlPoint (vital safety)
+        +--> FieldUnit InterlockingPlant (vital safety)
         |
         v
 Subdivision runtime consumers
@@ -60,7 +60,7 @@ Design detail lives in:
   US&S Model 503, one column is one 15-step controlled point.
 
 The runtime must remain a user of FieldUnit. It must not copy vital logic from
-`ControlPoint` / the interlocking engine.
+`InterlockingPlant` / the interlocking engine.
 
 ## Developer workflow: plant artifacts
 
@@ -147,7 +147,7 @@ FieldUnit build available.
 ## Subdivision runtime layout
 
 - **`runtime/plant_host/`**: Headless native C++ host. Runs FieldUnit
-  `ControlPoint` logic and bridges it to MQTT.
+  `InterlockingPlant` logic and bridges it to MQTT.
 - **`runtime/graph/`**: Topology and block-progression primitives. These map
   train position into track-circuit shunts.
 - **`runtime/traffic/`**: Train entities and optional NPC crew behavior.
@@ -204,7 +204,7 @@ delays.
 
 - Hand-authored KiCad gold plant: Luchessa.
 - Compiler emits portable model v1 and FieldUnit projection (native derails/OS).
-- Generated Luchessa JSON loads in FieldUnit `PlantSerializer` / `ControlPoint`.
+- Generated Luchessa JSON loads in FieldUnit `PlantSerializer` / `InterlockingPlant`.
 - Desk cutover is next: host profile + `configureDesk()` field numbers (`783` /
   `784`), not a new faceplate image.
 - After Luchessa desk acceptance: Christopher, then Corporal.
