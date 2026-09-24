@@ -7,18 +7,18 @@
  * Luchessa uses KiCad-projected FieldUnit plant IDs. Other stations remain
  * on legacy XML-derived bindings until each is cut over.
  * Reference copy: FieldUnit/examples/spcoast_ctc
- *
- * Select physical I/O backend:
  */
-#include "IO-I2C.h"
-// #include "IO-CMRI.h"
 
 #include <FieldUnit.h>
+#include "IO-I2C.h"
+// #include "IO-CMRI.h"
+#include "DeskOled.h"
 
 using namespace FieldUnit;
 
 #if defined(ARDUINO) && defined(ESP32)
 #define USE_OTA
+#define USE_OLED
 #endif
 
 #ifdef USE_OTA
@@ -45,6 +45,11 @@ PubSubClient mqtt(wifiClient);
 
 PanelIO hardware;
 cTcMachine machine(hardware);
+#ifdef USE_OLED
+DeskOled oled(hardware);
+uint32_t lastOledMs = 0;
+constexpr uint32_t kOledPeriodMs = 100;
+#endif
 
 void configureDesk() {
     // Column 1..2: CP_GilroyCaltrain
@@ -52,10 +57,10 @@ void configureDesk() {
         .inColumn(1).withSwitch("1").withTrackLamps({ "1T1", "EA1" })
         .inColumn(2).withSwitch("3").withTrackLamps({ "TK1", "TK2", "TK3" }).withCodeButton();
 
-    // Column 3..4: CP_GilroyInterchange
+    // Column 3..4: CP_GilroyInterchange (host codec expects MC1+MC2)
     machine.addStation("CP_GilroyInterchange")
-        .inColumn(3).withSwitch("1").withTrackLamps({ "1T1", "3T1", "TK1" })
-        .inColumn(4).withSwitch("3").withTrackLamps({ "EA1", "TL", "TR" }).withCodeButton();
+        .inColumn(3).withSwitch("1").withTrackLamps({ "1T1", "3T1", "TK1" }).withMaintainerCall("1")
+        .inColumn(4).withSwitch("3").withTrackLamps({ "EA1", "TL", "TR" }).withMaintainerCall("2").withCodeButton();
 
     // Column 5..7: CP_Luchessa (KiCad → FieldUnit JSON truth)
     // Dependent derail 795D has no separate lever; master 795 KR is combined.
@@ -64,20 +69,20 @@ void configureDesk() {
         .inColumn(6).withSwitch("795").withSignal("784").withTrackLamps({ "795T1", "2SA", "2NAA" }).withMaintainerCall("1")
         .inColumn(7).withSwitch("799").withTrackLamps({ "799T1", "1NA", "2NA", "3NA" }).withCodeButton();
 
-    // Column 8..10: CP_Christopher
+    // Column 8..10: CP_Christopher (host codec expects MC1+MC2)
     machine.addStation("CP_Christopher")
-        .inColumn(8).withSwitch("1").withTrackLamps({ "1T1", "1WA", "2WA" })
-        .inColumn(9).withSwitch("3").withSignal("2").withTrackLamps({ "3T1", "3BT1", "5T1" })
+        .inColumn(8).withSwitch("1").withTrackLamps({ "1T1", "1WA", "2WA" }).withMaintainerCall("1")
+        .inColumn(9).withSwitch("3").withSignal("2").withTrackLamps({ "3T1", "3BT1", "5T1" }).withMaintainerCall("2")
         .inColumn(10).withSwitch("5").withTrackLamps({ "1EA", "2EA" }).withCodeButton();
 
-    // Column 11..12: CP_Corporal
+    // Column 11..12: CP_Corporal (host codec expects MC1)
     machine.addStation("CP_Corporal")
         .inColumn(11).withSwitch("1").withSignal("2").withTrackLamps({ "1EA", "1T1", "3T1" })
-        .inColumn(12).withSwitch("3").withTrackLamps({ "SDT", "TL", "TR" }).withCodeButton();
+        .inColumn(12).withSwitch("3").withTrackLamps({ "SDT", "TL", "TR" }).withMaintainerCall("1").withCodeButton();
 
-    // Column 13: CP_Sargent
+    // Column 13: CP_Sargent (host codec expects MC1 — must be on desk encode schema)
     machine.addStation("CP_Sargent")
-        .inColumn(13).withSwitch("1").withTrackLamps({ "1T1", "HBD" }).withCodeButton();
+        .inColumn(13).withSwitch("1").withTrackLamps({ "1T1", "HBD" }).withMaintainerCall("1").withCodeButton();
 
     // Column 14: CP_Watsonville
     machine.addStation("CP_Watsonville")
@@ -106,6 +111,9 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
     msgBuf[copyLen] = '\0';
 
     machine.applyIndications(stationName, msgBuf);
+#ifdef USE_OLED
+    oled.noteRx();
+#endif
 }
 
 void reconnectMqtt(uint32_t nowMs) {
@@ -113,10 +121,21 @@ void reconnectMqtt(uint32_t nowMs) {
     if (nowMs - lastReconnectMs < 5000) return;
     lastReconnectMs = nowMs;
 
+#ifdef USE_OLED
+    oled.setNet(DeskOled::NetState::Connecting);
+#endif
     if (mqtt.connect("ctc-desk-south", "ctc/SPCoast/telemetry", 1, true, "OFFLINE")) {
         mqtt.publish("ctc/SPCoast/telemetry", "ONLINE", true);
         mqtt.subscribe("ctc/SPCoast/codeline/+/indications");
         Serial.println("MQTT connected. Subscribed to plant indications.");
+#ifdef USE_OLED
+        oled.setNet(DeskOled::NetState::Ready);
+        oled.setError("");
+#endif
+    } else {
+#ifdef USE_OLED
+        oled.setNet(DeskOled::NetState::Failed);
+#endif
     }
 }
 #endif
@@ -127,6 +146,12 @@ void setup() {
     hardware.begin();
     configureDesk();
     machine.begin(); // Preallocates Strategy B exact buffers and builds canonical AAR schemas
+
+#ifdef USE_OLED
+    if (!oled.begin("SPCoast")) {
+        Serial.println("OLED init failed (continuing headless)");
+    }
+#endif
 
 #ifdef USE_OTA
     ota.begin("spcoast-ctc", WIFI_SSID, WIFI_PASSWORD);
@@ -158,6 +183,11 @@ void loop() {
     if (machine.pollCode(stIdx, txTokens, sizeof(txTokens))) {
         const char* targetCp = machine.station(stIdx).name();
         Serial.printf("CODED [%s]: %s\n", targetCp, txTokens);
+#ifdef USE_OLED
+        oled.setLastCode(targetCp);
+        oled.noteTx();
+        oled.setError("");
+#endif
 
 #ifdef USE_OTA
         if (mqtt.connected()) {
@@ -169,5 +199,12 @@ void loop() {
     }
 
     hardware.syncOutputs();
+
+#ifdef USE_OLED
+    if (nowMs - lastOledMs >= kOledPeriodMs) {
+        lastOledMs = nowMs;
+        oled.show();
+    }
+#endif
 }
 #endif

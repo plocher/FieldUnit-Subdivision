@@ -3,72 +3,63 @@
 
 #include <Wire.h>
 #include <I2Cexpander.h>
-#include <drivers/I2CexpanderIOBus.h>
 #include <cTcMachine.h>
 
-// Physical desk I/O: one MAX7313 (or compatible) expander per Model 503 column.
-// FieldUnit I2CexpanderIOBus binds an array of I2Cexpander chips; device index
-// in InputBit/OutputBit is the array index (column-1), not the I2C address.
+// Physical desk I/O: one MAX7313 per Model 503 column (I2C addr 4..17).
+// Uses I2Cexpander 16-bit get()/put() once per sync — not per-bit digitalRead/Write.
+//
+// Pin map (per column expander, historical SPCoast):
+//   Out: 0 N-lamp, 1 R-lamp, 3..5 track lamps, 8 MC lamp, 13..15 signal lamps
+//   In:  2 MC switch, 6 N-lever, 7 R-lever, 9..11 signal lever, 12 CODE
 class PanelIO : public FieldUnit::PanelHardware {
 public:
     static constexpr uint8_t kColumnCount = 14;
-    // Historical SPCoast map: column 1 -> expander address 4 ... column 14 -> 17
     static constexpr uint8_t kBaseI2cAddress = 4;
-    // 0xFFFF = all pins as inputs at chip init; direction is set by later use.
-    // MAX7313 direction is managed by the I2Cexpander driver from read/write use.
-    static constexpr uint16_t kExpanderConfig = 0xFFFF;
+    // 1-bits = inputs on MAX731x-style config word
+    static constexpr uint16_t kInputMask =
+        (1u << 2) | (1u << 6) | (1u << 7) |
+        (1u << 9) | (1u << 10) | (1u << 11) | (1u << 12);
+    static constexpr uint16_t kExpanderConfig = kInputMask;
+    static constexpr uint32_t kCodeDebounceMs = 40;
 
-    PanelIO() : i2cBus_(expanders_, kColumnCount) {
+    PanelIO() {
         for (uint8_t i = 0; i < kColumnCount; ++i) {
-            codeButtonLast_[i] = false;
+            inputCache_[i] = 0;
+            outputCache_[i] = 0;
+            codeStable_[i] = false;
+            codeLastEmitted_[i] = false;
+            codeChangeMs_[i] = 0;
+            codeEdge_[i] = false;
         }
     }
 
     static uint8_t colToDevice(uint8_t col) {
-        // columns are 1..14
-        if (col < 1) {
-            return 0;
-        }
-        if (col > kColumnCount) {
-            return kColumnCount - 1;
-        }
+        if (col < 1) return 0;
+        if (col > kColumnCount) return static_cast<uint8_t>(kColumnCount - 1);
         return static_cast<uint8_t>(col - 1);
-    }
-
-    // Map expander pin 0..15 -> IOBus (offset, bitIndex)
-    static FieldUnit::InputBit inputPin(uint8_t device, uint8_t pin,
-                                        FieldUnit::Polarity pol = FieldUnit::Polarity::NORMAL) {
-        return FieldUnit::InputBit(device, pin / 8, pin % 8, pol);
-    }
-
-    static FieldUnit::OutputBit outputPin(uint8_t device, uint8_t pin,
-                                          FieldUnit::Polarity pol = FieldUnit::Polarity::NORMAL) {
-        return FieldUnit::OutputBit(device, pin / 8, pin % 8, pol);
     }
 
     bool read(uint8_t col, FieldUnit::PanelInput fn) override {
         uint8_t dev = colToDevice(col);
         switch (fn) {
             case FieldUnit::PanelInput::SW_NORMAL:
-                return i2cBus_.readBit(inputPin(dev, 6));
+                return readInputBit(dev, 6);
             case FieldUnit::PanelInput::SW_REVERSE:
-                return i2cBus_.readBit(inputPin(dev, 7));
+                return readInputBit(dev, 7);
             case FieldUnit::PanelInput::SIG_LEFT:
-                return i2cBus_.readBit(inputPin(dev, 9));
+                return readInputBit(dev, 9);
             case FieldUnit::PanelInput::SIG_STOP:
-                return i2cBus_.readBit(inputPin(dev, 10));
+                return readInputBit(dev, 10);
             case FieldUnit::PanelInput::SIG_RIGHT:
-                return i2cBus_.readBit(inputPin(dev, 11));
+                return readInputBit(dev, 11);
             case FieldUnit::PanelInput::CODE_BUTTON: {
-                // Rising-edge latch (press). Hardware is typically active-high or
-                // active-low depending on panel wiring; match prior active-high read.
-                bool now = i2cBus_.readBit(inputPin(dev, 12));
-                bool rose = now && !codeButtonLast_[dev];
-                codeButtonLast_[dev] = now;
-                return rose;
+                // One-shot edge for cTcMachine::pollCode (level re-fires every loop).
+                bool edge = codeEdge_[dev];
+                codeEdge_[dev] = false;
+                return edge;
             }
             case FieldUnit::PanelInput::MAINTAINER_CALL_SW:
-                return i2cBus_.readBit(inputPin(dev, 2));
+                return readInputBit(dev, 2);
             default:
                 return false;
         }
@@ -78,61 +69,116 @@ public:
         uint8_t dev = colToDevice(col);
         switch (fn) {
             case FieldUnit::PanelOutput::SW_NORMAL_LAMP:
-                i2cBus_.writeBit(outputPin(dev, 0), state);
-                break;
+                writeOutputBit(dev, 0, state); break;
             case FieldUnit::PanelOutput::SW_REVERSE_LAMP:
-                i2cBus_.writeBit(outputPin(dev, 1), state);
-                break;
+                writeOutputBit(dev, 1, state); break;
             case FieldUnit::PanelOutput::TRACK_LAMP_1:
-                i2cBus_.writeBit(outputPin(dev, 3), state);
-                break;
+                writeOutputBit(dev, 3, state); break;
             case FieldUnit::PanelOutput::TRACK_LAMP_2:
-                i2cBus_.writeBit(outputPin(dev, 4), state);
-                break;
+                writeOutputBit(dev, 4, state); break;
             case FieldUnit::PanelOutput::TRACK_LAMP_3:
-                i2cBus_.writeBit(outputPin(dev, 5), state);
-                break;
+                writeOutputBit(dev, 5, state); break;
             case FieldUnit::PanelOutput::MAINTAINER_LAMP:
-                i2cBus_.writeBit(outputPin(dev, 8), state);
-                break;
+                writeOutputBit(dev, 8, state); break;
             case FieldUnit::PanelOutput::SIG_LEFT_LAMP:
-                i2cBus_.writeBit(outputPin(dev, 13), state);
-                break;
+                writeOutputBit(dev, 13, state); break;
             case FieldUnit::PanelOutput::SIG_RIGHT_LAMP:
-                i2cBus_.writeBit(outputPin(dev, 14), state);
-                break;
+                writeOutputBit(dev, 14, state); break;
             case FieldUnit::PanelOutput::SIG_STOP_LAMP:
-                i2cBus_.writeBit(outputPin(dev, 15), state);
-                break;
-            default:
-                break;
+                writeOutputBit(dev, 15, state); break;
+            default: break;
         }
     }
 
     void begin() override {
         Wire.begin();
         for (uint8_t i = 0; i < kColumnCount; ++i) {
-            // Address matches historical colToDev = 3 + col = 4..17
             expanders_[i].init(
                 static_cast<size_t>(kBaseI2cAddress + i),
                 I2Cexpander::MAX7313,
                 kExpanderConfig
             );
+            inputCache_[i] = static_cast<uint16_t>(expanders_[i].get());
+            outputCache_[i] = 0;
+            expanders_[i].put(outputCache_[i]);
         }
+        nowMs_ = millis();
+        sampleCodeButtons(true);
     }
 
     void syncInputs() override {
-        // I2Cexpander digitalRead hits the bus per pin; no batch cache required.
+        nowMs_ = millis();
+        for (uint8_t i = 0; i < kColumnCount; ++i) {
+            inputCache_[i] = static_cast<uint16_t>(expanders_[i].get());
+        }
+        sampleCodeButtons(false);
     }
 
     void syncOutputs() override {
-        // digitalWrite is immediate on this driver.
+        for (uint8_t i = 0; i < kColumnCount; ++i) {
+            expanders_[i].put(outputCache_[i]);
+        }
     }
 
+    uint16_t inputImage(uint8_t device) const {
+        return (device < kColumnCount) ? inputCache_[device] : 0;
+    }
+    uint16_t outputImage(uint8_t device) const {
+        return (device < kColumnCount) ? outputCache_[device] : 0;
+    }
+    uint8_t columnCount() const { return kColumnCount; }
+
 private:
+    // CODE is active-low on the panel (closed = 0).
+    static bool codePressedRaw(uint16_t image) {
+        return ((image >> 12) & 0x1u) == 0;
+    }
+
+    bool readInputBit(uint8_t device, uint8_t pin) const {
+        return ((inputCache_[device] >> pin) & 0x1u) != 0;
+    }
+
+    void writeOutputBit(uint8_t device, uint8_t pin, bool state) {
+        if (state) {
+            outputCache_[device] = static_cast<uint16_t>(outputCache_[device] | (1u << pin));
+        } else {
+            outputCache_[device] = static_cast<uint16_t>(outputCache_[device] & ~(1u << pin));
+        }
+    }
+
+    void sampleCodeButtons(bool force) {
+        for (uint8_t i = 0; i < kColumnCount; ++i) {
+            bool rawPressed = codePressedRaw(inputCache_[i]);
+            if (force) {
+                codeStable_[i] = rawPressed;
+                codeLastEmitted_[i] = rawPressed;
+                codeChangeMs_[i] = nowMs_;
+                codeEdge_[i] = false;
+                continue;
+            }
+            if (rawPressed != codeStable_[i]) {
+                if (nowMs_ - codeChangeMs_[i] >= kCodeDebounceMs) {
+                    codeStable_[i] = rawPressed;
+                    codeChangeMs_[i] = nowMs_;
+                    if (codeStable_[i] && !codeLastEmitted_[i]) {
+                        codeEdge_[i] = true;
+                    }
+                    codeLastEmitted_[i] = codeStable_[i];
+                }
+            } else {
+                codeChangeMs_[i] = nowMs_;
+            }
+        }
+    }
+
     I2Cexpander expanders_[kColumnCount];
-    FieldUnit::I2CexpanderIOBus i2cBus_;
-    bool codeButtonLast_[kColumnCount];
+    uint16_t inputCache_[kColumnCount];
+    uint16_t outputCache_[kColumnCount];
+    bool codeStable_[kColumnCount];
+    bool codeLastEmitted_[kColumnCount];
+    bool codeEdge_[kColumnCount];
+    uint32_t codeChangeMs_[kColumnCount];
+    uint32_t nowMs_ = 0;
 };
 
 #endif // SPCOAST_IO_I2C_H
