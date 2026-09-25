@@ -178,9 +178,12 @@ public:
     void setupCodec() {
         codec_.clearEntries();
 
-        // Switches
+        // Switches / independent derails only. Dependent *D has no CodeLine step.
         for (uint8_t i = 0; i < cp_.switchCount(); ++i) {
             Switch* sw = cp_.getSwitch(i);
+            if (!sw || sw->isDependentDerail()) {
+                continue;
+            }
             codec_.addDecodeEntry(decodeSwitch(sw));
             codec_.addEncodeEntry(encodeSwitch(sw));
         }
@@ -249,16 +252,26 @@ public:
         return false;
     }
 
-    bool hasIndicationChanged() {
+    // True when indication content differs from what was last published, or
+    // when it's byte-identical but at least kMinResendIntervalMs has elapsed
+    // since the last publish (a periodic heartbeat re-assert of unchanged
+    // retained truth). Suppresses redundant back-to-back resends of
+    // identical content (e.g. a flaky desk reconnect storm re-triggering
+    // publishAllIndications(), or a no-op control replay) without ever
+    // delaying or hiding a genuine state change, which always publishes
+    // immediately regardless of timing.
+    static constexpr uint32_t kMinResendIntervalMs = 30000;
+
+    bool hasIndicationChanged(uint32_t nowMs) {
         std::string current;
-        if (exportIndications(current)) {
-            return current != lastPublishedIndication_;
-        }
-        return false;
+        if (!exportIndications(current)) return false;
+        if (current != lastPublishedIndication_) return true;
+        return (nowMs - lastPublishedMs_) >= kMinResendIntervalMs;
     }
 
-    void markIndicationPublished(const std::string& ind) {
+    void markIndicationPublished(const std::string& ind, uint32_t nowMs) {
         lastPublishedIndication_ = ind;
+        lastPublishedMs_ = nowMs;
     }
 
     const std::string& lastPublishedIndication() const {
@@ -276,6 +289,7 @@ private:
     AarTextCodec codec_;
     std::vector<std::unique_ptr<RealisticSwitchDriver>> mockDrivers_;
     std::string lastPublishedIndication_;
+    uint32_t lastPublishedMs_ = 0;
     uint32_t lastTickMs_;
 };
 
@@ -299,9 +313,12 @@ public:
         };
 
         for (const auto& name : stationNames) {
-            std::string path = profilesDir_ + "/" + name + ".json";
+            // Luchessa uses KiCad-projected FieldUnit JSON; others remain legacy harvest.
+            std::string path = (name == "CP_Luchessa")
+                ? (profilesDir_ + "/generated/" + name + ".json")
+                : (profilesDir_ + "/" + name + ".json");
             bungalows_.push_back(std::make_unique<VirtualBungalow>(name, path, isTest_));
-            printf("[INIT] Loaded virtual bungalow: %s\n", name.c_str());
+            printf("[INIT] Loaded virtual bungalow: %s from %s\n", name.c_str(), path.c_str());
         }
     }
 
@@ -420,16 +437,30 @@ int runSelfTest(SubdivisionPlantHost& host) {
     tc3T1->update(Occupancy::VACANT);
     host.tickAll(clockMs);
 
-    // 4. Test Route Clearing & Signal Clearance at CP_Luchessa
+    // 4. Test Route Clearing & Signal Clearance at CP_Luchessa (KiCad plant)
     printf("[TEST 4] Route Alignment & Signal Authority at CP_Luchessa\n");
     VirtualBungalow* luchessa = host.findStation("CP_Luchessa");
     assert(luchessa != nullptr);
+    assert(luchessa->cp().findSwitch("783") != nullptr);
+    assert(luchessa->cp().findSwitch("795D") != nullptr);
+    assert(luchessa->cp().findSwitch("795D")->isDerail());
 
-    // Command Signal 2 RIGHT (Southbound MT1 Straight)
+    // Align MT-MT1: masters NORMAL. Dependent 795D follows inverse pair automatically.
+    for (const char* swName : {"783", "795", "799"}) {
+        Switch* sw = luchessa->cp().findSwitch(swName);
+        assert(sw != nullptr);
+        sw->throwSwitch(SwitchPosition::NORMAL, clockMs);
+        sw->updateFeedback(SwitchPosition::NORMAL);
+    }
+    for (uint8_t i = 0; i < luchessa->cp().trackCircuitCount(); ++i) {
+        luchessa->cp().trackCircuit(i)->update(Occupancy::VACANT, Quality::GOOD, clockMs);
+    }
+    host.tickAll(clockMs);
+
     ControlTransaction ctlLuch;
-    SignalControl* sig2Luch = luchessa->cp().findSignalControl("2");
-    assert(sig2Luch != nullptr);
-    ctlLuch.signalDemands[sig2Luch->index()] = SignalDemand::RIGHT;
+    SignalControl* sig784 = luchessa->cp().findSignalControl("784");
+    assert(sig784 != nullptr);
+    ctlLuch.signalDemands[sig784->index()] = SignalDemand::RIGHT;
 
     char luchBuf[512];
     size_t luchLen = 0;
@@ -441,28 +472,28 @@ int runSelfTest(SubdivisionPlantHost& host) {
 
     std::string luchInd;
     luchessa->exportIndications(luchInd);
-    assert(luchInd.find("2SGK") != std::string::npos);
-    assert(luchInd.find("(2SGK)") == std::string::npos); // 2SGK is asserted!
-    printf("  -> Dispatcher cleared Signal 2 RIGHT: indication confirms 2SGK asserted\n");
-    printf("  -> PASS: Vital route SB-MT1-STRAIGHT cleared successfully!\n\n");
+    assert(luchInd.find("784SGK") != std::string::npos);
+    assert(luchInd.find("(784SGK)") == std::string::npos);
+    printf("  -> Dispatcher cleared Signal 784 RIGHT: indication confirms 784SGK asserted\n");
+    printf("  -> PASS: Vital route MT-MT1 cleared successfully!\n\n");
 
     // 5. Test Signal Knockdown on Train Entrance at CP_Luchessa
     printf("[TEST 5] Signal Knockdown on Train Entrance at CP_Luchessa\n");
-    TrackCircuit* tc1T1Luch = luchessa->cp().findTrackCircuit("1T1");
-    assert(tc1T1Luch != nullptr);
+    TrackCircuit* tc1SA = luchessa->cp().findTrackCircuit("1SA");
+    assert(tc1SA != nullptr);
 
-    // Train enters OS block 1T1 -> shunts track circuit
-    tc1T1Luch->update(Occupancy::OCCUPIED);
+    // Train enters entrance circuit 1SA -> shunts track circuit
+    tc1SA->update(Occupancy::OCCUPIED, Quality::GOOD, clockMs);
     host.tickAll(clockMs);
 
     luchessa->exportIndications(luchInd);
-    assert(luchInd.find("(2SGK)") != std::string::npos); // Knocked down to stop!
-    assert(luchInd.find("1T1K") != std::string::npos && luchInd.find("(1T1K)") == std::string::npos); // 1T1K occupied
-    printf("  -> Train shunted 1T1: Signal 2 immediately knocked down to STOP ((2SGK))\n");
+    assert(luchInd.find("(784SGK)") != std::string::npos);
+    assert(luchInd.find("1SAK") != std::string::npos && luchInd.find("(1SAK)") == std::string::npos);
+    printf("  -> Train shunted 1SA: Signal 784 immediately knocked down to STOP ((784SGK))\n");
     printf("  -> PASS: Automatic signal knockdown verified!\n\n");
 
     // Train clears plant
-    tc1T1Luch->update(Occupancy::VACANT);
+    tc1SA->update(Occupancy::VACANT, Quality::GOOD, clockMs);
     host.tickAll(clockMs);
 
     // 6. Test Yard Departure Route at CP_Watsonville
@@ -503,13 +534,16 @@ struct MqttContext {
 };
 
 void publishAllIndications(MqttContext* ctx, const char* reason) {
+    // Explicit full resync (cold start / REFRESH): always send every station's
+    // current truth regardless of the resend cooldown below.
     printf("[MQTT] Broadcasting all station indications (reason: %s)\n", reason);
+    uint32_t nowMs = getWallClockMs();
     for (const auto& b : ctx->host->bungalows()) {
         std::string ind;
         if (b->exportIndications(ind)) {
             std::string topic = "ctc/" + ctx->layout + "/codeline/" + b->name() + "/indications";
             mosquitto_publish(ctx->mosq, nullptr, topic.c_str(), ind.length(), ind.c_str(), 1, true);
-            b->markIndicationPublished(ind);
+            b->markIndicationPublished(ind, nowMs);
             printf("  [%s] -> %s\n", b->name().c_str(), ind.c_str());
         }
     }
@@ -573,13 +607,17 @@ void on_message_cb(struct mosquitto* mosq, void* obj, const struct mosquitto_mes
     b->handleControlMessage(payload.c_str(), nowMs);
     b->tick(nowMs);
 
-    // Immediate response to incoming controls: publish updated station truth
-    std::string ind;
-    if (b->exportIndications(ind)) {
-        std::string indTopic = "ctc/" + ctx->layout + "/codeline/" + b->name() + "/indications";
-        mosquitto_publish(mosq, nullptr, indTopic.c_str(), ind.length(), ind.c_str(), 1, true);
-        b->markIndicationPublished(ind);
-        printf("[TX IND RESPONSE] %s: %s\n", b->name().c_str(), ind.c_str());
+    // Immediate response to incoming controls: publish updated station truth,
+    // but only if it actually changed (or the resend cooldown has elapsed) —
+    // a no-op control replay should not spam an identical indication.
+    if (b->hasIndicationChanged(nowMs)) {
+        std::string ind;
+        if (b->exportIndications(ind)) {
+            std::string indTopic = "ctc/" + ctx->layout + "/codeline/" + b->name() + "/indications";
+            mosquitto_publish(mosq, nullptr, indTopic.c_str(), ind.length(), ind.c_str(), 1, true);
+            b->markIndicationPublished(ind, nowMs);
+            printf("[TX IND RESPONSE] %s: %s\n", b->name().c_str(), ind.c_str());
+        }
     }
 }
 #endif
@@ -639,14 +677,15 @@ int main(int argc, char* argv[]) {
         uint32_t nowMs = getWallClockMs();
         host.tickAll(nowMs);
 
-        // Only publish indications on state change!
+        // Only publish indications on real change, or a heartbeat resend of
+        // unchanged content past the cooldown window.
         for (const auto& b : host.bungalows()) {
-            if (b->hasIndicationChanged()) {
+            if (b->hasIndicationChanged(nowMs)) {
                 std::string ind;
                 if (b->exportIndications(ind)) {
                     std::string topic = "ctc/" + layout + "/codeline/" + b->name() + "/indications";
                     mosquitto_publish(mosq, nullptr, topic.c_str(), ind.length(), ind.c_str(), 1, true);
-                    b->markIndicationPublished(ind);
+                    b->markIndicationPublished(ind, nowMs);
                     printf("[TX IND CHANGED] %s: %s\n", b->name().c_str(), ind.c_str());
                 }
             }
