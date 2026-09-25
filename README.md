@@ -200,14 +200,19 @@ The physical desk owns office procedure (CodeLine timing, display pulses, future
 sound). The virtual field host must not simulate office-originated CodeLine
 delays.
 
-### In progress: portable design source path
+### Completed: Luchessa desk cutover
 
 - Hand-authored KiCad gold plant: Luchessa.
 - Compiler emits portable model v1 and FieldUnit projection (native derails/OS).
-- Generated Luchessa JSON loads in FieldUnit `PlantSerializer` / `InterlockingPlant`.
-- Desk cutover is next: host profile + `configureDesk()` field numbers (`783` /
-  `784`), not a new faceplate image.
-- After Luchessa desk acceptance: Christopher, then Corporal.
+- Generated Luchessa JSON (`profiles/spcoast_south/cps/generated/CP_Luchessa.json`)
+  loads in FieldUnit `PlantSerializer` / `InterlockingPlant` and drives both the
+  virtual plant host and the physical desk sketch's `configureDesk()` field
+  numbers (`783`/`795`/`799`/`784`) unchanged from the recovered, hardware-verified
+  baseline (I2C driver, `OneShot`, OLED, CodeLine stepping).
+- Six-scenario `spcoast_virtual_plant --test` self-test passes against the
+  Luchessa KiCad plant (route alignment, signal authority, knockdown).
+- Six of the seven stations (all but Luchessa) remain on legacy XML-harvested
+  profiles until each is cut over in turn. Next: Christopher, then Corporal.
 - Legacy XML bootstrap stays later work. See
   `docs/review/legacy-xml-kicad-bootstrap.md`.
 
