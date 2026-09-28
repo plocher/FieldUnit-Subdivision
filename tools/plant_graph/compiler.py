@@ -113,8 +113,6 @@ _REQUIRED_PINS: dict[EntityKind, frozenset[str]] = {
 
 _MAST_VALUE_RE = re.compile(r"^(\d+)([NSEW])([A-E]+)$")
 _HEAD_VALUE_RE = re.compile(r"^[A-E]$")
-_SWITCH_REF_RE = re.compile(r"^SW(.+)$")
-_MAST_REF_RE = re.compile(r"^S(\d+)([NSEW])(\d+)$")
 _DEFAULT_MAST_DIRECTION_MAP: dict[str, str] = {
     "N": "LEFT",
     "W": "LEFT",
@@ -486,13 +484,20 @@ class PlantGraphCompiler:
             )
             for span in graph.rail_spans
         ]
+        # Map switch names back to their KiCad components; References are
+        # annotation artifacts and never encode railroad names.
+        switch_reference = {
+            entity.canonical_name: entity.reference
+            for entity in graph.entities.values()
+            if entity.kind in {EntityKind.SWITCH_POWERED, EntityKind.SWITCH_LOCK}
+        }
         graph.turnout_layouts = [
             TurnoutLayout(
                 turnout.switch_name,
                 turnout.cn_heading,
-                row_for_net.get(port_net.get((f"SW{turnout.switch_name}", "1"), ""), turnout.c_row),
-                row_for_net.get(port_net.get((f"SW{turnout.switch_name}", "2"), ""), turnout.n_row),
-                row_for_net.get(port_net.get((f"SW{turnout.switch_name}", "3"), ""), turnout.r_row),
+                row_for_net.get(port_net.get((switch_reference.get(turnout.switch_name, ""), "1"), ""), turnout.c_row),
+                row_for_net.get(port_net.get((switch_reference.get(turnout.switch_name, ""), "2"), ""), turnout.n_row),
+                row_for_net.get(port_net.get((switch_reference.get(turnout.switch_name, ""), "3"), ""), turnout.r_row),
                 turnout.order,
             )
             for turnout in graph.turnout_layouts
@@ -888,18 +893,17 @@ class PlantGraphCompiler:
             value = ""
 
         if kind in (EntityKind.SWITCH_POWERED, EntityKind.SWITCH_LOCK):
-            match = _SWITCH_REF_RE.match(ref)
-            if not match:
+            if not value:
                 diags.append(
                     Diagnostic(
                         severity=DiagnosticSeverity.SEMANTIC,
-                        code="bad_switch_reference",
-                        message=f"Switch reference '{ref}' does not match SW<name>",
+                        code="missing_switch_value",
+                        message=f"Switch '{ref}' has empty Value (expected switch name)",
                         entity_ref=ref,
                     )
                 )
                 return ref, diags
-            return match.group(1), diags
+            return value, diags
 
         if kind is EntityKind.DERAIL:
             match = re.fullmatch(r"(\d+)(D)?", value.upper())
@@ -945,23 +949,6 @@ class PlantGraphCompiler:
                         entity_ref=ref,
                     )
                 )
-            ref_match = _MAST_REF_RE.match(ref)
-            val_match = _MAST_VALUE_RE.match(value)
-            if ref_match and val_match:
-                if ref_match.group(1) != val_match.group(1) or ref_match.group(
-                    2
-                ) != val_match.group(2):
-                    diags.append(
-                        Diagnostic(
-                            severity=DiagnosticSeverity.WARNING,
-                            code="mast_ref_value_mismatch",
-                            message=(
-                                f"Mast '{ref}' Reference signal/dir does not match "
-                                f"Value '{value}'"
-                            ),
-                            entity_ref=ref,
-                        )
-                    )
             return value, diags
 
         if kind is EntityKind.SIGNAL_HEAD:

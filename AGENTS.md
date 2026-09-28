@@ -69,7 +69,7 @@ tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-
 **Plant schematics (Railroad lib).** The compiler maps parts through `_PART_KIND` in
 `tools/plant_graph/compiler.py`; any other part raises `unknown_symbol`.
 
-- The Value is the railroad name. Switch Reference is `SW<n>`, so SW783 becomes switch "783".
+- The Value is the railroad name for every named part (switch `783`, mast `784EAB`, circuit `1NA`). References (`SW1`, `S7`) are KiCad annotation artifacts. Use them only as netlist identities, never to derive or check names.
 - Dependent derail Value is `<switch>D`, e.g. `795D`.
 - Mast Value matches `^\d+[NSEW][A-E]+$`, e.g. `784EAB`. N/W normalise to LEFT, S/E to RIGHT.
 - Head Value is one letter, A–E. The Track Circuit marker's Value is the authoritative circuit name.
