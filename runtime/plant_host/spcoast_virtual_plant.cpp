@@ -628,15 +628,27 @@ int main(int argc, char* argv[]) {
 
     bool testMode = false;
     bool resetMode = false;
+    // Relative to the repo root, where the binary is normally run.
+    std::string profilesDir = "profiles/spcoast_south/cps";
     for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "--test") == 0) {
             testMode = true;
         } else if (strcmp(argv[i], "--reset") == 0 || strcmp(argv[i], "--normative") == 0) {
             resetMode = true;
+        } else if (strcmp(argv[i], "--profiles") == 0 && i + 1 < argc) {
+            profilesDir = argv[++i];
+        } else {
+            fprintf(stderr, "usage: %s [--test] [--reset|--normative] [--profiles <dir>]\n", argv[0]);
+            return 2;
         }
     }
 
-    const std::string profilesDir = "/Users/jplocher/Dropbox/workspace/FieldUnit-Subdivision/profiles/spcoast_south/cps";
+    if (access(profilesDir.c_str(), R_OK) != 0) {
+        fprintf(stderr, "profiles directory not readable: %s (run from the repo root or pass --profiles <dir>)\n",
+                profilesDir.c_str());
+        return 2;
+    }
+
     SubdivisionPlantHost host(profilesDir, testMode);
 
     if (resetMode) {
