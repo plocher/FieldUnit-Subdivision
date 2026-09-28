@@ -212,7 +212,7 @@ class PlantGraphCompilerTests(unittest.TestCase):
                 ),
             },
             title_block=SchematicTitleBlock(
-                title="CP Luchessa",
+                title="Luchessa",
                 revision="1.0",
                 date="2026.09",
                 company="SPCoast",
@@ -229,14 +229,14 @@ class PlantGraphCompilerTests(unittest.TestCase):
 
         payload = compile_interlocking_plant_model(
             graph,
-            plant_name="CP Luchessa",
-            plant_id="spcoast.luchessa",
+            plant_name="Luchessa",
+            plant_id="spcoast.Luchessa",
         ).to_dict()
 
         self.assertEqual(
             payload["document"],
             {
-                "title": "CP Luchessa",
+                "title": "Luchessa",
                 "revision": "1.0",
                 "date": "2026.09",
                 "company": "SPCoast",

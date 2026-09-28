@@ -58,13 +58,19 @@ Design detail lives in:
   electronic transports).
 - **Panel Column**: Physical modular slice of the office console. On the SPCoast
   US&S Model 503, one column is one 15-step controlled point.
+- **Naming**: an interlocking (`Luchessa`) and one of its controlled points
+  (`CP Luchessa`) may share a base name. Interlockings never carry the `CP`
+  prefix; controlled points always do. Names are case-preserved when produced
+  and compared case-insensitively when consumed. The MQTT CodeLine is keyed by
+  interlocking; its messages carry the tokens of all of its CPs.
 
 The runtime must remain a user of FieldUnit. It must not copy vital logic from
 `InterlockingPlant` / the interlocking engine.
 
 ## Developer workflow: plant artifacts
 
-Default gold fixture is CP Luchessa. Override paths with env vars when needed:
+Default gold fixture is the Luchessa interlocking (controlled points CP Luchessa,
+CP Gilroy, CP Carnadero). Override paths with env vars when needed:
 
 - `KICAD_RAILROAD_LIB` — Railroad symbol library (`.kicad_sym`)
 - `KICAD_LUCHESSA_SCH` — Luchessa schematic (`.kicad_sch`)
@@ -102,8 +108,8 @@ python3 tools/parse_kicad_plant.py \
   --library "$KICAD_RAILROAD_LIB" \
   --schematic "$KICAD_LUCHESSA_SCH" \
   --format plant-model-json \
-  --plant-name "CP Luchessa" \
-  --plant-id spcoast.luchessa \
+  --plant-name Luchessa \
+  --plant-id spcoast.Luchessa \
   --output /tmp/luchessa.plant.json
 ```
 
@@ -117,8 +123,8 @@ python3 tools/parse_kicad_plant.py \
   --library "$KICAD_RAILROAD_LIB" \
   --schematic "$KICAD_LUCHESSA_SCH" \
   --format fieldunit-json \
-  --plant-name "CP Luchessa" \
-  --plant-id spcoast.luchessa \
+  --plant-name Luchessa \
+  --plant-id spcoast.Luchessa \
   --output /tmp/luchessa.fieldunit.json
 ```
 
@@ -204,7 +210,7 @@ delays.
 
 - Hand-authored KiCad gold plant: Luchessa.
 - Compiler emits portable model v1 and FieldUnit projection (native derails/OS).
-- Generated Luchessa JSON (`profiles/spcoast_south/cps/generated/CP_Luchessa.json`)
+- Generated Luchessa JSON (`profiles/spcoast_south/cps/generated/Luchessa.json`)
   loads in FieldUnit `PlantSerializer` / `InterlockingPlant` and drives both the
   virtual plant host and the physical desk sketch's `configureDesk()` field
   numbers (`783`/`795`/`799`/`784`) unchanged from the recovered, hardware-verified

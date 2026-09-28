@@ -60,7 +60,7 @@ tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-
 - `tools/plant_graph/`: plant compiler (`compiler.py`), routes, indications, portable model, FieldUnit projection, layout and picture.
 - `tools/parse_kicad_plant.py`, `tools/render_plant_picture.py`: CLI front ends.
 - `schemas/interlocking-plant/v1.json`: portable model schema.
-- `profiles/spcoast_south/cps/`: station JSON. `CP_*.json` are legacy harvests; `generated/` holds KiCad-derived stations (only `CP_Luchessa` so far).
+- `profiles/spcoast_south/cps/`: station JSON. `CP_*.json` are legacy harvests; `generated/` holds KiCad-derived interlockings (only `Luchessa` so far). The plant host prefers `generated/<name>.json` over the legacy file.
 - `runtime/plant_host/`: the only runtime code. `graph/`, `traffic/` and `web/*` are empty placeholders.
 - `docs/review/`: design notes and handoffs. `ctc-panel-hardware-binding.md` covers desk wiring.
 
@@ -88,8 +88,8 @@ tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-
 
 ## Station cutover checklist (legacy → KiCad-derived)
 
-1. Draw the plant in `~/Dropbox/KiCad/Railroad/SPCoast/CP_<Station>/`, add a two-line `Makefile` (`KIND := plant` / `include ../kicad.mk`), and run `make all`.
-2. Run `parse_kicad_plant.py --format fieldunit-json` into `profiles/spcoast_south/cps/generated/`. Split `projectionDeferred` into a sidecar and set `"name"` to the station id (see `generated/README.md`).
+1. Draw the interlocking in `~/Dropbox/KiCad/Railroad/SPCoast/<Interlocking>/`, add a two-line `Makefile` (`KIND := plant` / `include ../kicad.mk`), and run `make all`.
+2. Run `parse_kicad_plant.py --format fieldunit-json --plant-name <Interlocking> --plant-id spcoast.<Interlocking>` into `profiles/spcoast_south/cps/generated/<Interlocking>.json`, then split `projectionDeferred` into a sidecar (see `generated/README.md`).
 3. Update `loadStations()` and the self-test in `spcoast_virtual_plant.cpp`.
 4. Update the desk names in FieldUnit `examples/spcoast_ctc` (`configureDesk()`) and in `tools/test_ctc_desk.py`.
 5. Verify with unittest, the smoke script, `--test`, and an `arduino-cli compile` of the sketch.
@@ -109,7 +109,7 @@ full sketch) is still open. Propose options; do not pick one on your own.
 - Abstraction and DRY violations in existing code are debt, not precedent. Do not copy them into new code or treat them as conventions. Examples today:
   - hand-copied names across repos
   - `base + (col-1)` addressing and fixed bit constants in `spcoast_ctc`
-  - the `CP_Luchessa` special case in the plant host's `loadStations()`
+  - per-station maintainer-call special cases in the plant host's `setupCodec()`
 - Each fact has one source. When a fact exists both in a schematic and in code, generate or validate the code from the schematic.
 
 ## Conventions
@@ -117,7 +117,10 @@ full sketch) is still open. Propose options; do not pick one on your own.
 - Conventional Commits with scopes, e.g. `feat(plant-graph)`, `feat(kicad)`, `fix(plant_host)`, `docs:`. Bodies include a "Verified:" section. Use feature branches and PRs.
 - Naming:
   - AAR tokens: `783NWS`, `784SGK`, `1SA`.
-  - Station ids: `CP_<Station>`. Display names: `CP <Station>`.
-  - Plant ids: `spcoast.<station>`.
+  - Interlocking: `Luchessa` (no `CP`); this is the plant name and the MQTT station key.
+  - Controlled point: `CP Luchessa` (MAIN HOUSE Value; one desk column each).
+  - Plant id: `spcoast.<Interlocking>`.
+  - Names are case-preserved when produced and compared case-insensitively when consumed. Only case is folded, so `Luchessa` and `CP Luchessa` stay distinct.
+  - Legacy stations still named `CP_<X>` are renamed when each is cut over, after checking whether it is an interlocking or a single CP.
 - `secrets.h` is gitignored everywhere. Never commit credentials.
 - **Before editing any `.kicad_sch`/`.kicad_pro`**, check for `~*.lck` or a running KiCad; the user often has it open. Prefer reading the `.net`, and refresh it with `make netlist`, which rebuilds it when the `.kicad_sch` is newer.

@@ -8,7 +8,7 @@ echo '== unit tests =='
 python3 -m unittest tests.test_kicad_plant_graph -q
 
 LIB="${KICAD_RAILROAD_LIB:-$HOME/Dropbox/KiCad/InterlockingPlant/symbols/Railroad.kicad_sym}"
-SCH="${KICAD_LUCHESSA_SCH:-$HOME/Dropbox/KiCad/Railroad/SPCoast/CP_Luchessa/CP_Luchessa.kicad_sch}"
+SCH="${KICAD_LUCHESSA_SCH:-$HOME/Dropbox/KiCad/Railroad/SPCoast/Luchessa/Luchessa.kicad_sch}"
 
 if [[ ! -f "$LIB" || ! -f "$SCH" ]]; then
   echo 'SKIP Luchessa integration (set KICAD_RAILROAD_LIB / KICAD_LUCHESSA_SCH)'
@@ -303,8 +303,8 @@ python3 tools/parse_kicad_plant.py \
   --library "$LIB" \
   --schematic "$SCH" \
   --format plant-model-json \
-  --plant-name "CP Luchessa" \
-  --plant-id spcoast.luchessa \
+  --plant-name Luchessa \
+  --plant-id spcoast.Luchessa \
   --output "$MODEL_JSON"
 python3 - "$MODEL_JSON" <<'PY'
 import json
@@ -313,7 +313,7 @@ import sys
 model = json.load(open(sys.argv[1]))
 assert model["$schema"] == "https://fieldunit.dev/schema/interlocking-plant/v1.json"
 assert model["schemaVersion"] == "1.0.0"
-assert model["identity"] == {"id": "spcoast.luchessa", "name": "CP Luchessa"}
+assert model["identity"] == {"id": "spcoast.Luchessa", "name": "Luchessa"}
 assert len(model["routes"]) == 10
 assert {item["id"] for item in model["appliances"]["switches"]} == {
     "783", "795", "799",
@@ -330,15 +330,15 @@ python3 tools/parse_kicad_plant.py \
   --library "$LIB" \
   --schematic "$SCH" \
   --format fieldunit-json \
-  --plant-name "CP Luchessa" \
-  --plant-id spcoast.luchessa \
+  --plant-name Luchessa \
+  --plant-id spcoast.Luchessa \
   --output "$FIELDUNIT_JSON"
 python3 - "$FIELDUNIT_JSON" <<'PY'
 import json
 import sys
 
 plant = json.load(open(sys.argv[1]))
-assert plant["name"] == "CP Luchessa"
+assert plant["name"] == "Luchessa"
 assert len(plant["routes"]) == 10
 assert {item["name"] for item in plant["switches"]} == {
     "783", "795", "799",
@@ -357,7 +357,7 @@ for route in plant["routes"]:
         alignment["switch"] != "795D" for alignment in route["aligns"]
     ), route
 deferred = plant["projectionDeferred"]
-assert deferred["document"]["title"] == "CP Luchessa"
+assert deferred["document"]["title"] == "Luchessa"
 assert deferred["profile"]["ctc"] == "US&S 506"
 assert deferred["controlledPoints"]
 assert deferred["derails"] == [{

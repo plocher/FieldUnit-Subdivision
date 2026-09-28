@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <signal.h>
 #include <unistd.h>
 #include <time.h>
@@ -18,6 +19,13 @@
 #endif
 
 using namespace FieldUnit;
+
+// Station (interlocking) names are produced case-preserved and matched
+// case-insensitively. Only case is folded: "Luchessa" (interlocking) and
+// "CP Luchessa" (one of its controlled points) stay distinct.
+static bool sameName(const std::string& a, const char* b) {
+    return strcasecmp(a.c_str(), b) == 0;
+}
 
 static volatile bool g_running = true;
 void sigHandler(int) {
@@ -202,15 +210,15 @@ public:
         }
 
         // Maintainer Calls matching the physical desk columns
-        if (name_ == "CP_GilroyInterchange") {
+        if (sameName(name_, "CP_GilroyInterchange")) {
             codec_.addDecodeEntry(decodeMaintainer(0, "MC1"));
             codec_.addDecodeEntry(decodeMaintainer(1, "MC2"));
             codec_.addEncodeEntry(encodeMaintainer(0, "MC1"));
             codec_.addEncodeEntry(encodeMaintainer(1, "MC2"));
-        } else if (name_ == "CP_Luchessa" || name_ == "CP_Corporal" || name_ == "CP_Sargent") {
+        } else if (sameName(name_, "Luchessa") || sameName(name_, "CP_Corporal") || sameName(name_, "CP_Sargent")) {
             codec_.addDecodeEntry(decodeMaintainer(0, "MC1"));
             codec_.addEncodeEntry(encodeMaintainer(0, "MC1"));
-        } else if (name_ == "CP_Christopher") {
+        } else if (sameName(name_, "CP_Christopher")) {
             codec_.addDecodeEntry(decodeMaintainer(0, "MC1"));
             codec_.addDecodeEntry(decodeMaintainer(1, "MC2"));
             codec_.addEncodeEntry(encodeMaintainer(0, "MC1"));
@@ -305,7 +313,7 @@ public:
         const std::vector<std::string> stationNames = {
             "CP_GilroyCaltrain",
             "CP_GilroyInterchange",
-            "CP_Luchessa",
+            "Luchessa",
             "CP_Christopher",
             "CP_Corporal",
             "CP_Sargent",
@@ -313,10 +321,11 @@ public:
         };
 
         for (const auto& name : stationNames) {
-            // Luchessa uses KiCad-projected FieldUnit JSON; others remain legacy harvest.
-            std::string path = (name == "CP_Luchessa")
-                ? (profilesDir_ + "/generated/" + name + ".json")
-                : (profilesDir_ + "/" + name + ".json");
+            // Prefer KiCad-projected JSON in generated/; fall back to legacy harvest.
+            std::string path = profilesDir_ + "/generated/" + name + ".json";
+            if (access(path.c_str(), R_OK) != 0) {
+                path = profilesDir_ + "/" + name + ".json";
+            }
             bungalows_.push_back(std::make_unique<VirtualBungalow>(name, path, isTest_));
             printf("[INIT] Loaded virtual bungalow: %s from %s\n", name.c_str(), path.c_str());
         }
@@ -324,7 +333,7 @@ public:
 
     VirtualBungalow* findStation(const std::string& name) {
         for (auto& b : bungalows_) {
-            if (b->name() == name) return b.get();
+            if (sameName(b->name(), name.c_str())) return b.get();
         }
         return nullptr;
     }
@@ -437,9 +446,9 @@ int runSelfTest(SubdivisionPlantHost& host) {
     tc3T1->update(Occupancy::VACANT);
     host.tickAll(clockMs);
 
-    // 4. Test Route Clearing & Signal Clearance at CP_Luchessa (KiCad plant)
-    printf("[TEST 4] Route Alignment & Signal Authority at CP_Luchessa\n");
-    VirtualBungalow* luchessa = host.findStation("CP_Luchessa");
+    // 4. Test Route Clearing & Signal Clearance at interlocking Luchessa (KiCad plant)
+    printf("[TEST 4] Route Alignment & Signal Authority at Luchessa\n");
+    VirtualBungalow* luchessa = host.findStation("luchessa");  // case-insensitive lookup
     assert(luchessa != nullptr);
     assert(luchessa->cp().findSwitch("783") != nullptr);
     assert(luchessa->cp().findSwitch("795D") != nullptr);
@@ -477,8 +486,8 @@ int runSelfTest(SubdivisionPlantHost& host) {
     printf("  -> Dispatcher cleared Signal 784 RIGHT: indication confirms 784SGK asserted\n");
     printf("  -> PASS: Vital route MT-MT1 cleared successfully!\n\n");
 
-    // 5. Test Signal Knockdown on Train Entrance at CP_Luchessa
-    printf("[TEST 5] Signal Knockdown on Train Entrance at CP_Luchessa\n");
+    // 5. Test Signal Knockdown on Train Entrance at Luchessa
+    printf("[TEST 5] Signal Knockdown on Train Entrance at Luchessa\n");
     TrackCircuit* tc1SA = luchessa->cp().findTrackCircuit("1SA");
     assert(tc1SA != nullptr);
 
