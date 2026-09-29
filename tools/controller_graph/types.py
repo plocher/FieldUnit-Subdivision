@@ -71,6 +71,9 @@ class Codeline:
     station: str
     stub: bool
     params: dict[str, str] = field(default_factory=dict)
+    # True for a codeline the compiler filled in for a really empty sheet
+    # (no codeline symbol drawn): good only for a TBD doc packet.
+    defaulted: bool = False
 
     @property
     def station_key(self) -> str:

@@ -85,7 +85,7 @@ class NetlistReader:
                 continue
             tag = child[0]
             if tag == Symbol("design"):
-                model.source = self._design_source(child)
+                self._parse_design(child, model)
             elif tag == Symbol("components"):
                 for comp_node in child[1:]:
                     comp = self._parse_component(comp_node)
@@ -98,19 +98,30 @@ class NetlistReader:
                         model.nets.append(net)
         return model
 
-    def _design_source(self, design_node: List[Any]) -> str:
+    def _parse_design(
+        self, design_node: List[Any], model: ktypes.NetlistModel
+    ) -> None:
         from sexpdata import Symbol
 
         for item in design_node[1:]:
+            if not (isinstance(item, list) and item):
+                continue
             if (
-                isinstance(item, list)
-                and item
-                and item[0] == Symbol("source")
+                item[0] == Symbol("source")
                 and len(item) >= 2
                 and isinstance(item[1], str)
             ):
-                return item[1]
-        return ""
+                model.source = item[1]
+            elif item[0] == Symbol("sheet"):
+                for sub in item[1:]:
+                    if (
+                        isinstance(sub, list)
+                        and sub
+                        and sub[0] == Symbol("name")
+                        and len(sub) >= 2
+                        and isinstance(sub[1], str)
+                    ):
+                        model.sheets.append(sub[1])
 
     def _parse_component(self, node: Any) -> Optional[ktypes.NetlistComponent]:
         from sexpdata import Symbol

@@ -68,6 +68,12 @@ def drop_net(text, net_name):
 class NetlistSheetpathTests(unittest.TestCase):
     """Seam 1: the reader keeps each component's sheet path."""
 
+    def test_reader_keeps_design_sheets(self):
+        model = NetlistReader().read(FIXTURES / "South-cTc.net")
+        self.assertIn("/", model.sheets)
+        self.assertIn("/Luchessa/", model.sheets)
+        self.assertIn("/Gilroy CalTrain/", model.sheets)
+
     def test_components_carry_sheetpath(self):
         model = NetlistReader().read(FIXTURES / "South-cTc.net")
         self.assertEqual(model.components["MACHINE2"].sheetpath, "/")
@@ -339,6 +345,36 @@ class SheetRuleDiagnosticTests(unittest.TestCase):
         self.assertIn(
             "sheet-codeline-count", [d.code for d in errors(fragment)]
         )
+
+    def test_empty_sheet_gets_a_defaulted_virtual_codeline(self):
+        # A really empty stub page, without even a codeline symbol: we know
+        # enough to fill in the blank, though it is only good for a doc
+        # packet that says TBD.
+        def mutate(text):
+            return text.replace(
+                '(tool "hand-written fixture")',
+                '(tool "hand-written fixture")\n'
+                '    (sheet (number "1") (name "/") (tstamps "/"))\n'
+                '    (sheet (number "2") (name "/Alpha/") (tstamps "/aaaa/"))\n'
+                '    (sheet (number "3") (name "/Beta/") (tstamps "/bbbb/"))',
+            )
+
+        fragment = compile_minimal(mutate=mutate)
+        lines = {c.interlocking: c for c in fragment.codelines}
+        beta = lines["Beta"]
+        self.assertEqual(beta.transport, "VIRTUAL")
+        self.assertEqual(beta.station, "Beta")
+        self.assertTrue(beta.stub)
+        self.assertTrue(beta.defaulted)
+        self.assertFalse(lines["Alpha"].defaulted)
+        infos = [
+            d
+            for d in fragment.diagnostics
+            if d.code == "sheet-empty-defaulted"
+        ]
+        self.assertEqual([d.subject for d in infos], ["Beta"])
+        # The root sheet never becomes a station.
+        self.assertNotIn("", lines)
 
     def test_sheet_with_two_codelines_is_an_error(self):
         duplicate = CODELINE_BLOCK.replace("CODELINE1", "CODELINE9")

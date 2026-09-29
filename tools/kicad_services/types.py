@@ -84,6 +84,7 @@ class NetlistModel:
     source: str = ""
     components: dict[str, NetlistComponent] = field(default_factory=dict)
     nets: list[Net] = field(default_factory=list)
+    sheets: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

@@ -203,6 +203,39 @@ def compile_controller(netlist: NetlistModel) -> ControllerFragment:
             )
         )
 
+    # A really empty sheet (no components, not even a codeline symbol)
+    # still names an interlocking: fill in a defaulted VIRTUAL codeline.
+    occupied_sheets = {
+        _sheet_name(comp) for comp in netlist.components.values()
+    }
+    codeline_sheet_names = {c.interlocking for c in codelines}
+    for sheet_path in netlist.sheets:
+        sheet = sheet_path.strip("/")
+        if not sheet or sheet in occupied_sheets:
+            continue
+        if sheet in codeline_sheet_names:
+            continue
+        codelines.append(
+            Codeline(
+                interlocking=sheet,
+                transport="VIRTUAL",
+                station=sheet,
+                stub=True,
+                defaulted=True,
+            )
+        )
+        diagnostics.append(
+            Diagnostic(
+                severity="info",
+                code="sheet-empty-defaulted",
+                subject=sheet,
+                message=(
+                    f"sheet {sheet} is empty; defaulted to a VIRTUAL "
+                    f"codeline with station {sheet!r} (TBD placeholder)"
+                ),
+            )
+        )
+
     drivers = {
         comp.reference: comp
         for comp in netlist.components.values()
