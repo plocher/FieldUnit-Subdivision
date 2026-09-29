@@ -31,7 +31,7 @@ The symbol libraries are registered globally in
 ## Commands
 
 ```zsh
-python3 -m unittest discover -s tests -q      # 110 tests, Python 3.14
+python3 -m unittest discover -s tests -q      # 122 tests, Python 3.14
 tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-cli
 ```
 
