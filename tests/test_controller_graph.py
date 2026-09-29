@@ -465,6 +465,108 @@ class SymbolAndCodelineDiagnosticTests(unittest.TestCase):
         self.assertIn("unknown-kind", [d.code for d in errors(fragment)])
 
 
+class ReviewFixCompilerTests(unittest.TestCase):
+    """Fixes from the 2026-09-29 branch review: bad input must become a
+    diagnostic, never a crash or a silent wrong answer."""
+
+    def test_non_numeric_column_value_is_a_diagnostic_not_a_crash(self):
+        fragment = compile_minimal(
+            mutate=lambda t: t.replace('(value "1")', '(value "COLUMN")')
+        )
+        codes = [d.code for d in errors(fragment)]
+        self.assertIn("column-number-invalid", codes)
+
+    def test_non_numeric_machine_columns_is_a_diagnostic(self):
+        fragment = compile_minimal(
+            mutate=lambda t: t.replace(
+                '(field (name "Columns") "2")',
+                '(field (name "Columns") "fourteen")',
+            )
+        )
+        codes = [d.code for d in errors(fragment)]
+        self.assertIn("machine-columns-invalid", codes)
+        self.assertEqual(fragment.machine.columns, 0)
+
+    def test_duplicate_column_numbers_is_an_error(self):
+        duplicate_col = (
+            '    (comp (ref "COL9")\n'
+            '      (value "1")\n'
+            "      (fields\n"
+            '        (field (name "Role") "COLUMN")\n'
+            '        (field (name "CP Name") "CP Gamma"))\n'
+            '      (libsource (lib "RailroadPanel") (part "PanelColumn"))\n'
+            '      (sheetpath (names "/Alpha/") (tstamps "/aaaa/")))\n'
+        )
+        fragment = compile_minimal(
+            mutate=lambda t: t.replace(
+                '    (comp (ref "U1")', duplicate_col + '    (comp (ref "U1")'
+            )
+        )
+        codes = [d.code for d in errors(fragment)]
+        self.assertIn("column-number-duplicate", codes)
+
+    def test_codeline_on_root_sheet_is_an_error(self):
+        fragment = compile_minimal(
+            mutate=lambda t: t.replace(
+                '(part "Codeline-Virtual"))\n'
+                '      (sheetpath (names "/Alpha/")',
+                '(part "Codeline-Virtual"))\n'
+                '      (sheetpath (names "/")',
+            )
+        )
+        found = [d for d in errors(fragment) if d.code == "root-sheet-symbol"]
+        self.assertEqual([d.subject for d in found], ["CODELINE1"])
+
+    def test_two_function_pins_on_one_driver_bit_is_an_error(self):
+        # Rewire the lamp onto the CODE button's bit 12.
+        fragment = compile_minimal(
+            mutate=lambda t: t.replace(
+                '(node (ref "U1") (pin "4") (pinfunction "bit3_4")'
+                ' (pintype "output"))',
+                '(node (ref "U1") (pin "13") (pinfunction "bit12_13")'
+                ' (pintype "output"))',
+            )
+        )
+        found = [d for d in errors(fragment) if d.code == "driver-bit-shared"]
+        self.assertEqual(len(found), 1)
+        self.assertIn("bit 12", found[0].message)
+
+    def test_net_with_two_driver_bits_is_an_error(self):
+        extra = (
+            '      (node (ref "U1") (pin "6") (pinfunction "bit5_6")'
+            ' (pintype "output"))\n'
+        )
+        anchor = (
+            '      (node (ref "U1") (pin "8") (pinfunction "bit7_8")'
+            ' (pintype "input")))\n'
+        )
+        fragment = compile_minimal(
+            mutate=lambda t: t.replace(
+                anchor,
+                extra + anchor,
+            )
+        )
+        codes = [d.code for d in errors(fragment)]
+        self.assertIn("net-multiple-driver-bits", codes)
+
+    def test_machine_count_must_be_one(self):
+        machine_block = (
+            '    (comp (ref "MACHINE1")\n'
+            '      (value "Test Machine")\n'
+            "      (fields\n"
+            '        (field (name "Role") "MACHINE")\n'
+            '        (field (name "Type") "US&S506")\n'
+            '        (field (name "Columns") "2"))\n'
+            '      (libsource (lib "RailroadPanel") (part "CtcMachine"))\n'
+            '      (sheetpath (names "/") (tstamps "/")))\n'
+        )
+        fragment = compile_minimal(
+            mutate=lambda t: t.replace(machine_block, "")
+        )
+        codes = [d.code for d in errors(fragment)]
+        self.assertIn("machine-count", codes)
+
+
 class LinkerPairingTests(unittest.TestCase):
     """Seam 3: pairing by normalized name; unmatched sheets become
     placeholder stations, never fatal."""
@@ -765,6 +867,107 @@ class CodelineInstanceTests(unittest.TestCase):
         model = link_subdivision([fragment], [])
         codes = [d.code for d in model.diagnostics if d.severity == "error"]
         self.assertIn("codeline-baud-mismatch", codes)
+
+
+class ReviewFixLinkerTests(unittest.TestCase):
+    """Fixes from the 2026-09-29 branch review: linker edge cases."""
+
+    def test_lock_lever_is_uncheckable_info_not_a_false_error(self):
+        from dataclasses import replace
+
+        controller = compile_controller(read_golden())
+        controller.appliances = [
+            replace(a, kind="LOCK_LEVER")
+            if a.kind == "SWITCH_LEVER" and a.name == "795"
+            else a
+            for a in controller.appliances
+        ]
+        model = link_subdivision([controller], [read_luchessa_plant()])
+        codes = [d.code for d in model.diagnostics]
+        self.assertNotIn("appliance-unmatched", codes)
+        self.assertIn("lock-uncheckable", codes)
+        # 795 lost its switch lever, and that is still reported.
+        self.assertIn(
+            "795",
+            [
+                d.subject
+                for d in model.diagnostics
+                if d.code == "plant-unlevered"
+            ],
+        )
+
+    def test_baud_mismatch_reported_once_per_port(self):
+        fragment = stub_fragment(
+            "M",
+            [
+                Codeline("A", "CMRInet", "1", True, {"Port": "p1", "Baud": "9600"}),
+                Codeline("B", "CMRInet", "2", True, {"Port": "p1", "Baud": "19200"}),
+                Codeline("C", "CMRInet", "3", True, {"Port": "p1", "Baud": "9600"}),
+                Codeline("D", "CMRInet", "4", True, {"Port": "p1", "Baud": "9600"}),
+            ],
+        )
+        model = link_subdivision([fragment], [])
+        found = [
+            d for d in model.diagnostics if d.code == "codeline-baud-mismatch"
+        ]
+        self.assertEqual(len(found), 1)
+
+    def test_topicroot_warning_reported_once_per_broker(self):
+        fragment = stub_fragment(
+            "M",
+            [
+                Codeline("A", "MQTT", "A", True, {"Broker": "b", "TopicRoot": "r1"}),
+                Codeline("B", "MQTT", "B", True, {"Broker": "b", "TopicRoot": "r2"}),
+                Codeline("C", "MQTT", "C", True, {"Broker": "b", "TopicRoot": "r2"}),
+            ],
+        )
+        model = link_subdivision([fragment], [])
+        found = [d for d in model.diagnostics if d.code == "topicroot-mixed"]
+        self.assertEqual(len(found), 1)
+
+    def test_mn_controllers_share_a_station_without_false_duplicate(self):
+        # Design doc: Controller M:N CodeLine. Two machines controlling the
+        # same interlocking on one codeline instance is a legal topology.
+        desk = stub_fragment(
+            "Dispatcher",
+            [Codeline("Luchessa", "MQTT", "Luchessa", True, {"Broker": "b"})],
+        )
+        tower = stub_fragment(
+            "Tower",
+            [Codeline("Luchessa", "MQTT", "Luchessa", True, {"Broker": "b"})],
+        )
+        model = link_subdivision([desk, tower], [])
+        codes = [d.code for d in model.diagnostics if d.severity == "error"]
+        self.assertNotIn("station-key-duplicate", codes)
+        self.assertIn(
+            "station-mn-attached",
+            [d.code for d in model.diagnostics],
+        )
+        instance = model.instances[0]
+        self.assertEqual(instance.stations, ["Luchessa"])
+
+    def test_cp_name_matching_folds_case_only(self):
+        from dataclasses import replace
+
+        # Case-only difference matches...
+        controller = compile_controller(read_golden())
+        controller.columns = [
+            replace(c, cp_name="cp luchessa") if c.number == 5 else c
+            for c in controller.columns
+        ]
+        model = link_subdivision([controller], [read_luchessa_plant()])
+        self.assertNotIn(
+            "cp-unmatched", [d.code for d in model.diagnostics]
+        )
+        # ...but whitespace is part of the name (AGENTS.md: only case is
+        # folded, so 'Luchessa' and 'CP Luchessa' stay distinct).
+        controller = compile_controller(read_golden())
+        controller.columns = [
+            replace(c, cp_name="CPLuchessa") if c.number == 5 else c
+            for c in controller.columns
+        ]
+        model = link_subdivision([controller], [read_luchessa_plant()])
+        self.assertIn("cp-unmatched", [d.code for d in model.diagnostics])
 
 
 class ModelJsonTests(unittest.TestCase):

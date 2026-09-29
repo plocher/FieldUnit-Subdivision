@@ -16,7 +16,7 @@ def _derive_instances(model: SubdivisionModel) -> None:
     Station keys must be unique within an instance; one C/MRI port has one
     Baud."""
     instances: dict[tuple[str, str], CodelineInstance] = {}
-    keys_seen: dict[tuple[str, str], dict[str, str]] = {}
+    keys_seen: dict[tuple[str, str], dict[str, tuple[str, str]]] = {}
     port_bauds: dict[str, set[str]] = {}
     broker_roots: dict[str, set[str]] = {}
     for station in model.stations:
@@ -34,47 +34,67 @@ def _derive_instances(model: SubdivisionModel) -> None:
                 transport=codeline.transport, discriminator=discriminator
             ),
         )
-        instance.stations.append(station.interlocking)
-
         seen = keys_seen.setdefault(instance_id, {})
         key = codeline.station_key
         if key in seen:
-            model.diagnostics.append(
-                Diagnostic(
-                    severity="error",
-                    code="station-key-duplicate",
-                    subject=codeline.station,
-                    message=(
-                        f"stations {seen[key]!r} and {codeline.station!r} "
-                        f"normalise to the same key {key!r} on one "
-                        f"{codeline.transport} codeline"
-                    ),
-                )
-            )
-            # Normalization is warned about only when it caused a finding,
-            # never as routine notice on multi-word stations.
-            if seen[key] != codeline.station:
+            prev_controller, prev_station = seen[key]
+            if prev_controller != station.controller:
+                # Controller M:N CodeLine: another controller attaching to
+                # the same station on the same instance is a legal match.
                 model.diagnostics.append(
                     Diagnostic(
-                        severity="warning",
-                        code="station-key-normalized",
+                        severity="info",
+                        code="station-mn-attached",
                         subject=codeline.station,
                         message=(
-                            f"the collision between {seen[key]!r} and "
-                            f"{codeline.station!r} exists only after key "
-                            "normalisation (whitespace removed, case "
-                            "folded)"
+                            f"station {codeline.station!r} is controlled "
+                            f"by both {prev_controller!r} and "
+                            f"{station.controller!r} on one "
+                            f"{codeline.transport} codeline instance"
                         ),
                     )
                 )
+            else:
+                model.diagnostics.append(
+                    Diagnostic(
+                        severity="error",
+                        code="station-key-duplicate",
+                        subject=codeline.station,
+                        message=(
+                            f"stations {prev_station!r} and "
+                            f"{codeline.station!r} normalise to the same "
+                            f"key {key!r} on one {codeline.transport} "
+                            "codeline"
+                        ),
+                    )
+                )
+                # Normalization is warned about only when it caused a
+                # finding, never as routine notice on multi-word stations.
+                if prev_station != codeline.station:
+                    model.diagnostics.append(
+                        Diagnostic(
+                            severity="warning",
+                            code="station-key-normalized",
+                            subject=codeline.station,
+                            message=(
+                                f"the collision between {prev_station!r} "
+                                f"and {codeline.station!r} exists only "
+                                "after key normalisation (whitespace "
+                                "removed, case folded)"
+                            ),
+                        )
+                    )
         else:
-            seen[key] = codeline.station
+            seen[key] = (station.controller, codeline.station)
+            instance.stations.append(station.interlocking)
 
         if codeline.transport == "MQTT":
             broker = codeline.params.get("Broker", "")
             roots = broker_roots.setdefault(broker, set())
+            roots_before = len(roots)
             roots.add(codeline.params.get("TopicRoot", ""))
-            if len(roots) == 2:  # warn once, on the first mix
+            # Warn once, when the mix first appears.
+            if len(roots) == 2 and len(roots) > roots_before:
                 model.diagnostics.append(
                     Diagnostic(
                         severity="warning",
@@ -90,8 +110,10 @@ def _derive_instances(model: SubdivisionModel) -> None:
             port = codeline.params.get("Port", "")
             baud = codeline.params.get("Baud", "")
             bauds = port_bauds.setdefault(port, set())
+            bauds_before = len(bauds)
             bauds.add(baud)
-            if len(bauds) > 1:
+            # Error once, when the mismatch first appears.
+            if len(bauds) == 2 and len(bauds) > bauds_before:
                 model.diagnostics.append(
                     Diagnostic(
                         severity="error",
@@ -123,13 +145,15 @@ def _cross_check_cps(
 ) -> None:
     """§7a: a column IS a CP. CP Name must name a plant CP of the same
     interlocking, uniquely; a plant CP with no column is only a warning."""
+    # CP names are names, not wire keys: only case is folded (AGENTS.md),
+    # so 'CPLuchessa' does not silently pair with 'CP Luchessa'.
     plant_cps = {
-        station_key(cp.get("id", "")): cp.get("id", "")
+        cp.get("id", "").casefold(): cp.get("id", "")
         for cp in plant.get("appliances", {}).get("controlledPoints", [])
     }
     seen: dict[str, int] = {}
     for column in columns:
-        key = station_key(column.cp_name)
+        key = column.cp_name.casefold()
         if key not in plant_cps:
             model.diagnostics.append(
                 Diagnostic(
@@ -195,12 +219,28 @@ def _cross_check_appliances(
     signals = ids("signals")
     circuits = ids("trackCircuits")
 
-    lever_targets = {"SWITCH_LEVER": switches, "LOCK_LEVER": {}, "SIGNAL_LEVER": signals}
+    lever_targets = {"SWITCH_LEVER": switches, "SIGNAL_LEVER": signals}
     levered: set[str] = set()
     lamped: set[str] = set()
     mcall_reported = False
     for appliance in appliances:
-        if appliance.kind in lever_targets:
+        if appliance.kind == "LOCK_LEVER":
+            # Locks are not in the portable plant model yet: the same
+            # known gap as maintainer calls, reported, never a false error.
+            model.diagnostics.append(
+                Diagnostic(
+                    severity="info",
+                    code="lock-uncheckable",
+                    subject=appliance.name,
+                    message=(
+                        "switch locks are not in the portable plant model "
+                        f"yet; lock lever {appliance.name} of "
+                        f"{interlocking} cannot be cross-checked (known "
+                        "gap)"
+                    ),
+                )
+            )
+        elif appliance.kind in lever_targets:
             target = lever_targets[appliance.kind]
             key = appliance.name.casefold()
             if key in target:
@@ -344,6 +384,7 @@ def link_subdivision(
                         status="placeholder",
                         codeline=codeline,
                         columns=columns,
+                        controller=controller.machine.name,
                     )
                 )
                 continue
@@ -355,6 +396,7 @@ def link_subdivision(
                     codeline=codeline,
                     columns=columns,
                     plant_id=plant.get("identity", {}).get("id", ""),
+                    controller=controller.machine.name,
                 )
             )
             _cross_check_cps(model, codeline.interlocking, columns, plant)

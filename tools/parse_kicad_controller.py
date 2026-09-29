@@ -17,6 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from controller_graph.compiler import compile_controller
+from controller_graph.report import report_diagnostics
 from kicad_services.netlist_reader import KicadCliNetlistExporter, NetlistReader
 
 
@@ -73,12 +74,7 @@ def main() -> int:
     else:
         sys.stdout.write(text)
 
-    for diagnostic in fragment.diagnostics:
-        print(
-            f"{diagnostic.severity}: {diagnostic.code}: {diagnostic.message}",
-            file=sys.stderr,
-        )
-    return 1 if any(d.severity == "error" for d in fragment.diagnostics) else 0
+    return report_diagnostics(fragment.diagnostics)
 
 
 if __name__ == "__main__":

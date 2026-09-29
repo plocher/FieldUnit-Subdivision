@@ -16,6 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from controller_graph.compiler import compile_controller
+from controller_graph.report import report_diagnostics
 from kicad_services.netlist_reader import NetlistReader
 from link.linker import link_subdivision
 from link.model import subdivision_to_json
@@ -56,12 +57,7 @@ def main() -> int:
     diagnostics = list(model.diagnostics)
     for controller in controllers:
         diagnostics.extend(controller.diagnostics)
-    for diagnostic in diagnostics:
-        print(
-            f"{diagnostic.severity}: {diagnostic.code}: {diagnostic.message}",
-            file=sys.stderr,
-        )
-    return 1 if any(d.severity == "error" for d in diagnostics) else 0
+    return report_diagnostics(diagnostics)
 
 
 if __name__ == "__main__":

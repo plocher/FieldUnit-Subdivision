@@ -49,6 +49,18 @@ def _tokens(comp: NetlistComponent, field_name: str) -> tuple[str, ...]:
     return tuple(t.strip() for t in raw.split(",") if t.strip())
 
 
+def _root_sheet_error(comp: NetlistComponent) -> Diagnostic:
+    return Diagnostic(
+        severity="error",
+        code="root-sheet-symbol",
+        subject=comp.reference,
+        message=(
+            f"{comp.reference} ({comp.value}) sits on the root sheet; "
+            "COLUMN and CODELINE symbols belong on interlocking sheets"
+        ),
+    )
+
+
 def _sheet_name(component: NetlistComponent) -> str:
     """Interlocking name from the component's sheet path ('/Luchessa/')."""
     return component.sheetpath.strip("/")
@@ -121,6 +133,7 @@ def compile_controller(netlist: NetlistModel) -> ControllerFragment:
                 )
 
     machine = Machine(name="", machine_type="", columns=0)
+    machine_count = 0
     columns: list[Column] = []
     column_by_ref: dict[str, Column] = {}
     appliance_refs: list[NetlistComponent] = []
@@ -128,12 +141,43 @@ def compile_controller(netlist: NetlistModel) -> ControllerFragment:
     for comp in netlist.components.values():
         role = comp.fields.get("Role", "")
         if role == "MACHINE":
+            machine_count += 1
+            raw_columns = comp.fields.get("Columns", "0") or "0"
+            if not raw_columns.isdigit():
+                diagnostics.append(
+                    Diagnostic(
+                        severity="error",
+                        code="machine-columns-invalid",
+                        subject=comp.reference,
+                        message=(
+                            f"machine {comp.value!r} Columns "
+                            f"{raw_columns!r} is not a number"
+                        ),
+                    )
+                )
+                raw_columns = "0"
             machine = Machine(
                 name=comp.value,
                 machine_type=comp.fields.get("Type", ""),
-                columns=int(comp.fields.get("Columns", "0") or "0"),
+                columns=int(raw_columns),
             )
         elif role == "COLUMN":
+            if not _sheet_name(comp):
+                diagnostics.append(_root_sheet_error(comp))
+                continue
+            if not comp.value.isdigit():
+                diagnostics.append(
+                    Diagnostic(
+                        severity="error",
+                        code="column-number-invalid",
+                        subject=comp.reference,
+                        message=(
+                            f"column {comp.reference} Value {comp.value!r} "
+                            "is not a column number"
+                        ),
+                    )
+                )
+                continue
             column = Column(
                 number=int(comp.value),
                 cp_name=comp.fields.get("CP Name", ""),
@@ -144,12 +188,46 @@ def compile_controller(netlist: NetlistModel) -> ControllerFragment:
         elif role == "APPLIANCE":
             appliance_refs.append(comp)
 
+    if machine_count != 1:
+        diagnostics.append(
+            Diagnostic(
+                severity="error",
+                code="machine-count",
+                subject=str(netlist.path),
+                message=(
+                    f"controller project has {machine_count} MACHINE "
+                    "symbols; it needs exactly one"
+                ),
+            )
+        )
+
+    numbers_seen: dict[int, Column] = {}
+    for column in columns:
+        first = numbers_seen.setdefault(column.number, column)
+        if first is not column:
+            diagnostics.append(
+                Diagnostic(
+                    severity="error",
+                    code="column-number-duplicate",
+                    subject=str(column.number),
+                    message=(
+                        f"column number {column.number} is used on both "
+                        f"sheet {first.interlocking} and sheet "
+                        f"{column.interlocking}; column numbers are "
+                        "machine-wide"
+                    ),
+                )
+            )
+
     codelines: list[Codeline] = []
     sheets_with_columns = {c.interlocking for c in columns}
     for comp in netlist.components.values():
         if comp.fields.get("Role", "") != "CODELINE":
             continue
         sheet = _sheet_name(comp)
+        if not sheet:
+            diagnostics.append(_root_sheet_error(comp))
+            continue
         station = comp.fields.get("Station", "")
         if comp.value not in _TRANSPORTS:
             diagnostics.append(
@@ -251,7 +329,7 @@ def compile_controller(netlist: NetlistModel) -> ControllerFragment:
     for net in netlist.nets:
         net_columns: list[Column] = []
         members: list[str] = []
-        driver_bit: tuple[NetlistComponent, int] | None = None
+        driver_bits: list[tuple[NetlistComponent, int]] = []
         functions: list[tuple[str, str]] = []
         for node in net.nodes:
             if node.reference in column_by_ref:
@@ -259,7 +337,9 @@ def compile_controller(netlist: NetlistModel) -> ControllerFragment:
             elif node.reference in drivers:
                 match = _BIT_PIN.match(_pin_function(node.pinfunction))
                 if match:
-                    driver_bit = (drivers[node.reference], int(match.group(1)))
+                    driver_bits.append(
+                        (drivers[node.reference], int(match.group(1)))
+                    )
             elif node.reference in appliance_by_ref:
                 function = _pin_function(node.pinfunction)
                 if function == "Column":
@@ -270,8 +350,21 @@ def compile_controller(netlist: NetlistModel) -> ControllerFragment:
             appliance_columns.setdefault(ref, set()).update(
                 c.number for c in net_columns
             )
-        if driver_bit is not None:
-            driver, bit = driver_bit
+        if len(driver_bits) > 1:
+            diagnostics.append(
+                Diagnostic(
+                    severity="error",
+                    code="net-multiple-driver-bits",
+                    subject=net.name,
+                    message=(
+                        f"net {net.name!r} touches "
+                        f"{len(driver_bits)} IODRIVER bit pins; a "
+                        "binding must name exactly one bit"
+                    ),
+                )
+            )
+        elif len(driver_bits) == 1:
+            driver, bit = driver_bits[0]
             for ref, function in functions:
                 bindings.append(
                     DriveBinding(
@@ -295,6 +388,27 @@ def compile_controller(netlist: NetlistModel) -> ControllerFragment:
                         ),
                     )
                 )
+
+    # One driver bit drives one appliance function.
+    by_bit: dict[tuple[str, int], list[DriveBinding]] = {}
+    for binding in bindings:
+        by_bit.setdefault((binding.driver, binding.bit), []).append(binding)
+    for (driver_value, bit), shared in sorted(by_bit.items()):
+        if len(shared) > 1:
+            users = ", ".join(
+                f"{b.appliance}.{b.function}" for b in shared
+            )
+            diagnostics.append(
+                Diagnostic(
+                    severity="error",
+                    code="driver-bit-shared",
+                    subject=driver_value,
+                    message=(
+                        f"driver {driver_value} bit {bit} is used by "
+                        f"{users}"
+                    ),
+                )
+            )
 
     appliances = []
     if netlist.nets:

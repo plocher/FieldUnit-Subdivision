@@ -28,6 +28,7 @@ class Station:
     codeline: Codeline
     columns: list[Column] = field(default_factory=list)
     plant_id: str = ""
+    controller: str = ""  # machine name; several controllers may attach (M:N)
 
 
 @dataclass

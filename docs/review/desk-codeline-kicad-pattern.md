@@ -452,3 +452,9 @@ second-implementation fixture (§9), field side (§5a).
 - **FieldUnit `cTcMachine`:** it conflates codec track circuits with lamp slots
   (`withTrackLamps`). An `IndicationToken` list can drive one lamp from several
   circuits.
+- **Two diagnostic types:** `plant_graph` (enum severities) and
+  `controller_graph` (string severities) each define their own Diagnostic,
+  so printers and filters cannot be shared across the plant and controller
+  pipelines. Unify when the plant compiler moves to `Role`/`Kind` fields.
+- **Locks are not in the portable plant model** (like maintainer calls):
+  a `LOCK_LEVER` is reported `lock-uncheckable` (info) until they land.
