@@ -31,7 +31,7 @@ The symbol libraries are registered globally in
 ## Commands
 
 ```zsh
-python3 -m unittest discover -s tests -q      # 57 tests, stdlib only, Python 3.14
+python3 -m unittest discover -s tests -q      # 110 tests, Python 3.14
 tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-cli
 ```
 
@@ -58,7 +58,10 @@ tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-
 
 - `tools/kicad_services/`: generic KiCad readers (netlist, schematic placement, symbol library pin contracts). Reuse these; do not write new s-expression parsers.
 - `tools/plant_graph/`: plant compiler (`compiler.py`), routes, indications, portable model, FieldUnit projection, layout and picture.
-- `tools/parse_kicad_plant.py`, `tools/render_plant_picture.py`: CLI front ends.
+- `tools/controller_graph/`: controller compiler (columns are CPs, appliances, drive bits from IODRIVER pins, codelines with stub/empty-sheet handling, §7 diagnostics).
+- `tools/link/`: subdivision linker (pairing by normalized name, placeholder stations, §7a cross-checks, codeline instances, source hashes, JSON model).
+- `tools/parse_kicad_plant.py`, `tools/parse_kicad_controller.py`, `tools/link_subdivision.py`, `tools/render_plant_picture.py`: CLI front ends.
+- `tests/fixtures/kicad/`: frozen goldens (`South-cTc.net`, `Luchessa.plant-model.json`) and the hand-written `minimal_controller.net` that negative tests mutate.
 - `schemas/interlocking-plant/v1.json`: portable model schema.
 - `profiles/spcoast_south/cps/`: station JSON. `CP_*.json` are legacy harvests; `generated/` holds KiCad-derived interlockings (only `Luchessa` so far). The plant host prefers `generated/<name>.json` over the legacy file.
 - `runtime/plant_host/`: the only runtime code. `graph/`, `traffic/` and `web/*` are empty placeholders.
@@ -78,7 +81,7 @@ tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-
 - Direction and policy markers need `Rulebook`, and `Direction` where applicable.
 - Track nets need labels, except OS legs, dark track and derail nets.
 
-**Desk schematics (RailroadPanel lib).** No tool reads these yet.
+**Desk schematics (RailroadPanel lib).** Compiled by `tools/controller_graph/` (CLI `parse_kicad_controller.py`) and cross-checked against plants by `tools/link_subdivision.py`.
 
 - `PanelColumn` Value is the desk column number.
 - `PanelColumn-MAX7313` Value is the expander's address or index on its bus. Pin N is bit N-1. Take expander, bit and direction from the schematic; never compute them from column numbers.

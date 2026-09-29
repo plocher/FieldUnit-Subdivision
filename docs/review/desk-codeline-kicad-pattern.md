@@ -1,7 +1,9 @@
 # Desk, codeline and field: KiCad authoring pattern and logical model
 
-Status: draft for review (2026-09-28). Supersedes the desk-binding parts of
-`ctc-panel-hardware-binding.md` where they disagree.
+Status: draft for review (2026-09-28; amended 2026-09-29 with §1a, the
+placeholder/stub/EMULATED decisions, and implementation status). Supersedes
+the desk-binding parts of `ctc-panel-hardware-binding.md` where they
+disagree.
 
 ## 1. Principles
 
@@ -31,6 +33,83 @@ Terminology (FieldUnit / cTc):
 | signal | the dispatcher-controlled signal, one lever | `784` |
 | mast | one physical signal location governed by that signal | `784EAB`, `784WD` |
 | head | one lamp unit on a mast | `A`, `B` |
+
+## 1a. Three ecosystems, partial inputs
+
+The tooling deals with three ecosystems:
+**(1) A Plant Model**: the interlocking's field unit and its physical I/O,
+**(2) A Controller Model**: the controller (desk, tower panel, software
+panel) and its physical I/O, and
+**(3) A Codeline Model**: the codeline between them.
+A user may provide any or all of these.
+
+We have chosen to leverage KiCad's schematic editor for these source
+documents, producing a compiler that converts them into a generalized data
+model. This insulates the downstream tooling from dependencies on esoteric
+KiCad details, and allows us to replace KiCad with a better domain-aware
+editing tool in the future.
+
+- **KiCad schematics are the initial source of Truth.** The user creates
+  KiCad schematic models of
+  1. Plant trackplans, the appliances they use, the codeline it connects to
+     and the physical I/O connecting it to the layout;
+  2. Tower operator's / dispatcher cTc machine's lever panel layout and the
+     physical I/O connecting it to the cTc machine.
+- **The compiler generates per-project data models.** The output of the
+  compiler is a data model representation of the project as depicted by the
+  project's KiCad schematic source material. This model is self-consistent
+  and representative of the ecosystems found in the project sources, even
+  when those sources are incomplete. The compiler cross-checks the
+  integrity of the sources and emits diagnostics as necessary.
+- **The linker cross-checks between the three ecosystems.** A controller
+  sheet with no plant model becomes a **placeholder station** (recorded
+  status, like a weak symbol), not a failure. A plant with no controller
+  sheet is info (M:N, or not on this machine).
+- **The generated data model is a cached copy of the project's Truth.**
+  It is never edited, only regenerated.
+- **Generators use the data model to create artifacts.** The data model
+  carries per-station status rich enough for generators to validate and
+  use without any knowledge of KiCad. Generators consume the data model,
+  validate its suitability for use, and create artifacts (e.g., fieldunit
+  or cTc machine sketches, emulator and simulation applications,
+  documentation sets, CMRInet host applications).
+
+Framing use cases (GIVEN/WHEN/THEN):
+
+- GIVEN source data for (**A**) plants only,
+  WHEN the layout's data model is created,
+  THEN the model will contain (**A**) the plants' field unit models
+  AND the model will not contain (**B**) controller models
+  AND the model will not contain (**C**) codeline models.
+  Generators for interlockings will report "no controllers defined";
+  generators for field units are limited to EMULATED; codelines are
+  limited to the simple in-memory passing of data within a single app.
+- GIVEN source data for a (**B**) controller only,
+  WHEN the layout's data model is created,
+  THEN the model will contain (**A**) incomplete plant field unit models
+  (no trackplan, no field I/O bindings)
+  AND the model will contain (**B**) controller models
+  AND the model will contain (**C**) codeline models
+  AND linker cross-checks will report *unchecked*.
+  cTc machine/tower generators will be successful; generators for field
+  units will be limited to EMULATED.
+- GIVEN today's SPCoast South (one drawn plant, one drawn controller
+  interlocking and six stubs),
+  WHEN the layout's data model is created,
+  THEN the model will contain (**A**) a plant field unit model for
+  Luchessa only (others are undefined)
+  AND the model will contain (**B**) a controller model for Luchessa only
+  (others are placeholder stations)
+  AND the model will contain (**C**) the codeline models as drawn
+  (`Codeline-VIRTUAL` today); a really empty sheet defaults to VIRTUAL
+  (§7).
+- GIVEN a topology,
+  WHEN an interlocking plant's codeline transport changes,
+  THEN the logical column/appliance model remains unchanged; only the
+  controller/interlocking codeline details change.
+- GIVEN a topology,
+  WHEN an IODRIVER implementation changes,
+  THEN only the impacted I/O bindings change.
 
 ## 2. Topology
 
@@ -171,6 +250,10 @@ Luchessa/Luchessa.kicad_pro
   - proxy function pin not on a driver bit;
   - driver bit used twice.
 
+A plant project with **no hardware sheet implies `HARDWARE = EMULATED`**.
+Existing plants stay valid and virtual-plant generation just works; a
+physical build requires source data from that sheet.
+
 ## 6. Pipeline
 
 ```
@@ -210,7 +293,23 @@ Errors:
 Warnings:
 - Multiple `TopicRoot` values on one broker. This is allowed, but usually
   unintended.
-- Station key changed by normalisation.
+- Station key changed by normalisation — **forensic context only**: emitted
+  when the normalisation caused an associated finding (e.g. two stations
+  that collide only after whitespace removal and case folding), never as a
+  routine notice on multi-word stations, and not for literal copy-paste
+  duplicates.
+
+Stub sheets:
+- A sheet holding **exactly one CODELINE** and nothing else is a recognized
+  **stub**: a declared placeholder for an interlocking not yet drawn on
+  this panel. It is exempt from the one-CODE and lever rules and still
+  contributes its codeline parameters. Anything in between is still
+  validated and can generate warnings and errors.
+- A **really empty sheet** — no codeline symbol at all — still names an
+  interlocking: the compiler fills in the blank with a defaulted `VIRTUAL`
+  codeline (Station = sheet name, marked `defaulted`, info diagnostic).
+  Without any other data it is useless for anything but a doc packet that
+  says "TBD".
 
 ## 7a. Cross-project consistency: plant project ↔ controller sheet
 
@@ -222,8 +321,11 @@ diagnostics); the linker then cross-checks the two fragments.
 
 **Pairing:**
 - Each controller interlocking sheet matches exactly one plant project, by
-  name after normalisation, and the plant's identity name agrees. A sheet with
-  no plant is an **error**.
+  name after normalisation, and the plant's identity name agrees. A sheet
+  with no plant becomes a **placeholder station**: recorded status,
+  cross-checks reported as unchecked, never fatal at link time. It is an
+  error only when a generator that needs the pairing (field firmware, a
+  verified desk build) is asked to produce that station.
 - A plant with no controller sheet is **info**: it may be controlled by another
   controller (M:N), or not yet be on this machine.
 
@@ -303,6 +405,17 @@ the netlist:
   field references export resolved: `Topic` exports as
   `ctc/SPCoast/codeline/Luchessa`.
 - **ERC:** 0 violations after the root-UUID repair and the symbol clean-ups.
+
+**Implemented 2026-09-29** (`tools/controller_graph/`, `tools/link/`,
+`parse_kicad_controller.py`, `link_subdivision.py`; 50 new tests): the
+reader keeps sheetpaths and design-section sheet lists; controller
+compiler with §7 diagnostics, stub recognition and empty-sheet
+defaulting; linker with §7a cross-checks, placeholder stations, codeline
+instances, source hashes and JSON emission. Golden test: generated
+bindings match hand-written `examples/spcoast_ctc/IO-I2C.h` exactly.
+Negative fixtures cover §7 (incl. zero-nets) and §7a. Still open:
+station vocabulary coverage and machine-type capacity checks (§7a), the
+second-implementation fixture (§9), field side (§5a).
 
 ## 9. Test plan
 
