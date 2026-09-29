@@ -17,7 +17,7 @@
     )
     (comp
       (ref "SW783")
-      (value "~")
+      (value "783")
       (libsource
         (lib "Railroad")
         (part "Switch_Powered")

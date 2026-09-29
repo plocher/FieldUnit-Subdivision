@@ -147,6 +147,56 @@ class PlantGraphCompilerTests(unittest.TestCase):
             ["783T1"],
         )
 
+    def _compile_fixture_with(self, *replacements: tuple[str, str]):
+        """Compile the minimal fixture after textual netlist edits."""
+        import tempfile
+
+        text = (FIXTURES / "minimal_plant.net").read_text()
+        for old, new in replacements:
+            self.assertIn(old, text)
+            text = text.replace(old, new)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "edited.net"
+            path.write_text(text)
+            netlist = NetlistReader().read(path)
+        return PlantGraphCompiler().compile(self.library, netlist)
+
+    def test_switch_name_comes_from_value_not_reference(self) -> None:
+        """KiCad annotation owns References; railroad names live in Value."""
+        graph = self._compile_fixture_with(('"SW783"', '"SW1"'))
+        sw = graph.entities["SW1"]
+        self.assertEqual(sw.canonical_name, "783")
+        self.assertEqual(
+            [tc.name for tc in graph.derived_track_circuits],
+            ["783T1"],
+        )
+        self.assertEqual(
+            [
+                (t.switch_name, t.c_row, t.n_row, t.r_row)
+                for t in graph.turnout_layouts
+            ],
+            [
+                (t.switch_name, t.c_row, t.n_row, t.r_row)
+                for t in self.graph.turnout_layouts
+            ],
+        )
+        self.assertNotIn(
+            "bad_switch_reference", {d.code for d in graph.diagnostics}
+        )
+
+    def test_switch_without_value_is_diagnosed(self) -> None:
+        graph = self._compile_fixture_with(('(value "783")', '(value "~")'))
+        codes = {d.code for d in graph.diagnostics if d.entity_ref == "SW783"}
+        self.assertIn("missing_switch_value", codes)
+
+    def test_mast_reference_is_not_checked_against_value(self) -> None:
+        # A reference shaped like S<signal><dir><n> but disagreeing with Value.
+        graph = self._compile_fixture_with(('"S784S1"', '"S12N3"'))
+        self.assertEqual(graph.entities["S12N3"].canonical_name, "784SAB")
+        self.assertNotIn(
+            "mast_ref_value_mismatch", {d.code for d in graph.diagnostics}
+        )
+
     def test_projects_versioned_portable_model_without_kicad_evidence(self) -> None:
         model = compile_interlocking_plant_model(
             self.graph,
@@ -212,7 +262,7 @@ class PlantGraphCompilerTests(unittest.TestCase):
                 ),
             },
             title_block=SchematicTitleBlock(
-                title="CP Luchessa",
+                title="Luchessa",
                 revision="1.0",
                 date="2026.09",
                 company="SPCoast",
@@ -229,14 +279,14 @@ class PlantGraphCompilerTests(unittest.TestCase):
 
         payload = compile_interlocking_plant_model(
             graph,
-            plant_name="CP Luchessa",
-            plant_id="spcoast.luchessa",
+            plant_name="Luchessa",
+            plant_id="spcoast.Luchessa",
         ).to_dict()
 
         self.assertEqual(
             payload["document"],
             {
-                "title": "CP Luchessa",
+                "title": "Luchessa",
                 "revision": "1.0",
                 "date": "2026.09",
                 "company": "SPCoast",
@@ -256,7 +306,7 @@ class PlantGraphCompilerTests(unittest.TestCase):
     def test_projects_dependent_derail_from_d_suffix_value(self) -> None:
         self.netlist.components["SW795"] = NetlistComponent(
             "SW795",
-            "",
+            "795",
             "Railroad",
             "Switch_Powered",
             fields={"CP": "CP Gilroy"},
@@ -408,7 +458,7 @@ class PlantGraphCompilerTests(unittest.TestCase):
     def test_invalid_switch_indications_are_semantic_errors(self) -> None:
         self.netlist.components["SW783"] = NetlistComponent(
             "SW783",
-            "~",
+            "783",
             "Railroad",
             "Switch_Powered",
             fields={"Indications": "CLEAR/NOT_AN_INDICATION"},
@@ -617,7 +667,7 @@ class PlantGraphCompilerTests(unittest.TestCase):
             "B3": NetlistComponent("B3", "~", "Railroad", "IRJ"),
             "SW1": NetlistComponent(
                 "SW1",
-                "~",
+                "1",
                 "Railroad",
                 "Switch_Powered",
                 fields={"Indications": "CLEAR/DIVERGING_CLEAR"},
@@ -782,7 +832,7 @@ class PlantGraphCompilerTests(unittest.TestCase):
                 "B2", "~", "Railroad", "IRJ-Signal", fields={"CP": "CP East"}
             ),
             "SW1": NetlistComponent(
-                "SW1", "~", "Railroad", "Switch_Powered", fields={"CP": "CP West"}
+                "SW1", "1", "Railroad", "Switch_Powered", fields={"CP": "CP West"}
             ),
             "S2E1": NetlistComponent("S2E1", "2EA", "Railroad", "Mast_Single"),
             "S2W1": NetlistComponent("S2W1", "2WA", "Railroad", "Mast_Single"),
@@ -974,7 +1024,7 @@ class PlantGraphCompilerTests(unittest.TestCase):
             ),
             "B2": NetlistComponent("B2", "~", "Railroad", "IRJ-Signal"),
             "B4": NetlistComponent("B4", "~", "Railroad", "IRJ-Signal"),
-            "SW1": NetlistComponent("SW1", "~", "Railroad", "Switch_Powered"),
+            "SW1": NetlistComponent("SW1", "1", "Railroad", "Switch_Powered"),
             "S2S1": NetlistComponent("S2S1", "2SAB", "Railroad", "Mast_Single"),
             "S4S1": NetlistComponent("S4S1", "4SAB", "Railroad", "Mast_Single"),
         }
