@@ -83,7 +83,7 @@ Railroad/SPCoast/                  folder = membership (no manifest)
 | `CODELINE` | Codeline-VIRTUAL, Codeline-MQTT, Codeline-CMRInet | **transport type** | `Station`; transport parameters (below) |
 
 Appliance `Kind` values: `SWITCH_LEVER`, `LOCK_LEVER`, `SIGNAL_LEVER`, `LAMP`,
-`CODE`, `MAINTAINER_CALL`.
+`CODE`, `MAINTAINER_CALL`, `AUXILIARY`.
 
 Lamps: Value is a descriptive label only (OS, TRACK, MC) and nothing reads it.
 `IndicationToken` is the comma-separated list of indications OR'd onto the lamp
