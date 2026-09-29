@@ -24,6 +24,14 @@ Status: draft for review (2026-09-28). Supersedes the desk-binding parts of
   when consumed.** Only case is folded, so interlocking `Luchessa` and its
   controlled point `CP Luchessa` stay distinct.
 
+Terminology (FieldUnit / cTc):
+
+| Term | Meaning | Example |
+|---|---|---|
+| signal | the dispatcher-controlled signal, one lever | `784` |
+| mast | one physical signal location governed by that signal | `784EAB`, `784WD` |
+| head | one lamp unit on a mast | `A`, `B` |
+
 ## 2. Topology
 
 ```
@@ -70,7 +78,7 @@ Railroad/SPCoast/                  folder = membership (no manifest)
 |---|---|---|---|
 | `MACHINE` | CtcMachine | machine name | `Type` (e.g. `US&S506`), `Columns`, `Era` |
 | `COLUMN` | PanelColumn | **column number** (known nowhere else) | `CP Name` (the CP this column is); column pins (all equivalent) |
-| `APPLIANCE` | PanelSwitch, PanelLock, PanelSignal, PanelLamp-*, PanelCode, PanelAuxiliary | appliance name (plant name, or label for lamps) | `Kind`; one `Column` pin; function pins (NWS/RWS/NWK/RWK, NGS/HS/SGS/NGK/SGK/TEK, LAMP, CODE, SW) |
+| `APPLIANCE` | PanelSwitch, PanelLock, PanelSignal, PanelMCall, PanelLamp-*, PanelCode, PanelAuxiliary | appliance name (plant name, or label for lamps) | `Kind`; one `Column` pin; function pins (NWS/RWS/NWK/RWK, NGS/HS/SGS/NGK/SGK/TEK, LAMP, CODE, SW) |
 | `IODRIVER` | PanelColumn-MAX7313 (implementation-specific) | bus address (e.g. `0x24`) | `BusKind` (e.g. `I2C-MAX7313`); pins `bitN` |
 | `CODELINE` | Codeline-VIRTUAL, Codeline-MQTT, Codeline-CMRInet | **transport type** | `Station`; transport parameters (below) |
 
@@ -82,7 +90,7 @@ Lamps: Value is a descriptive label only (OS, TRACK, MC) and nothing reads it.
 (`795T1,2NAA,799T1`, `MC1K`). The library default is empty, so a lamp with no
 token is diagnosed rather than silently getting a default.
 
-Auxiliaries: `ControlToken` (e.g. `MC1S`); `Kind` says what it is.
+Maintainer calls use `PanelMCall` (`Kind=MAINTAINER_CALL`, `ControlToken=${VALUE}S`, e.g. `MC1S`). `PanelAuxiliary` is for other one-bit appliances (switch heater, bungalow door …). Its `Kind` says which, and it never means a maintainer call.
 
 `PanelColumn-MAX7313` states one implementation choice: this desk dedicates one
 16-bit expander per column. Other machines define their own IODRIVER symbols
@@ -143,7 +151,7 @@ Luchessa/Luchessa.kicad_pro
     Their function pins are that appliance's field I/O, for example:
     - switch machine: drive N/R, point detection N/R;
     - track circuit: occupancy;
-    - signal head: lamps or aspect channels;
+    - mast/head: head lamps or aspect channels;
     - derail and lock inputs.
 
     Proxies keep I/O pins off the topology symbols, whose pins (C/N/R, SIGNAL …)
@@ -196,6 +204,7 @@ Errors:
 - Duplicate station key within a codeline instance, after normalisation.
 - Inconsistent `Baud` on one C/MRI port.
 - Symbol with no `Role`; unknown `Role` or `Kind`.
+- A required field still holding its library placeholder (e.g. `CP Name` = `CP NAME`). Library defaults for identity fields should be empty.
 - Lamp with an empty `IndicationToken`.
 
 Warnings:
