@@ -51,6 +51,22 @@ def _derive_instances(model: SubdivisionModel) -> None:
                     ),
                 )
             )
+            # Normalization is warned about only when it caused a finding,
+            # never as routine notice on multi-word stations.
+            if seen[key] != codeline.station:
+                model.diagnostics.append(
+                    Diagnostic(
+                        severity="warning",
+                        code="station-key-normalized",
+                        subject=codeline.station,
+                        message=(
+                            f"the collision between {seen[key]!r} and "
+                            f"{codeline.station!r} exists only after key "
+                            "normalisation (whitespace removed, case "
+                            "folded)"
+                        ),
+                    )
+                )
         else:
             seen[key] = codeline.station
 

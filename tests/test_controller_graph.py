@@ -670,6 +670,54 @@ class CodelineInstanceTests(unittest.TestCase):
         self.assertEqual(len(found), 1)
         self.assertEqual(found[0].severity, "warning")
 
+    def test_normalization_warning_accompanies_a_caused_collision(self):
+        # "Big Sur" and "BIGSUR" collide only after normalization, so the
+        # duplicate error carries a normalization warning for context.
+        fragment = stub_fragment(
+            "M",
+            [
+                Codeline("Alpha", "VIRTUAL", "Big Sur", True),
+                Codeline("Beta", "VIRTUAL", "BIGSUR", True),
+            ],
+        )
+        model = link_subdivision([fragment], [])
+        warnings = [
+            d
+            for d in model.diagnostics
+            if d.code == "station-key-normalized"
+        ]
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("Big Sur", warnings[0].message)
+
+    def test_no_normalization_warning_without_a_finding(self):
+        # Multi-word stations normalize routinely; that alone is not news.
+        model = link_subdivision(
+            [compile_controller(read_golden())], [read_luchessa_plant()]
+        )
+        self.assertEqual(
+            [
+                d
+                for d in model.diagnostics
+                if d.code == "station-key-normalized"
+            ],
+            [],
+        )
+
+    def test_no_normalization_warning_for_literal_duplicates(self):
+        # Identical raw names are a plain duplicate; normalization played
+        # no part in the collision.
+        fragment = stub_fragment(
+            "M",
+            [
+                Codeline("Alpha", "VIRTUAL", "Corporal", True),
+                Codeline("Beta", "VIRTUAL", "Corporal", True),
+            ],
+        )
+        model = link_subdivision([fragment], [])
+        codes = [d.code for d in model.diagnostics]
+        self.assertIn("station-key-duplicate", codes)
+        self.assertNotIn("station-key-normalized", codes)
+
     def test_inconsistent_baud_on_one_port_is_an_error(self):
         fragment = stub_fragment(
             "M",
