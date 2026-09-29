@@ -1,0 +1,3579 @@
+(export
+	(version "E")
+	(design
+		(source "/Users/jplocher/Dropbox/KiCad/Railroad/SPCoast/South-cTc/South-cTc.kicad_sch")
+		(date "2026-09-29T10:22:37")
+		(tool "Eeschema 10.0.1")
+		(sheet
+			(number "1")
+			(name "/")
+			(tstamps "/")
+			(title_block
+				(title "South cTc")
+				(company "SPCoast Railroad")
+				(rev "0.1")
+				(date "2026.09")
+				(source "South-cTc.kicad_sch")
+				(comment
+					(number "1")
+					(value "JPlocher")
+				)
+				(comment
+					(number "2")
+					(value "")
+				)
+				(comment
+					(number "3")
+					(value "")
+				)
+				(comment
+					(number "4")
+					(value "")
+				)
+				(comment
+					(number "5")
+					(value "")
+				)
+				(comment
+					(number "6")
+					(value "")
+				)
+				(comment
+					(number "7")
+					(value "")
+				)
+				(comment
+					(number "8")
+					(value "")
+				)
+				(comment
+					(number "9")
+					(value "")
+				)
+			)
+		)
+		(sheet
+			(number "2")
+			(name "/Gilroy CalTrain/")
+			(tstamps "/61cd2495-14f3-42a6-a7c2-38f34b91ee1e/")
+			(title_block
+				(title "South cTc")
+				(company "SPCoast Railroad")
+				(rev "0.1")
+				(date "2026.09")
+				(source "GilroyCalTrain.kicad_sch")
+				(comment
+					(number "1")
+					(value "JPlocher")
+				)
+				(comment
+					(number "2")
+					(value "")
+				)
+				(comment
+					(number "3")
+					(value "")
+				)
+				(comment
+					(number "4")
+					(value "")
+				)
+				(comment
+					(number "5")
+					(value "")
+				)
+				(comment
+					(number "6")
+					(value "")
+				)
+				(comment
+					(number "7")
+					(value "")
+				)
+				(comment
+					(number "8")
+					(value "")
+				)
+				(comment
+					(number "9")
+					(value "")
+				)
+			)
+		)
+		(sheet
+			(number "3")
+			(name "/Gilroy Interchange/")
+			(tstamps "/defc570c-1f61-4751-be37-2827b304f837/")
+			(title_block
+				(title "South cTc")
+				(company "SPCoast Railroad")
+				(rev "0.1")
+				(date "2026.09")
+				(source "GilroyInterchange.kicad_sch")
+				(comment
+					(number "1")
+					(value "JPlocher")
+				)
+				(comment
+					(number "2")
+					(value "")
+				)
+				(comment
+					(number "3")
+					(value "")
+				)
+				(comment
+					(number "4")
+					(value "")
+				)
+				(comment
+					(number "5")
+					(value "")
+				)
+				(comment
+					(number "6")
+					(value "")
+				)
+				(comment
+					(number "7")
+					(value "")
+				)
+				(comment
+					(number "8")
+					(value "")
+				)
+				(comment
+					(number "9")
+					(value "")
+				)
+			)
+		)
+		(sheet
+			(number "4")
+			(name "/Luchessa/")
+			(tstamps "/b4829d91-9b5a-495f-b7c8-ba6a6006660d/")
+			(title_block
+				(title "South cTc")
+				(company "SPCoast Railroad")
+				(rev "0.1")
+				(date "2026.09")
+				(source "Luchessa.kicad_sch")
+				(comment
+					(number "1")
+					(value "JPlocher")
+				)
+				(comment
+					(number "2")
+					(value "Luchessa Interlocking")
+				)
+				(comment
+					(number "3")
+					(value "")
+				)
+				(comment
+					(number "4")
+					(value "")
+				)
+				(comment
+					(number "5")
+					(value "")
+				)
+				(comment
+					(number "6")
+					(value "")
+				)
+				(comment
+					(number "7")
+					(value "")
+				)
+				(comment
+					(number "8")
+					(value "")
+				)
+				(comment
+					(number "9")
+					(value "")
+				)
+			)
+		)
+		(sheet
+			(number "5")
+			(name "/Christopher/")
+			(tstamps "/a167e02f-2575-49a1-bdf8-73758c645318/")
+			(title_block
+				(title "South cTc")
+				(company "SPCoast Railroad")
+				(rev "0.1")
+				(date "2026.09")
+				(source "Christopher.kicad_sch")
+				(comment
+					(number "1")
+					(value "JPlocher")
+				)
+				(comment
+					(number "2")
+					(value "")
+				)
+				(comment
+					(number "3")
+					(value "")
+				)
+				(comment
+					(number "4")
+					(value "")
+				)
+				(comment
+					(number "5")
+					(value "")
+				)
+				(comment
+					(number "6")
+					(value "")
+				)
+				(comment
+					(number "7")
+					(value "")
+				)
+				(comment
+					(number "8")
+					(value "")
+				)
+				(comment
+					(number "9")
+					(value "")
+				)
+			)
+		)
+		(sheet
+			(number "6")
+			(name "/Corporal/")
+			(tstamps "/152658f8-a042-4e04-bedb-bf34ee4ce875/")
+			(title_block
+				(title "South cTc")
+				(company "SPCoast Railroad")
+				(rev "0.1")
+				(date "2026.09")
+				(source "Corporal.kicad_sch")
+				(comment
+					(number "1")
+					(value "JPlocher")
+				)
+				(comment
+					(number "2")
+					(value "")
+				)
+				(comment
+					(number "3")
+					(value "")
+				)
+				(comment
+					(number "4")
+					(value "")
+				)
+				(comment
+					(number "5")
+					(value "")
+				)
+				(comment
+					(number "6")
+					(value "")
+				)
+				(comment
+					(number "7")
+					(value "")
+				)
+				(comment
+					(number "8")
+					(value "")
+				)
+				(comment
+					(number "9")
+					(value "")
+				)
+			)
+		)
+		(sheet
+			(number "7")
+			(name "/Sargent/")
+			(tstamps "/f687a7a3-8fc1-435d-a0f4-b6b97af39a7e/")
+			(title_block
+				(title "South cTc")
+				(company "SPCoast Railroad")
+				(rev "0.1")
+				(date "2026.09")
+				(source "Sargent.kicad_sch")
+				(comment
+					(number "1")
+					(value "JPlocher")
+				)
+				(comment
+					(number "2")
+					(value "")
+				)
+				(comment
+					(number "3")
+					(value "")
+				)
+				(comment
+					(number "4")
+					(value "")
+				)
+				(comment
+					(number "5")
+					(value "")
+				)
+				(comment
+					(number "6")
+					(value "")
+				)
+				(comment
+					(number "7")
+					(value "")
+				)
+				(comment
+					(number "8")
+					(value "")
+				)
+				(comment
+					(number "9")
+					(value "")
+				)
+			)
+		)
+		(sheet
+			(number "8")
+			(name "/Watsonville/")
+			(tstamps "/0ce55e2d-fbe5-47d3-a48a-db8408a15e7e/")
+			(title_block
+				(title "South cTc")
+				(company "SPCoast Railroad")
+				(rev "0.1")
+				(date "2026.09")
+				(source "Watsonville.kicad_sch")
+				(comment
+					(number "1")
+					(value "JPlocher")
+				)
+				(comment
+					(number "2")
+					(value "")
+				)
+				(comment
+					(number "3")
+					(value "")
+				)
+				(comment
+					(number "4")
+					(value "")
+				)
+				(comment
+					(number "5")
+					(value "")
+				)
+				(comment
+					(number "6")
+					(value "")
+				)
+				(comment
+					(number "7")
+					(value "")
+				)
+				(comment
+					(number "8")
+					(value "")
+				)
+				(comment
+					(number "9")
+					(value "")
+				)
+			)
+		)
+	)
+	(components
+		(comp
+			(ref "MACHINE2")
+			(value "SPCoast South")
+			(description "One physical dispatcher cTc machine (protocol/vocabulary + desk geometry).")
+			(fields
+				(field
+					(name "Type") "US&S506")
+				(field
+					(name "Era")
+				)
+				(field
+					(name "Role") "MACHINE")
+				(field
+					(name "Columns") "14")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "One physical dispatcher cTc machine (protocol/vocabulary + desk geometry).")
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "CtcMachine")
+				(description "One physical dispatcher cTc machine (protocol/vocabulary + desk geometry).")
+			)
+			(property
+				(name "Type")
+				(value "US&S506")
+			)
+			(property
+				(name "Era")
+				(value "")
+			)
+			(property
+				(name "Role")
+				(value "MACHINE")
+			)
+			(property
+				(name "Columns")
+				(value "14")
+			)
+			(property
+				(name "Sheetname")
+				(value "")
+			)
+			(property
+				(name "Sheetfile")
+				(value "South-cTc.kicad_sch")
+			)
+			(sheetpath
+				(names "/")
+				(tstamps "/")
+			)
+			(tstamps "29322fa4-653d-445a-98d9-85900b829c72")
+			(units
+				(unit
+					(name "A")
+					(pins)
+				)
+			)
+		)
+		(comp
+			(ref "CODELINE1")
+			(value "VIRTUAL")
+			(fields
+				(field
+					(name "Role") "CODELINE")
+				(field
+					(name "Station") "Gilroy CalTrain")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "Codeline-Virtual")
+				(description "")
+			)
+			(property
+				(name "Role")
+				(value "CODELINE")
+			)
+			(property
+				(name "Station")
+				(value "Gilroy CalTrain")
+			)
+			(property
+				(name "Sheetname")
+				(value "Gilroy CalTrain")
+			)
+			(property
+				(name "Sheetfile")
+				(value "GilroyCalTrain.kicad_sch")
+			)
+			(sheetpath
+				(names "/Gilroy CalTrain/")
+				(tstamps "/61cd2495-14f3-42a6-a7c2-38f34b91ee1e/")
+			)
+			(tstamps "2c47c497-4287-47c0-b09c-b0effc3e2fe9")
+			(units
+				(unit
+					(name "A")
+					(pins)
+				)
+			)
+		)
+		(comp
+			(ref "CODELINE2")
+			(value "VIRTUAL")
+			(fields
+				(field
+					(name "Role") "CODELINE")
+				(field
+					(name "Station") "Gilroy Interchange")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "Codeline-Virtual")
+				(description "")
+			)
+			(property
+				(name "Role")
+				(value "CODELINE")
+			)
+			(property
+				(name "Station")
+				(value "Gilroy Interchange")
+			)
+			(property
+				(name "Sheetname")
+				(value "Gilroy Interchange")
+			)
+			(property
+				(name "Sheetfile")
+				(value "GilroyInterchange.kicad_sch")
+			)
+			(sheetpath
+				(names "/Gilroy Interchange/")
+				(tstamps "/defc570c-1f61-4751-be37-2827b304f837/")
+			)
+			(tstamps "41e7a085-9b89-49e7-b4a4-4c6de318e453")
+			(units
+				(unit
+					(name "A")
+					(pins)
+				)
+			)
+		)
+		(comp
+			(ref "AUX2")
+			(value "MC1")
+			(description "Generic 1-bit dispatcher-facing appliance (Maintainer Call, switch heater, bungalow door, etc).  ControlToken must be declared explicitly.")
+			(fields
+				(field
+					(name "Kind") "MAINTAINER_CALL")
+				(field
+					(name "Vital") "NO")
+				(field
+					(name "ControlToken") "MC1S")
+				(field
+					(name "Role") "APPLIANCE")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Generic 1-bit dispatcher-facing appliance (Maintainer Call, switch heater, bungalow door, etc).  ControlToken must be declared explicitly.")
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "PanelMCall")
+				(description "Maintainer Call Lever")
+			)
+			(property
+				(name "Kind")
+				(value "MAINTAINER_CALL")
+			)
+			(property
+				(name "Vital")
+				(value "NO")
+			)
+			(property
+				(name "ControlToken")
+				(value "MC1S")
+			)
+			(property
+				(name "Role")
+				(value "APPLIANCE")
+			)
+			(property
+				(name "Sheetname")
+				(value "Luchessa")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Luchessa.kicad_sch")
+			)
+			(sheetpath
+				(names "/Luchessa/")
+				(tstamps "/b4829d91-9b5a-495f-b7c8-ba6a6006660d/")
+			)
+			(tstamps "817f10fc-284d-41c0-9ac4-489fb067dbfc")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "CODE2")
+			(value "CODE")
+			(description "Station CODE pushbutton (one-shot). One per multi-column CtcStation, regardless of how many columns it spans.")
+			(fields
+				(field
+					(name "Role") "APPLIANCE")
+				(field
+					(name "Kind") "CODE")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Station CODE pushbutton (one-shot). One per multi-column CtcStation, regardless of how many columns it spans.")
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "PanelCode")
+				(description "Station CODE pushbutton (one-shot). One per multi-column CtcStation, regardless of how many columns it spans.")
+			)
+			(property
+				(name "Role")
+				(value "APPLIANCE")
+			)
+			(property
+				(name "Kind")
+				(value "CODE")
+			)
+			(property
+				(name "Sheetname")
+				(value "Luchessa")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Luchessa.kicad_sch")
+			)
+			(sheetpath
+				(names "/Luchessa/")
+				(tstamps "/b4829d91-9b5a-495f-b7c8-ba6a6006660d/")
+			)
+			(tstamps "700e03f2-e95a-4f18-9ab3-9bb740878204")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "CODELINE3")
+			(value "VIRTUAL")
+			(fields
+				(field
+					(name "Role") "CODELINE")
+				(field
+					(name "Station") "Luchessa")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "Codeline-Virtual")
+				(description "")
+			)
+			(property
+				(name "Role")
+				(value "CODELINE")
+			)
+			(property
+				(name "Station")
+				(value "Luchessa")
+			)
+			(property
+				(name "Sheetname")
+				(value "Luchessa")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Luchessa.kicad_sch")
+			)
+			(sheetpath
+				(names "/Luchessa/")
+				(tstamps "/b4829d91-9b5a-495f-b7c8-ba6a6006660d/")
+			)
+			(tstamps "a21de85f-3217-4fc2-971c-501c4af1d478")
+			(units
+				(unit
+					(name "A")
+					(pins)
+				)
+			)
+		)
+		(comp
+			(ref "COL4")
+			(value "5")
+			(fields
+				(field
+					(name "Interlocking") "Luchessa")
+				(field
+					(name "Machine") "SPCoast South")
+				(field
+					(name "Role") "COLUMN")
+				(field
+					(name "Column") "5")
+				(field
+					(name "CP Name") "CP Luchessa")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "PanelColumn")
+				(description "")
+			)
+			(property
+				(name "Interlocking")
+				(value "Luchessa")
+			)
+			(property
+				(name "Machine")
+				(value "SPCoast South")
+			)
+			(property
+				(name "Role")
+				(value "COLUMN")
+			)
+			(property
+				(name "Column")
+				(value "5")
+			)
+			(property
+				(name "CP Name")
+				(value "CP Luchessa")
+			)
+			(property
+				(name "Sheetname")
+				(value "Luchessa")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Luchessa.kicad_sch")
+			)
+			(sheetpath
+				(names "/Luchessa/")
+				(tstamps "/b4829d91-9b5a-495f-b7c8-ba6a6006660d/")
+			)
+			(tstamps "97cf1fad-cf4c-4155-b4fe-480dde579fcc")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "6")
+						)
+						(pin
+							(num "7")
+						)
+						(pin
+							(num "8")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "COL5")
+			(value "6")
+			(fields
+				(field
+					(name "Interlocking") "Luchessa")
+				(field
+					(name "Machine") "SPCoast South")
+				(field
+					(name "Role") "COLUMN")
+				(field
+					(name "Column") "6")
+				(field
+					(name "CP Name") "CP Gilroy")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "PanelColumn")
+				(description "")
+			)
+			(property
+				(name "Interlocking")
+				(value "Luchessa")
+			)
+			(property
+				(name "Machine")
+				(value "SPCoast South")
+			)
+			(property
+				(name "Role")
+				(value "COLUMN")
+			)
+			(property
+				(name "Column")
+				(value "6")
+			)
+			(property
+				(name "CP Name")
+				(value "CP Gilroy")
+			)
+			(property
+				(name "Sheetname")
+				(value "Luchessa")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Luchessa.kicad_sch")
+			)
+			(sheetpath
+				(names "/Luchessa/")
+				(tstamps "/b4829d91-9b5a-495f-b7c8-ba6a6006660d/")
+			)
+			(tstamps "696bac7b-fbff-462b-b10b-88b13c9ea033")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "6")
+						)
+						(pin
+							(num "7")
+						)
+						(pin
+							(num "8")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "COL6")
+			(value "7")
+			(fields
+				(field
+					(name "Interlocking") "Luchessa")
+				(field
+					(name "Machine") "SPCoast South")
+				(field
+					(name "Role") "COLUMN")
+				(field
+					(name "Column") "7")
+				(field
+					(name "CP Name") "CP Carnadero")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "PanelColumn")
+				(description "")
+			)
+			(property
+				(name "Interlocking")
+				(value "Luchessa")
+			)
+			(property
+				(name "Machine")
+				(value "SPCoast South")
+			)
+			(property
+				(name "Role")
+				(value "COLUMN")
+			)
+			(property
+				(name "Column")
+				(value "7")
+			)
+			(property
+				(name "CP Name")
+				(value "CP Carnadero")
+			)
+			(property
+				(name "Sheetname")
+				(value "Luchessa")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Luchessa.kicad_sch")
+			)
+			(sheetpath
+				(names "/Luchessa/")
+				(tstamps "/b4829d91-9b5a-495f-b7c8-ba6a6006660d/")
+			)
+			(tstamps "7be58584-6fad-4ec4-984a-783165b88b6f")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "6")
+						)
+						(pin
+							(num "7")
+						)
+						(pin
+							(num "8")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "LAMP5")
+			(value "OS")
+			(description "One physical desk lamp. Value is a free descriptive label (e.g. OS, TRACK, MC) and is not used elsewhere. IndicationToken is a comma-separated list of indication names (track circuits such as 795T1,2NAA,799T1, or tokens such as MC1K) OR'd to drive this one lamp. All listed indications are still individually on the CodeLine wire")
+			(fields
+				(field
+					(name "Color") "red")
+				(field
+					(name "IndicationToken") "783T1")
+				(field
+					(name "Role") "APPLIANCE")
+				(field
+					(name "Kind") "LAMP")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "One physical desk lamp. Value is a free descriptive label (e.g. OS, TRACK, MC) and is not used elsewhere. IndicationToken is a comma-separated list of indication names (track circuits such as 795T1,2NAA,799T1, or tokens such as MC1K) OR'd to drive this one lamp. All listed indications are still individually on the CodeLine wire")
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "PanelLamp-RED")
+				(description "One physical desk lamp. Value is a free descriptive label (e.g. OS, TRACK, MC) and is not used elsewhere. IndicationToken is a comma-separated list of indication names (track circuits such as 795T1,2NAA,799T1, or tokens such as MC1K) OR'd to drive this one lamp. All listed indications are still individually on the CodeLine wire")
+			)
+			(property
+				(name "Color")
+				(value "red")
+			)
+			(property
+				(name "IndicationToken")
+				(value "783T1")
+			)
+			(property
+				(name "Role")
+				(value "APPLIANCE")
+			)
+			(property
+				(name "Kind")
+				(value "LAMP")
+			)
+			(property
+				(name "Sheetname")
+				(value "Luchessa")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Luchessa.kicad_sch")
+			)
+			(sheetpath
+				(names "/Luchessa/")
+				(tstamps "/b4829d91-9b5a-495f-b7c8-ba6a6006660d/")
+			)
+			(tstamps "253f7338-7dcb-42d7-9a43-a98f1fe58e31")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "LAMP6")
+			(value "TRACK")
+			(description "One physical desk lamp. Value is a free descriptive label (e.g. OS, TRACK, MC) and is not used elsewhere. IndicationToken is a comma-separated list of indication names (track circuits such as 795T1,2NAA,799T1, or tokens such as MC1K) OR'd to drive this one lamp. All listed indications are still individually on the CodeLine wire")
+			(fields
+				(field
+					(name "Color") "yellow")
+				(field
+					(name "IndicationToken") "1NA")
+				(field
+					(name "Role") "APPLIANCE")
+				(field
+					(name "Kind") "LAMP")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "One physical desk lamp. Value is a free descriptive label (e.g. OS, TRACK, MC) and is not used elsewhere. IndicationToken is a comma-separated list of indication names (track circuits such as 795T1,2NAA,799T1, or tokens such as MC1K) OR'd to drive this one lamp. All listed indications are still individually on the CodeLine wire")
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "PanelLamp-YELLOW")
+				(description "One physical desk lamp. Value is a free descriptive label (e.g. OS, TRACK, MC) and is not used elsewhere. IndicationToken is a comma-separated list of indication names (track circuits such as 795T1,2NAA,799T1, or tokens such as MC1K) OR'd to drive this one lamp. All listed indications are still individually on the CodeLine wire")
+			)
+			(property
+				(name "Color")
+				(value "yellow")
+			)
+			(property
+				(name "IndicationToken")
+				(value "1NA")
+			)
+			(property
+				(name "Role")
+				(value "APPLIANCE")
+			)
+			(property
+				(name "Kind")
+				(value "LAMP")
+			)
+			(property
+				(name "Sheetname")
+				(value "Luchessa")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Luchessa.kicad_sch")
+			)
+			(sheetpath
+				(names "/Luchessa/")
+				(tstamps "/b4829d91-9b5a-495f-b7c8-ba6a6006660d/")
+			)
+			(tstamps "6b3e74a1-c6c8-44fd-b409-a2b0d1f54106")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "LAMP7")
+			(value "OS")
+			(description "One physical desk lamp. Value is a free descriptive label (e.g. OS, TRACK, MC) and is not used elsewhere. IndicationToken is a comma-separated list of indication names (track circuits such as 795T1,2NAA,799T1, or tokens such as MC1K) OR'd to drive this one lamp. All listed indications are still individually on the CodeLine wire")
+			(fields
+				(field
+					(name "Color") "red")
+				(field
+					(name "IndicationToken") "795T1,2NAA,799T1")
+				(field
+					(name "Role") "APPLIANCE")
+				(field
+					(name "Kind") "LAMP")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "One physical desk lamp. Value is a free descriptive label (e.g. OS, TRACK, MC) and is not used elsewhere. IndicationToken is a comma-separated list of indication names (track circuits such as 795T1,2NAA,799T1, or tokens such as MC1K) OR'd to drive this one lamp. All listed indications are still individually on the CodeLine wire")
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "PanelLamp-RED")
+				(description "One physical desk lamp. Value is a free descriptive label (e.g. OS, TRACK, MC) and is not used elsewhere. IndicationToken is a comma-separated list of indication names (track circuits such as 795T1,2NAA,799T1, or tokens such as MC1K) OR'd to drive this one lamp. All listed indications are still individually on the CodeLine wire")
+			)
+			(property
+				(name "Color")
+				(value "red")
+			)
+			(property
+				(name "IndicationToken")
+				(value "795T1,2NAA,799T1")
+			)
+			(property
+				(name "Role")
+				(value "APPLIANCE")
+			)
+			(property
+				(name "Kind")
+				(value "LAMP")
+			)
+			(property
+				(name "Sheetname")
+				(value "Luchessa")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Luchessa.kicad_sch")
+			)
+			(sheetpath
+				(names "/Luchessa/")
+				(tstamps "/b4829d91-9b5a-495f-b7c8-ba6a6006660d/")
+			)
+			(tstamps "9069cd67-5464-4fcb-af50-c87ea205faaa")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "LAMP8")
+			(value "MC")
+			(description "One physical desk lamp. Value is a free descriptive label (e.g. OS, TRACK, MC) and is not used elsewhere. IndicationToken is a comma-separated list of indication names (track circuits such as 795T1,2NAA,799T1, or tokens such as MC1K) OR'd to drive this one lamp. All listed indications are still individually on the CodeLine wire")
+			(fields
+				(field
+					(name "Color") "yellow")
+				(field
+					(name "IndicationToken") "MC1K")
+				(field
+					(name "Role") "APPLIANCE")
+				(field
+					(name "Kind") "LAMP")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "One physical desk lamp. Value is a free descriptive label (e.g. OS, TRACK, MC) and is not used elsewhere. IndicationToken is a comma-separated list of indication names (track circuits such as 795T1,2NAA,799T1, or tokens such as MC1K) OR'd to drive this one lamp. All listed indications are still individually on the CodeLine wire")
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "PanelLamp-YELLOW")
+				(description "One physical desk lamp. Value is a free descriptive label (e.g. OS, TRACK, MC) and is not used elsewhere. IndicationToken is a comma-separated list of indication names (track circuits such as 795T1,2NAA,799T1, or tokens such as MC1K) OR'd to drive this one lamp. All listed indications are still individually on the CodeLine wire")
+			)
+			(property
+				(name "Color")
+				(value "yellow")
+			)
+			(property
+				(name "IndicationToken")
+				(value "MC1K")
+			)
+			(property
+				(name "Role")
+				(value "APPLIANCE")
+			)
+			(property
+				(name "Kind")
+				(value "LAMP")
+			)
+			(property
+				(name "Sheetname")
+				(value "Luchessa")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Luchessa.kicad_sch")
+			)
+			(sheetpath
+				(names "/Luchessa/")
+				(tstamps "/b4829d91-9b5a-495f-b7c8-ba6a6006660d/")
+			)
+			(tstamps "131ee041-525f-4178-a22e-b97bd61335e8")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "SIG785")
+			(value "784")
+			(description "Lever plate for a dispatcher-controlled Signal. Value cross-references the plant sheet's SignalControl by name.")
+			(fields
+				(field
+					(name "Role") "APPLIANCE")
+				(field
+					(name "Kind") "SIGNAL_LEVER")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Lever plate for a dispatcher-controlled Signal. Value cross-references the plant sheet's SignalControl by name.")
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "PanelSignal")
+				(description "Lever plate for a dispatcher-controlled Signal. Value cross-references the plant sheet's SignalControl by name.")
+			)
+			(property
+				(name "Role")
+				(value "APPLIANCE")
+			)
+			(property
+				(name "Kind")
+				(value "SIGNAL_LEVER")
+			)
+			(property
+				(name "Sheetname")
+				(value "Luchessa")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Luchessa.kicad_sch")
+			)
+			(sheetpath
+				(names "/Luchessa/")
+				(tstamps "/b4829d91-9b5a-495f-b7c8-ba6a6006660d/")
+			)
+			(tstamps "952d0bf5-4806-4d21-bc43-afa535a13892")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "7")
+						)
+						(pin
+							(num "6")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "SW784")
+			(value "783")
+			(description "Lever plate for a dispatcher-controlled Switch (or Lock). Value cross-references the plant sheet's Switch appliance by name. NW/RW control+indication vocabulary is mandatory and type-fixed; this symbol declares only the physical realization.")
+			(fields
+				(field
+					(name "Role") "APPLIANCE")
+				(field
+					(name "Kind") "SWITCH_LEVER")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Lever plate for a dispatcher-controlled Switch (or Lock). Value cross-references the plant sheet's Switch appliance by name. NW/RW control+indication vocabulary is mandatory and type-fixed; this symbol declares only the physical realization.")
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "PanelSwitch")
+				(description "Lever plate for a dispatcher-controlled Switch (or Lock). Value cross-references the plant sheet's Switch appliance by name. NW/RW control+indication vocabulary is mandatory and type-fixed; this symbol declares only the physical realization.")
+			)
+			(property
+				(name "Role")
+				(value "APPLIANCE")
+			)
+			(property
+				(name "Kind")
+				(value "SWITCH_LEVER")
+			)
+			(property
+				(name "Sheetname")
+				(value "Luchessa")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Luchessa.kicad_sch")
+			)
+			(sheetpath
+				(names "/Luchessa/")
+				(tstamps "/b4829d91-9b5a-495f-b7c8-ba6a6006660d/")
+			)
+			(tstamps "2a3a7b61-ec08-4c75-b538-b693f67e1422")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "SW796")
+			(value "795")
+			(description "Lever plate for a dispatcher-controlled Switch (or Lock). Value cross-references the plant sheet's Switch appliance by name. NW/RW control+indication vocabulary is mandatory and type-fixed; this symbol declares only the physical realization.")
+			(fields
+				(field
+					(name "Role") "APPLIANCE")
+				(field
+					(name "Kind") "SWITCH_LEVER")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Lever plate for a dispatcher-controlled Switch (or Lock). Value cross-references the plant sheet's Switch appliance by name. NW/RW control+indication vocabulary is mandatory and type-fixed; this symbol declares only the physical realization.")
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "PanelSwitch")
+				(description "Lever plate for a dispatcher-controlled Switch (or Lock). Value cross-references the plant sheet's Switch appliance by name. NW/RW control+indication vocabulary is mandatory and type-fixed; this symbol declares only the physical realization.")
+			)
+			(property
+				(name "Role")
+				(value "APPLIANCE")
+			)
+			(property
+				(name "Kind")
+				(value "SWITCH_LEVER")
+			)
+			(property
+				(name "Sheetname")
+				(value "Luchessa")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Luchessa.kicad_sch")
+			)
+			(sheetpath
+				(names "/Luchessa/")
+				(tstamps "/b4829d91-9b5a-495f-b7c8-ba6a6006660d/")
+			)
+			(tstamps "1bd72381-ac30-4873-982b-eade408cfddb")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "SW800")
+			(value "799")
+			(description "Lever plate for a dispatcher-controlled Switch (or Lock). Value cross-references the plant sheet's Switch appliance by name. NW/RW control+indication vocabulary is mandatory and type-fixed; this symbol declares only the physical realization.")
+			(fields
+				(field
+					(name "Role") "APPLIANCE")
+				(field
+					(name "Kind") "SWITCH_LEVER")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Lever plate for a dispatcher-controlled Switch (or Lock). Value cross-references the plant sheet's Switch appliance by name. NW/RW control+indication vocabulary is mandatory and type-fixed; this symbol declares only the physical realization.")
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "PanelSwitch")
+				(description "Lever plate for a dispatcher-controlled Switch (or Lock). Value cross-references the plant sheet's Switch appliance by name. NW/RW control+indication vocabulary is mandatory and type-fixed; this symbol declares only the physical realization.")
+			)
+			(property
+				(name "Role")
+				(value "APPLIANCE")
+			)
+			(property
+				(name "Kind")
+				(value "SWITCH_LEVER")
+			)
+			(property
+				(name "Sheetname")
+				(value "Luchessa")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Luchessa.kicad_sch")
+			)
+			(sheetpath
+				(names "/Luchessa/")
+				(tstamps "/b4829d91-9b5a-495f-b7c8-ba6a6006660d/")
+			)
+			(tstamps "7f43325f-e63e-4c6a-9e84-8e390a526a4e")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "2")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "U4")
+			(value "0x24")
+			(description "One physical IO expander instance bound to a PanelColumn. Value is its address/index (I2C expander index, or C/MRI node UA). Bit assignment per pin mirrors FieldUnit's IOBit device/offset/bitIndex model.")
+			(fields
+				(field
+					(name "BusKind") "I2C-MAX7313")
+				(field
+					(name "Role") "IODRIVER")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "One physical IO expander instance bound to a PanelColumn. Value is its address/index (I2C expander index, or C/MRI node UA). Bit assignment per pin mirrors FieldUnit's IOBit device/offset/bitIndex model.")
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "PanelColumn-MAX7313")
+				(description "One physical IO expander instance bound to a PanelColumn. Value is its address/index (I2C expander index, or C/MRI node UA). Bit assignment per pin mirrors FieldUnit's IOBit device/offset/bitIndex model.")
+			)
+			(property
+				(name "BusKind")
+				(value "I2C-MAX7313")
+			)
+			(property
+				(name "Role")
+				(value "IODRIVER")
+			)
+			(property
+				(name "Sheetname")
+				(value "Luchessa")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Luchessa.kicad_sch")
+			)
+			(sheetpath
+				(names "/Luchessa/")
+				(tstamps "/b4829d91-9b5a-495f-b7c8-ba6a6006660d/")
+			)
+			(tstamps "8e495eb2-e5cd-4d98-a544-057a8cb7688f")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "6")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "7")
+						)
+						(pin
+							(num "8")
+						)
+						(pin
+							(num "16")
+						)
+						(pin
+							(num "14")
+						)
+						(pin
+							(num "15")
+						)
+						(pin
+							(num "12")
+						)
+						(pin
+							(num "11")
+						)
+						(pin
+							(num "10")
+						)
+						(pin
+							(num "13")
+						)
+						(pin
+							(num "9")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "U5")
+			(value "0x25")
+			(description "One physical IO expander instance bound to a PanelColumn. Value is its address/index (I2C expander index, or C/MRI node UA). Bit assignment per pin mirrors FieldUnit's IOBit device/offset/bitIndex model.")
+			(fields
+				(field
+					(name "BusKind") "I2C-MAX7313")
+				(field
+					(name "Role") "IODRIVER")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "One physical IO expander instance bound to a PanelColumn. Value is its address/index (I2C expander index, or C/MRI node UA). Bit assignment per pin mirrors FieldUnit's IOBit device/offset/bitIndex model.")
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "PanelColumn-MAX7313")
+				(description "One physical IO expander instance bound to a PanelColumn. Value is its address/index (I2C expander index, or C/MRI node UA). Bit assignment per pin mirrors FieldUnit's IOBit device/offset/bitIndex model.")
+			)
+			(property
+				(name "BusKind")
+				(value "I2C-MAX7313")
+			)
+			(property
+				(name "Role")
+				(value "IODRIVER")
+			)
+			(property
+				(name "Sheetname")
+				(value "Luchessa")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Luchessa.kicad_sch")
+			)
+			(sheetpath
+				(names "/Luchessa/")
+				(tstamps "/b4829d91-9b5a-495f-b7c8-ba6a6006660d/")
+			)
+			(tstamps "ab380287-3189-44dc-843a-9bcec3afaefb")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "6")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "7")
+						)
+						(pin
+							(num "8")
+						)
+						(pin
+							(num "16")
+						)
+						(pin
+							(num "14")
+						)
+						(pin
+							(num "15")
+						)
+						(pin
+							(num "12")
+						)
+						(pin
+							(num "11")
+						)
+						(pin
+							(num "10")
+						)
+						(pin
+							(num "13")
+						)
+						(pin
+							(num "9")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "U6")
+			(value "0x26")
+			(description "One physical IO expander instance bound to a PanelColumn. Value is its address/index (I2C expander index, or C/MRI node UA). Bit assignment per pin mirrors FieldUnit's IOBit device/offset/bitIndex model.")
+			(fields
+				(field
+					(name "BusKind") "I2C-MAX7313")
+				(field
+					(name "Role") "IODRIVER")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "One physical IO expander instance bound to a PanelColumn. Value is its address/index (I2C expander index, or C/MRI node UA). Bit assignment per pin mirrors FieldUnit's IOBit device/offset/bitIndex model.")
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "PanelColumn-MAX7313")
+				(description "One physical IO expander instance bound to a PanelColumn. Value is its address/index (I2C expander index, or C/MRI node UA). Bit assignment per pin mirrors FieldUnit's IOBit device/offset/bitIndex model.")
+			)
+			(property
+				(name "BusKind")
+				(value "I2C-MAX7313")
+			)
+			(property
+				(name "Role")
+				(value "IODRIVER")
+			)
+			(property
+				(name "Sheetname")
+				(value "Luchessa")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Luchessa.kicad_sch")
+			)
+			(sheetpath
+				(names "/Luchessa/")
+				(tstamps "/b4829d91-9b5a-495f-b7c8-ba6a6006660d/")
+			)
+			(tstamps "9a1ec9d1-b245-487b-bc4b-9d71f0d23095")
+			(units
+				(unit
+					(name "A")
+					(pins
+						(pin
+							(num "4")
+						)
+						(pin
+							(num "5")
+						)
+						(pin
+							(num "6")
+						)
+						(pin
+							(num "3")
+						)
+						(pin
+							(num "1")
+						)
+						(pin
+							(num "2")
+						)
+						(pin
+							(num "7")
+						)
+						(pin
+							(num "8")
+						)
+						(pin
+							(num "16")
+						)
+						(pin
+							(num "14")
+						)
+						(pin
+							(num "15")
+						)
+						(pin
+							(num "12")
+						)
+						(pin
+							(num "11")
+						)
+						(pin
+							(num "10")
+						)
+						(pin
+							(num "13")
+						)
+						(pin
+							(num "9")
+						)
+					)
+				)
+			)
+		)
+		(comp
+			(ref "CODELINE4")
+			(value "VIRTUAL")
+			(fields
+				(field
+					(name "Role") "CODELINE")
+				(field
+					(name "Station") "Christopher")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "Codeline-Virtual")
+				(description "")
+			)
+			(property
+				(name "Role")
+				(value "CODELINE")
+			)
+			(property
+				(name "Station")
+				(value "Christopher")
+			)
+			(property
+				(name "Sheetname")
+				(value "Christopher")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Christopher.kicad_sch")
+			)
+			(sheetpath
+				(names "/Christopher/")
+				(tstamps "/a167e02f-2575-49a1-bdf8-73758c645318/")
+			)
+			(tstamps "5f6e5fb6-f33c-4ad7-bf2e-5e0ed280b975")
+			(units
+				(unit
+					(name "A")
+					(pins)
+				)
+			)
+		)
+		(comp
+			(ref "CODELINE5")
+			(value "VIRTUAL")
+			(fields
+				(field
+					(name "Role") "CODELINE")
+				(field
+					(name "Station") "Corporal")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "Codeline-Virtual")
+				(description "")
+			)
+			(property
+				(name "Role")
+				(value "CODELINE")
+			)
+			(property
+				(name "Station")
+				(value "Corporal")
+			)
+			(property
+				(name "Sheetname")
+				(value "Corporal")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Corporal.kicad_sch")
+			)
+			(sheetpath
+				(names "/Corporal/")
+				(tstamps "/152658f8-a042-4e04-bedb-bf34ee4ce875/")
+			)
+			(tstamps "36cf4546-a788-4985-b9f8-048342df723e")
+			(units
+				(unit
+					(name "A")
+					(pins)
+				)
+			)
+		)
+		(comp
+			(ref "CODELINE6")
+			(value "VIRTUAL")
+			(fields
+				(field
+					(name "Role") "CODELINE")
+				(field
+					(name "Station") "Sargent")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "Codeline-Virtual")
+				(description "")
+			)
+			(property
+				(name "Role")
+				(value "CODELINE")
+			)
+			(property
+				(name "Station")
+				(value "Sargent")
+			)
+			(property
+				(name "Sheetname")
+				(value "Sargent")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Sargent.kicad_sch")
+			)
+			(sheetpath
+				(names "/Sargent/")
+				(tstamps "/f687a7a3-8fc1-435d-a0f4-b6b97af39a7e/")
+			)
+			(tstamps "3bdc5997-04af-4261-b8a2-b65232d6371a")
+			(units
+				(unit
+					(name "A")
+					(pins)
+				)
+			)
+		)
+		(comp
+			(ref "CODELINE7")
+			(value "VIRTUAL")
+			(fields
+				(field
+					(name "Role") "CODELINE")
+				(field
+					(name "Station") "Watsonville")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+			)
+			(libsource
+				(lib "RailroadPanel")
+				(part "Codeline-Virtual")
+				(description "")
+			)
+			(property
+				(name "Role")
+				(value "CODELINE")
+			)
+			(property
+				(name "Station")
+				(value "Watsonville")
+			)
+			(property
+				(name "Sheetname")
+				(value "Watsonville")
+			)
+			(property
+				(name "Sheetfile")
+				(value "Watsonville.kicad_sch")
+			)
+			(sheetpath
+				(names "/Watsonville/")
+				(tstamps "/0ce55e2d-fbe5-47d3-a48a-db8408a15e7e/")
+			)
+			(tstamps "4432be83-c5ed-4312-ba0b-8bba83d015dc")
+			(units
+				(unit
+					(name "A")
+					(pins)
+				)
+			)
+		)
+	)
+	(groups)
+	(variants)
+	(libparts
+		(libpart
+			(lib "RailroadPanel")
+			(part "Codeline-Virtual")
+			(fields
+				(field
+					(name "Reference") "CODELINE")
+				(field
+					(name "Value") "VIRTUAL")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+				(field
+					(name "Role") "CODELINE")
+				(field
+					(name "Station") "${SHEETNAME}")
+			)
+		)
+		(libpart
+			(lib "RailroadPanel")
+			(part "CtcMachine")
+			(description "One physical dispatcher cTc machine (protocol/vocabulary + desk geometry).")
+			(fields
+				(field
+					(name "Reference") "MACHINE")
+				(field
+					(name "Value") "SPCoast South cTc")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "One physical dispatcher cTc machine (protocol/vocabulary + desk geometry).")
+				(field
+					(name "Type") "US&S506")
+				(field
+					(name "Era")
+				)
+				(field
+					(name "Role") "MACHINE")
+				(field
+					(name "Columns") "14")
+			)
+		)
+		(libpart
+			(lib "RailroadPanel")
+			(part "PanelCode")
+			(description "Station CODE pushbutton (one-shot). One per multi-column CtcStation, regardless of how many columns it spans.")
+			(fields
+				(field
+					(name "Reference") "CODE")
+				(field
+					(name "Value") "CODE")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Station CODE pushbutton (one-shot). One per multi-column CtcStation, regardless of how many columns it spans.")
+				(field
+					(name "Role") "APPLIANCE")
+				(field
+					(name "Kind") "CODE")
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "Column")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "CODE")
+					(type "output")
+				)
+			)
+		)
+		(libpart
+			(lib "RailroadPanel")
+			(part "PanelColumn")
+			(fields
+				(field
+					(name "Reference") "COL")
+				(field
+					(name "Value") "COLUMN#")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description")
+				)
+				(field
+					(name "Interlocking") "Luchessa")
+				(field
+					(name "Role") "COLUMN")
+				(field
+					(name "Machine") "SPCoast South")
+				(field
+					(name "Column") "${VALUE}")
+				(field
+					(name "CP Name")
+				)
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "Column")
+					(type "free")
+				)
+				(pin
+					(num "2")
+					(name "Column")
+					(type "free")
+				)
+				(pin
+					(num "3")
+					(name "Column")
+					(type "free")
+				)
+				(pin
+					(num "4")
+					(name "Column")
+					(type "free")
+				)
+				(pin
+					(num "5")
+					(name "Column")
+					(type "free")
+				)
+				(pin
+					(num "6")
+					(name "Column")
+					(type "free")
+				)
+				(pin
+					(num "7")
+					(name "Column")
+					(type "free")
+				)
+				(pin
+					(num "8")
+					(name "Column")
+					(type "free")
+				)
+			)
+		)
+		(libpart
+			(lib "RailroadPanel")
+			(part "PanelColumn-MAX7313")
+			(description "One physical IO expander instance bound to a PanelColumn. Value is its address/index (I2C expander index, or C/MRI node UA). Bit assignment per pin mirrors FieldUnit's IOBit device/offset/bitIndex model.")
+			(fields
+				(field
+					(name "Reference") "U")
+				(field
+					(name "Value") "8")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "One physical IO expander instance bound to a PanelColumn. Value is its address/index (I2C expander index, or C/MRI node UA). Bit assignment per pin mirrors FieldUnit's IOBit device/offset/bitIndex model.")
+				(field
+					(name "BusKind") "I2C-MAX7313")
+				(field
+					(name "Role") "IODRIVER")
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "bit0")
+					(type "output")
+				)
+				(pin
+					(num "2")
+					(name "bit1")
+					(type "output")
+				)
+				(pin
+					(num "3")
+					(name "bit2")
+					(type "input")
+				)
+				(pin
+					(num "4")
+					(name "bit3")
+					(type "output")
+				)
+				(pin
+					(num "5")
+					(name "bit4")
+					(type "output")
+				)
+				(pin
+					(num "6")
+					(name "bit5")
+					(type "output")
+				)
+				(pin
+					(num "7")
+					(name "bit6")
+					(type "input")
+				)
+				(pin
+					(num "8")
+					(name "bit7")
+					(type "input")
+				)
+				(pin
+					(num "9")
+					(name "bit8")
+					(type "output")
+				)
+				(pin
+					(num "10")
+					(name "bit9")
+					(type "input")
+				)
+				(pin
+					(num "11")
+					(name "bit10")
+					(type "input")
+				)
+				(pin
+					(num "12")
+					(name "bit11")
+					(type "input")
+				)
+				(pin
+					(num "13")
+					(name "bit12")
+					(type "input")
+				)
+				(pin
+					(num "14")
+					(name "bit13")
+					(type "output")
+				)
+				(pin
+					(num "15")
+					(name "bit14")
+					(type "output")
+				)
+				(pin
+					(num "16")
+					(name "bit15")
+					(type "output")
+				)
+			)
+		)
+		(libpart
+			(lib "RailroadPanel")
+			(part "PanelLamp-RED")
+			(description "One physical desk lamp. Value is a free descriptive label (e.g. OS, TRACK, MC) and is not used elsewhere. IndicationToken is a comma-separated list of indication names (track circuits such as 795T1,2NAA,799T1, or tokens such as MC1K) OR'd to drive this one lamp. All listed indications are still individually on the CodeLine wire")
+			(fields
+				(field
+					(name "Reference") "LAMP")
+				(field
+					(name "Value") "OS")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "One physical desk lamp. Value is a free descriptive label (e.g. OS, TRACK, MC) and is not used elsewhere. IndicationToken is a comma-separated list of indication names (track circuits such as 795T1,2NAA,799T1, or tokens such as MC1K) OR'd to drive this one lamp. All listed indications are still individually on the CodeLine wire")
+				(field
+					(name "Color") "red")
+				(field
+					(name "IndicationToken") "S")
+				(field
+					(name "Role") "APPLIANCE")
+				(field
+					(name "Kind") "LAMP")
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "Column")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "LAMP")
+					(type "input")
+				)
+			)
+		)
+		(libpart
+			(lib "RailroadPanel")
+			(part "PanelLamp-YELLOW")
+			(description "One physical desk lamp. Value is a free descriptive label (e.g. OS, TRACK, MC) and is not used elsewhere. IndicationToken is a comma-separated list of indication names (track circuits such as 795T1,2NAA,799T1, or tokens such as MC1K) OR'd to drive this one lamp. All listed indications are still individually on the CodeLine wire")
+			(fields
+				(field
+					(name "Reference") "LAMP")
+				(field
+					(name "Value") "TRACK")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "One physical desk lamp. Value is a free descriptive label (e.g. OS, TRACK, MC) and is not used elsewhere. IndicationToken is a comma-separated list of indication names (track circuits such as 795T1,2NAA,799T1, or tokens such as MC1K) OR'd to drive this one lamp. All listed indications are still individually on the CodeLine wire")
+				(field
+					(name "Color") "yellow")
+				(field
+					(name "IndicationToken") "S")
+				(field
+					(name "Role") "APPLIANCE")
+				(field
+					(name "Kind") "LAMP")
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "Column")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "LAMP")
+					(type "input")
+				)
+			)
+		)
+		(libpart
+			(lib "RailroadPanel")
+			(part "PanelMCall")
+			(description "Maintainer Call Lever")
+			(fields
+				(field
+					(name "Reference") "MC")
+				(field
+					(name "Value") "MC1")
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Maintainer Call Lever")
+				(field
+					(name "Role") "APPLIANCE")
+				(field
+					(name "Vital") "NO")
+				(field
+					(name "ControlToken") "${VALUE}S")
+				(field
+					(name "Kind") "MAINTAINER_CALL")
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "Column")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "SW")
+					(type "output")
+				)
+			)
+		)
+		(libpart
+			(lib "RailroadPanel")
+			(part "PanelSignal")
+			(description "Lever plate for a dispatcher-controlled Signal. Value cross-references the plant sheet's SignalControl by name.")
+			(fields
+				(field
+					(name "Reference") "SIG")
+				(field
+					(name "Value")
+				)
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Lever plate for a dispatcher-controlled Signal. Value cross-references the plant sheet's SignalControl by name.")
+				(field
+					(name "Role") "APPLIANCE")
+				(field
+					(name "Kind") "SIGNAL_LEVER")
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "Column")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "NGS")
+					(type "output")
+				)
+				(pin
+					(num "3")
+					(name "HS")
+					(type "output")
+				)
+				(pin
+					(num "4")
+					(name "SGS")
+					(type "output")
+				)
+				(pin
+					(num "5")
+					(name "SGK")
+					(type "input")
+				)
+				(pin
+					(num "6")
+					(name "NGK")
+					(type "input")
+				)
+				(pin
+					(num "7")
+					(name "TEK")
+					(type "input")
+				)
+			)
+		)
+		(libpart
+			(lib "RailroadPanel")
+			(part "PanelSwitch")
+			(description "Lever plate for a dispatcher-controlled Switch (or Lock). Value cross-references the plant sheet's Switch appliance by name. NW/RW control+indication vocabulary is mandatory and type-fixed; this symbol declares only the physical realization.")
+			(fields
+				(field
+					(name "Reference") "SW")
+				(field
+					(name "Value")
+				)
+				(field
+					(name "Footprint")
+				)
+				(field
+					(name "Datasheet")
+				)
+				(field
+					(name "Description") "Lever plate for a dispatcher-controlled Switch (or Lock). Value cross-references the plant sheet's Switch appliance by name. NW/RW control+indication vocabulary is mandatory and type-fixed; this symbol declares only the physical realization.")
+				(field
+					(name "Role") "APPLIANCE")
+				(field
+					(name "Kind") "SWITCH_LEVER")
+			)
+			(pins
+				(pin
+					(num "1")
+					(name "Column")
+					(type "passive")
+				)
+				(pin
+					(num "2")
+					(name "NWS")
+					(type "output")
+				)
+				(pin
+					(num "3")
+					(name "RWS")
+					(type "output")
+				)
+				(pin
+					(num "4")
+					(name "RWK")
+					(type "input")
+				)
+				(pin
+					(num "5")
+					(name "NWK")
+					(type "input")
+				)
+			)
+		)
+	)
+	(libraries
+		(library
+			(logical "RailroadPanel")
+			(uri "/Users/jplocher/Dropbox/KiCad/InterlockingPlant/symbols/RailroadPanel.kicad_sym")
+		)
+	)
+	(nets
+		(net
+			(code "1")
+			(name "Net-(AUX2-Column)")
+			(class "Default")
+			(node
+				(ref "AUX2")
+				(pin "1")
+				(pinfunction "Column_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "COL5")
+				(pin "4")
+				(pinfunction "Column_4")
+				(pintype "free")
+			)
+		)
+		(net
+			(code "2")
+			(name "Net-(AUX2-SW)")
+			(class "Default")
+			(node
+				(ref "AUX2")
+				(pin "2")
+				(pinfunction "SW_2")
+				(pintype "output")
+			)
+			(node
+				(ref "U5")
+				(pin "3")
+				(pinfunction "bit2_3")
+				(pintype "input")
+			)
+		)
+		(net
+			(code "3")
+			(name "Net-(CODE2-CODE)")
+			(class "Default")
+			(node
+				(ref "CODE2")
+				(pin "2")
+				(pinfunction "CODE_2")
+				(pintype "output")
+			)
+			(node
+				(ref "U6")
+				(pin "13")
+				(pinfunction "bit12_13")
+				(pintype "input")
+			)
+		)
+		(net
+			(code "4")
+			(name "Net-(CODE2-Column)")
+			(class "Default")
+			(node
+				(ref "CODE2")
+				(pin "1")
+				(pinfunction "Column_1")
+				(pintype "passive")
+			)
+			(node
+				(ref "COL6")
+				(pin "7")
+				(pinfunction "Column_7")
+				(pintype "free")
+			)
+		)
+		(net
+			(code "5")
+			(name "Net-(LAMP5-Column)")
+			(class "Default")
+			(node
+				(ref "COL4")
+				(pin "1")
+				(pinfunction "Column_1")
+				(pintype "free")
+			)
+			(node
+				(ref "LAMP5")
+				(pin "1")
+				(pinfunction "Column_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "6")
+			(name "Net-(LAMP5-LAMP)")
+			(class "Default")
+			(node
+				(ref "LAMP5")
+				(pin "2")
+				(pinfunction "LAMP_2")
+				(pintype "input")
+			)
+			(node
+				(ref "U4")
+				(pin "4")
+				(pinfunction "bit3_4")
+				(pintype "output")
+			)
+		)
+		(net
+			(code "7")
+			(name "Net-(LAMP6-Column)")
+			(class "Default")
+			(node
+				(ref "COL5")
+				(pin "1")
+				(pinfunction "Column_1")
+				(pintype "free")
+			)
+			(node
+				(ref "LAMP6")
+				(pin "1")
+				(pinfunction "Column_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "8")
+			(name "Net-(LAMP6-LAMP)")
+			(class "Default")
+			(node
+				(ref "LAMP6")
+				(pin "2")
+				(pinfunction "LAMP_2")
+				(pintype "input")
+			)
+			(node
+				(ref "U5")
+				(pin "4")
+				(pinfunction "bit3_4")
+				(pintype "output")
+			)
+		)
+		(net
+			(code "9")
+			(name "Net-(LAMP7-Column)")
+			(class "Default")
+			(node
+				(ref "COL5")
+				(pin "2")
+				(pinfunction "Column_2")
+				(pintype "free")
+			)
+			(node
+				(ref "LAMP7")
+				(pin "1")
+				(pinfunction "Column_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "10")
+			(name "Net-(LAMP7-LAMP)")
+			(class "Default")
+			(node
+				(ref "LAMP7")
+				(pin "2")
+				(pinfunction "LAMP_2")
+				(pintype "input")
+			)
+			(node
+				(ref "U5")
+				(pin "5")
+				(pinfunction "bit4_5")
+				(pintype "output")
+			)
+		)
+		(net
+			(code "11")
+			(name "Net-(LAMP8-Column)")
+			(class "Default")
+			(node
+				(ref "COL5")
+				(pin "8")
+				(pinfunction "Column_8")
+				(pintype "free")
+			)
+			(node
+				(ref "LAMP8")
+				(pin "1")
+				(pinfunction "Column_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "12")
+			(name "Net-(LAMP8-LAMP)")
+			(class "Default")
+			(node
+				(ref "LAMP8")
+				(pin "2")
+				(pinfunction "LAMP_2")
+				(pintype "input")
+			)
+			(node
+				(ref "U5")
+				(pin "9")
+				(pinfunction "bit8_9")
+				(pintype "output")
+			)
+		)
+		(net
+			(code "13")
+			(name "Net-(SIG785-Column)")
+			(class "Default")
+			(node
+				(ref "COL4")
+				(pin "6")
+				(pinfunction "Column_6")
+				(pintype "free")
+			)
+			(node
+				(ref "SIG785")
+				(pin "1")
+				(pinfunction "Column_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "14")
+			(name "Net-(SIG785-HS)")
+			(class "Default")
+			(node
+				(ref "SIG785")
+				(pin "3")
+				(pinfunction "HS_3")
+				(pintype "output")
+			)
+			(node
+				(ref "U4")
+				(pin "11")
+				(pinfunction "bit10_11")
+				(pintype "input")
+			)
+		)
+		(net
+			(code "15")
+			(name "Net-(SIG785-NGK)")
+			(class "Default")
+			(node
+				(ref "SIG785")
+				(pin "6")
+				(pinfunction "NGK_6")
+				(pintype "input")
+			)
+			(node
+				(ref "U4")
+				(pin "14")
+				(pinfunction "bit13_14")
+				(pintype "output")
+			)
+		)
+		(net
+			(code "16")
+			(name "Net-(SIG785-NGS)")
+			(class "Default")
+			(node
+				(ref "SIG785")
+				(pin "2")
+				(pinfunction "NGS_2")
+				(pintype "output")
+			)
+			(node
+				(ref "U4")
+				(pin "10")
+				(pinfunction "bit9_10")
+				(pintype "input")
+			)
+		)
+		(net
+			(code "17")
+			(name "Net-(SIG785-SGK)")
+			(class "Default")
+			(node
+				(ref "SIG785")
+				(pin "5")
+				(pinfunction "SGK_5")
+				(pintype "input")
+			)
+			(node
+				(ref "U4")
+				(pin "15")
+				(pinfunction "bit14_15")
+				(pintype "output")
+			)
+		)
+		(net
+			(code "18")
+			(name "Net-(SIG785-SGS)")
+			(class "Default")
+			(node
+				(ref "SIG785")
+				(pin "4")
+				(pinfunction "SGS_4")
+				(pintype "output")
+			)
+			(node
+				(ref "U4")
+				(pin "12")
+				(pinfunction "bit11_12")
+				(pintype "input")
+			)
+		)
+		(net
+			(code "19")
+			(name "Net-(SIG785-TEK)")
+			(class "Default")
+			(node
+				(ref "SIG785")
+				(pin "7")
+				(pinfunction "TEK_7")
+				(pintype "input")
+			)
+			(node
+				(ref "U4")
+				(pin "16")
+				(pinfunction "bit15_16")
+				(pintype "output")
+			)
+		)
+		(net
+			(code "20")
+			(name "Net-(SW784-Column)")
+			(class "Default")
+			(node
+				(ref "COL4")
+				(pin "5")
+				(pinfunction "Column_5")
+				(pintype "free")
+			)
+			(node
+				(ref "SW784")
+				(pin "1")
+				(pinfunction "Column_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "21")
+			(name "Net-(SW784-NWK)")
+			(class "Default")
+			(node
+				(ref "SW784")
+				(pin "5")
+				(pinfunction "NWK_5")
+				(pintype "input")
+			)
+			(node
+				(ref "U4")
+				(pin "1")
+				(pinfunction "bit0_1")
+				(pintype "output")
+			)
+		)
+		(net
+			(code "22")
+			(name "Net-(SW784-NWS)")
+			(class "Default")
+			(node
+				(ref "SW784")
+				(pin "2")
+				(pinfunction "NWS_2")
+				(pintype "output")
+			)
+			(node
+				(ref "U4")
+				(pin "8")
+				(pinfunction "bit7_8")
+				(pintype "input")
+			)
+		)
+		(net
+			(code "23")
+			(name "Net-(SW784-RWK)")
+			(class "Default")
+			(node
+				(ref "SW784")
+				(pin "4")
+				(pinfunction "RWK_4")
+				(pintype "input")
+			)
+			(node
+				(ref "U4")
+				(pin "2")
+				(pinfunction "bit1_2")
+				(pintype "output")
+			)
+		)
+		(net
+			(code "24")
+			(name "Net-(SW784-RWS)")
+			(class "Default")
+			(node
+				(ref "SW784")
+				(pin "3")
+				(pinfunction "RWS_3")
+				(pintype "output")
+			)
+			(node
+				(ref "U4")
+				(pin "7")
+				(pinfunction "bit6_7")
+				(pintype "input")
+			)
+		)
+		(net
+			(code "25")
+			(name "Net-(SW796-Column)")
+			(class "Default")
+			(node
+				(ref "COL5")
+				(pin "5")
+				(pinfunction "Column_5")
+				(pintype "free")
+			)
+			(node
+				(ref "SW796")
+				(pin "1")
+				(pinfunction "Column_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "26")
+			(name "Net-(SW796-NWK)")
+			(class "Default")
+			(node
+				(ref "SW796")
+				(pin "5")
+				(pinfunction "NWK_5")
+				(pintype "input")
+			)
+			(node
+				(ref "U5")
+				(pin "1")
+				(pinfunction "bit0_1")
+				(pintype "output")
+			)
+		)
+		(net
+			(code "27")
+			(name "Net-(SW796-NWS)")
+			(class "Default")
+			(node
+				(ref "SW796")
+				(pin "2")
+				(pinfunction "NWS_2")
+				(pintype "output")
+			)
+			(node
+				(ref "U5")
+				(pin "8")
+				(pinfunction "bit7_8")
+				(pintype "input")
+			)
+		)
+		(net
+			(code "28")
+			(name "Net-(SW796-RWK)")
+			(class "Default")
+			(node
+				(ref "SW796")
+				(pin "4")
+				(pinfunction "RWK_4")
+				(pintype "input")
+			)
+			(node
+				(ref "U5")
+				(pin "2")
+				(pinfunction "bit1_2")
+				(pintype "output")
+			)
+		)
+		(net
+			(code "29")
+			(name "Net-(SW796-RWS)")
+			(class "Default")
+			(node
+				(ref "SW796")
+				(pin "3")
+				(pinfunction "RWS_3")
+				(pintype "output")
+			)
+			(node
+				(ref "U5")
+				(pin "7")
+				(pinfunction "bit6_7")
+				(pintype "input")
+			)
+		)
+		(net
+			(code "30")
+			(name "Net-(SW800-Column)")
+			(class "Default")
+			(node
+				(ref "COL6")
+				(pin "5")
+				(pinfunction "Column_5")
+				(pintype "free")
+			)
+			(node
+				(ref "SW800")
+				(pin "1")
+				(pinfunction "Column_1")
+				(pintype "passive")
+			)
+		)
+		(net
+			(code "31")
+			(name "Net-(SW800-NWK)")
+			(class "Default")
+			(node
+				(ref "SW800")
+				(pin "5")
+				(pinfunction "NWK_5")
+				(pintype "input")
+			)
+			(node
+				(ref "U6")
+				(pin "1")
+				(pinfunction "bit0_1")
+				(pintype "output")
+			)
+		)
+		(net
+			(code "32")
+			(name "Net-(SW800-NWS)")
+			(class "Default")
+			(node
+				(ref "SW800")
+				(pin "2")
+				(pinfunction "NWS_2")
+				(pintype "output")
+			)
+			(node
+				(ref "U6")
+				(pin "8")
+				(pinfunction "bit7_8")
+				(pintype "input")
+			)
+		)
+		(net
+			(code "33")
+			(name "Net-(SW800-RWK)")
+			(class "Default")
+			(node
+				(ref "SW800")
+				(pin "4")
+				(pinfunction "RWK_4")
+				(pintype "input")
+			)
+			(node
+				(ref "U6")
+				(pin "2")
+				(pinfunction "bit1_2")
+				(pintype "output")
+			)
+		)
+		(net
+			(code "34")
+			(name "Net-(SW800-RWS)")
+			(class "Default")
+			(node
+				(ref "SW800")
+				(pin "3")
+				(pinfunction "RWS_3")
+				(pintype "output")
+			)
+			(node
+				(ref "U6")
+				(pin "7")
+				(pinfunction "bit6_7")
+				(pintype "input")
+			)
+		)
+		(net
+			(code "35")
+			(name "unconnected-(COL4-Column-Pad2)")
+			(class "Default")
+			(node
+				(ref "COL4")
+				(pin "2")
+				(pinfunction "Column_2")
+				(pintype "free")
+			)
+		)
+		(net
+			(code "36")
+			(name "unconnected-(COL4-Column-Pad3)")
+			(class "Default")
+			(node
+				(ref "COL4")
+				(pin "3")
+				(pinfunction "Column_3")
+				(pintype "free")
+			)
+		)
+		(net
+			(code "37")
+			(name "unconnected-(COL4-Column-Pad4)")
+			(class "Default")
+			(node
+				(ref "COL4")
+				(pin "4")
+				(pinfunction "Column_4")
+				(pintype "free")
+			)
+		)
+		(net
+			(code "38")
+			(name "unconnected-(COL4-Column-Pad7)")
+			(class "Default")
+			(node
+				(ref "COL4")
+				(pin "7")
+				(pinfunction "Column_7")
+				(pintype "free")
+			)
+		)
+		(net
+			(code "39")
+			(name "unconnected-(COL4-Column-Pad8)")
+			(class "Default")
+			(node
+				(ref "COL4")
+				(pin "8")
+				(pinfunction "Column_8")
+				(pintype "free")
+			)
+		)
+		(net
+			(code "40")
+			(name "unconnected-(COL5-Column-Pad3)")
+			(class "Default")
+			(node
+				(ref "COL5")
+				(pin "3")
+				(pinfunction "Column_3")
+				(pintype "free")
+			)
+		)
+		(net
+			(code "41")
+			(name "unconnected-(COL5-Column-Pad6)")
+			(class "Default")
+			(node
+				(ref "COL5")
+				(pin "6")
+				(pinfunction "Column_6")
+				(pintype "free")
+			)
+		)
+		(net
+			(code "42")
+			(name "unconnected-(COL5-Column-Pad7)")
+			(class "Default")
+			(node
+				(ref "COL5")
+				(pin "7")
+				(pinfunction "Column_7")
+				(pintype "free")
+			)
+		)
+		(net
+			(code "43")
+			(name "unconnected-(COL6-Column-Pad1)")
+			(class "Default")
+			(node
+				(ref "COL6")
+				(pin "1")
+				(pinfunction "Column_1")
+				(pintype "free")
+			)
+		)
+		(net
+			(code "44")
+			(name "unconnected-(COL6-Column-Pad2)")
+			(class "Default")
+			(node
+				(ref "COL6")
+				(pin "2")
+				(pinfunction "Column_2")
+				(pintype "free")
+			)
+		)
+		(net
+			(code "45")
+			(name "unconnected-(COL6-Column-Pad3)")
+			(class "Default")
+			(node
+				(ref "COL6")
+				(pin "3")
+				(pinfunction "Column_3")
+				(pintype "free")
+			)
+		)
+		(net
+			(code "46")
+			(name "unconnected-(COL6-Column-Pad4)")
+			(class "Default")
+			(node
+				(ref "COL6")
+				(pin "4")
+				(pinfunction "Column_4")
+				(pintype "free")
+			)
+		)
+		(net
+			(code "47")
+			(name "unconnected-(COL6-Column-Pad6)")
+			(class "Default")
+			(node
+				(ref "COL6")
+				(pin "6")
+				(pinfunction "Column_6")
+				(pintype "free")
+			)
+		)
+		(net
+			(code "48")
+			(name "unconnected-(COL6-Column-Pad8)")
+			(class "Default")
+			(node
+				(ref "COL6")
+				(pin "8")
+				(pinfunction "Column_8")
+				(pintype "free")
+			)
+		)
+		(net
+			(code "49")
+			(name "unconnected-(U4-bit2-Pad3)")
+			(class "Default")
+			(node
+				(ref "U4")
+				(pin "3")
+				(pinfunction "bit2_3")
+				(pintype "input+no_connect")
+			)
+		)
+		(net
+			(code "50")
+			(name "unconnected-(U4-bit4-Pad5)")
+			(class "Default")
+			(node
+				(ref "U4")
+				(pin "5")
+				(pinfunction "bit4_5")
+				(pintype "output+no_connect")
+			)
+		)
+		(net
+			(code "51")
+			(name "unconnected-(U4-bit5-Pad6)")
+			(class "Default")
+			(node
+				(ref "U4")
+				(pin "6")
+				(pinfunction "bit5_6")
+				(pintype "output+no_connect")
+			)
+		)
+		(net
+			(code "52")
+			(name "unconnected-(U4-bit8-Pad9)")
+			(class "Default")
+			(node
+				(ref "U4")
+				(pin "9")
+				(pinfunction "bit8_9")
+				(pintype "output+no_connect")
+			)
+		)
+		(net
+			(code "53")
+			(name "unconnected-(U4-bit12-Pad13)")
+			(class "Default")
+			(node
+				(ref "U4")
+				(pin "13")
+				(pinfunction "bit12_13")
+				(pintype "input+no_connect")
+			)
+		)
+		(net
+			(code "54")
+			(name "unconnected-(U5-bit5-Pad6)")
+			(class "Default")
+			(node
+				(ref "U5")
+				(pin "6")
+				(pinfunction "bit5_6")
+				(pintype "output+no_connect")
+			)
+		)
+		(net
+			(code "55")
+			(name "unconnected-(U5-bit9-Pad10)")
+			(class "Default")
+			(node
+				(ref "U5")
+				(pin "10")
+				(pinfunction "bit9_10")
+				(pintype "input+no_connect")
+			)
+		)
+		(net
+			(code "56")
+			(name "unconnected-(U5-bit10-Pad11)")
+			(class "Default")
+			(node
+				(ref "U5")
+				(pin "11")
+				(pinfunction "bit10_11")
+				(pintype "input+no_connect")
+			)
+		)
+		(net
+			(code "57")
+			(name "unconnected-(U5-bit11-Pad12)")
+			(class "Default")
+			(node
+				(ref "U5")
+				(pin "12")
+				(pinfunction "bit11_12")
+				(pintype "input+no_connect")
+			)
+		)
+		(net
+			(code "58")
+			(name "unconnected-(U5-bit12-Pad13)")
+			(class "Default")
+			(node
+				(ref "U5")
+				(pin "13")
+				(pinfunction "bit12_13")
+				(pintype "input+no_connect")
+			)
+		)
+		(net
+			(code "59")
+			(name "unconnected-(U5-bit13-Pad14)")
+			(class "Default")
+			(node
+				(ref "U5")
+				(pin "14")
+				(pinfunction "bit13_14")
+				(pintype "output+no_connect")
+			)
+		)
+		(net
+			(code "60")
+			(name "unconnected-(U5-bit14-Pad15)")
+			(class "Default")
+			(node
+				(ref "U5")
+				(pin "15")
+				(pinfunction "bit14_15")
+				(pintype "output+no_connect")
+			)
+		)
+		(net
+			(code "61")
+			(name "unconnected-(U5-bit15-Pad16)")
+			(class "Default")
+			(node
+				(ref "U5")
+				(pin "16")
+				(pinfunction "bit15_16")
+				(pintype "output+no_connect")
+			)
+		)
+		(net
+			(code "62")
+			(name "unconnected-(U6-bit2-Pad3)")
+			(class "Default")
+			(node
+				(ref "U6")
+				(pin "3")
+				(pinfunction "bit2_3")
+				(pintype "input+no_connect")
+			)
+		)
+		(net
+			(code "63")
+			(name "unconnected-(U6-bit3-Pad4)")
+			(class "Default")
+			(node
+				(ref "U6")
+				(pin "4")
+				(pinfunction "bit3_4")
+				(pintype "output+no_connect")
+			)
+		)
+		(net
+			(code "64")
+			(name "unconnected-(U6-bit4-Pad5)")
+			(class "Default")
+			(node
+				(ref "U6")
+				(pin "5")
+				(pinfunction "bit4_5")
+				(pintype "output+no_connect")
+			)
+		)
+		(net
+			(code "65")
+			(name "unconnected-(U6-bit5-Pad6)")
+			(class "Default")
+			(node
+				(ref "U6")
+				(pin "6")
+				(pinfunction "bit5_6")
+				(pintype "output+no_connect")
+			)
+		)
+		(net
+			(code "66")
+			(name "unconnected-(U6-bit8-Pad9)")
+			(class "Default")
+			(node
+				(ref "U6")
+				(pin "9")
+				(pinfunction "bit8_9")
+				(pintype "output+no_connect")
+			)
+		)
+		(net
+			(code "67")
+			(name "unconnected-(U6-bit9-Pad10)")
+			(class "Default")
+			(node
+				(ref "U6")
+				(pin "10")
+				(pinfunction "bit9_10")
+				(pintype "input+no_connect")
+			)
+		)
+		(net
+			(code "68")
+			(name "unconnected-(U6-bit10-Pad11)")
+			(class "Default")
+			(node
+				(ref "U6")
+				(pin "11")
+				(pinfunction "bit10_11")
+				(pintype "input+no_connect")
+			)
+		)
+		(net
+			(code "69")
+			(name "unconnected-(U6-bit11-Pad12)")
+			(class "Default")
+			(node
+				(ref "U6")
+				(pin "12")
+				(pinfunction "bit11_12")
+				(pintype "input+no_connect")
+			)
+		)
+		(net
+			(code "70")
+			(name "unconnected-(U6-bit13-Pad14)")
+			(class "Default")
+			(node
+				(ref "U6")
+				(pin "14")
+				(pinfunction "bit13_14")
+				(pintype "output+no_connect")
+			)
+		)
+		(net
+			(code "71")
+			(name "unconnected-(U6-bit14-Pad15)")
+			(class "Default")
+			(node
+				(ref "U6")
+				(pin "15")
+				(pinfunction "bit14_15")
+				(pintype "output+no_connect")
+			)
+		)
+		(net
+			(code "72")
+			(name "unconnected-(U6-bit15-Pad16)")
+			(class "Default")
+			(node
+				(ref "U6")
+				(pin "16")
+				(pinfunction "bit15_16")
+				(pintype "output+no_connect")
+			)
+		)
+	)
+)

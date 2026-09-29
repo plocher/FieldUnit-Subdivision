@@ -122,6 +122,7 @@ class NetlistReader:
         value = ""
         lib = ""
         part = ""
+        sheetpath = ""
         fields: dict[str, str] = {}
 
         for item in node[1:]:
@@ -140,6 +141,16 @@ class NetlistReader:
                         lib = sub[1]
                     elif sub[0] == Symbol("part") and len(sub) >= 2 and isinstance(sub[1], str):
                         part = sub[1]
+            elif tag == Symbol("sheetpath"):
+                for sub in item[1:]:
+                    if (
+                        isinstance(sub, list)
+                        and sub
+                        and sub[0] == Symbol("names")
+                        and len(sub) >= 2
+                        and isinstance(sub[1], str)
+                    ):
+                        sheetpath = sub[1]
             elif tag == Symbol("fields"):
                 for field_node in item[1:]:
                     parsed = self._parse_field(field_node)
@@ -169,6 +180,7 @@ class NetlistReader:
             lib=lib,
             part=part,
             fields=fields,
+            sheetpath=sheetpath,
         )
 
     def _parse_field(self, node: Any) -> Optional[tuple[str, str]]:

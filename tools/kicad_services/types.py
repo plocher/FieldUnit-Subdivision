@@ -49,6 +49,7 @@ class NetlistComponent:
     lib: str
     part: str
     fields: dict[str, str] = field(default_factory=dict)
+    sheetpath: str = ""
 
     @property
     def lib_id(self) -> str:
