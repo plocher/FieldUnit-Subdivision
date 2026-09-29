@@ -69,7 +69,7 @@ Railroad/SPCoast/                  folder = membership (no manifest)
 | Role | Symbol(s) | Value | Key fields / pins |
 |---|---|---|---|
 | `MACHINE` | CtcMachine | machine name | `Type` (e.g. `US&S506`), `Columns`, `Era` |
-| `COLUMN` | PanelColumn | **column number** (known nowhere else) | column pins (all equivalent) |
+| `COLUMN` | PanelColumn | **column number** (known nowhere else) | `CP Name` (the CP this column is); column pins (all equivalent) |
 | `APPLIANCE` | PanelSwitch, PanelLock, PanelSignal, PanelLamp-*, PanelCode, PanelAuxiliary | appliance name (plant name, or label for lamps) | `Kind`; one `Column` pin; function pins (NWS/RWS/NWK/RWK, NGS/HS/SGS/NGK/SGK/TEK, LAMP, CODE, SW) |
 | `IODRIVER` | PanelColumn-MAX7313 (implementation-specific) | bus address (e.g. `0x24`) | `BusKind` (e.g. `I2C-MAX7313`); pins `bitN` |
 | `CODELINE` | Codeline-VIRTUAL, Codeline-MQTT, Codeline-CMRInet | **transport type** | `Station`; transport parameters (below) |
@@ -105,8 +105,8 @@ The netlist exports field values already resolved, including `${Station}`,
 |---|---|---|
 | appliance ∈ column | net between the appliance `Column` pin and a COLUMN pin | exactly one column per appliance |
 | appliance function → drive bit | net between an appliance function pin and an IODRIVER `bitN` pin | the driver is identified by Value and `BusKind`; the bit comes from the pin |
-| column ∈ interlocking | the sheet the column is on | — |
-| column → CP | **derived**: the column's switch/signal appliances name plant appliances, whose `CP` field gives the CP | all of a column's appliances must agree |
+| column ∈ interlocking | the sheet the column is on | an interlocking has exactly one CODE |
+| column = CP | identity: the column is the CP, named by its `CP Name` field | ≤1 switch/lock lever, ≤1 signal lever, ≥1 of them; `CP Name` is a plant CP (MAIN HOUSE) of the interlocking |
 | interlocking → codeline | the single CODELINE symbol on the interlocking's sheet | exactly one per sheet |
 | codeline instance | **derived**: same Value + same `Broker` (MQTT) or `Port` (C/MRI) | multiple brokers or buses are allowed |
 | machine → columns | the controller project | vertical lamp and lever order comes from the machine `Type` (manufacturer standard), not from the schematic |
@@ -170,7 +170,7 @@ make netlist   (per project: kicad-cli sch export netlist, rebuilt when a sheet 
    ↓
 compile        (per project → fragment: plant or controller)
    ↓
-link           (Railroad/SPCoast/*: resolve names, derive CPs and codeline instances, diagnose)
+link           (Railroad/SPCoast/*: resolve names, match columns to plant CPs, derive codeline instances, diagnose)
    ↓
 logical model  (JSON; the only input to generators)
    ↓
@@ -187,7 +187,8 @@ Errors:
   paths don't match the root sheet UUID. KiCad's ERC does not catch this.
 - Appliance with no column, or with more than one column.
 - Appliance function pin not on any IODRIVER bit.
-- Column whose appliances resolve to different CPs, or to no CP.
+- Column with more than one switch/lock lever or signal lever, or with none of them; interlocking sheet without exactly one CODE.
+- Column `CP Name` empty, still the library placeholder, or not a plant CP of the interlocking.
 - Panel appliance whose name matches no plant appliance.
 - Interlocking sheet with no, or more than one, CODELINE symbol.
 - Unknown CODELINE Value; C/MRI Station that isn't a UA from 0 to 127.
@@ -217,15 +218,20 @@ diagnostics); the linker then cross-checks the two fragments.
 - A plant with no controller sheet is **info**: it may be controlled by another
   controller (M:N), or not yet be on this machine.
 
-**CPs ↔ columns (one column is one CP):**
-- A column's CP comes from its **switch lever**: the named plant switch's
-  `CP`. A column with no switch lever takes its CP from its other appliances.
-  If they disagree or resolve to nothing, that's an **error**.
-- A signal lever needs at least one of its masts in the column's CP. A signal
-  control can span CPs: in Luchessa, signal 784's masts sit in all three.
-- Two columns resolving to the same CP is an **error**.
-- A plant CP with no column is a **warning** (not dispatcher-controlled from
-  this machine).
+**CPs and columns: a column IS a CP.** This is identity, not derivation.
+- The column's `CP Name` field names the CP. It must match a plant CP (MAIN HOUSE
+  Value) of the same interlocking. If it's empty, still holds the library
+  placeholder, or matches nothing, that's an **error**.
+- A column/CP has **at most one** switch or lock lever, **at most one** signal
+  lever, and **at least one** of them. This is a rule about **panel levers**.
+  It does not constrain how the plant allocates masts, heads or other field
+  equipment to MAIN HOUSEs. A signal's masts can sit in several houses:
+  Luchessa's signal 784 does. Routes and signals span CPs, which is exactly why
+  several CPs form one interlocking whose logic interlocks them.
+- An interlocking is the set of its CPs/columns, with **exactly one** CODE
+  button.
+- Two columns naming the same CP is an **error**. A plant CP with no column is
+  a **warning** (not dispatcher-controlled from this machine).
 
 **Appliances:**
 - Every panel appliance names a plant appliance **of this interlocking**, and
@@ -236,11 +242,10 @@ diagnostics); the linker then cross-checks the two fragments.
   - `MAINTAINER_CALL` ↔ maintainer call
 - Every dispatcher-controlled plant appliance has a lever. Dependent derails
   (`795D`) are exempt.
-- A lamp's `IndicationToken` entries must resolve to indications of this
-  interlocking: track circuits (including derived OS circuits such as
-  `783T1`) or maintainer-call indications. They need not be in the column's own
-  CP: in Luchessa, column 6 (CP Gilroy) lights `799T1` and `1NA` from CP
-  Carnadero.
+- A lamp's `IndicationToken` entries resolve **per interlocking**: to track
+  circuits (including derived OS circuits such as `783T1`) or maintainer-call
+  indications. Which column or driver a lamp is wired to is a hardware or
+  model-board choice and carries no CP meaning.
 - A plant track circuit that no lamp shows is **info**.
 
 **Station:**
@@ -265,9 +270,10 @@ diagnostics); the linker then cross-checks the two fragments.
   maintainer calls per station (debt). The plant model must carry them.
 
 **Prototype check against Luchessa (2026-09-28):**
-- **Column CPs:** columns 5/6/7 derive CP Luchessa / CP Gilroy / CP Carnadero
-  from switches 783/795/799.
-- **Signal lever:** 784 has a mast (784EAB) in column 5's CP.
+- **Lever counts:** columns 5/6/7 each have one switch lever (783/795/799);
+  column 5 also has signal lever 784. All satisfy the lever rule.
+- **`CP Name`:** still the library placeholder `CP NAME` on all three columns,
+  so it is flagged as unset.
 - **Switches:** every plant switch has a lever; 795D is exempt as a dependent
   derail.
 - **Lamp tokens:** all resolve within the interlocking.
@@ -317,6 +323,7 @@ the netlist:
     its `Column` field (`${VALUE}`) repeats Value. `Interlocking` and `Machine`
     are derivable from the sheet and project.
   - Codeline defaults carry SPCoast values (`Broker`, `TopicRoot`, `Port`).
+  - `PanelColumn` `CP Name` defaults to the placeholder `CP NAME`. An empty default (like the lamp `IndicationToken`) makes "unset" unambiguous.
 - **Plant compiler:** it still maps library part names to kinds (`_PART_KIND`
   in `tools/plant_graph/compiler.py`). It should move to `Role` / `Kind` fields
   like the panel library.
