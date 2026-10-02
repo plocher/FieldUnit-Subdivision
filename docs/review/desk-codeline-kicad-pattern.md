@@ -186,6 +186,59 @@ Codeline transport fields:
 The netlist exports field values already resolved, including `${Station}`,
 `${TopicRoot}` and `${SHEETNAME}`, so the compiler never interprets `${…}`.
 
+## 4a. Plant symbols (`Railroad.kicad_sym`): Role and Kind
+
+Agreed 2026-09-30 for the layout-model compiler (`layout-model.md`); the
+plant library gets the same hidden `Role` / `Kind` fields as the panel
+library, and the compiler stops classifying by symbol name.
+
+**Role answers: what does the compiler do with this symbol's Value and
+pins?** A Role is a set of compiler behaviours; that is the test for
+choosing one.
+
+| Role | Value | What it enables |
+|---|---|---|
+| `CONTROLLED_POINT` | CP name | creates the CP entity that `CP` fields point at |
+| `APPLIANCE` | railroad name | entity under a CP; in the CP's control/indication vocabulary (desk levers and lamps match it by name, the codec cross-checks it); a hardware-sheet proxy can name it to bind field I/O; pins are track connectivity or attachment |
+| `COMPONENT` | part label | folded into the appliance it attaches to; never matched by name from outside; I/O binds through the parent's proxy |
+| `TRACK` | none (terminals: designation) | pins are edges of the track graph |
+| `POLICY` | label | changes how derived facts are computed; fields carry parameters; a pin locates it |
+| `ANNOTATION` | label | documentation only |
+
+Masts are appliances (named, CP-owned through house allocation, FieldUnit
+class of their own, I/O via proxy); heads are components. The signal itself
+has no symbol: it is derived from masts sharing a number.
+
+**Kind answers: which class does the vital model (FieldUnit vocabulary)
+know this as, and which variant changes what the compiler derives?** A
+variant earns a suffix only when it changes derivation. Mechanism and
+implementation (powered vs hand-throw, colour-light vs searchlight) stay in
+the symbol name and description, so a new implementation is a new symbol
+with the same Kind and no compiler change. Kind is empty where variants do
+not change derivation (as the panel library does for MACHINE and COLUMN).
+
+| Symbol | Role | Kind |
+|---|---|---|
+| MAIN HOUSE | `CONTROLLED_POINT` | (empty) |
+| Switch_Powered | `APPLIANCE` | `SWITCH_POWERED` |
+| Switch_Lock | `APPLIANCE` | `SWITCH_LOCK` |
+| Switch_Powered_Derail, Switch_Powered_Derail_TC | `APPLIANCE` | `DERAIL` (the `TC` field says whether it has its own circuit; clear the plain symbol's default) |
+| Track Circuit | `APPLIANCE` | `TRACK_CIRCUIT` |
+| MaintainerCall | `APPLIANCE` | `MAINTAINER_CALL` |
+| Auxiliary (to add: `CP`, `Vital`, `ControlToken`) | `APPLIANCE` | `AUXILIARY` |
+| Mast_Single / Mast_Double / Mast_Dwarf | `APPLIANCE` | `MAST_SINGLE` / `MAST_DOUBLE` / `MAST_DWARF` (head count and dwarf change the FieldUnit mast type) |
+| Signal Head - CL | `COMPONENT` | `HEAD` |
+| IRJ / IRJ-Signal / Bumper / NextCP | `TRACK` | `IRJ` / `IRJ_SIGNAL` / `BUMPER` / `NEXT_CP` |
+| Rule251-DoT-Left, Rule251-DoT-Right | `POLICY` | `RULE_251` (`Direction` distinguishes) |
+| Rule261-DoT-BiDirectional | `POLICY` | `RULE_261` |
+| Rule6.28-OtherThanMain | `POLICY` | `RULE_6.28` |
+| Route | `POLICY` | `ROUTE_INDICATION` (authored override of the derived best indication) |
+| Milepost | `ANNOTATION` | (empty) |
+
+Identity placeholders (`CP` = "controlling cp", Value = "XX" / "?" /
+"Block Name" / "Neighboring CP?") should default to empty, as for the panel
+`CP Name`. The `Type` field on MAIN HOUSE is redundant with Role.
+
 ## 5. Relationships and how each is derived
 
 | Relationship | Source | Rule |
