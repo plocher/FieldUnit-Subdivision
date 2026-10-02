@@ -79,7 +79,7 @@ tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-
 - Head Value is one letter, A–E. The Track Circuit marker's Value is the authoritative circuit name.
 - A switch's OS circuit defaults to `<switch>T1`; a `TC` field overrides it.
 - `CP` must equal a MAIN HOUSE Value.
-- Direction and policy markers need `Rulebook`, and `Direction` where applicable.
+- Direction and policy markers: the symbol's Kind/Role records the rule. It replaces the `Rulebook` field. The compiler still requires `Rulebook` (it is behind; to be updated). `Direction` where applicable.
 - Track nets need labels, except OS legs, dark track and derail nets.
 
 **Desk schematics (RailroadPanel lib).** Compiled by `tools/controller_graph/` (CLI `parse_kicad_controller.py`) and cross-checked against plants by `tools/link_subdivision.py`.

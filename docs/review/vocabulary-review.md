@@ -768,7 +768,7 @@ list has one source.
 ## Spike results (2026-10-01)
 
 Reports: `vocabulary-sources.md` (S6), `../adr/0001-code-line-type-contract.md` (S2), `spike-cp-membership.md` (S3).
-`name-grammar.md` (S5) is pending.
+`../adr/0003-name-grammar.md` (S5) is pending.
 
 ### Corrections to this review from the sources spike
 
@@ -801,7 +801,7 @@ Everything below is uncommitted on branch `fix/derail-prototype-polarity` in eac
 | Plan step | State |
 |---|---|
 | 1a derail polarity | Code, tests, docs, KiCad pin rename done. `spcoast_ctc` and all four example sketches compile for ESP32 after forward declarations were added to `CP_Corporal`, `CP_Christopher` and `FieldUnit_Tracer`. Commit is on hold. |
-| 1 spikes | S2 `../adr/0001-code-line-type-contract.md`, S3 `spike-cp-membership.md`, S5 `name-grammar.md`, S6 `vocabulary-sources.md`. All four are proposals or reports. None is applied. |
+| 1 spikes | S2 `../adr/0001-code-line-type-contract.md`, S3 `spike-cp-membership.md`, S5 `../adr/0003-name-grammar.md`, S6 `vocabulary-sources.md`. All four are proposals or reports. None is applied. |
 | 2 glossary | Rewritten in STE (`FieldUnit/docs/GLOSSARY.md`). Reviewed; three corrections applied. |
 | 3 ontology | Rev 5 written after iteration 10 (by facet). Awaiting the owner's review. |
 | 4 replacements | Done in Subdivision `README.md`, `AGENTS.md`, `generated/README.md`. "desk" not replaced (not confirmed). |
@@ -815,7 +815,7 @@ Correction to F31: only `ControlPoint` is gone. `CodeLineCodec` exists (an alias
 
 1. Luchessa: one control point with three field stations, or three control points.
 2. Is "desk" retired in favour of "CTC machine"?
-3. The 13 questions in `name-grammar.md` (applying it renames about 375 names).
+3. The 13 questions in `../adr/0003-name-grammar.md` (applying it renames about 375 names).
 4. The three owner questions in `../adr/0001-code-line-type-contract.md`.
 5. Lift the commit hold, so the class rename can start.
 6. Milepost of Christopher (77.8 or 81) and Corporal (83, or 86.4 per the 1952 timetable).
@@ -1006,7 +1006,7 @@ fix the interlocking `Luchessa` and its control point `Luchessa` share a name an
 |---|---|
 | Watsonville note in AGENTS.md | Removed. The schematic will be fixed soon, so it is not a lasting instruction. The exclusion stays in the review documents. |
 | Proxy names | `<interlocking>:<tokenname>` (the older pattern, still in the XML and some KiCad). When `<interlocking>` is not the local one, the generator must listen on the code line for the office indications of that field station and take the value, usually for route equations. When it names a control point inside the same interlocking limits, the generator handles it locally. The data model supplies the facts. It does not set the policy. |
-| Symbol fields | The definitions behind the symbol fields changed. The symbols must be refactored to hold the facts the model now needs (for example the `Station` field of `Codeline-MQTT`). A proposal is in work: `docs/review/symbol-contract.md`. |
+| Symbol fields | The definitions behind the symbol fields changed. The symbols must be refactored to hold the facts the model now needs (for example the `Station` field of `Codeline-MQTT`). A proposal is in work: `docs/adr/0002-symbol-contract.md`. |
 | No `MAIN HOUSE` | An error. The `MAIN HOUSE` symbol is the explicit source of the name; not the title block and not the file name. The symbol can display a title block variable. This replaces "cannot use a 506-style encoding" in ADR D3. |
 | Field unit and two code lines | Covered by the six terms: a field processor runs one or more interlocking applications. The "two instances" rule stands. |
 | Lever rule | Still an error for a CTC machine with a lever panel that is not NX. This is the only style captured now. The rule belongs to the choice of machine. A glass-panel track plan can have other rules. |
@@ -1041,3 +1041,33 @@ ignores all first-class controls together, as stated here.
 
 The vocabulary, the ontology and ADR 0001 exist so that step 2's model is unambiguous. They are not
 the goal. Three operator roles use the result: dispatcher, tower operator, maintainer.
+
+---
+
+## Iteration 12 (2026-10-02): the control transaction rule, restated by the owner
+
+Recorded as FieldUnit `docs/adr/0002-control-transaction-classes.md` (proposed).
+
+- A malformed transaction (incomplete, unknown or corrupted data, failed structural check) is ignored
+  as a whole, like a UDP packet with a bad checksum. Error counters are updated.
+- A valid transaction is reliable. If acting on it would violate a safety protection, every control
+  that can affect safety is ignored. All other controls are honored. The maintainer call is one.
+- The code line control is a transactional demand. This gives the protection of the lever frame: no
+  partial control escapes.
+- `applyControlTransaction` predates this work. It is illustrative and not authoritative. It has two
+  defects against the rule (maintainer call applied on a malformed transaction; only the unsafe
+  control skipped) and it knows only one second-class control.
+- If a dispatcher needs several routes active at once, the interlocking must be designed for it.
+
+Other answers:
+
+- No `MAIN HOUSE`: the compiler stops with an error that states the uncertainty.
+- The `Rulebook` field was replaced on purpose by the Kind/Role mechanism. The compiler is behind.
+  AGENTS.md is corrected.
+- The owner updated the Watsonville schematic and fixed the GilroyCalTrain spellings on 2026-10-02.
+  The exclusions and counts in the documents are dated 2026-10-01 and must be re-checked.
+- Maintainer call and `MAIN HOUSE`: verified in the netlists. The call symbol connects by pin to
+  `MAIN HOUSE` pin H in Luchessa, Sargent and GilroyInterchange. It is not a defect. The proposal is
+  only to read the pin and not also require a `CP` field.
+- Proposals that need a decision moved into the ADR structure: `docs/adr/0002-symbol-contract.md`,
+  `docs/adr/0003-name-grammar.md`. `docs/adr/README.md` lists what waits for the owner.
