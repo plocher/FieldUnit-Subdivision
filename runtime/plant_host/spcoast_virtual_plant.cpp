@@ -488,21 +488,21 @@ int runSelfTest(SubdivisionPlantHost& host) {
 
     // 5. Test Signal Knockdown on Train Entrance at Luchessa
     printf("[TEST 5] Signal Knockdown on Train Entrance at Luchessa\n");
-    TrackCircuit* tc1SA = luchessa->cp().findTrackCircuit("1SA");
-    assert(tc1SA != nullptr);
+    TrackCircuit* tc1SAT = luchessa->cp().findTrackCircuit("1SAT");
+    assert(tc1SAT != nullptr);
 
-    // Train enters entrance circuit 1SA -> shunts track circuit
-    tc1SA->update(Occupancy::OCCUPIED, Quality::GOOD, clockMs);
+    // Train enters entrance circuit 1SAT -> shunts track circuit
+    tc1SAT->update(Occupancy::OCCUPIED, Quality::GOOD, clockMs);
     host.tickAll(clockMs);
 
     luchessa->exportIndications(luchInd);
     assert(luchInd.find("(784SGK)") != std::string::npos);
-    assert(luchInd.find("1SAK") != std::string::npos && luchInd.find("(1SAK)") == std::string::npos);
-    printf("  -> Train shunted 1SA: Signal 784 immediately knocked down to STOP ((784SGK))\n");
+    assert(luchInd.find("1SATK") != std::string::npos && luchInd.find("(1SATK)") == std::string::npos);
+    printf("  -> Train shunted 1SAT: Signal 784 immediately knocked down to STOP ((784SGK))\n");
     printf("  -> PASS: Automatic signal knockdown verified!\n\n");
 
     // Train clears plant
-    tc1SA->update(Occupancy::VACANT, Quality::GOOD, clockMs);
+    tc1SAT->update(Occupancy::VACANT, Quality::GOOD, clockMs);
     host.tickAll(clockMs);
 
     // 6. Test Yard Departure Route at CP_Watsonville

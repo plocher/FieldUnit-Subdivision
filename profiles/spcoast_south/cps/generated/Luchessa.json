@@ -2,22 +2,22 @@
   "name": "Luchessa",
   "trackCircuits": [
     {
-      "name": "1NA"
+      "name": "1NAT"
     },
     {
-      "name": "1SA"
+      "name": "1SAT"
     },
     {
-      "name": "2NA"
+      "name": "2NAAT"
     },
     {
-      "name": "2NAA"
+      "name": "2NAT"
     },
     {
-      "name": "2SA"
+      "name": "2SAT"
     },
     {
-      "name": "3NA"
+      "name": "3NAT"
     },
     {
       "name": "783T1"
@@ -78,7 +78,7 @@
   ],
   "routes": [
     {
-      "name": "2SA-Branch",
+      "name": "2SAT-Branch",
       "governedBy": {
         "signal": "784",
         "direction": "RIGHT"
@@ -98,15 +98,15 @@
         }
       ],
       "clears": [
-        "2NAA",
+        "2NAAT",
         "795T1",
         "799T1"
       ],
-      "entrance": "2SA",
-      "approaching": "3NA"
+      "entrance": "2SAT",
+      "approaching": "3NAT"
     },
     {
-      "name": "2SA-MT1",
+      "name": "2SAT-MT1",
       "governedBy": {
         "signal": "784",
         "direction": "RIGHT"
@@ -126,12 +126,12 @@
         }
       ],
       "clears": [
-        "2NAA",
+        "2NAAT",
         "795T1",
         "799T1"
       ],
-      "entrance": "2SA",
-      "approaching": "2NA"
+      "entrance": "2SAT",
+      "approaching": "2NAT"
     },
     {
       "name": "Branch-Industry",
@@ -154,12 +154,12 @@
         }
       ],
       "clears": [
-        "2NAA",
-        "2SA",
+        "2NAAT",
+        "2SAT",
         "795T1",
         "799T1"
       ],
-      "entrance": "3NA"
+      "entrance": "3NAT"
     },
     {
       "name": "Branch-MT",
@@ -186,13 +186,13 @@
         }
       ],
       "clears": [
-        "2NAA",
+        "2NAAT",
         "783T1",
         "795T1",
         "799T1"
       ],
-      "entrance": "3NA",
-      "approaching": "1SA"
+      "entrance": "3NAT",
+      "approaching": "1SAT"
     },
     {
       "name": "MT-Branch",
@@ -219,13 +219,13 @@
         }
       ],
       "clears": [
-        "2NAA",
+        "2NAAT",
         "783T1",
         "795T1",
         "799T1"
       ],
-      "entrance": "1SA",
-      "approaching": "3NA"
+      "entrance": "1SAT",
+      "approaching": "3NAT"
     },
     {
       "name": "MT-MT1",
@@ -252,13 +252,13 @@
         }
       ],
       "clears": [
-        "2NAA",
+        "2NAAT",
         "783T1",
         "795T1",
         "799T1"
       ],
-      "entrance": "1SA",
-      "approaching": "2NA"
+      "entrance": "1SAT",
+      "approaching": "2NAT"
     },
     {
       "name": "MT-MT2",
@@ -279,8 +279,8 @@
       "clears": [
         "783T1"
       ],
-      "entrance": "1SA",
-      "approaching": "1NA"
+      "entrance": "1SAT",
+      "approaching": "1NAT"
     },
     {
       "name": "MT1-Industry",
@@ -303,12 +303,12 @@
         }
       ],
       "clears": [
-        "2NAA",
-        "2SA",
+        "2NAAT",
+        "2SAT",
         "795T1",
         "799T1"
       ],
-      "entrance": "2NA"
+      "entrance": "2NAT"
     },
     {
       "name": "MT1-MT",
@@ -335,13 +335,13 @@
         }
       ],
       "clears": [
-        "2NAA",
+        "2NAAT",
         "783T1",
         "795T1",
         "799T1"
       ],
-      "entrance": "2NA",
-      "approaching": "1SA"
+      "entrance": "2NAT",
+      "approaching": "1SAT"
     },
     {
       "name": "MT2-MT",
@@ -362,8 +362,8 @@
       "clears": [
         "783T1"
       ],
-      "entrance": "1NA",
-      "approaching": "1SA"
+      "entrance": "1NAT",
+      "approaching": "1SAT"
     }
   ]
 }

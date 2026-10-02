@@ -37,15 +37,15 @@
           },
           {
             "kind": "trackCircuit",
-            "id": "1NA"
+            "id": "1NAT"
           },
           {
             "kind": "trackCircuit",
-            "id": "2NA"
+            "id": "2NAT"
           },
           {
             "kind": "trackCircuit",
-            "id": "3NA"
+            "id": "3NAT"
           }
         ]
       },
@@ -70,11 +70,11 @@
           },
           {
             "kind": "trackCircuit",
-            "id": "2NAA"
+            "id": "2NAAT"
           },
           {
             "kind": "trackCircuit",
-            "id": "2SA"
+            "id": "2SAT"
           }
         ]
       },
@@ -91,7 +91,7 @@
           },
           {
             "kind": "trackCircuit",
-            "id": "1SA"
+            "id": "1SAT"
           }
         ]
       }
@@ -121,22 +121,22 @@
     "controlGroups": [],
     "trackCircuits": [
       {
-        "id": "1NA"
+        "id": "1NAT"
       },
       {
-        "id": "1SA"
+        "id": "1SAT"
       },
       {
-        "id": "2NA"
+        "id": "2NAAT"
       },
       {
-        "id": "2NAA"
+        "id": "2NAT"
       },
       {
-        "id": "2SA"
+        "id": "2SAT"
       },
       {
-        "id": "3NA"
+        "id": "3NAT"
       },
       {
         "id": "783T1"
@@ -230,7 +230,7 @@
       {
         "id": "segment:1",
         "kind": "track",
-        "trackCircuit": "1NA",
+        "trackCircuit": "1NAT",
         "endpoints": [
           "signal_irj:4",
           "terminal:mt2:next_cp:1"
@@ -239,7 +239,7 @@
       {
         "id": "segment:2",
         "kind": "track",
-        "trackCircuit": "1SA",
+        "trackCircuit": "1SAT",
         "endpoints": [
           "signal_irj:1",
           "terminal:mt:next_cp:1"
@@ -248,25 +248,25 @@
       {
         "id": "segment:3",
         "kind": "track",
-        "trackCircuit": "2NA",
-        "endpoints": [
-          "signal_irj:9",
-          "terminal:mt1:next_cp:1"
-        ]
-      },
-      {
-        "id": "segment:4",
-        "kind": "track",
-        "trackCircuit": "2NAA",
+        "trackCircuit": "2NAAT",
         "endpoints": [
           "irj:6",
           "irj:7"
         ]
       },
       {
+        "id": "segment:4",
+        "kind": "track",
+        "trackCircuit": "2NAT",
+        "endpoints": [
+          "signal_irj:9",
+          "terminal:mt1:next_cp:1"
+        ]
+      },
+      {
         "id": "segment:5",
         "kind": "track",
-        "trackCircuit": "2SA",
+        "trackCircuit": "2SAT",
         "endpoints": [
           "irj:2",
           "signal_irj:5"
@@ -275,7 +275,7 @@
       {
         "id": "segment:6",
         "kind": "track",
-        "trackCircuit": "3NA",
+        "trackCircuit": "3NAT",
         "endpoints": [
           "signal_irj:10",
           "terminal:branch:next_cp:1"
@@ -458,8 +458,8 @@
   ],
   "routes": [
     {
-      "id": "2sa-branch",
-      "name": "2SA-Branch",
+      "id": "2sat-branch",
+      "name": "2SAT-Branch",
       "signal": "784",
       "mast": "784EC",
       "direction": "RIGHT",
@@ -478,21 +478,21 @@
         }
       ],
       "clearTrackCircuits": [
-        "2NAA",
+        "2NAAT",
         "795T1",
         "799T1"
       ],
       "staticIndication": "APPROACH",
-      "entrance": "2SA",
-      "approaching": "3NA",
+      "entrance": "2SAT",
+      "approaching": "3NAT",
       "entryTerminal": null,
       "exitTerminal": "terminal:branch:next_cp:1",
       "endKind": "cp_limit",
       "exitFace": null
     },
     {
-      "id": "2sa-mt1",
-      "name": "2SA-MT1",
+      "id": "2sat-mt1",
+      "name": "2SAT-MT1",
       "signal": "784",
       "mast": "784EC",
       "direction": "RIGHT",
@@ -511,13 +511,13 @@
         }
       ],
       "clearTrackCircuits": [
-        "2NAA",
+        "2NAAT",
         "795T1",
         "799T1"
       ],
       "staticIndication": "APPROACH",
-      "entrance": "2SA",
-      "approaching": "2NA",
+      "entrance": "2SAT",
+      "approaching": "2NAT",
       "entryTerminal": null,
       "exitTerminal": "terminal:mt1:next_cp:1",
       "endKind": "cp_limit",
@@ -544,13 +544,13 @@
         }
       ],
       "clearTrackCircuits": [
-        "2NAA",
-        "2SA",
+        "2NAAT",
+        "2SAT",
         "795T1",
         "799T1"
       ],
       "staticIndication": "DIVERGING_RESTRICTING",
-      "entrance": "3NA",
+      "entrance": "3NAT",
       "approaching": null,
       "entryTerminal": "terminal:branch:next_cp:1",
       "exitTerminal": null,
@@ -578,14 +578,14 @@
         }
       ],
       "clearTrackCircuits": [
-        "2NAA",
+        "2NAAT",
         "783T1",
         "795T1",
         "799T1"
       ],
       "staticIndication": "APPROACH",
-      "entrance": "3NA",
-      "approaching": "1SA",
+      "entrance": "3NAT",
+      "approaching": "1SAT",
       "entryTerminal": "terminal:branch:next_cp:1",
       "exitTerminal": "terminal:mt:next_cp:1",
       "endKind": "cp_limit",
@@ -612,14 +612,14 @@
         }
       ],
       "clearTrackCircuits": [
-        "2NAA",
+        "2NAAT",
         "783T1",
         "795T1",
         "799T1"
       ],
       "staticIndication": "APPROACH",
-      "entrance": "1SA",
-      "approaching": "3NA",
+      "entrance": "1SAT",
+      "approaching": "3NAT",
       "entryTerminal": "terminal:mt:next_cp:1",
       "exitTerminal": "terminal:branch:next_cp:1",
       "endKind": "cp_limit",
@@ -646,14 +646,14 @@
         }
       ],
       "clearTrackCircuits": [
-        "2NAA",
+        "2NAAT",
         "783T1",
         "795T1",
         "799T1"
       ],
       "staticIndication": "CLEAR",
-      "entrance": "1SA",
-      "approaching": "2NA",
+      "entrance": "1SAT",
+      "approaching": "2NAT",
       "entryTerminal": "terminal:mt:next_cp:1",
       "exitTerminal": "terminal:mt1:next_cp:1",
       "endKind": "cp_limit",
@@ -675,8 +675,8 @@
         "783T1"
       ],
       "staticIndication": "APPROACH",
-      "entrance": "1SA",
-      "approaching": "1NA",
+      "entrance": "1SAT",
+      "approaching": "1NAT",
       "entryTerminal": "terminal:mt:next_cp:1",
       "exitTerminal": "terminal:mt2:next_cp:1",
       "endKind": "cp_limit",
@@ -703,13 +703,13 @@
         }
       ],
       "clearTrackCircuits": [
-        "2NAA",
-        "2SA",
+        "2NAAT",
+        "2SAT",
         "795T1",
         "799T1"
       ],
       "staticIndication": "DIVERGING_RESTRICTING",
-      "entrance": "2NA",
+      "entrance": "2NAT",
       "approaching": null,
       "entryTerminal": "terminal:mt1:next_cp:1",
       "exitTerminal": null,
@@ -737,14 +737,14 @@
         }
       ],
       "clearTrackCircuits": [
-        "2NAA",
+        "2NAAT",
         "783T1",
         "795T1",
         "799T1"
       ],
       "staticIndication": "CLEAR",
-      "entrance": "2NA",
-      "approaching": "1SA",
+      "entrance": "2NAT",
+      "approaching": "1SAT",
       "entryTerminal": "terminal:mt1:next_cp:1",
       "exitTerminal": "terminal:mt:next_cp:1",
       "endKind": "cp_limit",
@@ -766,8 +766,8 @@
         "783T1"
       ],
       "staticIndication": "APPROACH",
-      "entrance": "1NA",
-      "approaching": "1SA",
+      "entrance": "1NAT",
+      "approaching": "1SAT",
       "entryTerminal": "terminal:mt2:next_cp:1",
       "exitTerminal": "terminal:mt:next_cp:1",
       "endKind": "cp_limit",

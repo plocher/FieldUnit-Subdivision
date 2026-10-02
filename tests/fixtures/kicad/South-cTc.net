@@ -1095,7 +1095,7 @@
 				(field
 					(name "Color") "yellow")
 				(field
-					(name "IndicationToken") "1NA")
+					(name "IndicationToken") "1NAT")
 				(field
 					(name "Role") "APPLIANCE")
 				(field
@@ -1165,7 +1165,7 @@
 				(field
 					(name "Color") "red")
 				(field
-					(name "IndicationToken") "795T1,2NAA,799T1")
+					(name "IndicationToken") "795T1,2NAAT,799T1")
 				(field
 					(name "Role") "APPLIANCE")
 				(field
