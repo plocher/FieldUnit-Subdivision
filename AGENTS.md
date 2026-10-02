@@ -6,14 +6,14 @@ first; this file adds what an agent needs that the README does not say.
 ## What this repo owns
 
 FieldUnit-Subdivision is the operating-territory layer (SPCoast South: 7
-controlled points, one 14-column US&S cTc desk). It owns:
+interlockings, one 14-column desk: the SPCoast CTC machine, US&S style). It owns:
 
 - **KiCad → data tooling**: reading plant and desk schematics and emitting the
-  portable model, FieldUnit plant JSON, board pictures, and (planned) desk
+  portable model, FieldUnit interlocking model JSON, board pictures, and (planned) desk
   firmware.
 - **Subdivision runtime**: virtual plants, train progression, board and crew views.
 
-It does **not** own vital logic. Plants run FieldUnit's `InterlockingPlant`;
+It does **not** own vital logic. Plants run FieldUnit's interlocking logic (`InterlockingPlant`);
 never copy or reimplement interlocking rules here.
 
 ## Related repos and sources of truth
@@ -22,7 +22,7 @@ never copy or reimplement interlocking rules here.
 | --- | --- | --- |
 | `~/Dropbox/KiCad/Railroad/SPCoast/<Project>/` | KiCad projects (git) | Plant topology and desk wiring as drawn |
 | `~/Dropbox/KiCad/InterlockingPlant/symbols/` | `Railroad.kicad_sym` (plant), `RailroadPanel.kicad_sym` (desk) | Symbol and field contracts. **Not in git.** Parked outside this repo while they evolve; expected to move into this repo. |
-| `~/Dropbox/Arduino/libraries/FieldUnit` | Header-only C++17 library (git) | Vital engine, codecs, `PlantSerializer`, `cTcMachine`, and the `examples/spcoast_ctc` desk sketch |
+| `~/Dropbox/Arduino/libraries/FieldUnit` | Header-only C++17 library (git) | Interlocking logic, codecs, `PlantSerializer`, `cTcMachine`, and the `examples/spcoast_ctc` desk sketch |
 | this repo | Tooling and runtime | Everything derived from the above |
 
 The symbol libraries are registered globally in
@@ -31,7 +31,7 @@ The symbol libraries are registered globally in
 ## Commands
 
 ```zsh
-python3 -m unittest discover -s tests -q      # 122 tests, Python 3.14
+python3 -m unittest discover -s tests -q      # 123 tests, Python 3.14
 tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-cli
 ```
 
@@ -65,6 +65,7 @@ tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-
 - `schemas/interlocking-plant/v1.json`: portable model schema.
 - `profiles/spcoast_south/cps/`: station JSON. `CP_*.json` are legacy harvests; `generated/` holds KiCad-derived interlockings (only `Luchessa` so far). The plant host prefers `generated/<name>.json` over the legacy file.
 - `runtime/plant_host/`: the only runtime code. `graph/`, `traffic/` and `web/*` are empty placeholders.
+- `docs/review/vocabulary-review.md` and FieldUnit `docs/GLOSSARY.md` (`~/Dropbox/Arduino/libraries/FieldUnit/docs/GLOSSARY.md`): the sources of truth for vocabulary. Use their terms in prose; code names keep their spelling.
 - `docs/review/`: design notes and handoffs. `ctc-panel-hardware-binding.md` covers desk wiring.
 
 ## KiCad conventions the compiler relies on
@@ -73,7 +74,7 @@ tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-
 `tools/plant_graph/compiler.py`; any other part raises `unknown_symbol`.
 
 - The Value is the railroad name for every named part (switch `783`, mast `784EAB`, circuit `1NA`). References (`SW1`, `S7`) are KiCad annotation artifacts. Use them only as netlist identities, never to derive or check names.
-- Dependent derail Value is `<switch>D`, e.g. `795D`.
+- Dependent derail Value is `<switch>D`, e.g. `795D`. It takes the same position as its switch. Derail NORMAL is derailing; REVERSE is clear. The derail symbol's through pin is `R` (pin 2).
 - Mast Value matches `^\d+[NSEW][A-E]+$`, e.g. `784EAB`. N/W normalise to LEFT, S/E to RIGHT.
 - Head Value is one letter, A–E. The Track Circuit marker's Value is the authoritative circuit name.
 - A switch's OS circuit defaults to `<switch>T1`; a `TC` field overrides it.
@@ -96,6 +97,7 @@ tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-
 3. Update `loadStations()` and the self-test in `spcoast_virtual_plant.cpp`.
 4. Update the desk names in FieldUnit `examples/spcoast_ctc` (`configureDesk()`) and in `tools/test_ctc_desk.py`.
 5. Verify with unittest, the smoke script, `--test`, and an `arduino-cli compile` of the sketch.
+6. Update FieldUnit docs that quote the station. Corporal: primer Act V and Tutorial 2 quote the legacy `CP_Corporal.ino`.
 
 Tests and the smoke script hard-code Luchessa facts. When a change to them is intended, make it in a separate step.
 
@@ -121,7 +123,7 @@ full sketch) is still open. Propose options; do not pick one on your own.
 - Naming:
   - AAR tokens: `783NWS`, `784SGK`, `1SA`.
   - Interlocking: `Luchessa` (no `CP`); this is the plant name and the MQTT station key.
-  - Controlled point: `CP Luchessa` (MAIN HOUSE Value; one desk column each).
+  - The three `CP <name>` houses: `CP Luchessa`, `CP Gilroy`, `CP Carnadero` (MAIN HOUSE Values; one desk column each). Each is a control point: a `MAIN HOUSE` symbol declares it and its bungalow. On a 506-style code line each is one field station with the same name. The interlocking `Luchessa` contains all three.
   - Plant id: `spcoast.<Interlocking>`.
   - Names are case-preserved when produced and compared case-insensitively when consumed. Only case is folded, so `Luchessa` and `CP Luchessa` stay distinct.
   - Legacy stations still named `CP_<X>` are renamed when each is cut over, after checking whether it is an interlocking or a single CP.
