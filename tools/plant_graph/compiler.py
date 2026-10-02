@@ -74,7 +74,7 @@ _PART_KIND: dict[str, EntityKind] = {
 _TRACK_PINS: dict[EntityKind, frozenset[str]] = {
     EntityKind.SWITCH_POWERED: frozenset({"1", "2", "3"}),  # C/N/R
     EntityKind.SWITCH_LOCK: frozenset({"1", "2", "3"}),
-    EntityKind.DERAIL: frozenset({"1", "2"}),  # C/N; derailing end is ballast
+    EntityKind.DERAIL: frozenset({"1", "2"}),  # C/R; REVERSE is clear, NORMAL derails onto ballast
     EntityKind.IRJ: frozenset({"1", "2"}),  # A/B
     EntityKind.IRJ_SIGNAL: frozenset({"1", "2"}),  # A/B only; 3 is SIGNAL
     EntityKind.TRACK_CIRCUIT: frozenset({"1"}),

@@ -107,7 +107,7 @@ The overhead display, diagnostics, model board, cTc console, train simulation, a
 - Plant identity is compiler input (`--plant-name`, `--plant-id`), never inferred from `MAIN HOUSE` board sections.
 ## FieldUnit projection notes
 - FieldUnit plant JSON is the public PlantSerializer contract: `switches[]` / `derails[]` with optional `os`, then routes. Dependence is the `*D` name; route `aligns` name the master switch only.
-- Derail polarity matches FieldUnit: NORMAL = clear (off-rail); REVERSE = on-rail.
+- Derail polarity follows the prototype and FieldUnit: NORMAL = derailing (on the rail); REVERSE = clear. The derail's through port is `R`.
 - Portable derail control-mode facts remain available under projection deferred metadata for tooling that is not the vital engine.
 ## Known Gaps
 - FieldUnit `PlantSerializer` cannot yet express all definition facts, especially route end kinds, circuit roles, topology segments, and terminal semantics. Projection remains intentionally lossy for those.
