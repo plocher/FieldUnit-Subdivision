@@ -89,8 +89,7 @@ axes, or two fields must.
 - Functions (controls and office indications of appliances) are grouped into field stations.
 - On a 506-style encoding a field station is a control point: one `MAIN HOUSE` symbol.
   - The `MAIN HOUSE` must have a Value. The Value is the field station name.
-  - Names are normalized and checked for duplicates. They are never invented. The normalization
-    pattern (for example `CP <Name>`) is open.
+  - Names are checked for duplicates. They are never invented. D12 gives the naming rule.
   - An interlocking model with no `MAIN HOUSE` symbol cannot use a 506-style encoding.
 - On the AAR token encoding a field unit answers at one field station, named by the interlocking
   (`Luchessa`).
@@ -250,9 +249,9 @@ The form of the type definition is still to choose. The three options of the spi
 |---|---|---|---|
 | A. Data files | Type file in this repo; chart file with field stations listed by control point | The location (D10: SPCoast repo). Listing field stations and membership in the chart file (D3: field stations are `MAIN HOUSE` symbols; membership comes from the `CP` field or lever column). A chart file as the only path: a generation target that was not drawn still needs defaults (D6). | Encoding and transport definition files in the SPCoast repo. Per-field-station overrides and authored addresses in data, keyed by `MAIN HOUSE` name. The generator builds charts from defaults plus overrides. |
 | B. Drawn in KiCad | `FieldStation-USS506` symbols with step pins on the CTC machine sheet; encoder symbols | `FieldStation` symbols: they name field stations a second time beside `MAIN HOUSE` (D3). A chart that exists only as nets: it covers the drawn default and not other targets (D6). | Authored addresses and per-station overrides as fields on `MAIN HOUSE` or on the `CODELINE` symbol. Encoder symbols are not needed if rules are data. |
-| C. C++ classes in FieldUnit | Type is code; grouping by a field on `PanelColumn`; closed set of rules | Type definitions in FieldUnit (D10). Grouping by desk column as a new field (D3), although the lever column stays a candidate source. | A generic FieldUnit codec that runs chart tables (all options need it). Encoding rules as named code, if they are not data. |
+| C. C++ classes in FieldUnit | Type is code; grouping by a field on `PanelColumn`; closed set of rules | Type definitions in FieldUnit (D10). Grouping by desk column as a new field (D3), D3 uses the existing lever column and adds no field. | A generic FieldUnit codec that runs chart tables (all options need it). Encoding rules as named code, if they are not data. |
 
-Decision (owner, 2026-10-01): A, with authored addresses as fields on `MAIN HOUSE`, because the answers
+Decision (owner, 2026-10-01): A, with authored addresses as fields on the `CODELINE` symbol (D13), because the answers
 move every fact to a layout source that the generator reads for any target, and A is the only option
 that needs no second drawing of field stations.
 
@@ -268,8 +267,8 @@ that needs no second drawing of field stations.
 - `layout-model.md` `fieldUnits[].station` becomes a list (field unit to field station is 1 : N).
 - The `CtcMachine` symbol field `Type` = `US&S506` names a code line type as a machine type (F8). It
   moves to the code line.
-- `PanelColumn` stays a CTC machine fact. It is not the unit of addressing, unless the lever column is
-  chosen as the grouping source.
+- `PanelColumn` stays a CTC machine fact. By D3 the panel column of a lever or lamp decides which
+  field station carries its function.
 - A `MAIN HOUSE` without a Value becomes a compile error when a 506-style encoding is the default or a target.
 
 ### For the code (not changed by this ADR)

@@ -786,7 +786,7 @@ Reports: `vocabulary-sources.md` (S6), `../adr/0001-code-line-type-contract.md` 
 | Iteration 6 | "Central instrument location (CIL)" was not found in any source. Do not put it in the glossary. |
 | Iteration 7 | "Application" is sourced for Microlok II ("Application Logic Programming Guide"). The CENELEC wording is unconfirmed. |
 
-### Open decision from the membership spike
+### Open decision from the membership spike (closed by iteration 9)
 
 By the F4 definition the drawn Luchessa is one control point with three houses, not three control
 points. See `spike-cp-membership.md`. The owner decides: one control point with three field
@@ -803,7 +803,7 @@ Everything below is uncommitted on branch `fix/derail-prototype-polarity` in eac
 | 1a derail polarity | Code, tests, docs, KiCad pin rename done. `spcoast_ctc` and all four example sketches compile for ESP32 after forward declarations were added to `CP_Corporal`, `CP_Christopher` and `FieldUnit_Tracer`. Commit is on hold. |
 | 1 spikes | S2 `../adr/0001-code-line-type-contract.md`, S3 `spike-cp-membership.md`, S5 `name-grammar.md`, S6 `vocabulary-sources.md`. All four are proposals or reports. None is applied. |
 | 2 glossary | Rewritten in STE (`FieldUnit/docs/GLOSSARY.md`). Reviewed; three corrections applied. |
-| 3 ontology | **Not started.** Blocked on the Luchessa decision (one control point with three field stations, or three control points). |
+| 3 ontology | Rev 5 written after iteration 10 (by facet). Awaiting the owner's review. |
 | 4 replacements | Done in Subdivision `README.md`, `AGENTS.md`, `generated/README.md`. "desk" not replaced (not confirmed). |
 | 4a class rename | **Not started.** Needs the derail change committed first. |
 | 5 teaching documents | Primer, FieldUnit README, three tutorials, five how-tos corrected. Every tutorial and how-to code sample compiles (`-fsyntax-only`) against `src/`. `CTC_SUBDIVISION_AND_PLANT_DESIGN.md` rewritten in STE. |
