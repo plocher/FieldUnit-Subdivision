@@ -22,6 +22,9 @@ Sources: `docs/adr/0001-code-line-type-contract.md` (accepted, D1–D16),
   `controlledPoint` → `controlPoint`; `stations[]` → `fieldStations[]`;
   `vital` → `interlocked`. Keys that exist in code today keep their spelling
   (§4).
+- Reverted 2026-10-02 (FieldUnit ADR 0002, accepted): the two classes are
+  "vital" and "non-vital" again; the proposed key `interlocked` is `vital`
+  (bool). The code line is not vital.
 - A control point is declared by one `MAIN HOUSE` symbol. The tooling never
   derives or counts control points (ontology §3.1).
 - A panel column is not a control point. The column of a lever or lamp
@@ -113,8 +116,8 @@ layout
 │     switches{}          { kind: POWERED | LOCK, osTrackCircuit, … }     a lock is a switch under different operating rules
 │     derails{}           { controlMode, controllingSwitch, trackCircuit }
 │     trackCircuits{}     including the derived OS circuit of each switch (783T1 belongs to the control point of 783)
-│     maintainerCalls{}   auxiliary function { controlToken: MC1S, indicationToken: MC1K, interlocked: false }
-│     auxiliaries{}       { kind, controlToken, interlocked }              switch heater, bungalow door, …
+│     maintainerCalls{}   non-vital control { controlToken: MC1S, indicationToken: MC1K, vital: false }
+│     auxiliaries{}       { kind, controlToken, vital }                    switch heater, bungalow door, …
 │
 ├── fieldUnits{name}      field unit (glossary §3): the interlocking application of one interlocking on a field processor   ─── ecosystem A: field I/O (§5a)
 │     interlocking        FK
@@ -126,7 +129,7 @@ layout
 ├── controllers{name}     CTC machine (any implementation: panel, screen, simulator) ─── ecosystem B: CTC machine + I/O
 │     machine             { type, columns: 14, era }                      type: the panel style (lever panel, not NX); era is documentation; the encoding is on codelines[]
 │     columns[]           ordered { number, controlPoint }                controlPoint: the column's CP Name field; a column is not a control point
-│     appliances[]        { kind, name, column, color, interlocked, indicationTokens[], controlTokens[],
+│     appliances[]        { kind, name, column, color, vital, indicationTokens[], controlTokens[],
 │                           functions{ <fn>: { driver, bit } } }         fn: NWS, RWS, NWK, RWK, NGS, HS, SGS, NGK, SGK, TEK, LAMP, CODE, SW
 │     drivers[]           { id, busKind, address }
 │
@@ -174,9 +177,9 @@ Key rules:
   interlocking rules differ, the CTC view differs only in the plate name and
   the reverse-lamp colour.
 - **Maintainer calls and auxiliaries are control point appliances** with
-  their control and indication tokens and the `interlocked` flag, so lever,
-  lamp and codec vocabulary cross-check. A maintainer call is always an
-  auxiliary function (`interlocked: false`). An ad hoc auxiliary states the
+  their control and indication tokens and the `vital` flag, so lever,
+  lamp and codec vocabulary cross-check. A maintainer call is always a
+  non-vital control (`vital: false`). An ad hoc auxiliary states the
   flag. The panel symbols carry it today as the field `Vital` (code name).
 - **A field unit row is authored hardware for one interlocking** (§5a
   hardware sheet). Its proxies name plant appliances by
@@ -330,7 +333,7 @@ compile, see §7, "Source ripple of ADR 0001"):
 | `controlledPoints[]` (plant JSON key) and its `members` (kind/id list) | `controlPoints`: the control point entity owning its appliances |
 | `Column` docstring "A column IS a controlled point"; `cp_name` | a column names a control point by its `CP Name` field; `columns[].controlPoint` |
 | `Machine.machine_type` from the `CtcMachine` field `Type` = `US&S506` | two facts: `codelines[].encoding` takes the encoding; `machine.type` stays and names the panel style (ADR D3 amendment, iteration 11) |
-| panel symbol field `Vital` = `NO` | `interlocked: false` (glossary §5: a code line function is interlocked or auxiliary) |
+| panel symbol field `Vital` = `NO` | `vital: false` (glossary §5: vital control and non-vital control; the code line is not vital) |
 | masts under `appliances.masts[]` with a `signal` back-pointer | `signals{}.masts{}` on the interlocking |
 | diagnostic codes `netlist-no-nets`, subjects = designators / sheet names | source-neutral codes (`source-no-connectivity`), `about` = entity refs, `sourceRef` for forensics |
 | `sources[].kind` = controller-netlist / plant-model | `role` + `frontEnd` |
@@ -401,7 +404,7 @@ SPCoast KiCad repo, read by the compiler and the generator (ADR D10).
 Resolved in the fifth and sixth rounds and still standing: deployment
 defaults are both-and (§5); the field unit's field stations are derived, never
 re-declared on the hardware sheet; the flag stays on ad hoc appliances (now
-`interlocked`); `Codeline-VIRTUAL` removed; generator options are out of
+`vital`); `Codeline-VIRTUAL` removed; generator options are out of
 scope here.
 
 Withdrawn in rev 8: "a unit serves one master" as "exactly one station"

@@ -53,7 +53,7 @@ Glossary §2.1 states the three roles and the seam. Glossary §2.3 states the to
 - The model records the facts of each role. A generator chooses an implementation for each role (ADR D6).
 - The seam carries controls and office indications as named functions. The names are the same for every code line type.
 - Below the seam, each code line type defines its own step, code cycle, address, field station, capacity, encoding and timing.
-- Vital logic is in the field unit only. A code line function is interlocked or auxiliary (glossary §5). The model does not mark a code line function as vital.
+- Vital logic is in the field unit only. A control is vital or non-vital (glossary §5), which describes how the field unit processes it. The model does not mark the code line as vital.
 - A generated CTC machine application lets the operator state an unsafe intent (glossary §2.3). It does not copy locking to the office.
 - Relations between the control points of one interlocking are behind the seam. The code line does not carry them.
 
@@ -252,7 +252,7 @@ Glossary §3, "bungalow".
 
 Re-derived under the rev 5 model:
 
-- A maintainer call is an auxiliary function (glossary §5). It calls the maintainer to a bungalow.
+- A maintainer call is a non-vital control (glossary §5). It calls the maintainer to a bungalow.
 - Its control point is given by its `CP` field, as for any appliance.
 - Its control and office indication go to the field station of the column that holds its lever and lamp (ADR D3). Luchessa: `MC1` is in column 6, so a 506-style encoding puts it in field station CP Gilroy.
 - Rev 4 said: "call count is at most the house count everywhere". The drawn symbols today (`MaintainerCall` symbols and `MAIN HOUSE` symbols, read 2026-10-01):

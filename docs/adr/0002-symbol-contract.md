@@ -8,7 +8,7 @@ Not committed. No library, schematic or code is changed by this ADR.
 Terms: FieldUnit `docs/GLOSSARY.md`; ADR 0001 (D1–D16, amended 2026-10-02); `docs/review/vocabulary-review.md`
 iterations 9–11; `ontology.md` rev 5; `layout-model.md` rev 8; `desk-codeline-kicad-pattern.md`.
 The class of a control (the `Vital` field) is the subject of FieldUnit `docs/adr/0002-control-transaction-classes.md`
-(proposed). That ADR names the classes. This ADR does not.
+(accepted 2026-10-02). That ADR names the classes: vital and non-vital. The field is `Vital`.
 
 "(unverified)" marks a statement that no opened source supports.
 
@@ -31,9 +31,9 @@ Asked:
    yes, no. Default: yes.
 3. Policy marker `Kind` names: by meaning (`SIGNALED_ONE_DIRECTION`, `SIGNALED_BOTH_DIRECTIONS`,
    `YARD_LIMITS`, `NOT_SIGNALED`) or by one rulebook (which)? Default: by meaning.
-4. Where does the control class field live? Options: on the plant `AUXILIARY` symbol (moved from the panel
-   symbols), or stay on the panel symbols. Default: on `AUXILIARY`. The class names and the field name come
-   from FieldUnit ADR 0002 (control transaction classes), not from this ADR.
+4. Where does the `Vital` field (the control class) live? Options: on the plant `AUXILIARY` symbol (moved from the panel
+   symbols), or stay on the panel symbols. Default: on `AUXILIARY`. The class names (vital, non-vital) and the field `Vital` come
+   from FieldUnit ADR 0002 (control transaction classes).
 5. Lamp entries: office indication names (`795T1K`, `MC1K`) or appliance names (`795T1`, `MC1`)?
    Default: office indication names.
 6. Addresses on `CODELINE`: one field per field station (`Address Gilroy`) or one list field (`Addresses`)?
@@ -178,9 +178,9 @@ Policy markers (`Rule251-DoT-Left`, `Rule251-DoT-Right`, `Rule261-DoT-BiDirectio
 |---|---|---|---|
 | `MaintainerCall` `Value` | required: `MC<n>`, unique in the interlocking (Luchessa MC1 has `~`) | the call's name; functions `MC<n>S`, `MC<n>K` | compiler, linker, generator |
 | `MaintainerCall` `CP` | do not add to the library. Read the control point from the pin connection to `MAIN HOUSE` pin `H` (P6) and do not also require a `CP` field. Remove the 4 existing instance fields (GilroyInterchange 2, Christopher 2) | the bungalow the maintainer is called to | compiler |
-| `MaintainerCall` class | no field: a maintainer call is always a second-class control (iteration 11) | (by `Kind`) | generator |
+| `MaintainerCall` class | no field: a maintainer call is always a non-vital control (iteration 11) | (by `Kind`) | generator |
 | `AUXILIARY` control point | pin connection to `MAIN HOUSE` pin `H` (P6); rename pin name `MC` → `H` | the bungalow of the appliance | compiler |
-| `AUXILIARY` class field | add. The class names and the field name come from FieldUnit ADR 0002 (control transaction classes). The class moves here from the panel symbols (request 4) | how the field unit processes the control (first class: rejected as a group when one is unsafe; second class: processed anyway) | generator (interlocking application) |
+| `AUXILIARY` `Vital` field | add (bool). The class names (vital, non-vital) come from FieldUnit ADR 0002 (control transaction classes). The class moves here from the panel symbols (request 4) | how the field unit processes the control (vital: ignored as a group when one is unsafe; non-vital: processed anyway) | generator (interlocking application) |
 | `AUXILIARY` `Functions` | add: `CONTROL`, `INDICATION`, or `CONTROL,INDICATION` (proposal) | which functions exist; their names are `<Value>S`, `<Value>K` | generator; linker (lever and lamp cross-check) |
 
 The maintainer call connects by pin to `MAIN HOUSE` pin `H`. The drawing records the bungalow of every
@@ -236,12 +236,12 @@ Maintainer call and auxiliary levers:
 | `PanelMCall` `ControlToken` | remove (P1, P3: the function name follows from the Value) | none | none |
 | `PanelMCall` `Vital` | remove: the class of a maintainer call is fixed | none | none |
 | `PanelAuxiliary` `ControlToken` | remove (P1, P3) | none | none |
-| `PanelAuxiliary` `Vital` | move to the plant `AUXILIARY` as the class field (request 4) | none on the panel | none |
+| `PanelAuxiliary` `Vital` | move to the plant `AUXILIARY` as the `Vital` field (request 4) | none on the panel | none |
 
 Why the class moves. The class says how the field unit processes a control (iteration 11). The
 interlocking application must know it with no CTC machine drawn, for example for a tower operator or a
 virtual target. One fact, one place: the plant symbol. The CTC machine does not need it. FieldUnit
-ADR 0002 (control transaction classes) names the classes.
+ADR 0002 (control transaction classes) names the classes: vital and non-vital.
 
 ### Code line
 
@@ -593,10 +593,10 @@ Pins: 1 named `MC` on both. Today `MaintainerCall` is in `_PART_KIND` but no pha
 |---|---|---|---|---|
 | `MaintainerCall` `Value` | empty · C (name only) | keep: `MC<n>`, unique in the interlocking. Required (Luchessa MC1 has `~`) | the call's name; functions `MC<n>S`, `MC<n>K` | compiler, linker, generator |
 | `MaintainerCall` `CP` | not in library; drawn on 4 (GilroyInterchange 2, Christopher 2) · none | do not add. The control point is the `MAIN HOUSE` its pin connects to (P6); do not also require a `CP` field. Remove the 4 instance fields | the bungalow the maintainer is called to | compiler |
-| `MaintainerCall` class | none | no field: a maintainer call is always a second-class control (iteration 11) | (by `Kind`) | generator |
+| `MaintainerCall` class | none | no field: a maintainer call is always a non-vital control (iteration 11) | (by `Kind`) | generator |
 | `AUXILIARY` `Value` | empty · none | keep: the appliance name (switch heater, bungalow door) | auxiliary appliance name | compiler, linker, generator |
 | `AUXILIARY` control point | none | pin connection to `MAIN HOUSE` pin `H` (P6); rename pin name `MC` → `H` | the bungalow of the appliance | compiler |
-| `AUXILIARY` class field | none (the class is on the panel symbols today) | add. Class names and field name: FieldUnit ADR 0002 (control transaction classes). See A2.7 for why it moves here (request 4) | how the field unit processes the control: first class (rejected as a group when one is unsafe) or second class (processed anyway) | generator (interlocking application) |
+| `AUXILIARY` `Vital` field | none (the class is on the panel symbols today) | add (bool). Class names: FieldUnit ADR 0002 (control transaction classes). See A2.7 for why it moves here (request 4) | how the field unit processes the control: vital (ignored as a group when one is unsafe) or non-vital (processed anyway) | generator (interlocking application) |
 | `AUXILIARY` `Functions` | none | add: `CONTROL`, `INDICATION`, or `CONTROL,INDICATION` (proposal) | which functions exist; their names are `<Value>S`, `<Value>K` | generator; linker (lever and lamp cross-check) |
 
 The drawn pin connection records the bungalow of every connected call. It is verified in the Luchessa,
@@ -679,12 +679,12 @@ ADR 0001 D9 question; it is not a symbol field.
 | `PanelMCall` `Vital` | `NO` · none | remove: the class of a maintainer call is fixed | none | none |
 | `PanelAuxiliary` `Value` | empty · none | keep: names the plant `AUXILIARY` | which auxiliary this lever sends | linker, generator |
 | `PanelAuxiliary` `ControlToken` | `${VALUE}S` · CC | remove (P1, P3) | none | none |
-| `PanelAuxiliary` `Vital` | `NO` · none | move to the plant `AUXILIARY` as the class field (A1.10; request 4) | none on the panel | none |
+| `PanelAuxiliary` `Vital` | `NO` · none | move to the plant `AUXILIARY` as the `Vital` field (A1.10; request 4) | none on the panel | none |
 
 Why the class moves. The class says how the field unit processes a control (iteration 11). The
 interlocking application must know it with no CTC machine drawn, for example for a tower operator or a
 virtual target. One fact, one place: the plant symbol. The CTC machine does not need it. The class names
-are the subject of FieldUnit ADR 0002 (control transaction classes).
+(vital, non-vital) come from FieldUnit ADR 0002 (control transaction classes).
 
 #### A2.8 Code line: `CODELINE`, encoding symbol, transport symbol (replace `Codeline-MQTT`, `Codeline-CMRInet`)
 

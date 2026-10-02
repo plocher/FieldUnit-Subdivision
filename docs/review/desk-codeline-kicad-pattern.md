@@ -279,9 +279,10 @@ default on all three `PanelLamp-*` symbols is `S` (to be fixed).
 
 Maintainer calls use `PanelMCall` (`Kind=MAINTAINER_CALL`, `ControlToken=${VALUE}S`, e.g. `MC1S`). `PanelAuxiliary` is for other one-bit appliances (switch heater, bungalow door …). Its `Kind` says which, and it never means a maintainer call.
 
-Both symbols carry a `Vital` field (`NO`). A code line function is
-interlocked or auxiliary, not vital (glossary §5). A maintainer call is an
-auxiliary function. The field name is to be reviewed (§10).
+Both symbols carry a `Vital` field (`NO`). The field states the class of the
+control (glossary §5: vital control, non-vital control). The code line is not
+vital. A maintainer call is a non-vital control. The field name is settled
+(FieldUnit ADR 0002).
 
 `PanelColumn-MAX7313` states one implementation choice: this desk dedicates one
 16-bit expander per column. Other machines define their own IODRIVER symbols
@@ -715,8 +716,9 @@ gates.
   - `PanelLamp-*` `IndicationToken` defaults to `S`, not empty (to fix).
   - `CtcMachine` `Type` = `US&S506` names an encoding. The encoding moves to
     the code line (ADR 0001, consequences). `Type` stays as the panel style.
-  - `PanelMCall` and `PanelAuxiliary` carry `Vital` = `NO`. A code line
-    function is interlocked or auxiliary (glossary §5). Review the field.
+  - `PanelMCall` and `PanelAuxiliary` carry `Vital` = `NO`. The field states
+    the class of the control: vital or non-vital (glossary §5). The code line is
+    not vital.
   - `PanelLock` function pins are `NWS`/`RWS`/`NWK`/`RWK`. The glossary's
     electric lock tokens are `WLS`/`WLK`. Review.
 - **Plant compiler:** it still maps library part names to kinds (`_PART_KIND`
