@@ -1082,3 +1082,19 @@ Other answers:
 - Name grammar Q3 decided: OS track circuits are `<switch>T1`; `833T` and `833T1` are distinct.
 - Name grammar Q4 was misread: it asks only what NUMBER an approach track circuit's name carries
   (today `1SA`), not which circuit is the approach. Restated to the owner.
+
+## Iteration 14 (2026-10-02): the MC1 "mismatch" and what the linker does not check
+
+- The live desk netlist puts Luchessa's MC1 lever on expander U5 = `0x25`, pin 3 (bit 2). This agrees
+  with the hardware-verified sketch. The `0x2C` seen earlier was a test defect: when the whole live
+  desk fixture is loaded, `DriveBitGoldenTests` keys its lookup by the Value `MC1`, which five sheets
+  share, and Sargent's MC1 (U33, `0x2C`) wins. Appliance names are unique inside an interlocking, not
+  across the desk. The test must key by (sheet, name). Backlog.
+- The owner moved MC1 on the Luchessa plant sheet from `CP Luchessa`'s house to `CP Gilroy`'s house,
+  to agree with desk column 6.
+- Why no compile or link diagnostic caught the difference: (1) the maintainer call is not in the
+  plant model, so the linker lists it as uncheckable; (2) by ADR 0001 D3 a difference between an
+  appliance's `CP` and the column of its lever or lamp is not an error. Proposed: once the plant
+  model carries auxiliaries (symbol ADR 0002), the linker reports every such difference as a
+  diagnostic (`info` or `warning`, not `error`), so the owner sees it. The desk's hardware connections
+  are read only by the linker; the plant compiler never sees the desk.
