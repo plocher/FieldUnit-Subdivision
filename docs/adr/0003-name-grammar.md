@@ -16,7 +16,11 @@ Answer each item with one line. The recommended default is the first option. "Q"
 2. Q3. OS track circuit suffix: DECIDED (owner, 2026-10-02). An OS track circuit generated from the
    switch number is `<switch>T1`. This keeps it distinct from other circuits that end in `T`; `833T`
    and `833T1` can both exist. The AAR56 `<number>T` form is not used for OS circuits.
-3. Q4. Number of an approach track circuit: the plant signal that governs over it (`784LAT`), or the milepost of the governing automatic signal (`780T`)? Recommended: the plant signal.
+3. Q4. Approach track circuit names: DECIDED (owner, 2026-10-02). A track circuit name ends in `T` or
+   `T<digit>`. When the drawing gives a name (`1SAT`), the tooling uses it. When no name is given, the
+   AAR56 rule is authoritative for the generated name. Luchessa's circuits are renamed in the
+   schematic (`1SA`→`1SAT`, `2NAA`→`2NAAT`, and so on).
+
 4. Q9. Circuits with no switch and no signal: AAR `O<n>T` (`O1T`), or mnemonics (`IND`, `TK1`)? And do `HBD`, `TL`, `TR`, which are not track circuits, get their own kinds? Recommended: `O<n>T`, and own kinds.
 5. Q5. Section letter: after the side (`784LAT`) or as a true prefix (`A784LT`)? Recommended: after the side.
 6. Q6. Crossover ends: both lettered (`815A`, `815B`) or base plus letter (`815`, `815A`)? Recommended: both lettered.
@@ -31,6 +35,14 @@ Questions not asked:
 
 - Q12 (staging yards of the Watsonville schematic) is withdrawn by the owner. Model-layout yards will be supported by the tooling later. The Watsonville schematic was excluded as of 2026-10-01; the owner changed it on 2026-10-02; to be re-checked.
 - ADR 0001 D12 (as amended) answers any question about a `CP_` or `CP ` prefix and about normalizing names. A KiCad name has no prefix, a model board may add `CP ` for display, and a space becomes `-` in a topic or key. This ADR adds no prefix rule and no normalization.
+
+## Principle (owner, 2026-10-02)
+
+- A symbol that is local to one drawing uses a short number and a tag: switch `1`, signal `2`, circuit `1SAT`.
+- A symbol that is not local, because another sheet uses it or the dispatcher sees it, uses milepost
+  numbering, so that the reference is explicit: switch `783`, signal `784`, circuit `783T1`.
+- A track circuit name ends in `T` or `T<digit>`. A name given on the drawing is used as drawn. A
+  generated name follows the AAR56 rule.
 
 ## Context
 
