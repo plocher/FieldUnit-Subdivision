@@ -9,6 +9,8 @@ Revision 2026-10-02. Terms follow FieldUnit `docs/GLOSSARY.md`. Decisions
 follow ADR 0001 (`docs/adr/0001-code-line-type-contract.md`, accepted,
 D1–D16) and `ontology.md` rev 5. Section numbers are unchanged.
 
+2026-10-02 (iteration 11): proxy names, MAIN HOUSE required, machine type kept as panel style, operator roles, topic normalization
+
 - Terms: "controlled point", "CP" as a common noun, "station" for a code
   line address, "cTc machine" in prose and "plant host" are replaced by
   control point, field station, CTC machine and virtual field processor.
@@ -28,8 +30,14 @@ D1–D16) and `ontology.md` rev 5. Section numbers are unchanged.
   addresses are fields on the `CODELINE` symbol (D13). `Codeline-VIRTUAL`
   and the "really empty sheet defaults to VIRTUAL" rule are restated: a
   virtual target needs no drawn data. The compiler still has both today.
-- §4, §5: `CtcMachine` `Type` = `US&S506` names an encoding. It moves to the
-  code line (ADR 0001, consequences).
+- §4, §5: `CtcMachine` `Type` = `US&S506` names an encoding. The encoding
+  moves to the code line (ADR 0001, consequences). The machine keeps `Type`
+  as its panel style (iteration 11).
+- Roles (iteration 11): "controller" is not a term for a role. The
+  dispatcher's CTC machine is the only role modelled. The tower operator and
+  the maintainer are not yet covered. `tools/controller_graph`,
+  `parse_kicad_controller.py` and `controllers{}` are code names and keep
+  their spelling.
 - §4, §7, §10: statements about library defaults and fields now match the
   library as it is today (`CP Name` empty, lamp `IndicationToken` = `S`,
   `Railroad` in place of `TopicRoot`, `Vital` field).
@@ -59,10 +67,11 @@ D1–D16) and `ontology.md` rev 5. Section numbers are unchanged.
   Shortcuts in existing code (`base + (col-1)`, fixed bit constants, hand-copied
   names) are debt, not conventions.
 - **Names are case-preserved when produced and compared case-insensitively
-  when consumed.** Only case is folded.
+  when consumed.** Case is folded. One more normalization: a name used in an
+  MQTT topic or a key has each space replaced by `-` (ADR D12, amended).
 - **A KiCad name has no `CP_` or `CP ` prefix (ADR D12).** A `MAIN HOUSE`
   Value is the bare name (`Gilroy`). A model board can add `CP ` for display.
-  Each source is fixed once; no code normalizes a prefix. After the fix, the
+  Each source is fixed once; no code adds or strips a prefix. After the fix, the
   interlocking `Luchessa` and its control point `Luchessa` share a name and
   differ by kind. Today the Values still carry the prefix (`CP Luchessa`), to
   be fixed. (This replaces "`Luchessa` and `CP Luchessa` stay distinct".)
@@ -79,8 +88,9 @@ Terminology (FieldUnit / CTC; the glossary defines all other terms):
 
 The tooling deals with three ecosystems:
 **(1) A Plant Model**: the interlocking's field unit and its physical I/O,
-**(2) A Controller Model**: the controller (desk, tower panel, software
-panel) and its physical I/O, and
+**(2) A CTC Machine Model**: the dispatcher's CTC machine and its physical
+I/O (the tower operator's machine and the maintainer's mode are not yet
+covered), and
 **(3) A Code Line Model**: the code line between them.
 A user may provide any or all of these.
 
@@ -94,18 +104,18 @@ editing tool in the future.
   KiCad schematic models of
   1. Plant trackplans, the appliances they use, the code line it connects to
      and the physical I/O connecting it to the layout;
-  2. The lever panel layout of a tower operator's machine or a dispatcher's
-     CTC machine, and the physical I/O connecting it to that machine.
+  2. The lever panel layout of a dispatcher's CTC machine, and the physical
+     I/O connecting it to that machine.
 - **The compiler generates per-project data models.** The output of the
   compiler is a data model representation of the project as depicted by the
   project's KiCad schematic source material. This model is self-consistent
   and representative of the ecosystems found in the project sources, even
   when those sources are incomplete. The compiler cross-checks the
   integrity of the sources and emits diagnostics as necessary.
-- **The linker cross-checks between the three ecosystems.** A controller
+- **The linker cross-checks between the three ecosystems.** A CTC machine
   sheet with no interlocking model becomes a **placeholder** (recorded
   status, like a weak symbol), not a failure. An interlocking model with no
-  controller sheet is info (M:N, or not on this machine).
+  CTC machine sheet is info (M:N, or not on this machine).
 - **The generated data model is a cached copy of the project's Truth.**
   It is never edited, only regenerated.
 - **Generators use the data model to create artifacts.** The data model
@@ -120,28 +130,28 @@ Framing use cases (GIVEN/WHEN/THEN):
 - GIVEN source data for (**A**) plants only,
   WHEN the layout's data model is created,
   THEN the model will contain (**A**) the plants' field unit models
-  AND the model will not contain (**B**) controller models
+  AND the model will not contain (**B**) CTC machine models
   AND the model will not contain (**C**) code line models.
-  Generators for interlockings will report "no controllers defined";
+  Generators for interlockings will report "no CTC machines defined";
   generators for field units are limited to EMULATED; code lines are
   limited to the virtual target: in-memory passing of data within a single
   app. The virtual target needs no drawn data (ADR D13).
-- GIVEN source data for a (**B**) controller only,
+- GIVEN source data for a (**B**) CTC machine only,
   WHEN the layout's data model is created,
   THEN the model will contain (**A**) incomplete plant field unit models
   (no trackplan, no field I/O bindings)
-  AND the model will contain (**B**) controller models
+  AND the model will contain (**B**) CTC machine models
   AND the model will contain (**C**) code line models
   AND linker cross-checks will report *unchecked*.
   CTC machine and tower generators will be successful; generators for field
   units will be limited to EMULATED.
 - GIVEN SPCoast South as in the frozen netlist
   (`tests/fixtures/kicad/South-cTc.net`, 2026-09-29: one drawn plant, one
-  drawn controller interlocking and six stubs),
+  drawn CTC machine interlocking and six stubs),
   WHEN the layout's data model is created,
   THEN the model will contain (**A**) a plant field unit model for
   Luchessa only (others are undefined)
-  AND the model will contain (**B**) a controller model for Luchessa only
+  AND the model will contain (**B**) a CTC machine model for Luchessa only
   (others are placeholders)
   AND the model will contain (**C**) the code line models as drawn.
   The frozen netlist draws `Codeline-VIRTUAL` on every sheet. The live
@@ -153,7 +163,7 @@ Framing use cases (GIVEN/WHEN/THEN):
   WHEN an interlocking plant's code line type (encoding or transport)
   changes,
   THEN the logical column/appliance model remains unchanged; only the
-  controller/interlocking code line details change, and the generator
+  CTC machine/interlocking code line details change, and the generator
   builds new code charts (ADR D6).
 - GIVEN a topology,
   WHEN an IODRIVER implementation changes,
@@ -166,10 +176,10 @@ one CP" and "a station is an interlocking's attachment to exactly one
 codeline". What stands is kept below.
 
 ```
-Controller (desk, tower panel, software panel)  [M:N]  CodeLine  [N:F]  FieldUnit
+CTC machine (the dispatcher's)  [M:N]  CodeLine  [N:F]  FieldUnit
 ```
 
-- A **controller** has **panel columns**. A panel column holds levers, lamps
+- A **CTC machine** has **panel columns**. A panel column holds levers, lamps
   and code buttons. A panel column is not a control point and not a field
   station.
 - An **interlocking** contains one or more **control points**. One `MAIN
@@ -209,33 +219,39 @@ Controller (desk, tower panel, software panel)  [M:N]  CodeLine  [N:F]  FieldUni
 ```
 Railroad/SPCoast/                  folder = membership (no manifest)
   Luchessa/Luchessa.kicad_pro      plant project  (contains MAIN HOUSE symbols)
-  South-cTc/South-cTc.kicad_pro    controller project (contains a MACHINE symbol)
+  South-cTc/South-cTc.kicad_pro    CTC machine project (contains a MACHINE symbol)
     South-cTc.kicad_sch            root sheet: MACHINE
     Luchessa.kicad_sch             one hierarchical sheet per interlocking
     Christopher.kicad_sch …
 ```
 
 - **A project's role comes from its content, not its name:** MAIN HOUSE means
-  an interlocking plant; MACHINE means a controller. (Open: ADR D3 allows an
-  interlocking model with no `MAIN HOUSE`, which then cannot use a 506-style
-  encoding. How such a plant project is recognized is not decided.)
+  an interlocking plant; MACHINE means a CTC machine. A plant
+  project with no `MAIN HOUSE` symbol is an error (owner, 2026-10-02). The
+  symbol is the explicit source of the name, not the title block and not the
+  file name. It can display a title block variable (`${DOCUMENT_NAME}`,
+  `${COMMENTx}`).
 - **The sheet name is the interlocking name.** It links by name to the plant
   project of the same name.
-- **MACHINE appears only in controller projects,** once per machine.
+- **MACHINE appears only in CTC machine projects,** once per machine.
 
-## 4. Controller symbols (`RailroadPanel.kicad_sym`)
+## 4. CTC machine symbols (`RailroadPanel.kicad_sym`)
 
 | Role | Symbol(s) | Value | Key fields / pins |
 |---|---|---|---|
-| `MACHINE` | CtcMachine | machine name | `Type` (e.g. `US&S506`), `Columns`, `Era` |
+| `MACHINE` | CtcMachine | machine name | `Type` (panel style; today's value `US&S506` names an encoding and is to be revised), `Columns`, `Era` |
 | `COLUMN` | PanelColumn | **column number** (known nowhere else) | `CP Name` (the control point this column names; see §5); column pins (all equivalent) |
 | `APPLIANCE` | PanelSwitch, PanelLock, PanelSignal, PanelMCall, PanelLamp-*, PanelCode, PanelAuxiliary | appliance name (the name in the interlocking model, or a label for lamps) | `Kind`; one `Column` pin; function pins (NWS/RWS/NWK/RWK, NGS/HS/SGS/NGK/SGK/TEK, LAMP, CODE, SW) |
 | `IODRIVER` | PanelColumn-MAX7313 (implementation-specific) | bus address (e.g. `0x24`) | `BusKind` (e.g. `I2C-MAX7313`); pins `bitN` |
 | `CODELINE` | today: Codeline-MQTT, Codeline-CMRInet | today: **transport type** | `Station`; transport parameters (below) |
 
-- `CtcMachine` `Type` = `US&S506` names an encoding as a machine type. It
-  moves to the code line (ADR 0001, consequences). `Era` is documentation,
-  not a model input (ontology §1).
+- `CtcMachine` `Type` is the panel style of the machine (ADR D3 amendment,
+  iteration 11). A lever panel that is not NX is the only style captured now.
+  Today's value `US&S506` names an encoding. The encoding moves to the code
+  line (ADR 0001, consequences). The `Type` value for the panel style is to
+  be chosen. The panel style owns the lever rule (§5, §7a) and the order of
+  levers and lamps (§5). A glass-panel track plan can have other rules. `Era`
+  is documentation, not a model input (ontology §1).
 - `CODELINE`, planned (ADR D15): the `CODELINE` symbol has two pins. One pin
   takes an encoding symbol. The other takes a transport symbol. Each
   encoding and each transport is a one-pin symbol with its own fields. The
@@ -353,18 +369,18 @@ Identity placeholders (`CP` = "controlling cp", Value = "XX" / "?" /
 | appliance ∈ column | net between the appliance `Column` pin and a COLUMN pin | exactly one column per appliance |
 | appliance function → drive bit | net between an appliance function pin and an IODRIVER `bitN` pin | the driver is identified by Value and `BusKind`; the bit comes from the pin |
 | column ∈ interlocking | the sheet the column is on | code buttons: see §7a (ADR D9) |
-| panel column → control point | the column's `CP Name` field | ≤1 switch/lock lever, ≤1 signal lever, ≥1 of them; `CP Name` is a control point (`MAIN HOUSE` Value) of the interlocking. The column is not the control point. |
+| panel column → control point | the column's `CP Name` field | lever rule of the panel style (lever panel, not NX; an error): ≤1 switch/lock lever, ≤1 signal lever, ≥1 of them; `CP Name` is a control point (`MAIN HOUSE` Value) of the interlocking. The column is not the control point. |
 | function → field station | the panel column of its lever or lamp (ADR D3) | 506-style encoding: the field station of the control point that the column names (ontology §3.4; unverified); AAR tokens: the one field station of the interlocking |
 | interlocking → code line | the CODELINE symbol on the interlocking's sheet | at most one per sheet; it states the layout's default (ADR D6). None: no drawn default; the virtual target is still available (ADR D13) |
 | code line instance | **derived**: same Value + same `Broker` (MQTT) or `Port` (C/MRI) | multiple brokers or buses are allowed |
-| machine → columns | the controller project | vertical lamp and lever order is a manufacturer standard, not drawn in the schematic. This document took it from the machine `Type`; `Type` = `US&S506` moves to the code line (ADR 0001, consequences). The source of the order is open. |
+| machine → columns | the CTC machine project | vertical lamp and lever order is a manufacturer standard, not drawn in the schematic. It comes from the machine symbol: the machine `Type`, its panel style (iteration 11). Only the code line encoding leaves the machine. |
 | panel appliance ↔ appliance in the interlocking model | by name (Value) | e.g. panel switch `783` ↔ plant switch `783` |
 
-Field station keys on the wire: remove whitespace (`Gilroy CalTrain` becomes
-`GilroyCalTrain`) and compare case-insensitively. Keys must be unique within a
-code line instance after this normalisation. (Open: ADR D12 says "write no
-normalization code now" for names; this key rule and `station_key()` predate
-it.)
+Field station keys on the wire: replace each space with `-` (`Gilroy CalTrain`
+becomes `Gilroy-CalTrain`) and compare case-insensitively. Keys must be unique
+within a code line instance after this replacement. (ADR D12, amended
+2026-10-02: `station_key()` changes from removing whitespace to replacing each
+space with `-`. No code adds or strips a `CP` prefix.)
 
 ## 5a. Field side: binding plants to hardware (to do)
 
@@ -404,9 +420,9 @@ Luchessa/Luchessa.kicad_pro
     function pins connect to driver bits, and the drive binding is read from
     the netlist.
 - **The code line is not repeated on the field side.** The interlocking's
-  code line and field station addresses come from the controller project's
+  code line and field station addresses come from the CTC machine project's
   sheet for that interlocking (§5). The linker gives the field unit its code
-  line. A field unit reachable from several controllers (M:N) gets its code
+  line. A field unit reachable from several CTC machines (M:N) gets its code
   line from the matched instance.
 - **Diagnostics mirror the desk's:**
   - appliance with no proxy (when `HARDWARE` ≠ `EMULATED`);
@@ -423,7 +439,7 @@ physical build requires source data from that sheet.
 ```
 make netlist   (per project: kicad-cli sch export netlist, rebuilt when a sheet is newer)
    ↓
-compile        (per project → fragment: plant or controller)
+compile        (per project → fragment: plant or CTC machine)
    ↓
 link           (Railroad/SPCoast/*: resolve names, match panel columns to control points, derive code line instances, diagnose)
    ↓
@@ -463,7 +479,7 @@ Errors:
 - Interlocking sheet with more than one CODELINE symbol. A sheet with none is not an error: it has no drawn default, and the virtual target needs no drawn data (ADR D13). Today the compiler still reports a sheet with columns and no CODELINE (`sheet-codeline-count`).
 - Unknown CODELINE Value; C/MRI `Station` that isn't a UA from 0 to 127.
 - MQTT `Station` containing `/`, `+` or `#`.
-- Duplicate field station key within a code line instance, after normalisation.
+- Duplicate field station key within a code line instance, after the space replacement.
 - Duplicate authored field station address within a code line instance (ADR D6; not implemented).
 - Inconsistent `Baud` on one C/MRI port.
 - Symbol with no `Role`; unknown `Role` or `Kind`.
@@ -478,9 +494,9 @@ fault.
 Warnings:
 - Multiple `TopicRoot` values on one broker. This is allowed, but usually
   unintended. (The library field is `Railroad`; see §4.)
-- Field station key changed by normalisation — **forensic context only**:
-  emitted when the normalisation caused an associated finding (e.g. two
-  field stations that collide only after whitespace removal and case
+- Field station key changed by the space replacement — **forensic context
+  only**: emitted when the replacement caused an associated finding (e.g. two
+  field stations that collide only after space replacement and case
   folding), never as a routine notice on multi-word names, and not for
   literal copy-paste duplicates.
 
@@ -500,27 +516,27 @@ Stub sheets:
   codeline". The compiler still does that today: `sheet-empty-defaulted`,
   info. To be removed.)
 
-## 7a. Cross-project consistency: plant project ↔ controller sheet
+## 7a. Cross-project consistency: plant project ↔ CTC machine sheet
 
 Partly replaced by ADR 0001 (D2, D3, D5, D6, D9). The ADR replaces "a column
 IS a CP", "one CODE per interlocking sheet (one station)" and "machine-type
 capacity per column". Pairing, appliances and staying in sync stand.
 
-A plant project (`Luchessa/Luchessa.kicad_pro`) and the controller sheet for
+A plant project (`Luchessa/Luchessa.kicad_pro`) and the CTC machine sheet for
 that interlocking (`South-cTc/Luchessa.kicad_sch`) are authored separately and
 linked only by name. The **linker** owns keeping them consistent. Each project
 first compiles clean on its own (plant compiler and desk compiler
 diagnostics); the linker then cross-checks the two fragments.
 
 **Pairing:**
-- Each controller interlocking sheet matches exactly one plant project, by
-  name after normalisation, and the plant's identity name agrees. A sheet
+- Each CTC machine interlocking sheet matches exactly one plant project, by
+  name (case folded), and the plant's identity name agrees. A sheet
   with no interlocking model becomes a **placeholder**: recorded status,
   cross-checks reported as unchecked, never fatal at link time. It is an
   error only when a generator that needs the pairing (field firmware, a
   verified desk build) is asked to produce that interlocking.
-- An interlocking model with no controller sheet is **info**: it may be
-  controlled by another controller (M:N), or not yet be on this machine.
+- An interlocking model with no CTC machine sheet is **info**: it may be
+  controlled by another CTC machine (M:N), or not yet be on this machine.
 
 **Control points and panel columns.** A panel column is not a control point
 (replaces "a column IS a CP"; ADR D3, ontology §5.5).
@@ -531,8 +547,9 @@ diagnostics); the linker then cross-checks the two fragments.
   still holds the library placeholder, or matches nothing, that's an
   **error**.
 - A panel column has **at most one** switch or lock lever, **at most one**
-  signal lever, and **at least one** of them. This is a rule about **panel
-  levers**. It does not constrain how the plant assigns masts, heads or other
+  signal lever, and **at least one** of them. This is the lever rule of the
+  machine's panel style (a lever panel that is not NX). It stays an error for
+  this style. It is a rule about **panel levers**. It does not constrain how the plant assigns masts, heads or other
   field equipment to control points. A signal's masts can sit at several
   control points: Luchessa's signal 784 does. Routes and signals span control
   points; the interlocking logic handles them for all control points of the
@@ -653,7 +670,7 @@ gates.
 - **Golden:** from the Luchessa sheet plus the Luchessa plant, generate the
   column/appliance/bit bindings and check them against today's hand-written
   `configureDesk()` / `IO-I2C.h`.
-- **Generality:** include a second, different controller implementation as a
+- **Generality:** include a second, different CTC machine implementation as a
   test fixture, e.g. lamps on a neopixel IODRIVER and levers on another
   expander type. It must compile to the same logical column/appliance model.
 - **Negative fixtures:** one for each error in §7, including the broken-root-UUID
@@ -682,12 +699,12 @@ gates.
   (`CP Luchessa`, `CP Gilroy`, `CP Carnadero`; `FIXME` on the other sheets),
   the generated JSON, tests and documents. The linker's `cp-unmatched` then
   compares bare names.
-- **Controller compiler** (ADR 0001, consequences): remove the VIRTUAL
+- **CTC machine compiler** (`tools/controller_graph`; ADR 0001, consequences): remove the VIRTUAL
   transport and the empty-sheet default; accept a sheet with no CODELINE;
   read the MQTT field the library has (`Railroad`, not `TopicRoot`); treat
   `FIXME` as a placeholder.
-- **M:N controllers:** a tower panel and the dispatcher sharing a code line.
-  Each controller project carries its own code line symbols; the linker
+- **M:N CTC machines:** two CTC machines sharing a code line. Each CTC
+  machine project carries its own code line symbols; the linker
   matches them into one instance.
 - **Library clean-ups:**
   - `PanelColumn` defaults carry SPCoast values (`Interlocking`, `Machine`), and
@@ -696,8 +713,8 @@ gates.
   - Code line defaults carry SPCoast values (`Broker`, `Railroad`, `Port`).
   - `PanelColumn` `CP Name` now defaults to empty (done).
   - `PanelLamp-*` `IndicationToken` defaults to `S`, not empty (to fix).
-  - `CtcMachine` `Type` = `US&S506` moves to the code line (ADR 0001,
-    consequences).
+  - `CtcMachine` `Type` = `US&S506` names an encoding. The encoding moves to
+    the code line (ADR 0001, consequences). `Type` stays as the panel style.
   - `PanelMCall` and `PanelAuxiliary` carry `Vital` = `NO`. A code line
     function is interlocked or auxiliary (glossary §5). Review the field.
   - `PanelLock` function pins are `NWS`/`RWS`/`NWK`/`RWK`. The glossary's

@@ -79,11 +79,11 @@ Glossary §4, "control point".
 | number of control points | not derived | none | no check requires a number (ADR D5) |
 
 - A difference between the `CP` field of an appliance and the column of its lever or lamp is not an error (ADR D3). Example: track circuit 1NA has `CP` = CP Carnadero. Its lamp is in column 6, which names CP Gilroy.
-- Name rule (ADR D12): a KiCad name contains no `CP_` and no `CP `. A model board can add `CP ` for display.
+- Name rule (ADR D12): a KiCad name contains no `CP_` and no `CP `. A model board can add `CP ` for display. One normalization is allowed: a name used in an MQTT topic or a key has each space replaced by `-`.
 - Names today, to be fixed:
   - Luchessa `MAIN HOUSE` Values: `CP Luchessa`, `CP Gilroy`, `CP Carnadero`.
   - Luchessa `CP` fields and column `CP Name` fields: the same three values.
-  - `CP Name` on the other interlocking sheets: `CP_<Name>` forms or `FIXME` (Watsonville excluded; its schematic is not valid evidence).
+  - `CP Name` on the other interlocking sheets: `CP_<Name>` forms or `FIXME` (Watsonville excluded until the schematic is corrected; its schematic is not valid evidence).
   - `CP` fields at Christopher: `CP Christopher North` and others, while the `MAIN HOUSE` Values are bare.
 - After the fix, the interlocking `Luchessa` and the control point `Luchessa` have the same name. They differ by kind only.
 - Luchessa is one interlocking with three control points. This is a design decision of the layout (selective compression).
@@ -148,7 +148,7 @@ Field station:
 - A signal control (left, stop, right) is one function of one lever. It goes to the field station of that lever.
 - Routes, masts and aspects are not code line functions.
 - An appliance of one control point can serve a function of another field station of the same interlocking. This is normal.
-- An interlocking model with no `MAIN HOUSE` symbol cannot use a 506-style encoding. A `MAIN HOUSE` with no Value is an error when a 506-style encoding is the default or a target (ADR 0001, consequences).
+- A plant project with no `MAIN HOUSE` symbol is an error (owner, 2026-10-02). The `MAIN HOUSE` symbol is the explicit source of the name; the tooling does not take it from the title block or the file name. The symbol can display a title block variable (`${DOCUMENT_NAME}`, `${COMMENTx}`). A `MAIN HOUSE` with no Value is also an error.
 - ADR D3 says "its panel column". It does not name the field that joins a column to a field station. This document reads it as `CP Name` (unverified).
 
 Code chart, address and capacity:
@@ -245,7 +245,7 @@ Glossary §3, "bungalow".
 
 - It becomes a list. Field unit to field station is 1 : N (glossary §2.5; ADR 0001, consequences).
 - Proposed form: `fieldUnits[].codeline`, with the field stations derived from the encoding (§3.4).
-- Whether one field unit can serve two code lines is open.
+- An interlocking that answers on two code lines is two interlocking applications, so two field units (settled, owner 2026-10-02).
 - `stations[]` there becomes field stations. On a 506-style encoding the name is the `MAIN HOUSE` Value. On AAR tokens it is the interlocking name.
 
 ### 5.3 Maintainer call
@@ -294,11 +294,10 @@ Open:
 - Confirm `CP Name` as the join from panel column to field station (§3.4).
 - Decide whether "one plant project gives one Rule A piece" is a compiler check.
 - Decide whether "at most one maintainer call for each bungalow" is a check (§5.3).
-- Decide whether one field unit can serve two code lines (§5.2).
 - Draw the two-pin `CODELINE` symbol and the encoding and transport symbols (D15).
 - Build the worked example for truth tables (D11).
 - Choose the Luchessa CODE button workaround when a 506 target is built (D9).
-- Move `Type` = `US&S506` from `CtcMachine` to the code line (ADR 0001, consequences).
+- Move the encoding `US&S506` out of `CtcMachine` `Type` to the code line (ADR 0001, consequences). The machine keeps `Type` as its panel style.
 - Reduce Luchessa to one control point: owner's plan, no date.
 - Fascia devices and maintainer service modes: own ADR.
 

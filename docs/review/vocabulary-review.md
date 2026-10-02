@@ -997,3 +997,47 @@ Consequences:
 
 D12 reverses the naming rule in AGENTS.md ("controlled points always carry the `CP` prefix"). After the
 fix the interlocking `Luchessa` and its control point `Luchessa` share a name and differ by kind only.
+
+---
+
+## Iteration 11 (2026-10-02): owner's answers on the aligned design documents
+
+| Topic | Decision |
+|---|---|
+| Watsonville note in AGENTS.md | Removed. The schematic will be fixed soon, so it is not a lasting instruction. The exclusion stays in the review documents. |
+| Proxy names | `<interlocking>:<tokenname>` (the older pattern, still in the XML and some KiCad). When `<interlocking>` is not the local one, the generator must listen on the code line for the office indications of that field station and take the value, usually for route equations. When it names a control point inside the same interlocking limits, the generator handles it locally. The data model supplies the facts. It does not set the policy. |
+| Symbol fields | The definitions behind the symbol fields changed. The symbols must be refactored to hold the facts the model now needs (for example the `Station` field of `Codeline-MQTT`). A proposal is in work: `docs/review/symbol-contract.md`. |
+| No `MAIN HOUSE` | An error. The `MAIN HOUSE` symbol is the explicit source of the name; not the title block and not the file name. The symbol can display a title block variable. This replaces "cannot use a 506-style encoding" in ADR D3. |
+| Field unit and two code lines | Covered by the six terms: a field processor runs one or more interlocking applications. The "two instances" rule stands. |
+| Lever rule | Still an error for a CTC machine with a lever panel that is not NX. This is the only style captured now. The rule belongs to the choice of machine. A glass-panel track plan can have other rules. |
+| Lever and lamp order | From the machine symbol. The machine keeps a type (its panel style). Only the code line encoding leaves the machine. This corrects "Type moves to the code line". |
+| "Controller" | Not a term. Name the operator role: **dispatcher** (code line and the distributed handshake), **tower operator** (direct to a locking bed, real or virtual), **maintainer** (maintenance or debug mode, without the interlocking). The work so far covers the dispatcher. The tower operator is covered a little. The maintainer is not covered. |
+| Name normalization | D12 was too strict. A name used in a topic or key has each space replaced by `-`. |
+
+### The two classes of control (the purpose of the `vital` tag)
+
+A field unit handles a control transaction in three steps:
+
+1. It checks that the transaction is complete. An incomplete or malformed transaction is ignored as a
+   whole. The only response is an office indication of the current, unchanged state.
+2. It checks the transaction against the safety rules. If a control is unsafe or not allowed (for
+   example a switch control while its OS track circuit is occupied), **all** the controls of the
+   first class are ignored. The controls of the second class (maintainer call and the like) are processed.
+3. It acts.
+
+The tag separates the two classes. Open: the names of the classes. The glossary says "interlocked
+function" and "auxiliary function". The owner says "vital" and "non-vital". The tag describes how the
+field unit processes a control. It does not describe the code line. To check: whether the code
+ignores all first-class controls together, as stated here.
+
+### The top-level storyline (restated, because the detail work lost sight of it)
+
+1. Draw each interlocking and the CTC machine in KiCad.
+2. The compiler and linker read the drawings and make one model.
+3. The generator reads the model and emits an interlocking application for each interlocking and a
+   CTC machine application.
+4. The applications run on field processors and on the CTC machine. The first target is virtual,
+   then AAR tokens over MQTT.
+
+The vocabulary, the ontology and ADR 0001 exist so that step 2's model is unambiguous. They are not
+the goal. Three operator roles use the result: dispatcher, tower operator, maintainer.

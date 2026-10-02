@@ -12,6 +12,8 @@ code line with ADR 0001 and ontology rev 5. Vocabulary follows FieldUnit
 Sources: `docs/adr/0001-code-line-type-contract.md` (accepted, D1–D16),
 `docs/review/ontology.md` rev 5, `vocabulary-review.md` iterations 8–10.
 
+2026-10-02 (iteration 11): proxy names, MAIN HOUSE required, machine type kept as panel style, operator roles, topic normalization
+
 - Terms. "Controlled point" becomes "control point". "Station" and "line
   station" become "field station". "Host" becomes "field processor".
   "Vital" and "non-vital" on code line functions become "interlocked" and
@@ -29,12 +31,14 @@ Sources: `docs/adr/0001-code-line-type-contract.md` (accepted, D1–D16),
   506-style encoding, one per interlocking on AAR tokens (ADR D3).
 - A field unit answers at one or more field stations (1 : N). `fieldUnits[].station`
   becomes the derived set `fieldStations` (ADR 0001, consequences).
-- A code line type is an encoding on a transport (D1). `machine.type: "US&S506"`
-  moves from the CTC machine to the code line as its encoding.
+- A code line type is an encoding on a transport (D1). The encoding `US&S506`
+  leaves the CTC machine and goes to the code line. `machine.type` stays: it
+  is the panel style of the machine (ADR D3 amendment, iteration 11).
 - Field station addresses are authored on the `CODELINE` symbol (D13), which
   has an encoding pin and a transport pin (D15).
 - Names carry no `CP ` or `CP_` prefix (D12). The wire key that removed
-  whitespace is withdrawn.
+  whitespace changes: a name in an MQTT topic or a key has each space replaced
+  by `-` (D12, amended 2026-10-02).
 - The generator phase is stated in §0, §2 and §5: it chooses the code line
   type target, builds the code charts and checks capacity and size limits for
   that target (D5, D6, D16).
@@ -42,6 +46,12 @@ Sources: `docs/adr/0001-code-line-type-contract.md` (accepted, D1–D16),
   lever's column"; "a unit serves one master: exactly one station"; "a
   controller's interlockings are the groups of columns sharing one CODE
   button"; the station `key` with whitespace removed; §7 "Open points: none".
+- Roles (iteration 11). "Controller" is not a term for a role. The model
+  covers the dispatcher's CTC machine only. The tower operator (works directly
+  on a locking bed, real or virtual) and the maintainer (maintenance or debug
+  mode, without the interlocking) are not yet covered. `controllers{}`,
+  `tools/controller_graph` and `parse_kicad_controller.py` are code names and
+  keep their spelling.
 - The review log (§8) keeps the words of earlier revisions.
 
 ## 0. The rule
@@ -111,10 +121,10 @@ layout
 │     fieldStations       derived set: the field stations of this interlocking on its code line (§5)
 │     hardware            ESP32 | RELAY | …                               (no row at all when nothing is authored)
 │     drivers[]           { id, busKind, address }
-│     proxies[]           { appliance: "<interlocking>/<name>", functions{ <fn>: { driver, bit } } }   fn: DRIVE_N, DETECT_R, OCCUPANCY, HEAD_A, …
+│     proxies[]           { appliance: "<interlocking>:<tokenname>", functions{ <fn>: { driver, bit } } }   fn: DRIVE_N, DETECT_R, OCCUPANCY, HEAD_A, …
 │
-├── controllers{name}     CTC machine (any implementation: panel, screen, simulator) ─── ecosystem B: controller + I/O
-│     machine             { columns: 14, era }                            era is documentation; the code line type is on codelines[]
+├── controllers{name}     CTC machine (any implementation: panel, screen, simulator) ─── ecosystem B: CTC machine + I/O
+│     machine             { type, columns: 14, era }                      type: the panel style (lever panel, not NX); era is documentation; the encoding is on codelines[]
 │     columns[]           ordered { number, controlPoint }                controlPoint: the column's CP Name field; a column is not a control point
 │     appliances[]        { kind, name, column, color, interlocked, indicationTokens[], controlTokens[],
 │                           functions{ <fn>: { driver, bit } } }         fn: NWS, RWS, NWK, RWK, NGS, HS, SGS, NGK, SGK, TEK, LAMP, CODE, SW
@@ -123,7 +133,7 @@ layout
 ├── codelines[]           derived instances                              ─── ecosystem C
 │     { id, encoding, transport, params }                                id is functional: "MQTT@mqtt.local", "CMRInet@/dev/tty…"; there is no VIRTUAL instance
 │
-├── attachments[]         controller × interlocking (relation)
+├── attachments[]         CTC machine × interlocking (relation)
 │     { controller, interlocking, columns[], codeline: null | id }       codeline null ⇒ in-process (nothing drawn)
 │
 ├── fieldStations[]       per code line type   (derived from attachments that name a codeline, and the encoding)
@@ -146,7 +156,10 @@ Key rules:
 - **A control point is declared, never derived.** One `MAIN HOUSE` symbol
   declares one control point and its bungalow; its Value is the name. The
   tooling does not count control points, and no check requires a number of
-  them (ADR D5). A control point owns the appliances that its `CP` field
+  them (ADR D5). A plant project with no `MAIN HOUSE` symbol is an error. The
+  symbol is the explicit source of the name, not the title block and not the
+  file name. It can display a title block variable (`${DOCUMENT_NAME}`,
+  `${COMMENTx}`). A control point owns the appliances that its `CP` field
   assigns to it: switches (powered or lock), derails, track circuits
   (including the derived OS circuit of each of its switches), and its
   auxiliary appliances. Luchessa is one interlocking with three control
@@ -167,21 +180,32 @@ Key rules:
   flag. The panel symbols carry it today as the field `Vital` (code name).
 - **A field unit row is authored hardware for one interlocking** (§5a
   hardware sheet). Its proxies name plant appliances by
-  `<interlocking>/<name>`, exactly as desk levers and lamps name them, with
-  each field function bound inline to a driver bit. No hardware sheet, no
+  `<interlocking>:<tokenname>`, with each field function bound inline to a
+  driver bit. When `<interlocking>` is not the local interlocking, the
+  generator listens on the code line for the office indications of that field
+  station and takes the value, usually for route equations. When it names a
+  control point inside the same interlocking limits, the generator handles it
+  locally. The data model supplies the facts; it does not set the policy. No hardware sheet, no
   row. A field unit answers at every field station of its interlocking on its
   code line (field unit to field station is 1 : N). Luchessa: three field
-  stations on a 506-style encoding, one on AAR tokens. Whether one field unit
-  can serve two code lines is open (ontology §5.2). Until it is decided, an
-  interlocking on two code lines is two field unit instances; at most one of
-  them is the drawn hardware, the rest are generated realizations (see §5).
-- **A controller is an ordered list of panel columns.** Each column sits on
+  stations on a 506-style encoding, one on AAR tokens. A field processor
+  runs one or more interlocking applications. An interlocking that answers on
+  two code lines is two interlocking applications, so two field unit
+  instances; at most one of them is the drawn hardware, the rest are generated
+  realizations (see §5). This is settled (owner, 2026-10-02).
+- **A CTC machine is an ordered list of panel columns.** Each column sits on
   one interlocking sheet, which names its interlocking. Its `CP Name` field
   names one control point of that interlocking; the linker checks that it
   resolves to a `MAIN HOUSE` Value (ontology §3.1). A panel column is not a
   control point. CODE buttons do not define interlockings: on a 506 machine
   each field station has its own CODE button (unverified), and at Luchessa
   one CODE button serves three columns (ADR D9).
+- **The CTC machine keeps a type: its panel style.** The only style captured
+  now is a lever panel that is not NX. The panel style owns the lever rule
+  (for each panel column: at most one switch or lock, at most one signal, at
+  least one of them), which stays an error for this style, and the order of
+  levers and lamps. A glass-panel track plan can have other rules. Only the
+  code line encoding (`US&S506`) leaves the machine and goes to the code line.
 - **Appliances have no ids.** Nothing references an appliance, so bindings
   live inline as the appliance's `functions`. A lever is `{kind, name,
   column}`; a board lamp is what it shows, `{kind: LAMP, color,
@@ -197,7 +221,7 @@ Key rules:
   interlocking. Example: track circuit 1NA has `CP` = Carnadero and its lamp
   is in column 6 (`CP Name` = Gilroy), so a 506-style field station Gilroy
   carries `1NAK`. This is not an error.
-- **In-process is the absence of a codeline.** A controller sheet with no
+- **In-process is the absence of a codeline.** A CTC machine sheet with no
   Codeline symbol reaches its interlocking in-process; nothing declares
   "VIRTUAL" because a virtual realization is a selection (§5), never a
   drawing. A virtual target needs no added data and is always available
@@ -210,10 +234,10 @@ Key rules:
   Today `Codeline-MQTT` names the transport only, and the encoding is AAR
   tokens by implication. Encoding and transport definitions are data files in
   the SPCoast KiCad repo (D10).
-- **Attachment = a controller's columns on an interlocking**, plus the
-  codeline it reaches it over, which is a fact about the controller's sheet
-  (that is where a Codeline symbol sits). Controller M:N codeline = two
-  attachments on one interlocking naming the same codeline. A controller
+- **Attachment = a CTC machine's columns on an interlocking**, plus the
+  codeline it reaches it over, which is a fact about the CTC machine's sheet
+  (that is where a Codeline symbol sits). CTC machine M:N codeline = two
+  attachments on one interlocking naming the same codeline. A CTC machine
   that only names an interlocking has an attachment with no columns and no
   codeline: an empty sheet needs no symbol and no default.
 - **Field stations are derived from attachments and the encoding.** On a
@@ -222,14 +246,16 @@ Key rules:
   are the columns whose `CP Name` is that control point. On AAR tokens there
   is one field station for each interlocking: its `name` is the interlocking
   name, `controlPoint` is null, and `columns` are all columns of that sheet.
-  An interlocking model with no `MAIN HOUSE` symbol cannot use a 506-style
-  encoding. The model holds the field stations of the drawn default; a
+  An interlocking model with no `MAIN HOUSE` symbol is an error (§1). The
+  model holds the field stations of the drawn default; a
   generator derives them again for another target.
 - **Addresses are authored, never allocated** (ADR D4, D13). The address of
   each field station is a field of the `CODELINE` symbol of its code line.
   Attachments that disagree on an address for one field station on one code
-  line are a diagnostic. Names are not normalized (D12): they are compared
-  with case folded only, and a duplicate is an error.
+  line are a diagnostic. One normalization is allowed (D12, amended
+  2026-10-02): a name used in an MQTT topic or a key has each space replaced by
+  `-`. No code adds or strips a `CP` prefix. Names are compared with case
+  folded, and a duplicate is an error.
 - **Derived facts are in the model** (routes and their `bestIndication`, OS
   circuits, codeline instances, the field stations of the drawn default),
   so generators never re-derive them for the drawn default. Code charts are
@@ -273,11 +299,11 @@ compile, see §7, "Source ripple of ADR 0001"):
 ## 3. Framing cases (§1a) against this shape
 
 - **A: plants only.** Interlockings and control points defined (field units
-  if drawn); controllers, codelines, field stations, attachments empty. A
+  if drawn); CTC machines, codelines, field stations, attachments empty. A
   generator finds no code line → virtual (in-process) only, which needs no
   added data. ✓
-- **B: controller only.** Interlockings and control points named but empty;
-  controllers and attachments filled, codelines and field stations as drawn.
+- **B: CTC machine only.** Interlockings and control points named but empty;
+  CTC machines and attachments filled, codelines and field stations as drawn.
   Desk generator succeeds; a field generator walks into empty control points
   and says so. ✓
 - **C: today.** Table above. ✓
@@ -286,7 +312,7 @@ compile, see §7, "Source ripple of ADR 0001"):
   a generator setting (ADR D6). **IODRIVER change** touches
   `controllers[].drivers` and the affected `functions` only. **Field
   hardware change** touches `fieldUnits` only. ✓
-- **M:N controllers**: one field station, two attachments. **506-style
+- **M:N CTC machines**: one field station, two attachments. **506-style
   encoding**: one field station per control point. **Emulate everything in
   one process**, or **also simulate what is drawn for ESP32**: a
   generate-time selection (§5), no model change. ✓
@@ -299,11 +325,11 @@ compile, see §7, "Source ripple of ADR 0001"):
 | `Codeline-VIRTUAL` symbol, `Codeline.stub`, "really empty sheet", `sheet-empty-defaulted` | nothing: no symbol means in-process; an empty sheet is an interlocking the desk names with nothing drawn |
 | `Station.status` linked / placeholder | nothing; empty entities are discovered by walking |
 | `Station` (link model), "station" for a code line address | `fieldStations[]`, derived per code line type |
-| `station_key()` / `stationKey` (whitespace removed, case folded) | nothing: names are compared with case folded only, and addresses are authored (ADR D12, D13) |
+| `station_key()` / `stationKey` (whitespace removed, case folded) | the same function, changed to replace each space with `-` (ADR D12, amended); addresses are authored (D13) |
 | `route.staticIndication` (v1) / `maxIndication` (FieldUnit payload) | `bestIndication` on both sides (FieldUnit changes too) |
 | `controlledPoints[]` (plant JSON key) and its `members` (kind/id list) | `controlPoints`: the control point entity owning its appliances |
 | `Column` docstring "A column IS a controlled point"; `cp_name` | a column names a control point by its `CP Name` field; `columns[].controlPoint` |
-| `Machine.machine_type` from the `CtcMachine` field `Type` = `US&S506` | `codelines[].encoding`: a code line encoding, not a machine type (ADR 0001, consequences) |
+| `Machine.machine_type` from the `CtcMachine` field `Type` = `US&S506` | two facts: `codelines[].encoding` takes the encoding; `machine.type` stays and names the panel style (ADR D3 amendment, iteration 11) |
 | panel symbol field `Vital` = `NO` | `interlocked: false` (glossary §5: a code line function is interlocked or auxiliary) |
 | masts under `appliances.masts[]` with a `signal` back-pointer | `signals{}.masts{}` on the interlocking |
 | diagnostic codes `netlist-no-nets`, subjects = designators / sheet names | source-neutral codes (`source-no-connectivity`), `about` = entity refs, `sourceRef` for forensics |
@@ -319,7 +345,7 @@ Code names that stay until a rename: the KiCad Role `CONTROLLED_POINT` of
 (Rev 7 title: "Hosting".)
 
 The drawings say what exists: plants, per-plant field hardware (§5a),
-controllers, and which codeline each controller reaches each interlocking
+CTC machines, and which codeline each CTC machine reaches each interlocking
 over. Deployment content recorded in the model is a default for generators: a
 convenience that lets the layout designer capture everything about their
 railroad in one source document. It does not preclude generator options
@@ -329,12 +355,12 @@ type ("both-and", 2026-09-30 review; ADR D6).
 
 What the model carries, and what it does not:
 
-- **`attachments[].codeline`** says which codeline a controller uses for an
+- **`attachments[].codeline`** says which codeline a CTC machine uses for an
   interlocking; null is in-process. **`fieldStations`** follow from each
   interlocking × codeline pair and the code line's encoding (§1).
 - **`fieldUnits`** rows exist only for drawn hardware (§5a), one per
   interlocking, each with its `fieldStations`: the derived set of field
-  stations of its interlocking on its code line. The controller sheets are
+  stations of its interlocking on its code line. The CTC machine sheets are
   the one source of codeline declarations and addresses; the hardware sheet
   never repeats them.
 - **The code line type in the model is the layout's default.** The generator
@@ -356,7 +382,7 @@ What the model carries, and what it does not:
 
 ```
 tools/kicad/        front end: netlist, schematic, symbol readers + role/kind mapping   (only KiCad-aware code)
-tools/compile/      phases: read projects → control points/interlockings → field units → controllers → codelines/field stations/attachments → cross-check (incl. capacity and size limits of the drawn default) → derive
+tools/compile/      phases: read projects → control points/interlockings → field units → CTC machines → codelines/field stations/attachments → cross-check (incl. capacity and size limits of the drawn default) → derive
 tools/model/        types, JSON, draft schema `layout-model/v1` (frozen with the 2nd field unit)
 tools/generate/     one package; targets are settings, not separate tools per artifact; the code line type target is one setting
 compile_layout.py   folder in, model out
@@ -383,11 +409,8 @@ Withdrawn in rev 8: "a unit serves one master" as "exactly one station"
 
 Open after rev 8 (from ADR 0001 and ontology rev 5 §6):
 
-- Whether one field unit can serve two code lines (ontology §5.2).
 - Confirm `CP Name` as the join from panel column to field station
   (ontology §3.4).
-- Where an interlocking with no `MAIN HOUSE` keeps its appliances in this
-  shape (§1 puts every appliance under a control point).
 - The form of the encoding and transport definitions and their schema (ADR
   D10, D11), and the two-pin `CODELINE` symbol (D15).
 - The source fix for names (D12): `MAIN HOUSE` Values, `CP` fields, `CP Name`,
@@ -399,7 +422,7 @@ question, listed so it is not lost):
 - `RailroadPanel.kicad_sym`: deleted the symbol; South-cTc: deleted it from
   the seven interlocking sheets. The `South-cTc.net` netlist file needs
   to be regenerated.
-- Controller compile phase: "exactly one CODELINE per sheet" becomes "at
+- CTC machine compile phase: "exactly one CODELINE per sheet" becomes "at
   most one"; stub recognition, the VIRTUAL transport and the
   `sheet-empty-defaulted` default go away; the 2026-09-29 decision
   "`Codeline-VIRTUAL` is the correct spelling" is superseded.
@@ -408,7 +431,9 @@ Source ripple of ADR 0001 (listed so it is not lost):
 - The §2 instance table predates the current drawing. South-cTc now has
   `Codeline-MQTT` on all seven interlocking sheets (read 2026-10-02), so a
   compile gives seven code line attachments, not seven in-process ones.
-- `CtcMachine` field `Type` = `US&S506` moves to the code line.
+- `CtcMachine` field `Type` = `US&S506` names an encoding. The encoding moves
+  to the code line. The machine keeps `Type` as its panel style; the value for
+  the panel style is to be chosen.
 - `Codeline-MQTT` becomes a transport symbol on the two-pin `CODELINE`
   symbol, with an AAR token encoding symbol beside it (D15).
 - The plant model must carry maintainer calls (ontology §5.3). The

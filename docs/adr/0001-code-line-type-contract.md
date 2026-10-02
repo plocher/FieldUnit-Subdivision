@@ -90,7 +90,9 @@ axes, or two fields must.
 - On a 506-style encoding a field station is a control point: one `MAIN HOUSE` symbol.
   - The `MAIN HOUSE` must have a Value. The Value is the field station name.
   - Names are checked for duplicates. They are never invented. D12 gives the naming rule.
-  - An interlocking model with no `MAIN HOUSE` symbol cannot use a 506-style encoding.
+  - An interlocking model with no `MAIN HOUSE` symbol is an error (owner, 2026-10-02). The `MAIN HOUSE`
+    symbol is the explicit source of the name. The tooling does not take it from the title block or
+    the file name. The symbol can show a title block variable (`${DOCUMENT_NAME}`, `${COMMENTx}`).
 - On the AAR token encoding a field unit answers at one field station, named by the interlocking
   (`Luchessa`).
 - Two sources can assign an appliance to a control point:
@@ -191,7 +193,9 @@ This choice is provisional: build one worked example, and change it if tables ar
 
 - A KiCad name never contains `CP_` or `CP `. A `MAIN HOUSE` Value is the bare name: `Gilroy`, not `CP Gilroy`.
 - A model board can put `CP ` in front of a name for display, to match the signs on the railroad.
-- Fix every source once. Write no normalization code now.
+- Fix every source once. Write no code that adds or strips a prefix.
+- Amended 2026-10-02: one normalization is allowed. A name used in an MQTT topic or a key has each
+  space replaced by `-`. A space in a topic name is legal but not wanted.
 - Consequence to check when the sources are fixed: the interlocking `Luchessa` and its control point
   `Luchessa` then have the same name. They differ by kind only. Today the two are kept apart by the
   prefix (AGENTS.md "Naming"; FieldUnit test `testStationLookupFoldsCaseOnly`).
@@ -265,8 +269,11 @@ that needs no second drawing of field stations.
 - `desk-codeline-kicad-pattern.md` §10 and `layout-model.md` `stations[].controlledPoint` ("506 gives
   each CP its own station") are prescriptive. They are replaced by D3 and D5.
 - `layout-model.md` `fieldUnits[].station` becomes a list (field unit to field station is 1 : N).
-- The `CtcMachine` symbol field `Type` = `US&S506` names a code line type as a machine type (F8). It
-  moves to the code line.
+- The `CtcMachine` symbol field `Type` = `US&S506` names a code line encoding as a machine type (F8).
+  The encoding moves to the code line. The machine keeps a type of its own (amended 2026-10-02): the
+  style of its panel, for example a lever panel that is not NX. The panel style owns the lever rule
+  (at most one switch or lock, at most one signal, at least one, for each column) and the order of
+  levers and lamps. Another style, such as a glass-panel track plan, can have other rules.
 - `PanelColumn` stays a CTC machine fact. By D3 the panel column of a lever or lamp decides which
   field station carries its function.
 - A `MAIN HOUSE` without a Value becomes a compile error when a 506-style encoding is the default or a target.

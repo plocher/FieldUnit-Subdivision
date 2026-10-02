@@ -12,13 +12,16 @@ rev 5.
 Sources: `docs/adr/0001-code-line-type-contract.md` (accepted, D1–D16),
 `docs/review/ontology.md` rev 5, `vocabulary-review.md` iterations 8–10.
 
+2026-10-02 (iteration 11): proxy names, MAIN HOUSE required, machine type kept as panel style, operator roles, topic normalization
+
 - Terms. "CP" as a common noun becomes "control point". "Station" becomes
   "field station". "Host program" becomes "simulated field processor". "Desk"
   is kept.
 - §0: the order of authority is added, the three phases of ADR D6, and the scope of the code line work
   (first target AAR tokens over MQTT; US&S 506 not ruled out, D14).
 - Step 2.1: control points come from `MAIN HOUSE` symbols and are never
-  counted. Names are not normalized (D12).
+  counted. One normalization: a space becomes `-` in a topic or key (D12,
+  amended); no code adds or strips a `CP` prefix.
 - Step 2.3: the control point of each mast comes from its `CP` field.
 - Step 2.6: field stations are derived per code line type (D3). Addresses
   come from the `CODELINE` symbol (D13).
@@ -32,10 +35,15 @@ Sources: `docs/adr/0001-code-line-type-contract.md` (accepted, D1–D16),
   consequences).
 - Cross-repo items: encoding and transport definition files (D10), the
   two-pin `CODELINE` symbol (D15), the name fix (D12) and the move of
-  `Type` = `US&S506` are added.
+  the encoding `US&S506` out of `Type` are added. The machine keeps `Type` as
+  its panel style.
 - Removed (overridden): "signal CP from the lever's column" and "CODE
   grouping vs plant interlocking" as cross-checks (step 2.7, overridden by
   ADR D3).
+- Roles (iteration 11). "Controller" is not a term for a role. Only the
+  dispatcher's CTC machine is modelled; the tower operator and the maintainer
+  are not yet covered. `controller_graph`, `controllers{}` and
+  `parse_kicad_controller.py` are code names and keep their spelling.
 
 ## 0. Decisions this plan rests on
 
@@ -132,7 +140,7 @@ and stale docs are debt (§0), so each step ends with its docs refreshed.
   timestamp). No schema file yet.
 - `tools/kicad/`: today's `kicad_services` readers moved unchanged;
   project discovery (folder = membership; MAIN HOUSE ⇒ plant, MACHINE ⇒
-  controller); Role/Kind classification with `unknown-role` / `unknown-kind`
+  CTC machine; a plant project with no MAIN HOUSE is an error); Role/Kind classification with `unknown-role` / `unknown-kind`
   diagnostics; sheet paths; source versions.
 - One `Diagnostic` type: severity, code, `about` (entity refs), message,
   optional `sourceRef`.
@@ -145,9 +153,12 @@ lands and its output read, nothing frozen.
 1. **Control points and interlockings.** One plant project is one
    interlocking. Each `MAIN HOUSE` symbol (Role `CONTROLLED_POINT` today, a
    code name to review) declares one control point; its Value is the name.
-   The compiler never derives or counts control points. It checks that each
+   The compiler never derives or counts control points. A plant project with no
+   `MAIN HOUSE` symbol is an error: the symbol is the explicit source of the
+   name, and it can display a title block variable. It checks that each
    Value is present and unique, and that each `CP` field resolves to a
-   `MAIN HOUSE` Value of the same project. Names are not normalized (D12).
+   `MAIN HOUSE` Value of the same project. A space becomes `-` in a topic or
+   key (D12); no code adds or strips `CP`.
    Appliances by Kind (`SWITCH_POWERED`, `SWITCH_LOCK`, `DERAIL`,
    `TRACK_CIRCUIT`, `MAINTAINER_CALL`, `AUXILIARY`), assigned to a control
    point by their `CP` field. Harvest canonical-name and allocation rules
@@ -161,7 +172,7 @@ lands and its output read, nothing frozen.
 4. **Routes and best indication** with `POLICY` symbols. Harvest
    `routes.py` and `indications.py`; the ten Luchessa routes compared
    against today's output and against the drawing.
-5. **Controllers**: machine, ordered columns, appliances with inline
+5. **CTC machines**: machine (with its panel style, `Type`), ordered columns, appliances with inline
    `functions` from IODRIVER bits, column membership from column pins.
    Harvest `controller_graph` net logic. Bindings compared against
    `IO-I2C.h`, the one binding fact validated on the real desk.
@@ -175,7 +186,8 @@ lands and its output read, nothing frozen.
    `CODELINE` symbol exists (D15).
 7. **Cross-checks** re-derived from the model, only what a generator
    needs: column `CP Name` ↔ `MAIN HOUSE` Value of that sheet's
-   interlocking; lever ↔ switch kind; lamp tokens; the field station of each
+   interlocking; lever ↔ switch kind; the lever rule of the panel style (an error for the
+   lever panel); lamp tokens; the field station of each
    function from the column of its lever or lamp (D3). A difference between
    an appliance's `CP` field and that column is not an error. Capacity of
    the drawn default, counting steps after the code chart (D5), and size
@@ -261,8 +273,8 @@ model.
   gains `compile`/`generate` rules calling this repo's CLIs.
 - Railroad (SPCoast): encoding and transport definition files and their
   schema (D10, D11); the source fix for names (D12: `MAIN HOUSE` Values,
-  `CP` fields, `CP Name`); `Type` = `US&S506` moved from `CtcMachine` to the
-  code line.
+  `CP` fields, `CP Name`); the encoding `US&S506` moved from `CtcMachine` `Type` to
+  the code line (the machine keeps `Type` as its panel style).
 - Symbol libraries: the two-pin `CODELINE` symbol and the one-pin encoding
   and transport symbols (D15).
 - Symbol libraries into git (own repo or under Railroad: decide) so source

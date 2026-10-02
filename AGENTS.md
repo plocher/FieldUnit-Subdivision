@@ -99,8 +99,6 @@ tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-
 5. Verify with unittest, the smoke script, `--test`, and an `arduino-cli compile` of the sketch.
 6. Update FieldUnit docs that quote the station. Corporal: primer Act V and Tutorial 2 quote the legacy `CP_Corporal.ino`.
 
-The Watsonville schematic is incomplete and wrong (model-layout staging yard; owner, 2026-10-02). Do not use it as evidence for rules or counts.
-
 Tests and the smoke script hard-code Luchessa facts. When a change to them is intended, make it in a separate step.
 
 ## Direction (in progress)
