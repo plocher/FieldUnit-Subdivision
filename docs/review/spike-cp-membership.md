@@ -15,7 +15,7 @@ run, saved by the orchestrating session. Parent: `vocabulary-review.md`, finding
 
 - Fresh netlists exported with `kicad-cli` for all seven SPCoast projects.
 - Each compiled with `PlantGraphCompiler().compile(library, netlist, None)`. The layout path was not used.
-- The throwaway rule was run on Luchessa, GilroyInterchange, Sargent and Watsonville.
+- The throwaway rule was run on Luchessa, GilroyInterchange, Sargent and Watsonville. The Watsonville run is excluded: its schematic is incomplete and not valid evidence (owner, 2026-10-02).
 - **Corporal, Christopher and GilroyCalTrain could not be run.** Their netlists have an empty
   `(nets)` section. The symbols are placed and nothing is connected.
 - Reasoned only, not run: a plant with two or more signal-bounded control points and two or more
@@ -55,7 +55,7 @@ Rule A:
 | Luchessa | 3 | 1: {783, 795, 795D, 799} | 0 of 15 |
 | GilroyInterchange | 2 | 1: {777, 781} | 0 of 9 |
 | Sargent | 1 | 1: {835} | 1: `Corporal:2NA` (belongs to the next plant) |
-| Watsonville | 1 (`FIXME CP 1`) | none: no signals drawn | all |
+| Watsonville | excluded: the Watsonville schematic is incomplete and not valid evidence (owner, 2026-10-02) | | |
 | Corporal, Christopher, GilroyCalTrain | 2, 3, 3 | not runnable: no nets | |
 
 Support for the Luchessa result: masts 784EAB, 784WBC and 784WD each run one signal-to-signal route

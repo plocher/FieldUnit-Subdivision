@@ -302,17 +302,17 @@ Fit: derail `829D`, switches `829`, `831`.
 | SW835 | TC field | `835T1` | `835T` |
 | SW3 | hand-throw switch | `1` | `?` (Q10) |
 
-**Watsonville.net (65)**
+**Watsonville.net (65)** - excluded: the Watsonville schematic is incomplete and not valid evidence (owner, 2026-10-02). The table is kept for the record and drives no proposal.
 
 | Ref | Kind | Now | Proposed |
 |---|---|---|---|
-| SW3…SW25 | switch | `FIXME 3` … `FIXME 25` (12) | milepost lever numbers `?` |
-| SW837 | TC field | `837T1` | `837T` |
-| SW3, 5, 7, 9, 11, 13 | TC field | `DLT` (6) | one OS name: lowest switch + `T` |
-| SW15…SW23 | TC field | `ALT` (5) | one OS name: lowest switch + `T` |
-| SW25 | TC field | `FIXME 25T1` | `<lever>T` |
-| TC1–TC32 | staging sections | `AT`, `SAT`, `SDT`, `1BT`…`1ET`, `2AT`…`2ET`, `3BT`…`7ET` (32) | `O1T`…`O32T`, or a staging form (Q12). The leading digit is a track number, not a lever. |
-| MC1–MC8 | maintainer call | `K0`…`K7` (8) | `MC1`…`MC8` |
+| SW3…SW25 | switch | `FIXME 3` … `FIXME 25` (12) | excluded |
+| SW837 | TC field | `837T1` | excluded |
+| SW3, 5, 7, 9, 11, 13 | TC field | `DLT` (6) | excluded |
+| SW15…SW23 | TC field | `ALT` (5) | excluded |
+| SW25 | TC field | `FIXME 25T1` | excluded |
+| TC1–TC32 | staging sections | `AT`, `SAT`, `SDT`, `1BT`…`1ET`, `2AT`…`2ET`, `3BT`…`7ET` (32) | excluded |
+| MC1–MC8 | maintainer call | `K0`…`K7` (8) | excluded |
 
 ### 4.2 Profiles, `profiles/spcoast_south/cps/`
 
@@ -327,7 +327,7 @@ Legacy files are renamed at cutover (AGENTS.md). Their switch and signal levers 
 | `CP_GilroyInterchange.json` | `1T1`, `3T1`, `TK1` | `1T`, `3T`, `O1T` | 3 |
 | `CP_Luchessa.json` | `1T1`, `3T1`; masts `2SAB`, `2NAB` | `1T`, `3T`; `2RAB`, `2LAB` | 4 |
 | `CP_Sargent.json` | `1T1`, `HBD` | `1T`, `O1T` or detector (Q9) | 2 |
-| `CP_Watsonville.json` | `ALT`, `EAT`, `SAT`; masts `2NA`, `2SA` | `O1T`…`O3T`; `2LA`, `2RA` | 5 |
+| `CP_Watsonville.json` (legacy harvest, not the Watsonville schematic; kept) | `ALT`, `EAT`, `SAT`; masts `2NA`, `2SA` | `O1T`…`O3T`; `2LA`, `2RA` | 5 |
 | `generated/Luchessa.json` | the 9 track circuits and 5 masts of Luchessa.net | as Luchessa.net | 14 |
 | `generated/Luchessa.projectionDeferred.json` | the same 6 track circuits and 5 masts, as references | regenerated | 11 |
 
@@ -382,8 +382,8 @@ faults are independent of the grammar:
 
 | Source | Failing names |
 |---|---|
-| Plant netlists (7) | 144 (Luchessa 15, Christopher 22, Corporal 12, GilroyCalTrain 11, GilroyInterchange 9, Sargent 10, Watsonville 65) |
-| Profiles | 62 (legacy 37, `generated/Luchessa.json` 14, sidecar 11) |
+| Plant netlists (6 valid) | 79 without Watsonville (Luchessa 15, Christopher 22, Corporal 12, GilroyCalTrain 11, GilroyInterchange 9, Sargent 10); Watsonville excluded (was 144 with its 65) |
+| Profiles | 62 (legacy 37 including the legacy `CP_Watsonville.json` 5, `generated/Luchessa.json` 14, sidecar 11) |
 | FieldUnit examples | 55 |
 | FieldUnit docs | 84 |
 | Desk netlist (extra) | 31 |
@@ -405,7 +405,7 @@ Also affected, not counted: FieldUnit-Subdivision tests and fixtures hard-code L
 | `_DEFAULT_MAST_DIRECTION_MAP`, `mast_direction_map` parameter, `PlantGraph.mast_direction_map` | N/W → LEFT, S/E → RIGHT | Remove. L → LEFT and R → RIGHT need no map. With reading R1-2 (E/W) the map stays, as E/W only. |
 | `bad_mast_value` message | says `<signal><N\|S><heads>` while the regex accepts NSEW | Message follows the regex. |
 | `_derive_os_circuits` default | `f"{name}T1"` | `f"{name}T"`. Validate the `TC` field against the track circuit regex. Reject a list of names in one `TC` field (GilroyCalTrain 771). |
-| Switch Value | any non-empty string (`FIXME 11` passes) | `^[1-9]\d{0,3}[A-C]?$`. Diagnostic `bad_switch_value`. |
+| Switch Value | any non-empty string | `^[1-9]\d{0,3}[A-C]?$`. Diagnostic `bad_switch_value`. |
 | Derail Value | `(\d+)(D)?` after `upper()` | `^[1-9]\d{0,3}([A-C]?D)?$`. Dependent-derail lookup strips `D` as today. |
 | Head Value | `^[A-E]$` | No change. Empty `~` heads already fail. |
 | Track Circuit Value | any non-empty string | Track circuit regex, warning first. Optional check: the side letter of a `signal_tc` matches the side of the plant where the section lies (topology from the netlist, not coordinates). Accept `<Interlocking>:` references. |
@@ -462,5 +462,5 @@ the plants.
 | Q9 | Circuits with no switch and no signal: AAR `O<n>T`, or mnemonics (`IND`, `TK1`)? `HBD`, `TL`, `TR` are not track circuits; do they get their own kinds? | `O<n>T`; own kinds |
 | Q10 | Name of a hand-throw (non-interlocked) switch: milepost number like any switch? | Milepost number |
 | Q11 | May a one-head signal omit its letter (`10R`, as AAR56 allows)? | No; always a letter |
-| Q12 | Staging yard sections (Watsonville `1BT`…`7ET`): `O<n>T`, or a staging form? | Owner's choice |
+| Q12 | excluded: the Watsonville schematic is incomplete and not valid evidence (owner, 2026-10-02). Withdrawn. Model-layout yards will be supported by the tooling later. | None |
 | Q13 | Maintainer call `MC<n>` has no source. Keep it? | Keep, marked FieldUnit |

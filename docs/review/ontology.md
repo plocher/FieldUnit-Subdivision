@@ -83,7 +83,7 @@ Glossary §4, "control point".
 - Names today, to be fixed:
   - Luchessa `MAIN HOUSE` Values: `CP Luchessa`, `CP Gilroy`, `CP Carnadero`.
   - Luchessa `CP` fields and column `CP Name` fields: the same three values.
-  - `CP Name` on the other interlocking sheets: `CP_<Name>` forms or `FIXME`.
+  - `CP Name` on the other interlocking sheets: `CP_<Name>` forms or `FIXME` (Watsonville excluded; its schematic is not valid evidence).
   - `CP` fields at Christopher: `CP Christopher North` and others, while the `MAIN HOUSE` Values are bare.
 - After the fix, the interlocking `Luchessa` and the control point `Luchessa` have the same name. They differ by kind only.
 - Luchessa is one interlocking with three control points. This is a design decision of the layout (selective compression).
@@ -229,7 +229,7 @@ Glossary §3, "bungalow".
 - Rev 4 §7 ("retire the `CP` field") is reversed.
 - Issue #16 says that control points are optional and that the decomposition is a 506 requirement. Rev 5 does not adopt this. Control points are declared layout facts. One field station for each control point is a property of the 506-style encoding.
 - Proposed scope for #16 (owner to decide): keep the field; check that it resolves; fix the drift and the names (D12).
-- Drift today. Method: each symbol with a `CP` field whose value is not a `MAIN HOUSE` Value of the same `.kicad_sch` (empty values included), read 2026-10-01. Issue #16 used another method and reports 66.
+- Drift today. Method: each symbol with a `CP` field whose value is not a `MAIN HOUSE` Value of the same `.kicad_sch` (empty values included), read 2026-10-01. Issue #16 used another method and reports 66. That total includes Watsonville; not valid. Without Watsonville this method gives 39 of 88 (21 + 10 + 0 + 4 + 0 + 4 = 39 unresolved; 21 + 13 + 16 + 13 + 15 + 10 = 88 symbols). Watsonville excluded.
 
 | Project | Unresolved of all | Values seen |
 |---|---|---|
@@ -239,7 +239,7 @@ Glossary §3, "bungalow".
 | GilroyInterchange | 4 of 13 | empty |
 | Luchessa | 0 of 15 | |
 | Sargent | 4 of 10 | empty, `Corporal` |
-| Watsonville | 44 of 45 | `FIXME` |
+| Watsonville | excluded: the Watsonville schematic is incomplete and not valid evidence (owner, 2026-10-02) | |
 
 ### 5.2 `fieldUnits[].station` in `layout-model.md`
 
@@ -265,9 +265,9 @@ Re-derived under the rev 5 model:
 | GilroyInterchange | 2 | 2 |
 | Luchessa | 1 | 3 |
 | Sargent | 1 | 1 |
-| Watsonville | 8 (`K0` to `K7`) | 1 (`FIXME CP 1`) |
+| Watsonville | excluded: the Watsonville schematic is incomplete and not valid evidence (owner, 2026-10-02) | |
 
-- The observation fails at Watsonville. Issue #16 calls those eight symbols yard selectors. If they are not maintainer calls, the observation holds in the other six projects (unverified).
+- The observation holds in all six other projects: calls never exceed bungalows (2 of 3, 1 of 2, 0 of 3, 2 of 2, 1 of 3, 1 of 1). Watsonville is excluded: its schematic is incomplete and not valid evidence (owner, 2026-10-02). Issue #16's reading of its symbols as yard selectors is not used. Model-layout yards will be supported by the tooling later.
 - "At most one maintainer call for each bungalow" is a candidate check. It is not a rule now (owner to decide).
 - The check cannot run today. Christopher's calls name `CP` values that match no `MAIN HOUSE`. The calls at Corporal, Sargent and Luchessa have no `CP` field. The Luchessa call has an empty Value; `MC1` is its Reference.
 - A maintainer call does not create a control point. "More than one call forces more than one control point" (rev 4 §4, issue #16) is withdrawn.
