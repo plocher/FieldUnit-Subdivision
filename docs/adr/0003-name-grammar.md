@@ -9,8 +9,13 @@ Reshaped from spike S5 of `vocabulary-review.md` (F16). This is a proposal. Noth
 
 Answer each item with one line. The recommended default is the first option. "Q" numbers are the question numbers of the earlier proposal; the appendices use them. The items are ordered by the number of names each one renames.
 
-1. Q1. Signal direction letter: L/R (lever position), E/W (timetable direction) or N/S (status quo)? Recommended: L/R. It renames all 25 named masts and every approach track circuit; E/W renames 20 and keeps a translation map.
-2. Q3. OS track circuit suffix: `T` (`783T`) or keep `T1` (`783T1`)? Recommended: `T`, unless a SP or US&S drawing shows `T1`. Every OS name changes (plants, profiles, desk tokens, tests, compiler default).
+1. Q1. Signal direction letter: DECIDED (owner, 2026-10-02). Panels and code conventions use L and R;
+   they do not depend on railroad, geography or era. A schematic track diagram can use N/S, E/W or
+   L/R as local policy decides. The fixed mapping is Left = North and West; Right = South and East.
+   Mast names drawn with compass letters therefore stay valid; the compiler maps them to L and R.
+2. Q3. OS track circuit suffix: DECIDED (owner, 2026-10-02). An OS track circuit generated from the
+   switch number is `<switch>T1`. This keeps it distinct from other circuits that end in `T`; `833T`
+   and `833T1` can both exist. The AAR56 `<number>T` form is not used for OS circuits.
 3. Q4. Number of an approach track circuit: the plant signal that governs over it (`784LAT`), or the milepost of the governing automatic signal (`780T`)? Recommended: the plant signal.
 4. Q9. Circuits with no switch and no signal: AAR `O<n>T` (`O1T`), or mnemonics (`IND`, `TK1`)? And do `HBD`, `TL`, `TR`, which are not track circuits, get their own kinds? Recommended: `O<n>T`, and own kinds.
 5. Q5. Section letter: after the side (`784LAT`) or as a true prefix (`A784LT`)? Recommended: after the side.

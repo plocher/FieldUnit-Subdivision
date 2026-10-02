@@ -1071,3 +1071,14 @@ Other answers:
   only to read the pin and not also require a `CP` field.
 - Proposals that need a decision moved into the ADR structure: `docs/adr/0002-symbol-contract.md`,
   `docs/adr/0003-name-grammar.md`. `docs/adr/README.md` lists what waits for the owner.
+
+## Iteration 13 (2026-10-02)
+
+- FieldUnit ADR 0002 accepted: the two transaction rules; the classes are **vital** and **non-vital**.
+  The class describes field-unit processing; the code line is not vital. The glossary, primer §10,
+  the layout model and the symbol ADR revert "interlocked / auxiliary" to these names.
+- Name grammar Q1 decided: L/R on panels and in code; schematics may use N/S, E/W or L/R by local
+  policy; Left = N and W, Right = S and E.
+- Name grammar Q3 decided: OS track circuits are `<switch>T1`; `833T` and `833T1` are distinct.
+- Name grammar Q4 was misread: it asks only what NUMBER an approach track circuit's name carries
+  (today `1SA`), not which circuit is the approach. Restated to the owner.
