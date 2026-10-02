@@ -52,6 +52,17 @@ Asked:
 15. Is a hand-throw switch an appliance with a `CP` (Corporal 1 has `INDUSTRY`)? Default: none; the drawing
     owner knows.
 
+## Decided since the proposal (owner, 2026-10-02)
+
+- The `Vital` field exists on `AUXILIARY` symbols only. A switch or a signal is vital by kind and
+  carries no such field.
+- A switch or signal marked non-vital on a drawing is a compiler **warning**: the attribute is
+  ignored and the appliance is processed as vital. It is not an error.
+- What a drawer means by a "non-vital switch" or "non-vital signal" has a model already: a switch
+  the interlocking does not control is dark track; a signal that is not interlocked is an
+  `AUXILIARY` lamp; relaxed checks for test or maintenance are the maintainer role, a run-time
+  mode, not a drawn attribute.
+
 ## Context
 
 ### The storyline
