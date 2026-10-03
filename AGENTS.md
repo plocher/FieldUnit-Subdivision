@@ -75,7 +75,7 @@ tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-
 
 - The Value is the railroad name for every named part (switch `783`, mast `784EAB`, circuit `1NA`). References (`SW1`, `S7`) are KiCad annotation artifacts. Use them only as netlist identities, never to derive or check names.
 - Dependent derail Value is `<switch>D`, e.g. `795D`. It takes the same position as its switch. Derail NORMAL is derailing; REVERSE is clear. The derail symbol's through pin is `R` (pin 2).
-- Mast Value matches `^\d+[NSEW][A-E]+$`, e.g. `784EAB`. N/W normalise to LEFT, S/E to RIGHT.
+- Mast Value matches `^\d+[NSEW][A-E]+$` in the compiler today, e.g. `784EAB`; ADR 0003 D9 allows any letter A to Z (compiler to follow). N/W normalise to LEFT, S/E to RIGHT (ADR 0003 D1).
 - Head Value is one letter, A–E. The Track Circuit marker's Value is the authoritative circuit name.
 - A switch's OS circuit defaults to `<switch>T1`; a `TC` field overrides it.
 - `CP` must equal a MAIN HOUSE Value.

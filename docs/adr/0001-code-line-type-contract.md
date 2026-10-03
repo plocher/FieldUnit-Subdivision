@@ -74,8 +74,8 @@ it to one of them (drawn values, from the model golden):
 | transport | how the encoded code is moved, and its parameters | MQTT (`Broker`, `Topic`); LocoNet; serial; a custom relay box; in-process |
 
 A code line type is one encoding on one transport. Examples: AAR tokens over MQTT; 506 over LocoNet;
-506 over a custom relay box. The KiCad `CODELINE` Value today names a transport only. It must name both
-axes, or two fields must.
+506 over a custom relay box. The drawing names both axes with one transport symbol and one encoding symbol (D15). The retired
+`CODELINE` symbol named a transport only.
 
 ### D2. The encoding is per field station
 
@@ -299,7 +299,7 @@ The form of the type definition is still to choose. The three options of the spi
 | B. Drawn in KiCad | `FieldStation-USS506` symbols with step pins on the CTC machine sheet; encoder symbols | `FieldStation` symbols: they name field stations a second time beside `MAIN HOUSE` (D3). A chart that exists only as nets: it covers the drawn default and not other targets (D6). | Authored addresses and per-station overrides as fields on `MAIN HOUSE` or on the `CODELINE` symbol. Encoder symbols are not needed if rules are data. |
 | C. C++ classes in FieldUnit | Type is code; grouping by a field on `PanelColumn`; closed set of rules | Type definitions in FieldUnit (D10). Grouping by desk column as a new field (D3), D3 uses the existing lever column and adds no field. | A generic FieldUnit codec that runs chart tables (all options need it). Encoding rules as named code, if they are not data. |
 
-Decision (owner, 2026-10-01): A, with authored addresses as fields on the `CODELINE` symbol (D13), because the answers
+Decision (owner, 2026-10-01): A, with authored addresses as fields on the encoding instance of each field station (D13, D15), because the answers
 move every fact to a layout source that the generator reads for any target, and A is the only option
 that needs no second drawing of field stations.
 
@@ -347,6 +347,8 @@ that needs no second drawing of field stations.
 2. A worked example for D11 (truth tables).
 3. The source fix for D12: `MAIN HOUSE` Values, `CP` fields, generated JSON, tests and documents.
 4. Local fascia-mounted devices and maintainer service modes: own ADR, later.
+5. The source of `${Railroad}` in the MQTT topic root: the transport symbol's `Railroad` field, or title block comment 4. One fact, one source; to decide (raised by the ADR 0002 final-form pass, 2026-10-03).
+6. The class (vital or non-vital) of an auxiliary control when no CTC machine is drawn (tower operator or virtual target): FieldUnit ADR 0002 needs the class on each function in the interlocking model, and ADR 0002 D6 puts `Vital` on the panel symbols only. To decide (ADR 0002 O1).
 
 ### Not verified
 
