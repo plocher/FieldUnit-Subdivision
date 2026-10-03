@@ -68,24 +68,57 @@ Asked:
    
 6. Addresses on `CODELINE`: one field per field station (`Address Gilroy`) or one list field (`Addresses`)?
    Default: one field per field station.
+
+   RESPONSE: See new transport/encoding symbology in South-cTc
+
 7. Encoding and transport symbols: once per code line on the root sheet (global label), or on every sheet?
    Default: once per code line on the root sheet.
+
+      RESPONSE: See new transport/encoding symbology in South-cTc
+
 8. `NextCP` Value: the neighbor interlocking or the neighbor control point? Default: the neighbor interlocking.
+
+   RESPONSE: neighbor interlocking
+
 9.  Rename `NextCP` / `NEXT_CP` to `NextInterlocking` / `NEXT_INTERLOCKING`: yes or no? Default: yes (optional).
+
+   RESPONSE: I'll change the library, but allow both unless we kick off a task to modify the existing schematics...
+
 10. `MAIN HOUSE` `Milepost`: keep as the geographic order of control points, or remove? Default: keep.
+
+   RESPONSE: Keep
+
 11. Remove the unread `Route` symbol: yes or no? Default: yes.
+
+   RESPONSE: Deleted
+
 12. Does a lock lever carry `NWK` and `RWK` as well as `WLS` and `WLK`? Default: `WLS` and `WLK` only until
     FieldUnit confirms (unverified).
-13. Spelling of the SPCoast panel style value (for example `LEVER`)? Default: `LEVER`.
-14. GilroyCalTrain switch 771 has `TC` = `771T1, 773T1, 775T1`: one shared OS circuit, or three? Default: none;
+
+   RESPONSE: Currently, locks and switches carry the SAME AAR tokens (both control and indication) for simplicity - the prototypical crew/dispatcher/field coordination is ignored.
+
+   In order to "do" electric locks correctly, we need more structure and vocabulary, which is a large scoped task that I'm not sure we're ready for in this session.  I've captured it in `docs/review/ElectricLockProcedure.md` for reference.
+
+
+12.  Spelling of the SPCoast panel style value (for example `LEVER`)? Default: `LEVER`.
+    
+     RESPONSE:  LEVER
+
+13.  GilroyCalTrain switch 771 has `TC` = `771T1, 773T1, 775T1`: one shared OS circuit, or three? Default: none;
     the drawing owner knows.
-15. Is a hand-throw switch an appliance with a `CP` (Corporal 1 has `INDUSTRY`)? Default: none; the drawing
+
+   RESPONSE: All three switches are in one logical detection block.  If the layout uses detectors on each, they need to be aggregated.
+
+14.  Is a hand-throw switch an appliance with a `CP` (Corporal 1 has `INDUSTRY`)? Default: none; the drawing
     owner knows.
+
+   RESPONSE: The industry switches are not ctc/dispatcher controlled, though they may well (will) be electrically operated devices with local fascia mounted controls that need to be integrated into the field unit's I/O connections.
 
 ## Decided since the proposal (owner, 2026-10-02)
 
-- The `Vital` field exists on `AUXILIARY` symbols only. A switch or a signal is vital by kind and
-  carries no such field.
+- The `Vital` field is a property of a control. It lives on the panel auxiliary symbols (`PanelMCall`,
+  `PanelAuxiliary`), never on a switch or signal lever (owner's response to request 4, 2026-10-02).
+  The plant and panel libraries will merge; the split is not meaningful.
 - A switch or signal marked non-vital on a drawing is a compiler **warning**: the attribute is
   ignored and the appliance is processed as vital. It is not an error.
 - What a drawer means by a "non-vital switch" or "non-vital signal" has a model already: a switch
@@ -797,3 +830,19 @@ and title `GilroyInterchange`, desk sheet `Gilroy Interchange`. The linker pairs
 whitespace, a rule that ADR 0001 D12 (amended) withdraws.
 
 The three options are in "Decision", "What names the interlocking". Recommendation: A.
+
+
+## Decisions from the owner's responses (2026-10-02)
+
+Requests 1, 2, 4 to 15 are decided as the RESPONSE text above states. In short: A, an `INTERLOCKING`
+symbol (1); read `Role`/`Kind` from the library, warn on a differing instance copy, and never key the
+compiler on a symbol name (2); `Vital` on the panel auxiliary symbols only (4); lamp entries are the
+`IndicationToken` list of tokens, a bare circuit name meaning its `K` token (5); the drawn
+transport/encoding structure of ADR 0001 D15 (6, 7); `NextCP` names the neighbor interlocking (8);
+the library gains `NextInterlocking` and accepts both until the schematics move (9); keep `Milepost`
+(10); `Route` deleted (11); locks share switch tokens for now, the electric lock procedure is deferred
+to `docs/review/ElectricLockProcedure.md`, unverified (12); panel style `LEVER` (13); switch 771's `TC`
+list is one logical detection block with aggregated detectors (14); industry switches are not
+dispatcher controlled and belong with the fascia/local control scope (15).
+
+Open: request 3, the `Kind` names of the policy markers (direction of traffic and signalling policy).

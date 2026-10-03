@@ -22,18 +22,85 @@ Answer each item with one line. The recommended default is the first option. "Q"
    schematic (`1SA`→`1SAT`, `2NAA`→`2NAAT`, and so on).
 
 4. Q9. Circuits with no switch and no signal: AAR `O<n>T` (`O1T`), or mnemonics (`IND`, `TK1`)? And do `HBD`, `TL`, `TR`, which are not track circuits, get their own kinds? Recommended: `O<n>T`, and own kinds.
+
+   RESPONSE: While not used in these South-cTc plans, the AAR scheme should be part of the layout designer documentation.  As with other specialized tokens, the semantic value associated with them should be minimal.  Where AAR has defined terminology, it should be documented and used.  The ones you mention were takeen from forum threads and may not be AAR...
+   HBD - hot box detector
+   TL/TR - left and right traffic indications
+
+   Arbitrary numbers with a zero prefix (0<n>T) are explicitly assigned to isolated or auxiliary track segments—such as plain stretch blocks, specialized detector circuits, or crossing approaches—where no switch points exist and no governing signal is directly attached
+
 5. Q5. Section letter: after the side (`784LAT`) or as a true prefix (`A784LT`)? Recommended: after the side.
+
+    RESPONSE: Not sure what is meant here.  Is it related to `/Users/jplocher/Dropbox/Arduino/libraries/FieldUnit/docs/reference/AAR. Signal Section. Circuit nomenclature, written circuits, and graphical symbols. 1946-10.pdf`?
+
 6. Q6. Crossover ends: both lettered (`815A`, `815B`) or base plus letter (`815`, `815A`)? Recommended: both lettered.
+
+    RESPONSE: For simple crossovers, base plus letter: (`815`, `815A`) and for doubles, (`815`, `815A`, `815B`, `815C`)
+    (`815D`) is used as a DERAIL reference, though with recent changes, I don't believe the "D" is still special
+
 7. Q10. Name of a hand-throw (non-interlocked) switch: milepost number like any switch? Recommended: milepost number. Corporal `SW901` and Sargent `SW3` now carry `1`.
+   
+   RESPONSE: Local non-dispatcher seen/controlled items usually don't have milepost names, but instead have arbitrary numbers with or without a zero prefix (0<n>T) or ([1..9]T)
+
 8. Q2. Signal tokens: keep `NGS/SGS/NGK/SGK` as FieldUnit wire names with a glossary note, or move to `LGS/RGS/LGK/RGK`? Recommended: decide separately; it is a code line API change.
-9. Q7. Dependent derail: keep `<switch>D` (`795D`)? Recommended: keep.
+
+    RESPONSE: local era/railroad/geography/policy dictates drawing, token and panel displays (W/E, N/S, L/R), our code uses L/R internally but keeps user-provided style.
+
+9.  Q7. Dependent derail: keep `<switch>D` (`795D`)? Recommended: keep.
+    RESPONSE: keep
+
 10. Q8. Are head letters A-E enough? Recommended: yes (the maximum in use is E, at GilroyCalTrain).
+    
+    RESPONSE: don't limit them.  All single letters should be usable.
+
 11. Q11. May a one-head signal omit its letter (`10R`, as AAR56 allows)? Recommended: no; always a letter.
+
+    RESPONSE: always a letter
+
 12. Q13. Keep maintainer call `MC<n>`, which has no period source? Recommended: keep, marked as FieldUnit.
+
+    RESPONSE:
+
+The Association of American Railroads (AAR) establishes standard technical guidelines, circuit nomenclature, and specifications for Maintainer Call (MC) systems used across North American railroads. [1, 2] 
+In standard AAR signal manuals and standard railroad plans (such as Conrail or ATSF design catalogs), the specific designation token for these systems is MC. [1, 3] 
+Here is how the AAR standards govern the levers, switches, and lamps for these systems:
+### 1. The AAR Token & Lamp Specifications (MC)
+
+* Nomenclature: On a signal circuit drawing or control board layout, a lamp designated as MC explicitly stands for Maintainer's Call. [1] 
+* AAR Bulb Standards: The AAR Signal Manual (specifically Part 91) categorizes bulbs by manufacturing dimensions, base styles, and filaments (such as those detailed under AAR drawings 1541, 1542, and 1543). [1] 
+* Physical Lamp Purpose: When a dispatcher activates the MC system, it lights a steady white or clear bulb inside a weatherproof housing mounted on the exterior wall of a wayside signal bungalow or relay house at an interlocking. [3, 4] 
+
+### 2. Control Machine Levers and Toggles
+On vintage Union Switch & Signal (US&S) or General Railway Signal (GRS) Centralized Traffic Control (CTC) machines, the maintainer call function is assigned a control interface directly beneath the track model board: [5] 
+
+* The Toggle Switch: Because maintainer calls do not require mechanical safety interlocking logic (they don't change track switches or clear trains), they do not use the large "Armstrong" or heavy rotary levers. Instead, they use small two-position toggle switches or push-buttons located on the console panel. [4, 5, 6] 
+* Operation Sequence: To signal a maintainer, the train dispatcher flips the field station's MC toggle switch to "ON" and hits the Code Start button to send a pneumatic or electronic code out to that field location. [4] 
+
+### 3. Indication Lamps on the Console
+
+* The Repeater Lamp: Right next to or directly below the field code buttons on the dispatcher's console, there is a small panel indication lamp. [4] 
+* AAR Classification: This is an AAR-standardized LL (Lever Light) or IND (Indication) lamp. It illuminates on the dispatcher's board to confirm that the code successfully went out and that the field MC light is actively burning on the wayside bungalow. [1, 4] 
+
+### Historic Context
+Before the widespread adoption of two-way locomotive and trackside radios, the Maintainer Call system was vital. While called a "Maintainer" call, railroad operating rulebooks typically mandated that any railroad employee (including conductors or engineers) who spotted a lit MC lamp on a wayside building had to immediately stop at the nearest wayside telephone box to contact the dispatcher. [3, 4] 
+
+[1] [https://multimodalways.org](http://multimodalways.org/docs/railroads/companies/CR/CR%20Standard%20Plans/CR%20CS-4000-6%204-15-1981.pdf)
+[2] [https://www.jonroma.net](https://www.jonroma.net/media/signaling/standards/na/aar/AAR.%20Signal%20Section.%20Circuit%20nomenclature%2C%20written%20circuits%2C%20and%20graphical%20symbols.%201946-10.pdf)
+[3] [https://www.trainorders.com](https://www.trainorders.com/discussion/read.php?11,4849511)
+[4] [https://ctcparts.com](http://ctcparts.com/?page_id=322)
+[5] [https://ctcparts.com](http://ctcparts.com/?page_id=322)
+[6] [https://forum.trains.com](https://forum.trains.com/t/interlocking-levers-how-did-they-work/143927)
+
+
+
+
 
 Questions not asked:
 
-- Q12 (staging yards of the Watsonville schematic) is withdrawn by the owner. Model-layout yards will be supported by the tooling later. The Watsonville schematic was excluded as of 2026-10-01; the owner changed it on 2026-10-02; to be re-checked.
+- Q12 (staging yards of the Watsonville schematic) was withdrawn by the owner. Model-layout yards will be supported by the tooling later. 
+  
+  RESPONSE: The Watsonville schematic has been updated and can now be rechecked.
+  
 - ADR 0001 D12 (as amended) answers any question about a `CP_` or `CP ` prefix and about normalizing names. A KiCad name has no prefix, a model board may add `CP ` for display, and a space becomes `-` in a topic or key. This ADR adds no prefix rule and no normalization.
 
 ## Principle (owner, 2026-10-02)
@@ -489,3 +556,16 @@ faults are independent of the grammar:
 
 - `PanelSignal` `838` has no plant signal of that number. Sargent's masts are `836…`.
 - `773T1` has no plant circuit of its own. GilroyCalTrain lists it inside switch 771's `TC` field.
+
+
+## Decisions from the owner's responses (2026-10-02)
+
+All questions are decided as the RESPONSE text above states: `0<n>T` (zero prefix) for isolated or
+auxiliary circuits, with the AAR scheme documented for designers; local items that the dispatcher does
+not see use arbitrary short numbers, not mileposts; crossovers are base plus letter (`815`, `815A`;
+a double to `815C`); `<switch>D` stays, so `D` remains reserved; any single letter names a head;
+always a letter; the code uses L and R internally and keeps the drawn style for tokens and panels;
+`MC<n>` is kept. Q5 is not needed while approach circuits keep their drawn names. The AAR claims for
+`MC`, `HBD`, `TL`/`TR` and the zero prefix are unverified until the 1946 AAR nomenclature document
+(`FieldUnit/docs/reference/AAR. Signal Section. Circuit nomenclature... 1946-10.pdf`, a scan with no
+text layer) is read. Awaiting the owner's acceptance of the ADR as recorded.
