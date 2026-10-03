@@ -1098,3 +1098,15 @@ Other answers:
   model carries auxiliaries (symbol ADR 0002), the linker reports every such difference as a
   diagnostic (`info` or `warning`, not `error`), so the owner sees it. The desk's hardware connections
   are read only by the linker; the plant compiler never sees the desk.
+
+## Tracking (2026-10-02)
+
+The code backlog in this document is now GitHub issues. This document keeps the history only.
+
+- FieldUnit-Subdivision: #17 desk compiler for ADR 0001 D15; #18 linker capacity and addresses; #19 linker
+  control-point-versus-column warning; #20 `station_key()`; #21 no-prefix name fix; #22 test keyed by
+  Value; #23 desk fixture refresh; #24 `TC` field and mast `CP`; #25 picture lane layout. Comments on #15
+  (Kind/Role replaces `Rulebook`; `layout.py:65`) and #16 (superseded; recommend closing).
+- FieldUnit: #18 control transaction classes (ADR 0002); #19 `approaching()` split; #20 time locking
+  without an approach circuit; #21 engine return stick; #22 `HAND_LOCKED` in route evaluation; #23
+  `TEK` lamp and out-of-correspondence output; #24 class rename.
