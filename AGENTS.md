@@ -109,6 +109,30 @@ FieldUnit `examples/spcoast_ctc` is a working placeholder and a possible
 template, not a constraint. The output form (runtime JSON, generated header, or
 full sketch) is still open. Propose options; do not pick one on your own.
 
+## Working agreements (owner, 2026-10-01 to 03)
+
+- **Order of authority.** (1) The relay model of the interlocking logic and AAR practice: the design
+  principle (`FieldUnit/docs/GLOSSARY.md` section 10.6). (2) FieldUnit `src/`: where it differs from
+  (1), the code has a defect. (3) KiCad-derived interlocking models. (4) Legacy sketches and
+  XML-harvested profiles: evidence only, never a reference. Never rewrite a principle to match weaker
+  code; file the difference as a code defect.
+- **Vocabulary.** `FieldUnit/docs/GLOSSARY.md` is the source of truth. Use its terms exactly. Its
+  section 11 lists retired terms. Decisions live in `docs/adr/`; `docs/adr/README.md` is the index.
+- **Facts, not symbols.** A rule that reads "is there a symbol on this sheet" is a placeholder for a
+  fact that lives elsewhere. Find the fact (ADR 0001 D15).
+- **Proposals are ADRs.** Anything that needs the owner's decision goes in `docs/adr/` as a proposed
+  ADR that opens with the decisions requested, one line each, with a default. Keep records and
+  spikes out of `docs/review/`; they go to `docs/archive/` when superseded.
+- **Baseline before editing.** The owner's design drafts are in scope and collaborative. Commit the
+  current version before changing one, so the change is an auditable diff.
+- **Watsonville.** Its schematic was incomplete until 2026-10-02. Re-check before citing a count or a
+  rule derived from it.
+- **Briefing agents.** State the order of authority. Do not say "document what the code does" for
+  interlocking logic. Do not name a legacy sketch as the reference. Exclude evidence the owner has
+  ruled out. Ask for one consolidated list of pending decisions back, not a narrative.
+- **Goldens.** A frozen golden encodes facts that go stale (the desk fixture, title blocks, the
+  `0x25` lookup). Prefer behavioural gates; when a golden must change, change it in its own commit.
+
 ## Design rules
 
 - Abstraction and DRY violations in existing code are debt, not precedent. Do not copy them into new code or treat them as conventions. Examples today:
