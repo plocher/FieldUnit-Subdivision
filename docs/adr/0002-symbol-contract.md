@@ -845,4 +845,13 @@ to `docs/review/ElectricLockProcedure.md`, unverified (12); panel style `LEVER` 
 list is one logical detection block with aggregated detectors (14); industry switches are not
 dispatcher controlled and belong with the fascia/local control scope (15).
 
-Open: request 3, the `Kind` names of the policy markers (direction of traffic and signalling policy).
+Request 3 (decided 2026-10-03): the policy marker `Kind` uses Standard Code rule numbers, because the
+markers name truths the Standard Code defines and SPCoast models a 1942-1985 SP railroad; the GCOR
+equivalent goes in the description. `RULE_251`, `RULE_261`, `RULE_93` (yard limits; PRR 1956 text
+confirmed; GCOR 6.13). The Standard Code number for movement on other than main track (GCOR 6.28) is
+to be confirmed by the owner from the SP book. Standard Code numbering varied by road; the SP's own
+rulebook is the final reference for SPCoast.
+
+Request 14, read in the data model: switches 771, 773, 775 share ONE OS track circuit. The `TC` field
+on each names that one circuit. The three physical detectors are inputs on the field I/O side, OR'd
+into the one `TrackCircuit`; they are not plant-model entities. Capacity: one office indication.
