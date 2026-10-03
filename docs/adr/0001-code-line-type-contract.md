@@ -245,16 +245,23 @@ Drawn and verified in the South-cTc netlist on 2026-10-02.
   transport addresses stations (506 step address; C/MRI UA; LocoNet address), capacity fields where
   the type needs them (`ControlBytes`, `IndicationBytes` for BITS), and an optional `Chart` naming
   an authored code chart file (D11).
-- On the AAR token encoding the instance carries `Station` only. The generator appends the station
-  name to the transport's topic root, with each space replaced by `-`.
-- The `CODELINE` symbol is retired. A sheet with no encoding instance has no drawn code line and
-  the virtual target only (D13).
+- On the AAR token encoding no instance is needed: the generator appends the interlocking's name to
+  the transport's topic root, with each space replaced by `-`. An instance with `Station` is allowed
+  and adds nothing.
+- The `CODELINE` symbol is retired.
+- Availability of a target (owner, 2026-10-02): a code line target is available for an interlocking
+  when every fact its type definition needs is present, wherever it is drawn. AAR over MQTT needs the
+  broker, the topic root and the interlocking's name, so it is available for every interlocking with
+  nothing on its sheet. US&S 506 needs a station address, so it needs station instances on the sheet.
+  Virtual needs nothing. The absence of a symbol is not a fact. An interlocking is kept off a
+  transport only by an explicit, drawn exclusion, if that is ever needed. Rules that read the
+  presence of a symbol on a sheet ("exactly one code line symbol", "empty sheet defaults to
+  VIRTUAL", "no encoding means virtual only") are obsolete.
 - Cardinality: CTC machine 1 : N code lines (transports); code line 1 : N field stations (encoding
   instances); interlocking 1 : N field stations.
 - Luchessa as drawn: `TIMECODE` carries `Luchessa` 5, `Gilroy` 6, `Carnadero` 7; `MQTT` carries
   `Luchessa`; `CMRInet` carries `Luchessa` 30 (8 + 8 bytes); `Loconet` carries `Luchessa` 7D:30.
-- Migration: the six other sheets still carry the old `Codeline-MQTT` symbol; each becomes one
-  `Encoding-AAR` instance on the `MQTT` label. The desk compiler must read transports from the root,
+- Migration: the six other sheets still carry the old `Codeline-MQTT` symbol; delete them. The desk compiler must read transports from the root,
   stations from the sheets, and the pairing from the label nets; its "exactly one code line symbol
   for each sheet" rule goes.
 
