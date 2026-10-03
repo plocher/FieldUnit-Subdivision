@@ -33,6 +33,9 @@ _NATURAL_PARTS_RE = re.compile(r"(\d+)")
 _PIN_C = "1"
 _PIN_N = "2"
 _PIN_R = "3"
+# A derail has two track pins. Pin 2 is the through path, which is the derail's
+# REVERSE (clear) position. NORMAL is the derailing position and has no track pin.
+_PIN_DERAIL_R = "2"
 
 _SWITCH_KINDS = frozenset({EntityKind.SWITCH_POWERED, EntityKind.SWITCH_LOCK})
 _DERAIL_KINDS = frozenset({EntityKind.DERAIL})
@@ -962,8 +965,8 @@ class _TrackTopology:
                 out.append((c, f"switch:{sw_name}:R", {}))
         elif ent and ent.kind in _DERAIL_KINDS:
             if pin == _PIN_C:
-                out.append((self._port(ref, _PIN_N), f"derail:{ent.canonical_name}", {}))
-            elif pin == _PIN_N:
+                out.append((self._port(ref, _PIN_DERAIL_R), f"derail:{ent.canonical_name}", {}))
+            elif pin == _PIN_DERAIL_R:
                 out.append((self._port(ref, _PIN_C), f"derail:{ent.canonical_name}", {}))
         seen: set[str] = set()
         uniq: list[tuple[str, str, dict[str, str]]] = []
@@ -1017,8 +1020,8 @@ class _TrackTopology:
                     out.append((c, f"switch:{sw_name}:R", delta))
         elif ent and ent.kind in _DERAIL_KINDS:
             if pin == _PIN_C:
-                out.append((self._port(ref, _PIN_N), f"derail:{ent.canonical_name}", {}))
-            elif pin == _PIN_N:
+                out.append((self._port(ref, _PIN_DERAIL_R), f"derail:{ent.canonical_name}", {}))
+            elif pin == _PIN_DERAIL_R:
                 out.append((self._port(ref, _PIN_C), f"derail:{ent.canonical_name}", {}))
 
         seen: set[str] = set()

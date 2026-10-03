@@ -303,6 +303,24 @@ class PlantGraphCompilerTests(unittest.TestCase):
             },
         )
 
+    def test_route_through_derail_requires_reverse(self) -> None:
+        """Prototype polarity: a derail is clear in REVERSE; NORMAL derails."""
+        from types import SimpleNamespace
+
+        from plant_graph.model import _route_alignments
+
+        route = SimpleNamespace(
+            switch_alignments=(("795", "R"),),
+            derail_requirements=("795D",),
+        )
+        self.assertEqual(
+            _route_alignments(route),
+            [
+                {"appliance": "795", "position": "REVERSE"},
+                {"appliance": "795D", "position": "REVERSE"},
+            ],
+        )
+
     def test_projects_dependent_derail_from_d_suffix_value(self) -> None:
         self.netlist.components["SW795"] = NetlistComponent(
             "SW795",
@@ -316,7 +334,7 @@ class PlantGraphCompilerTests(unittest.TestCase):
             reference_prefix="DERAIL",
             pins=(
                 SymbolPin("1", "C", "passive"),
-                SymbolPin("2", "N", "passive"),
+                SymbolPin("2", "R", "passive"),
             ),
         )
         self.netlist.components["DERAIL795"] = NetlistComponent(

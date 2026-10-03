@@ -103,7 +103,7 @@ def validate_interlocking_plant_model(
     endpoint_ids.update(
         f"derail:{derail_id}:{port}"
         for derail_id in derail_ids
-        for port in ("C", "N")
+        for port in ("C", "R")
     )
 
     groups_by_member: dict[str, dict[str, Any]] = {}
@@ -690,7 +690,7 @@ def _endpoint_id(
         if port:
             return f"switch:{entity.canonical_name}:{port}"
     if entity.kind is _DERAIL_KIND:
-        port = {"1": "C", "2": "N"}.get(pin)
+        port = {"1": "C", "2": "R"}.get(pin)
         if port:
             return f"derail:{entity.canonical_name}:{port}"
     return None
@@ -759,7 +759,7 @@ def _route_alignments(route: Any) -> list[dict[str, str]]:
     alignments.extend(
         {
             "appliance": derail,
-            "position": "NORMAL",
+            "position": "REVERSE",
         }
         for derail in route.derail_requirements
     )
