@@ -7,14 +7,14 @@ One list of what is decided and what waits for the owner. Each proposed ADR open
 
 | ADR | Subject | Asked of the owner |
 |---|---|---|
-| FieldUnit `docs/adr/0002-control-transaction-classes.md` | How a field unit processes a control transaction: a malformed one is ignored as a whole; an unsafe one has every first-class control ignored together | Approve the two rules. Choose the class names: vital / non-vital, or interlocked / auxiliary. |
-| [0002](0002-symbol-contract.md) | What each KiCad symbol records | The numbered list at the top of the ADR. First: what names the interlocking. |
-| [0003](0003-name-grammar.md) | One grammar for the names of appliances, signals and track circuits | The numbered list at the top of the ADR. Nothing is renamed until it is accepted. |
+| [0002](0002-symbol-contract.md) | What each KiCad symbol records | Final review: 17 decisions folded from the owner's responses; three open items (O1-O3). Accept, or amend. |
+| [0003](0003-name-grammar.md) | One grammar for the names of appliances, signals and track circuits | Final review: 14 decisions folded from the owner's responses; three open items; six items to validate against the 1946 AAR scan (FieldUnit #26). Nothing is renamed until accepted. |
 
 ## Accepted
 
 | ADR | Subject | Date |
 |---|---|---|
+| FieldUnit `docs/adr/0002-control-transaction-classes.md` | A malformed transaction is ignored as a whole; an unsafe one voids every vital control; classes are vital and non-vital | 2026-10-02 |
 | [0001](0001-code-line-type-contract.md) | The code line type contract: encoding on transport, one code chart for each field station, authored addresses, data-file definitions, first target AAR tokens over MQTT | 2026-10-01, amended 2026-10-02 |
 | FieldUnit `docs/adr/0001-mqtt-aar-codeline-interface-a.md` | MQTT broker and AAR tokens for the code line interface | 2026-09-12 |
 
