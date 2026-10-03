@@ -25,23 +25,53 @@ Already decided by the owner (2026-10-02), so not asked:
 
 Asked:
 
-1. Interlocking name: which symbol or field names the interlocking? Options: A, an `INTERLOCKING` symbol;
-   B, a field on `MAIN HOUSE`; C, the title block. Default: A.
+1. Interlocking name: which symbol or field names the interlocking? Options: 
+   A. an `INTERLOCKING` symbol;
+   B. a field on `MAIN HOUSE`
+   C. the title block. 
+   Default: A.
+
+   RESPONSE: Agreed: A
+   B fails when there are multiple MAIN HOUSE symbols
+   C fails becaus title blocks are not authorative parts of the schematic/data model
+
 2. Read `Role` and `Kind` from the library by `lib_id`, and only warn on instance copies that differ? Options:
    yes, no. Default: yes.
+
+   RESPONSE: Agreed: warn when symbols don't match library Kind and Role.
+   Disagreement means someone was trying to do something different, and we need to understand their problem better...
+
+   Tied to this: making a new symbol with an existing KIND/ROLE and the same pin naming/count shoul dbe transparent to the compiler.  Saying another way, the names of the symbols should not be special/hardcoded into the compiler.
+
 3. Policy marker `Kind` names: by meaning (`SIGNALED_ONE_DIRECTION`, `SIGNALED_BOTH_DIRECTIONS`,
    `YARD_LIMITS`, `NOT_SIGNALED`) or by one rulebook (which)? Default: by meaning.
+
+   RESPONSE: Is this a reference to the direction of traffic?
+   NEED MORE INFO TO RESPOND
+
 4. Where does the `Vital` field (the control class) live? Options: on the plant `AUXILIARY` symbol (moved from the panel
    symbols), or stay on the panel symbols. Default: on `AUXILIARY`. The class names (vital, non-vital) and the field `Vital` come
    from FieldUnit ADR 0002 (control transaction classes).
+
+   RESPONSE: These can only apply to **controls**, which makes them panel appliance attributes and not hardware I/O attributes.  
+   This implies that PanelAuxiliary is the correct symbol, not the AUXILIARY lamp...
+   Further, the attribute does not apply to signal and switch levers; only to auxiliary functions such as MCall and PanelAuxiliary...
+
+   I hear a distinction between "plant" and "panel" symbols that should not exist - these symbols will merge into one library soon, and their names should not matter...
+
 5. Lamp entries: office indication names (`795T1K`, `MC1K`) or appliance names (`795T1`, `MC1`)?
+   
    Default: office indication names.
+
+   RESPONSE:  The attribute `IndicationToken` exists for exactly this purpose.  It is a comma separated list of tokens...
+   The lamp appliances don't generally have VALUES that are unique...
+   
 6. Addresses on `CODELINE`: one field per field station (`Address Gilroy`) or one list field (`Addresses`)?
    Default: one field per field station.
 7. Encoding and transport symbols: once per code line on the root sheet (global label), or on every sheet?
    Default: once per code line on the root sheet.
 8. `NextCP` Value: the neighbor interlocking or the neighbor control point? Default: the neighbor interlocking.
-9. Rename `NextCP` / `NEXT_CP` to `NextInterlocking` / `NEXT_INTERLOCKING`: yes or no? Default: yes (optional).
+9.  Rename `NextCP` / `NEXT_CP` to `NextInterlocking` / `NEXT_INTERLOCKING`: yes or no? Default: yes (optional).
 10. `MAIN HOUSE` `Milepost`: keep as the geographic order of control points, or remove? Default: keep.
 11. Remove the unread `Route` symbol: yes or no? Default: yes.
 12. Does a lock lever carry `NWK` and `RWK` as well as `WLS` and `WLK`? Default: `WLS` and `WLK` only until
@@ -62,6 +92,16 @@ Asked:
   the interlocking does not control is dark track; a signal that is not interlocked is an
   `AUXILIARY` lamp; relaxed checks for test or maintenance are the maintainer role, a run-time
   mode, not a drawn attribute.
+
+## Prototype adopted (owner, 2026-10-02)
+
+The owner drew the code line symbols on the South-cTc Luchessa sheet: `Codeline` (pin `Transports`),
+`Codeline-Transport-MQTT` and `Codeline-Transport-TimeCode` (pins `Codeline`, `Encoding`),
+`Codeline-Encoding-AAR` and `Codeline-Encoding-US&S-506` (pin `Encoding`). The netlist shows the
+graph complete. ADR 0001 D13 and D15 are amended to this shape. Requests 6 and 7 are answered:
+addresses are one field for each field station on the encoding instance; the symbols sit on the
+sheet of the interlocking. Open on the prototype: the Value "USS Type L Form 506" ("Type L" and
+"Form 506" have no source) and the ATCS description on `Codeline-Encoding-AAR`.
 
 ## Context
 

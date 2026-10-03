@@ -200,10 +200,14 @@ This choice is provisional: build one worked example, and change it if tables ar
   `Luchessa` then have the same name. They differ by kind only. Today the two are kept apart by the
   prefix (AGENTS.md "Naming"; FieldUnit test `testStationLookupFoldsCaseOnly`).
 
-### D13. Authored addresses live on the `CODELINE` symbol
+### D13. Authored addresses live on the encoding instance (amended 2026-10-02)
 
-- The addresses of a code line's field stations are fields of the `CODELINE` symbol for that code
-  line, on that sheet.
+- An address exists only for an encoding with station selection (US&S 506). The addresses of that
+  code line's field stations are fields of that encoding instance, one field for each field station
+  (`Luchessa`, `Gilroy`, `Carnadero` on `Encoding2`). A new field station is a new field.
+- On the AAR token encoding the topic is the address. `Transport-MQTT` carries `Station`
+  (`${SHEETNAME}`, the interlocking) and `Topic`; a space in the name becomes `-`.
+- The first form (fields on the `CODELINE` symbol) is withdrawn.
 - The generator fails for a target when it lacks the facts to make useful output. The missing symbol
   is not itself the fault. A US&S 506 target needs authored addresses, so it needs a `CODELINE` symbol
   that carries them.
@@ -215,11 +219,18 @@ This choice is provisional: build one worked example, and change it if tables ar
 - A US&S 506 code line is left for later. Nothing in the model or the code may rule it out.
 - The CODE button workaround for Luchessa (D9) is not chosen now.
 
-### D15. The `CODELINE` symbol has two pins
+### D15. The `CODELINE` symbol, transports and encodings (amended 2026-10-02 from the owner's prototype)
 
-- One pin takes an encoding symbol. The other takes a transport symbol.
-- Each encoding and each transport is a one-pin symbol with its own fields.
-- The designer connects one of each to the `CODELINE` symbol. Each combination is drawn the same way.
+- One `CODELINE` symbol on a sheet is the interlocking's code line attachment. It has one pin, `Transports`.
+- Each transport is a symbol with two pins: `Codeline`, wired to the `CODELINE` symbol, and `Encoding`.
+- Each encoding is a symbol with one pin, wired to the `Encoding` pin of one transport.
+- One transport with its encoding is one code line type (D1). Several transports on one `CODELINE`
+  are several targets for the same interlocking (D6).
+- Roles: `CODELINE`, `CODELINE_TRANSPORT`, `CODELINE_ENCODING`. `Kind` names the type definition
+  (`MQTT`, `TIMECODE`; `AAR`, `USS506`).
+- Prototype: South-cTc, Luchessa sheet: `CODELINE1` with `Transport-MQTT` + `Encoding-AAR` and
+  `Transport-TimeCode` + `Encoding-US&S-506`. Verified in the netlist on 2026-10-02.
+- The earlier form (one `CODELINE` with one encoding pin and one transport pin) is withdrawn.
 
 ### D16. Size limits: each phase checks what it can see
 
