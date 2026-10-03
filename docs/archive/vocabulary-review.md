@@ -7,7 +7,7 @@ Scope read in full:
 
 - FieldUnit: `docs/GLOSSARY.md` (including the uncommitted §1.4), `docs/AAR_SIGNALING_PRIMER.md`,
   `docs/CTC_SUBDIVISION_AND_PLANT_DESIGN.md`, `docs/how-to/01`–`05`, `docs/tutorials/01`–`03`, `README.md`.
-- FieldUnit-Subdivision: `docs/review/ontology.md` (rev 4), `README.md`.
+- FieldUnit-Subdivision: `docs/design/ontology.md` (rev 4), `README.md`.
 
 Not read: `CONTROL_POINT_ARCHITECTURE.md`, `FIELDUNIT_STUDIO_DESIGN_SPEC.md`, the ADR, the two reference PDFs.
 

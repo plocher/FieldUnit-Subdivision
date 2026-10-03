@@ -23,15 +23,15 @@ One list of what is decided and what waits for the owner. Each proposed ADR open
 | Document | What changed |
 |---|---|
 | FieldUnit `docs/GLOSSARY.md` | Rewritten. Source of truth for terms. |
-| `docs/review/ontology.md` (rev 5) | Rewritten by facet. |
-| `docs/review/layout-model.md` (rev 8), `layout-model-plan.md` (rev 3) | Aligned with ADR 0001. Key names `controlPoints`, `fieldStations` are proposals. |
-| `docs/review/desk-codeline-kicad-pattern.md` | Aligned with ADR 0001. |
+| `docs/design/ontology.md` (rev 5) | Rewritten by facet. |
+| `docs/design/layout-model.md` (rev 8), `layout-model-plan.md` (rev 3) | Aligned with ADR 0001. Key names `controlPoints`, `fieldStations` are proposals. |
+| `docs/design/desk-codeline-kicad-pattern.md` | Aligned with ADR 0001. |
 
 ## Records (not for decision)
 
-- `docs/review/vocabulary-review.md`: findings, eleven iterations of decisions, the plan, the code backlog.
-- `docs/review/vocabulary-sources.md`: what is and is not sourced.
-- `docs/review/spike-cp-membership.md`: the interlocking limits can be derived from signals; control points are declared.
+- `docs/archive/vocabulary-review.md`: findings, eleven iterations of decisions, the plan, the code backlog.
+- `docs/archive/vocabulary-sources.md`: what is and is not sourced.
+- `docs/archive/spike-cp-membership.md`: the interlocking limits can be derived from signals; control points are declared.
 
 ## Not yet written
 

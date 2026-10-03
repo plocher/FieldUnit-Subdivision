@@ -11,7 +11,7 @@ This note is **Subdivision-local**: what the spike implements, what Luchessa pro
 | FieldUnit `docs/CTC_SUBDIVISION_AND_PLANT_DESIGN.md` (Arduino/libraries/FieldUnit) | Normative design layer: GCOR CTC frame, static vs dynamic clocks, faces, route ends, DoT placeholders, ABS/tumble-down, naming, indication solve sketch |
 | FieldUnit `docs/AAR_SIGNALING_PRIMER.md` | Bungalow / vital logic (HR, DR, locking, CodeLine) |
 | `docs/review/kicad-as-plant-design-editor.pdf` | Spike motivation: schematic as plant design editor |
-| `docs/review/TBD-shared-kicad-python-api.md` | Later lift of `tools/kicad_services/` toward jBOM / shared KiCad API |
+| `docs/archive/TBD-shared-kicad-python-api.md` | Later lift of `tools/kicad_services/` toward jBOM / shared KiCad API |
 
 If this note and the FieldUnit CTC document disagree, **prefer the FieldUnit document** for domain rules, then fix this note.
 ## Glossary

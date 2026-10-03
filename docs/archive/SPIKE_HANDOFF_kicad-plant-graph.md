@@ -36,7 +36,7 @@ Requires: Python 3.10+, `sexpdata`, local jBOM at `~/Dropbox/KiCad/jBOM/src`
 ## Design locks
 
 - Normative domain: FieldUnit `docs/CTC_SUBDIVISION_AND_PLANT_DESIGN.md`
-- Spike map: `docs/review/ctc-subdivision-design-layer.md`
+- Spike map: `docs/archive/ctc-subdivision-design-layer.md`
 - Static enum ≠ dynamic eval. Routes are equations; occupancy/switches solve them later.
 - Route ends: `dead_end` | `cp_limit` (DoT stub for next CP) | `next_face` (same direction of travel).
 - Faces are direction-sensitive (e.g. industry dwarf ends outbound only).

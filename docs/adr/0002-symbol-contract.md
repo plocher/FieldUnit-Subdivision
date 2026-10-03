@@ -6,7 +6,7 @@
 Not committed. This ADR changes no library, schematic or code by itself. The owner changed the
 libraries while it was open (see Findings).
 
-Terms: FieldUnit `docs/GLOSSARY.md`; ADR 0001 (D1–D16, amended 2026-10-02); `docs/review/vocabulary-review.md`
+Terms: FieldUnit `docs/GLOSSARY.md`; ADR 0001 (D1–D16, amended 2026-10-02); `docs/archive/vocabulary-review.md`
 iterations 9–11; `ontology.md` rev 5; `layout-model.md` rev 8; `desk-codeline-kicad-pattern.md`.
 The class of a control (the `Vital` field) is the subject of FieldUnit `docs/adr/0002-control-transaction-classes.md`
 (accepted 2026-10-02). That ADR names the classes: vital and non-vital. The field is `Vital`.
@@ -75,7 +75,7 @@ the owner on 2026-10-03. D4 and D5 were decided before the requests.
 - D14. Lock levers (request 12). Locks and switches carry the same AAR tokens, controls and
     indications, for simplicity; the prototype crew, dispatcher and field coordination is ignored.
     `PanelLock` keeps the switch pins. A correct electric lock needs more structure and vocabulary, a
-    large task that is deferred; `docs/review/ElectricLockProcedure.md` is a lead, not a reference.
+    large task that is deferred; `docs/design/ElectricLockProcedure.md` is a lead, not a reference.
 - D15. Panel style (request 13). The panel style value is `LEVER`.
 - D16. Logical detection block (request 14, settled 2026-10-03). A `TC` field holds one track circuit
     name or a list; a list names a logical detection block. Each listed circuit is a track circuit with
@@ -613,7 +613,7 @@ Asked:
 
    RESPONSE: Currently, locks and switches carry the SAME AAR tokens (both control and indication) for simplicity - the prototypical crew/dispatcher/field coordination is ignored.
 
-   In order to "do" electric locks correctly, we need more structure and vocabulary, which is a large scoped task that I'm not sure we're ready for in this session.  I've captured it in `docs/review/ElectricLockProcedure.md` for reference.
+   In order to "do" electric locks correctly, we need more structure and vocabulary, which is a large scoped task that I'm not sure we're ready for in this session.  I've captured it in `docs/design/ElectricLockProcedure.md` for reference.
 
 
 12.  Spelling of the SPCoast panel style value (for example `LEVER`)? Default: `LEVER`.

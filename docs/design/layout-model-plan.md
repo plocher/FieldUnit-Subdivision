@@ -10,7 +10,7 @@ rev 5.
 ## Revision (2026-10-02, rev 3)
 
 Sources: `docs/adr/0001-code-line-type-contract.md` (accepted, D1–D16),
-`docs/review/ontology.md` rev 5, `vocabulary-review.md` iterations 8–10.
+`docs/design/ontology.md` rev 5, `vocabulary-review.md` iterations 8–10.
 
 2026-10-02 (iteration 11): proxy names, MAIN HOUSE required, machine type kept as panel style, operator roles, topic normalization
 

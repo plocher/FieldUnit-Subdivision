@@ -42,7 +42,7 @@ it to one of them (drawn values, from the model golden):
 - The CTC machine has one CODE button for the three columns.
 - Luchessa is one interlocking with three control points (owner, 2026-10-01). Each `MAIN HOUSE` symbol
   declares one control point and its bungalow. The `CP` field assigns an appliance to a control point.
-- Spike S3 (`docs/review/spike-cp-membership.md`) found that the signals alone give the interlocking
+- Spike S3 (`docs/archive/spike-cp-membership.md`) found that the signals alone give the interlocking
   limits (one piece for Luchessa), not the control points. The assignment to control points is a drawn
   fact. Two drawn values disagree with the track graph (784WA, 1NA). The desk lamp for 1NA
   is in column 6 (CP Gilroy) while its `CP` field says CP Carnadero.
