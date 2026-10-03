@@ -200,7 +200,7 @@ This choice is provisional: build one worked example, and change it if tables ar
   `Luchessa` then have the same name. They differ by kind only. Today the two are kept apart by the
   prefix (AGENTS.md "Naming"; FieldUnit test `testStationLookupFoldsCaseOnly`).
 
-### D13. Field stations are drawn as encoding instances; the address is a field on each (amended 2026-10-02, second time)
+### D13. Field stations are drawn as encoding instances; the address is a field on each (final form in D15)
 
 - An encoding that selects stations (US&S 506) is drawn once for each field station. Each instance
   is wired to the `Encoding` pin of its transport. The instance carries:
@@ -226,18 +226,37 @@ This choice is provisional: build one worked example, and change it if tables ar
 - A US&S 506 code line is left for later. Nothing in the model or the code may rule it out.
 - The CODE button workaround for Luchessa (D9) is not chosen now.
 
-### D15. The `CODELINE` symbol, transports and encodings (amended 2026-10-02 from the owner's prototype)
+### D15. Code lines on the root sheet, field stations on the interlocking sheets (final form, 2026-10-02)
 
-- One `CODELINE` symbol on a sheet is the interlocking's code line attachment. It has one pin, `Transports`.
-- Each transport is a symbol with two pins: `Codeline`, wired to the `CODELINE` symbol, and `Encoding`.
-- Each encoding is a symbol with one pin, wired to the `Encoding` pin of one transport.
-- One transport with its encoding is one code line type (D1). Several transports on one `CODELINE`
-  are several targets for the same interlocking (D6).
-- Roles: `CODELINE`, `CODELINE_TRANSPORT`, `CODELINE_ENCODING`. `Kind` names the type definition
-  (`MQTT`, `TIMECODE`; `AAR`, `USS506`).
-- Prototype: South-cTc, Luchessa sheet: `CODELINE1` with `Transport-MQTT` + `Encoding-AAR` and
-  `Transport-TimeCode` + `Encoding-US&S-506`. Verified in the netlist on 2026-10-02.
-- The earlier form (one `CODELINE` with one encoding pin and one transport pin) is withdrawn.
+Drawn and verified in the South-cTc netlist on 2026-10-02.
+
+- The `CtcMachine` symbol has a pin `Transports`. Every code line of the machine is a transport
+  symbol (`CODELINE_TRANSPORT`) on the root sheet, wired to that pin. A transport carries only its
+  link parameters: `Broker` and the topic root `ctc/${Railroad}/codeline` for MQTT; `Port` and
+  `Baud` for CMRInet; `Port` for LocoNet; nothing for the time code line. One transport instance is
+  one code line, shared by every interlocking on it.
+- Each transport's `Encoding` pin is on a global label named for it (`MQTT`, `TIMECODE`, `CMRInet`,
+  `Loconet`). The label is the code line's net across sheets.
+- Each interlocking sheet holds its field stations only: encoding instances (`CODELINE_ENCODING`),
+  one for each field station, each wired to the global label of the code line it rides. The sheet
+  path gives the interlocking.
+- The encoding instance carries the station facts: `Station` (the control point name on a
+  station-selecting encoding; the interlocking name otherwise), `Address` when the encoding or
+  transport addresses stations (506 step address; C/MRI UA; LocoNet address), capacity fields where
+  the type needs them (`ControlBytes`, `IndicationBytes` for BITS), and an optional `Chart` naming
+  an authored code chart file (D11).
+- On the AAR token encoding the instance carries `Station` only. The generator appends the station
+  name to the transport's topic root, with each space replaced by `-`.
+- The `CODELINE` symbol is retired. A sheet with no encoding instance has no drawn code line and
+  the virtual target only (D13).
+- Cardinality: CTC machine 1 : N code lines (transports); code line 1 : N field stations (encoding
+  instances); interlocking 1 : N field stations.
+- Luchessa as drawn: `TIMECODE` carries `Luchessa` 5, `Gilroy` 6, `Carnadero` 7; `MQTT` carries
+  `Luchessa`; `CMRInet` carries `Luchessa` 30 (8 + 8 bytes); `Loconet` carries `Luchessa` 7D:30.
+- Migration: the six other sheets still carry the old `Codeline-MQTT` symbol; each becomes one
+  `Encoding-AAR` instance on the `MQTT` label. The desk compiler must read transports from the root,
+  stations from the sheets, and the pairing from the label nets; its "exactly one code line symbol
+  for each sheet" rule goes.
 
 ### D16. Size limits: each phase checks what it can see
 

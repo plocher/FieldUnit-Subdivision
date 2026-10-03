@@ -95,6 +95,11 @@ Asked:
 
 ## Prototype adopted (owner, 2026-10-02)
 
+Final form (later on 2026-10-02): transports on the root sheet on the `CtcMachine` `Transports` pin,
+global labels as the code line nets, field stations as encoding instances on the interlocking sheets,
+`CODELINE` retired. See ADR 0001 D15. The `CtcMachine` symbol gains the pin `Transports`.
+
+
 The owner drew the code line symbols on the South-cTc Luchessa sheet: `Codeline` (pin `Transports`),
 `Codeline-Transport-MQTT` and `Codeline-Transport-TimeCode` (pins `Codeline`, `Encoding`),
 `Codeline-Encoding-AAR` and `Codeline-Encoding-US&S-506` (pin `Encoding`). The netlist shows the
