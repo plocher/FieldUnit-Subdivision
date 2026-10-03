@@ -3,10 +3,10 @@
 Operating-session runtime and virtual railroad simulator for the
 [FieldUnit](https://github.com/plocher/FieldUnit) ecosystem.
 
-`FieldUnit-Subdivision` connects multiple FieldUnit Interlocking Plants into one
+`FieldUnit-Subdivision` connects multiple FieldUnit interlocking plants into one
 operating territory. It combines live track-circuit state, train progression,
 optional NPC traffic, crew interfaces, and an overhead model board. The physical
-dispatcher cTc machine remains the supervisory control source.
+dispatcher CTC machine remains the supervisory control source.
 
 ## Ecosystem map
 
@@ -25,10 +25,10 @@ Portable InterlockingPlantModel
   schemas/interlocking-plant/v1.json
         |
         v
-FieldUnit plant JSON projection
+FieldUnit interlocking model projection
   tools/plant_graph/fieldunit_projection.py
         |
-        +--> FieldUnit InterlockingPlant (vital safety)
+        +--> FieldUnit interlocking logic, `InterlockingPlant` (vital safety)
         |
         v
 Subdivision runtime consumers
@@ -37,10 +37,10 @@ Subdivision runtime consumers
 
 | Layer | Owns | Does not own |
 | --- | --- | --- |
-| **KiCad + Railroad library** | Human plant design, topology drawing, title-block metadata | Runtime state, MQTT, desk wiring |
+| **KiCad + Railroad library** | Human interlocking plant design, topology drawing, title-block metadata | Runtime state, MQTT, desk wiring |
 | **Plant graph compiler** | Source parse, diagnostics, route harvest, board picture inputs | FieldUnit execution payload |
-| **Portable model** | Editor-neutral plant definition and static route equations | KiCad refs, runtime occupancy, desk columns |
-| **FieldUnit projection** | Map into FieldUnit plant JSON (switches, derails, OS, routes) plus deferred facts | Reinterpretation of routes at runtime |
+| **Portable model** | Editor-neutral interlocking model and static route equations | KiCad refs, runtime occupancy, desk columns |
+| **FieldUnit projection** | Map into the FieldUnit interlocking model JSON (switches, derails, OS, routes) plus deferred facts | Reinterpretation of routes at runtime |
 | **Subdivision runtime** | Hosting plants, train progression, board/crew views | Vital safety rules (those stay in FieldUnit) |
 
 Design detail lives in:
@@ -51,26 +51,39 @@ Design detail lives in:
 
 ## Domain boundaries
 
-- **Interlocking Plant**: Field safety entity. Track junction, appliances, routes,
-  and vital rules. Independent of the shelter that holds the equipment.
-- **Controlled Point / Line Station**: Addressable supervisory unit on the
-  CodeLine. Capacity follows the coding system (US&S step codes, GRS, NX, or
-  electronic transports).
+- **Interlocking plant**: Field safety entity. Track junction, appliances, routes,
+  and vital rules. Independent of the bungalow that holds the equipment.
+- **Control point**: The place where signals are controlled.
+- **Field station**: Addressable unit on the code line. Capacity follows the code
+  line type (US&S 506 time code, GRS, NX, or electronic transports).
 - **Panel Column**: Physical modular slice of the office console. On the SPCoast
-  US&S Model 503, one column is one 15-step controlled point.
-- **Naming**: an interlocking (`Luchessa`) and one of its controlled points
-  (`CP Luchessa`) may share a base name. Interlockings never carry the `CP`
-  prefix; controlled points always do. Names are case-preserved when produced
-  and compared case-insensitively when consumed. The MQTT CodeLine is keyed by
-  interlocking; its messages carry the tokens of all of its CPs.
+  CTC machine (US&S style), one column is one code line address (US&S 506 time
+  code: 16 steps; 7 controls and 7 indications per field station).
+- **Naming**: an interlocking (`Luchessa`) and the `CP Luchessa` house (a MAIN
+  HOUSE Value) may share a base name. Interlockings never carry the `CP`
+  prefix; the three `CP <name>` houses (`CP Luchessa`, `CP Gilroy`,
+  `CP Carnadero`) always do. Names are case-preserved when produced
+  and compared case-insensitively when consumed. The MQTT code line is keyed by
+  interlocking; its messages carry the tokens of all three `CP <name>` houses.
 
 The runtime must remain a user of FieldUnit. It must not copy vital logic from
-`InterlockingPlant` / the interlocking engine.
+FieldUnit's interlocking logic (`InterlockingPlant`).
 
-## Developer workflow: plant artifacts
+## KiCad symbol details
 
-Default gold fixture is the Luchessa interlocking (controlled points CP Luchessa,
-CP Gilroy, CP Carnadero). Override paths with env vars when needed:
+Attributes used:
+- CONTROLLED_POINT: Value creates a CP entity. Other symbols point at it by name through their CP field.
+- APPLIANCE: Value is a railroad name; the compiler creates an entity under a CP; that entity is in the CP's control/indication vocabulary, so desk levers and lamps match it by name and the codec cross-checks it; and a hardware-sheet proxy can name it to bind field I/O. Pins are track connectivity or attachment.
+- COMPONENT: Value names a part of the appliance it is attached to, folded into that parent. It is never matched by name from outside. Its I/O binds through the parent's proxy.
+- TRACK: no railroad name of its own. Pins are edges of the track graph; the compiler builds topology from them, and terminals carry a designation.
+- POLICY: changes how derived facts are computed. Value is a label; fields carry parameters; a pin locates it on the track.
+- ANNOTATION: documentation only, no effect on derivation.
+
+
+## Developer workflow: interlocking plant artifacts
+
+Default gold fixture is the Luchessa interlocking (the three `CP <name>` houses:
+`CP Luchessa`, `CP Gilroy`, `CP Carnadero`). Override paths with env vars when needed:
 
 - `KICAD_RAILROAD_LIB` — Railroad symbol library (`.kicad_sym`)
 - `KICAD_LUCHESSA_SCH` — Luchessa schematic (`.kicad_sch`)
@@ -116,7 +129,7 @@ python3 tools/parse_kicad_plant.py \
 Plant identity comes from `--plant-name` / `--plant-id`. The compiler does not
 infer identity from Main House board sections.
 
-### 5. FieldUnit plant JSON
+### 5. FieldUnit interlocking model JSON
 
 ```zsh
 python3 tools/parse_kicad_plant.py \
@@ -146,30 +159,31 @@ python3 tools/render_plant_picture.py \
 
 ### 7. Validate FieldUnit JSON (optional C++ check)
 
-`tools/validate_plants.cpp` loads plant JSON through FieldUnit
+`tools/validate_plants.cpp` loads interlocking model JSON through FieldUnit
 `PlantSerializer`. Use it after you generate FieldUnit JSON and have a local
 FieldUnit build available.
 
 ## Subdivision runtime layout
 
-- **`runtime/plant_host/`**: Headless native C++ host. Runs FieldUnit
-  `InterlockingPlant` logic and bridges it to MQTT.
+- **`runtime/plant_host/`**: Headless native C++ host (a field
+  processor running seven field units). Runs FieldUnit's interlocking logic
+  (`InterlockingPlant`) and bridges it to MQTT.
 - **`runtime/graph/`**: Topology and block-progression primitives. These map
   train position into track-circuit shunts.
 - **`runtime/traffic/`**: Train entities and optional NPC crew behavior.
 - **`runtime/web/`**: FastAPI/WebSocket server for the 2D SVG model board and
   mobile crew cabs.
-- **`profiles/`**: Layout-specific plant JSON, topology links, roles, timetables.
+- **`profiles/`**: Layout-specific interlocking model JSON, topology links, roles, timetables.
 - **`tools/`**: Harvest helpers, KiCad compiler, validators, picture renderers.
-- **`schemas/`**: Versioned portable plant contracts.
+- **`schemas/`**: Versioned portable interlocking model contracts.
 
 ## Aspiration
 
 Target: a playable, operationally credible model railroad subdivision.
 
-- A physical or virtual cTc machine dispatches territory through the CodeLine
+- A physical or virtual CTC machine dispatches territory through the code line
   interface.
-- Native virtual Interlocking Plants apply FieldUnit vital safety rules and
+- Native virtual field units apply FieldUnit's interlocking logic and
   publish verified indications.
 - A simulation overlay moves trains through topology and shunts real plant track
   circuits. It does not reproduce vital rules.
@@ -195,15 +209,16 @@ Review route and topology assumptions before automated train movement uses them.
 ### Completed: Part B — Virtual plant / physical desk
 
 - `runtime/plant_host/spcoast_virtual_plant.cpp` hosts seven native virtual
-  plants and talks to the physical SPCoast Model 503 desk over MQTT.
+  field units and talks to the physical SPCoast desk, a CTC machine (US&S
+  style), over MQTT.
 - Controls use `ctc/SPCoast/codeline/<station>/controls`.
 - Verified indications use the matching `/indications` topic.
 - The host models switch lock-dog withdrawal, point travel, and correspondence.
 - Retained MQTT indications provide normal startup field truth.
   `--reset` / `--normative` is an explicit simulation reset only.
 
-The physical desk owns office procedure (CodeLine timing, display pulses, future
-sound). The virtual field host must not simulate office-originated CodeLine
+The physical desk owns office procedure (code line timing, display pulses, future
+sound). The virtual field host must not simulate office-originated code line
 delays.
 
 ### Completed: Luchessa desk cutover
@@ -214,7 +229,7 @@ delays.
   loads in FieldUnit `PlantSerializer` / `InterlockingPlant` and drives both the
   virtual plant host and the physical desk sketch's `configureDesk()` field
   numbers (`783`/`795`/`799`/`784`) unchanged from the recovered, hardware-verified
-  baseline (I2C driver, `OneShot`, OLED, CodeLine stepping).
+  baseline (I2C driver, `OneShot`, OLED, code line stepping).
 - Six-scenario `spcoast_virtual_plant --test` self-test passes against the
   Luchessa KiCad plant (route alignment, signal authority, knockdown).
 - Six of the seven stations (all but Luchessa) remain on legacy XML-harvested
@@ -247,7 +262,7 @@ Engine Return Stick (`ERS`) behavior.
 During Studio design, a serialized design artifact can be the fluid source of
 truth. After physical panel columns, wiring, faceplates, and model-board
 graphics exist, that constructed desk becomes a lifecycle interlock. Compatible
-profile CodeLine definitions must conform to its fixed hardware allocation.
+profile code line definitions must conform to its fixed hardware allocation.
 
 The runtime and Studio must report mismatches. They must not silently rewrite a
 plant definition to fit a desk.
@@ -255,8 +270,8 @@ plant definition to fit a desk.
 ## Profiles
 
 - **`spcoast_south`**: Southern Pacific Coast Line from Gilroy Caltrain (MP 77)
-  through Watsonville staging (MP 97), controlled by the 14-column US&S Model 503
-  `spcoast_ctc` machine.
+  through Watsonville staging (MP 97), controlled by the 14-column SPCoast CTC
+  machine (US&S style), `spcoast_ctc`.
 
 ## Related work
 

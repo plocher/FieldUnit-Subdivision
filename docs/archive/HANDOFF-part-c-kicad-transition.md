@@ -4,8 +4,8 @@ Restate and continue Part C after the KiCad schematic-as-plant-editor pivot. The
 ## Read first
 - Original Part C roadmap and source-model reset: Warp plan `eb965064-b08a-428c-a90b-659f1932db5a`.
 - KiCad plant-graph spike report: PR #3, `https://github.com/plocher/FieldUnit-Subdivision/pull/3`.
-- Spike design lock: PR #3 `docs/review/ctc-subdivision-design-layer.md`.
-- Spike handoff: PR #3 `docs/review/SPIKE_HANDOFF_kicad-plant-graph.md`.
+- Spike design lock: PR #3 `docs/archive/ctc-subdivision-design-layer.md`.
+- Spike handoff: PR #3 `docs/archive/SPIKE_HANDOFF_kicad-plant-graph.md`.
 - FieldUnit normative companion: `~/Dropbox/Arduino/libraries/FieldUnit/docs/CTC_SUBDIVISION_AND_PLANT_DESIGN.md`.
 - FieldUnit signaling/vital primer: `~/Dropbox/Arduino/libraries/FieldUnit/docs/AAR_SIGNALING_PRIMER.md`.
 - Current local domain glossary: `CONTEXT.md`.

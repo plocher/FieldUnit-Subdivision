@@ -30,15 +30,15 @@
         },
         {
           "kind": "trackCircuit",
-          "id": "1NA"
+          "id": "1NAT"
         },
         {
           "kind": "trackCircuit",
-          "id": "2NA"
+          "id": "2NAT"
         },
         {
           "kind": "trackCircuit",
-          "id": "3NA"
+          "id": "3NAT"
         }
       ]
     },
@@ -63,11 +63,11 @@
         },
         {
           "kind": "trackCircuit",
-          "id": "2NAA"
+          "id": "2NAAT"
         },
         {
           "kind": "trackCircuit",
-          "id": "2SA"
+          "id": "2SAT"
         }
       ]
     },
@@ -84,7 +84,7 @@
         },
         {
           "kind": "trackCircuit",
-          "id": "1SA"
+          "id": "1SAT"
         }
       ]
     }
@@ -102,7 +102,7 @@
       {
         "id": "segment:1",
         "kind": "track",
-        "trackCircuit": "1NA",
+        "trackCircuit": "1NAT",
         "endpoints": [
           "signal_irj:4",
           "terminal:mt2:next_cp:1"
@@ -111,7 +111,7 @@
       {
         "id": "segment:2",
         "kind": "track",
-        "trackCircuit": "1SA",
+        "trackCircuit": "1SAT",
         "endpoints": [
           "signal_irj:1",
           "terminal:mt:next_cp:1"
@@ -120,25 +120,25 @@
       {
         "id": "segment:3",
         "kind": "track",
-        "trackCircuit": "2NA",
-        "endpoints": [
-          "signal_irj:9",
-          "terminal:mt1:next_cp:1"
-        ]
-      },
-      {
-        "id": "segment:4",
-        "kind": "track",
-        "trackCircuit": "2NAA",
+        "trackCircuit": "2NAAT",
         "endpoints": [
           "irj:6",
           "irj:7"
         ]
       },
       {
+        "id": "segment:4",
+        "kind": "track",
+        "trackCircuit": "2NAT",
+        "endpoints": [
+          "signal_irj:9",
+          "terminal:mt1:next_cp:1"
+        ]
+      },
+      {
         "id": "segment:5",
         "kind": "track",
-        "trackCircuit": "2SA",
+        "trackCircuit": "2SAT",
         "endpoints": [
           "irj:2",
           "signal_irj:5"
@@ -147,7 +147,7 @@
       {
         "id": "segment:6",
         "kind": "track",
-        "trackCircuit": "3NA",
+        "trackCircuit": "3NAT",
         "endpoints": [
           "signal_irj:10",
           "terminal:branch:next_cp:1"
@@ -330,14 +330,14 @@
   ],
   "routeTopology": [
     {
-      "route": "2sa-branch",
+      "route": "2sat-branch",
       "entryTerminal": null,
       "exitTerminal": "terminal:branch:next_cp:1",
       "endKind": "cp_limit",
       "exitFace": null
     },
     {
-      "route": "2sa-mt1",
+      "route": "2sat-mt1",
       "entryTerminal": null,
       "exitTerminal": "terminal:mt1:next_cp:1",
       "endKind": "cp_limit",
