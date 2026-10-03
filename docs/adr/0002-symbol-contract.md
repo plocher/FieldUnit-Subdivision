@@ -98,9 +98,9 @@ Asked:
 The owner drew the code line symbols on the South-cTc Luchessa sheet: `Codeline` (pin `Transports`),
 `Codeline-Transport-MQTT` and `Codeline-Transport-TimeCode` (pins `Codeline`, `Encoding`),
 `Codeline-Encoding-AAR` and `Codeline-Encoding-US&S-506` (pin `Encoding`). The netlist shows the
-graph complete. ADR 0001 D13 and D15 are amended to this shape. Requests 6 and 7 are answered:
-addresses are one field for each field station on the encoding instance; the symbols sit on the
-sheet of the interlocking. Open on the prototype: the Value "USS Type L Form 506" ("Type L" and
+graph complete. ADR 0001 D13 and D15 are amended to this shape. Requests 6 and 7 are answered (ADR 0001 D13 as
+amended a second time): a station-selecting encoding is drawn once for each field station, with
+`Station` and `Address` fields on each instance; the symbols sit on the sheet of the interlocking. Open on the prototype: the Value "USS Type L Form 506" ("Type L" and
 "Form 506" have no source) and the ATCS description on `Codeline-Encoding-AAR`.
 
 ## Context

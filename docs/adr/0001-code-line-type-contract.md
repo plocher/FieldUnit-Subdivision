@@ -200,18 +200,25 @@ This choice is provisional: build one worked example, and change it if tables ar
   `Luchessa` then have the same name. They differ by kind only. Today the two are kept apart by the
   prefix (AGENTS.md "Naming"; FieldUnit test `testStationLookupFoldsCaseOnly`).
 
-### D13. Authored addresses live on the encoding instance (amended 2026-10-02)
+### D13. Field stations are drawn as encoding instances; the address is a field on each (amended 2026-10-02, second time)
 
-- An address exists only for an encoding with station selection (US&S 506). The addresses of that
-  code line's field stations are fields of that encoding instance, one field for each field station
-  (`Luchessa`, `Gilroy`, `Carnadero` on `Encoding2`). A new field station is a new field.
-- On the AAR token encoding the topic is the address. `Transport-MQTT` carries `Station`
-  (`${SHEETNAME}`, the interlocking) and `Topic`; a space in the name becomes `-`.
-- The first form (fields on the `CODELINE` symbol) is withdrawn.
-- The generator fails for a target when it lacks the facts to make useful output. The missing symbol
-  is not itself the fault. A US&S 506 target needs authored addresses, so it needs a `CODELINE` symbol
-  that carries them.
-- A virtual target needs no added data. It is always available.
+- An encoding that selects stations (US&S 506) is drawn once for each field station. Each instance
+  is wired to the `Encoding` pin of its transport. The instance carries:
+  - `Station`: the field station name. On a 506-style encoding it equals the control point name,
+    the `MAIN HOUSE` Value (bare, D12). The linker joins by this name; a station that names no
+    control point is an error.
+  - `Address`: the authored address (D4). Required when the encoding's definition has station selection.
+- An encoding with no station selection (AAR tokens) is drawn once. Its one field station is the
+  interlocking; the transport carries the name (`Transport-MQTT` `Station` = `${SHEETNAME}`) and the
+  topic is the address. A space in a name becomes `-` in the topic.
+- Adding a field station is placing one more encoding instance. The capacity check (D5) runs for
+  each instance.
+- Prototype: South-cTc, Luchessa sheet, 2026-10-02: `Encoding2`, `Encoding3`, `Encoding4`
+  (`Station` = `Luchessa`, `Gilroy Industry`, `Carnadero`) on `Transport-TimeCode`; `Encoding1`
+  (AAR) on `Transport-MQTT`. The `Address` field is not drawn yet. `Gilroy Industry` does not join
+  the plant's `CP Gilroy` until the names agree.
+- Both earlier forms (fields on `CODELINE`; one field for each station on one encoding instance)
+  are withdrawn.
 
 ### D14. Scope now: AAR tokens over MQTT
 
