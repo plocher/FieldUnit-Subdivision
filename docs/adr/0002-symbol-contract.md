@@ -848,10 +848,16 @@ dispatcher controlled and belong with the fascia/local control scope (15).
 Request 3 (decided 2026-10-03): the policy marker `Kind` uses Standard Code rule numbers, because the
 markers name truths the Standard Code defines and SPCoast models a 1942-1985 SP railroad; the GCOR
 equivalent goes in the description. `RULE_251`, `RULE_261`, `RULE_93` (yard limits; PRR 1956 text
-confirmed; GCOR 6.13). The Standard Code number for movement on other than main track (GCOR 6.28) is
-to be confirmed by the owner from the SP book. Standard Code numbering varied by road; the SP's own
+confirmed; GCOR 6.13). `RULE_105` for movement on sidings and other than main track (GCOR 6.28): SP Coast Division Rules &
+Regulations, effective 1943-02-15, "All movements on sidings must be made with caution" (later
+editions: at restricted speed). That book is the reference for SPCoast. Standard Code numbering varied by road; the SP's own
 rulebook is the final reference for SPCoast.
 
-Request 14, read in the data model: switches 771, 773, 775 share ONE OS track circuit. The `TC` field
-on each names that one circuit. The three physical detectors are inputs on the field I/O side, OR'd
-into the one `TrackCircuit`; they are not plant-model entities. Capacity: one office indication.
+Request 14, corrected 2026-10-03 (the first reading was wrong): the `TC` list expresses a **logical
+detection block**: several physical track circuits, each with its own detector, treated as one
+occupancy for one purpose. The model gains a block entity with member track circuits; a block is
+occupied when any member is occupied. The OS section of a switch is a block (usually of one circuit);
+route clear lists may name blocks; a desk lamp's `IndicationToken` list is the same idea on the office
+side. The code chart decides whether members or the block go on the code line. The general case
+stays although the owner redrew this instance. It also serves mixed current and optical detection on
+one section, and later ABS and APB blocks.
