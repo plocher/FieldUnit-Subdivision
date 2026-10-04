@@ -51,6 +51,12 @@ the owner on 2026-10-03. D4 and D5 were decided before the requests.
      interlocking does not control is dark track; a signal that is not interlocked is an `AUXILIARY`
      lamp; relaxed checks for test or maintenance are the maintainer role, a run-time mode, not a drawn
      attribute.
+   - No CTC machine drawn (O1, closed 2026-10-03). In the data model the class of every `AUXILIARY`
+     appliance defaults to non-vital. Without a CTC machine there is no code line and no "code, then look
+     for the indication" workflow, so the class has no meaning; the appliances are direct access points
+     to the field unit. The model is complete only after both the compiler and the linker have run; the
+     linker applies the `Vital` field of a drawn panel symbol. The owner names the real problem as the
+     "in two places" KiCad setup, not the data model. This also closes ADR 0001 open item 6.
 - D7. One library (request 4). The plant and panel libraries will merge into one library soon. The
    split between "plant" and "panel" symbols carries no meaning, and symbol names do not matter (D2).
    This ADR names the two files only to say where a symbol is today.
@@ -63,7 +69,8 @@ the owner on 2026-10-03. D4 and D5 were decided before the requests.
    `CtcMachine` `Transports` pin, global labels as the code line nets, field stations as encoding
    instances with `Station` and `Address` on the interlocking sheets, `CODELINE` retired. A target is
    available when its facts are present; rules that read the presence of a symbol are obsolete. See
-   ADR 0001 D15.
+   ADR 0001 D15. The owner changed the Value of the South-cTc Luchessa encoding symbols to "US&S 506
+   time-coded DC pulses" (O3, 2026-10-03), replacing "USS Type L Form 506".
 - D10. `NextCP` Value (request 8). The `NextCP` Value is the bare name of the neighbor interlocking
     (`Christopher`, not `CP Christopher`).
 - D11. `NextCP` rename (request 9). The owner changes the library to `NextInterlocking` /
@@ -96,19 +103,19 @@ the owner on 2026-10-03. D4 and D5 were decided before the requests.
     controlled. They may well be (will be) electrically operated, with local fascia-mounted controls
     that must be integrated into the field unit's I/O. Local fascia control is a future scope item with
     its own ADR (ADR 0001, still open item 4).
+    - `CP` (O2, closed 2026-10-03). An appliance that is not on the code line needs no dispatcher-visible
+      control point name. The `CP` field is not required on it, and the compiler does not diagnose its
+      absence or a value that resolves to no `MAIN HOUSE` (Corporal SW901 `INDUSTRY`). A local
+      hand-thrown switch connects through the field's hardware mapping: in the model, device to I/O
+      unit. Fascia-mounted lamps and levers are still to be designed.
+
+Closed on 2026-10-03 by the owner's second responses (verbatim in Appendix A, "Second round"):
+O1 (by D6), O2 (by D17), and the encoding Value of O3 (by D9).
 
 Open:
 
-- O1 (D6). How the interlocking application learns the class of an auxiliary control when no CTC
-  machine is drawn, for example for a tower operator or a virtual target. The proposal put the class
-  on the plant `AUXILIARY` symbol for this reason. FieldUnit ADR 0002 requires the class on each
-  function of the interlocking model. Needed: the owner's rule (for example, the linker carries the
-  panel class into the model, and an undrawn class defaults to one of the two).
-- O2 (D17). What the `CP` field of a hand-throw switch holds. Corporal SW901 has `INDUSTRY`, which
-  resolves to no `MAIN HOUSE`. Needed: the fascia ADR.
-- O3 (D9). On the drawn prototype: the Value "USS Type L Form 506" ("Type L" and "Form 506" have no
-  source; the glossary retires them) and the ATCS description on `Codeline-Encoding-AAR`. Needed: the
-  owner's spelling.
+- O3 (D9). The ATCS description on `Codeline-Encoding-AAR`. The second response covers only the
+  US&S 506 encoding Value. Needed: the owner's text, or removal.
 
 ## Context
 
@@ -342,7 +349,7 @@ so its counts can be stale (unverified)). The library `Railroad.kicad_sym` chang
 |---|---|---|---|---|---|---|---|
 | `MAIN HOUSE` Value: strip `CP ` | 3 | 0 | 0 | 0 | 0 | 0 | yes |
 | `CP` values: strip `CP ` | 15 | 0 | 0 | 15 | 0 | 0 | yes |
-| `CP` values that resolve to no `MAIN HOUSE` after the strip (empty IRJ `CP` included; those fields go) | 0 | 4 (3 IRJ, 1 proxy) | 4 (IRJ) | 6 (IRJ) | 10 (4 IRJ, 5 `FIXME`, 1 `INDUSTRY`) | 0 | no for `FIXME`, `INDUSTRY` (O2) |
+| `CP` values that resolve to no `MAIN HOUSE` after the strip (empty IRJ `CP` included; those fields go) | 0 | 4 (3 IRJ, 1 proxy) | 4 (IRJ) | 6 (IRJ) | 10 (4 IRJ, 5 `FIXME`, 1 `INDUSTRY`) | 0 | no for `FIXME`; `INDUSTRY` needs no change (D17) |
 | Role `CONTROLLED_POINT` → `CONTROL_POINT` | 3 | 1 | 2 | 3 | 2 | 3 | yes |
 | Instance `Role`/`Kind` reset to library | 0 | 1 | 2 | 4 | 2 | 5 | yes |
 | Mast `CP` from the IRJ on its `SIGNAL` net, then IRJ `CP` removed | 5 | 3 (IRJ empty: hand) | 4 (2 set on the mast; 2 by hand) | 6 (no nets: hand) | 4 (no nets, IRJ empty: hand) | 5 (no nets: hand) | Luchessa yes; others hand |
@@ -385,7 +392,8 @@ Plant compiler:
    `Switch_Powered_Small`, `Track Circuit_Yellow`, `Rule93-Yard Limits`, `Rule105-RestrictedSpeed`, the
    semaphore heads, `AUXILIARY` and the new `IRJ_Diag` and `Switch_Powered_Diag` with no code change.
 2. Error when a plant project has no `MAIN HOUSE` (D5); the message states the uncertainty. Warn on a
-   `CP ` or `CP_` prefix in any name (a check, not normalization).
+   `CP ` or `CP_` prefix in any name (a check, not normalization). Do not diagnose a missing or
+   unresolved `CP` on an appliance that is not on the code line (D17).
 3. Read the mast `CP`; during the transition fall back to the IRJ `CP` with a warning.
 4. Read policy `Kind` (D3) and `Direction`; find dark track by `Kind` `RULE_105`; stop requiring
    `Rulebook` (D4).
@@ -421,7 +429,8 @@ Linker:
 2. Cross-check `PanelColumn` `CP`, maintainer calls and auxiliaries (now in the model). Locks stay a
    known gap until the plant model has them.
 3. Check that addresses are unique on one code line instance, and that two attachments agree.
-4. Carry the class of each auxiliary control into the model (FieldUnit ADR 0002; O1).
+4. Carry the class of each auxiliary control into the model: non-vital by default, the panel `Vital`
+   field where a CTC machine is drawn (D6; FieldUnit ADR 0002).
 
 ### Migration order
 
@@ -630,6 +639,36 @@ Asked:
 
    RESPONSE: The industry switches are not ctc/dispatcher controlled, though they may well (will) be electrically operated devices with local fascia mounted controls that need to be integrated into the field unit's I/O connections.
 
+
+### Second round (2026-10-03)
+
+The open items as written in the first final-review form, with the owner's responses unchanged.
+
+- O1 (D6). How the interlocking application learns the class of an auxiliary control when no CTC
+  machine is drawn, for example for a tower operator or a virtual target. The proposal put the class
+  on the plant `AUXILIARY` symbol for this reason. FieldUnit ADR 0002 requires the class on each
+  function of the interlocking model. Needed: the owner's rule (for example, the linker carries the
+  panel class into the model, and an undrawn class defaults to one of the two).
+
+  RESPONSE: This looks like a problem with the current "in two places" kicad sch setup more than a Data Model question.
+  deconflating into two parts:
+  Data model: The default for all AUXILIARY Appliances is "non-vital".  
+              Without a cTc, the "appliances" are simply direct-access points to the field unit, there is no code line, no "code and look for an indication" workflow, and the concept behind this classification has no meaning
+  Compiler: The data model is not complete until both the compiler and linker have run.
+
+- O2 (D17). What the `CP` field of a hand-throw switch holds. Corporal SW901 has `INDUSTRY`, which
+  resolves to no `MAIN HOUSE`. Needed: the fascia ADR.
+
+  RESPONSE: why is a dispatcher-visible name for a point to control this non-remotely-managed appliance needed?
+            The connection for a hand thrown "local" switch is via the field's hardware mapping, and is not
+            exposed over a codeline.  The data model's connection is from a device to an I/O unit and from local I/O devices for fascia-mounted lamps, levers etc that are still TBD...
+
+- O3 (D9). On the drawn prototype: the Value "USS Type L Form 506" ("Type L" and "Form 506" have no
+  source; the glossary retires them) and the ATCS description on `Codeline-Encoding-AAR`. Needed: the
+  owner's spelling.
+
+  RESPONSE: Updated South-cTc's Luchessa encoding symbols to say "US&S 506 time-coded DC pulses"
+
 ## Appendix B: full inventory
 
 Readers today (plant): `plant_graph/compiler.py` (C), `plant_graph/model.py` (M), `plant_graph/routes.py`
@@ -691,7 +730,7 @@ Pins: 1 `C`, 2 `R` (through path = REVERSE; verified in the library). `Kind` = `
 
 | Field | Today: default · reader | Proposed | Fact | Phase |
 |---|---|---|---|---|
-| `Value` | empty · C | keep: `<switch>D` (dependent) or its own number (independent) | derail name; dependency on its switch | compiler |
+| `Value` | empty · C | keep. Dependent when its gang id (the Value minus its trailing letter) matches a switch or lock gang of the interlocking, by convention `<id>D`; independent otherwise. A Value used twice across switches, locks and derails is an error (ADR 0003 D8) | derail name; dependency on its gang | compiler |
 | `CP` | empty · C (mismatch warning) | keep for an independent derail. Empty for a dependent derail: the compiler takes the switch's control point (P1). A value that differs is an error | control point of the derail | compiler |
 | `TC` | empty / `${VALUE}T1` · C | keep; same rule as switches | own track circuit, if any | compiler |
 
@@ -847,7 +886,7 @@ ADR 0001 D9 question; it is not a symbol field.
 | `PanelAuxiliary` `ControlToken` | `${VALUE}S` · CC | remove (P1, P3) | none | none |
 | `PanelAuxiliary` `Vital` | `NO` · none | keep (D6). The proposal moved it to the plant `AUXILIARY` (B1.10; request 4) | the class of the control | linker, generator |
 
-Why the proposal moved the class (not adopted; D6, O1). The class says how the field unit processes a control (iteration 11). The
+Why the proposal moved the class (not adopted; D6). The class says how the field unit processes a control (iteration 11). The
 interlocking application must know it with no CTC machine drawn, for example for a tower operator or a
 virtual target. One fact, one place: the plant symbol. The CTC machine does not need it. The class names
 (vital, non-vital) come from FieldUnit ADR 0002 (control transaction classes).

@@ -65,7 +65,7 @@ tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-
 - `schemas/interlocking-plant/v1.json`: portable model schema.
 - `profiles/spcoast_south/cps/`: station JSON. `CP_*.json` are legacy harvests; `generated/` holds KiCad-derived interlockings (only `Luchessa` so far). The plant host prefers `generated/<name>.json` over the legacy file.
 - `runtime/plant_host/`: the only runtime code. `graph/`, `traffic/` and `web/*` are empty placeholders.
-- `docs/review/vocabulary-review.md` and FieldUnit `docs/GLOSSARY.md` (`~/Dropbox/Arduino/libraries/FieldUnit/docs/GLOSSARY.md`): the sources of truth for vocabulary. Use their terms in prose; code names keep their spelling.
+- `docs/archive/vocabulary-review.md` and FieldUnit `docs/GLOSSARY.md` (`~/Dropbox/Arduino/libraries/FieldUnit/docs/GLOSSARY.md`): the sources of truth for vocabulary. Use their terms in prose; code names keep their spelling.
 - `docs/review/`: design notes and handoffs. `ctc-panel-hardware-binding.md` covers desk wiring.
 
 ## KiCad conventions the compiler relies on
@@ -74,7 +74,7 @@ tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-
 `tools/plant_graph/compiler.py`; any other part raises `unknown_symbol`.
 
 - The Value is the railroad name for every named part (switch `783`, mast `784EAB`, circuit `1NA`). References (`SW1`, `S7`) are KiCad annotation artifacts. Use them only as netlist identities, never to derive or check names.
-- Dependent derail Value is `<switch>D`, e.g. `795D`. It takes the same position as its switch. Derail NORMAL is derailing; REVERSE is clear. The derail symbol's through pin is `R` (pin 2).
+- Switch, lock and derail Values are unique in an interlocking. Gang id = Value minus its trailing letter (A–Z); switches and locks with one gang id are one gang (`815`, `815A`). A derail whose gang id matches a gang is dependent on it, by convention `<id>D` (e.g. `795D`); the letter D is not the mechanism (ADR 0003 D8, proposed). A dependent derail takes the same position as its switch. Derail NORMAL is derailing; REVERSE is clear. The derail symbol's through pin is `R` (pin 2).
 - Mast Value matches `^\d+[NSEW][A-E]+$` in the compiler today, e.g. `784EAB`; ADR 0003 D9 allows any letter A to Z (compiler to follow). N/W normalise to LEFT, S/E to RIGHT (ADR 0003 D1).
 - Head Value is one letter, A–E. The Track Circuit marker's Value is the authoritative circuit name.
 - A switch's OS circuit defaults to `<switch>T1`; a `TC` field overrides it.
