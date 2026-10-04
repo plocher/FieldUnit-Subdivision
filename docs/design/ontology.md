@@ -112,17 +112,17 @@ Glossary §4, "interlocking"; glossary §2.4 for the interlocking logic.
 
 ### 3.3 Extent: limits
 
-Glossary §4, "interlocking limits", "control point limits", "CTC limits".
+Glossary §4, "interlocking limits", "CTC limits". A control point has no limits of its own (owner, 2026-10-03); the `CP` field draws membership, not a boundary.
 
 | Limits | How they are known | Phase | Status |
 |---|---|---|---|
 | interlocking limits | derived: cut the track graph at every controlled signal; each piece that contains a switch or derail is one interlocking (spike S3, Rule A) | compiler | spike code only; not in `tools/` |
-| control point limits | drawn: the `CP` field | compiler | in the model; the compiler reads `CP` on the signal IRJ only, not on the mast (spike S3) |
+| control point membership (not limits) | drawn: the `CP` field | compiler | in the model; the compiler reads `CP` on the signal IRJ only, not on the mast (spike S3) |
 | CTC limits | not drawn | none | not modeled |
 
 - Spike S3 results: Luchessa gives one piece. GilroyInterchange gives one. Sargent gives one, plus one circuit of the next plant.
 - Corporal, Christopher and GilroyCalTrain have no nets. Rule A did not run on them.
-- Control point limits are not derived. Rule B (house allocation from switch anchors) disagrees with two drawn Luchessa values (784WA, 1NA). These are drawn facts. They are not errors.
+- Control point membership is not derived. Rule B (house allocation from switch anchors) disagrees with two drawn Luchessa values (784WA, 1NA). These are drawn facts. They are not errors.
 
 ### 3.4 Addressing: field station and code line type
 
@@ -223,7 +223,7 @@ Glossary §3, "bungalow".
 
 ### 5.1 The `CP` field (issue #16)
 
-- Meaning: the drawn assignment of an appliance to a control point in the field. It gives the control point limits.
+- Meaning: the drawn assignment of an appliance to a control point in the field. It gives membership, not a boundary; the interlocking limits bound every control point.
 - It does not group functions into field stations. The panel column does (ADR D3).
 - It cannot be derived from signals. Rule A gives interlocking limits. Rule B needs one anchor for each switch, and it disagrees with two drawn Luchessa values.
 - Rev 4 §7 ("retire the `CP` field") is reversed.
