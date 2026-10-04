@@ -45,9 +45,9 @@ Subdivision runtime consumers
 
 Design detail lives in:
 
-- `docs/review/portable-interlocking-plant-model.md`
-- `docs/review/legacy-xml-kicad-bootstrap.md`
-- `docs/review/ctc-subdivision-design-layer.md` (when present)
+- `docs/design/portable-interlocking-plant-model.md`
+- `docs/archive/legacy-xml-kicad-bootstrap.md`
+- `docs/archive/ctc-subdivision-design-layer.md` (when present)
 
 ## Domain boundaries
 
@@ -235,7 +235,7 @@ delays.
 - Six of the seven stations (all but Luchessa) remain on legacy XML-harvested
   profiles until each is cut over in turn. Next: Christopher, then Corporal.
 - Legacy XML bootstrap stays later work. See
-  `docs/review/legacy-xml-kicad-bootstrap.md`.
+  `docs/archive/legacy-xml-kicad-bootstrap.md`.
 
 ### Part C: Virtual operating session overlay
 
