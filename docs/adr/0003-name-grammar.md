@@ -1,6 +1,6 @@
 # 0003. One grammar for the names of appliances, signals and track circuits
 
-- Status: proposed (final review)
+- Status: proposed; frozen 2026-10-03 until the cleanup pass (issue #30) rewrites this ADR to rules. The owner's review: too complicated and unfocused to approve as-is.
 - Date: 2026-10-02 (responses), 2026-10-03 (final form)
 
 Reshaped from spike S5 of `vocabulary-review.md` (F16). Nothing is renamed until the owner accepts this
@@ -29,48 +29,83 @@ others follow the RESPONSE text.
   name (`1SAT`), the tooling uses it. When no name is given, the AAR56 rule is authoritative for the
   generated name, except for the OS form of D3. Luchessa's circuits are renamed in the schematic
   (`1SA` → `1SAT`, `2NAA` → `2NAAT`, and so on).
-- D5. Circuits with no switch and no signal; specialized tokens (Q9). The AAR scheme is part of the
-  layout designer documentation, although these South-cTc plans do not use it. Where AAR has defined
-  terminology, it is documented and used; specialized tokens carry minimal semantic value.
-  - Arbitrary numbers with a zero prefix, `0<n>T` (`01T`), name isolated or auxiliary track segments
-    where no switch points exist and no governing signal is directly attached (the owner's examples:
-    plain stretch blocks, specialized detector circuits, crossing approaches).
-  - `HBD` is a hot box detector. `TL` and `TR` are left and right traffic indications. None of them is
-    a track circuit. They came from forum threads and may not be AAR.
-  - The AAR status of `HBD`, `TL`/`TR` and the zero prefix is unverified until the 1946 AAR nomenclature
-    document is checked (see Consequences, "To check in the 1946 AAR document").
-- D6. Section letter placement (Q5). Not needed while approach circuits keep their drawn names (D4).
+- D5. Circuits with no switch and no signal; specialized tokens (Q9, second round 2026-10-03). The AAR
+  scheme is part of the layout designer documentation, although these South-cTc plans do not use it.
+  Where AAR has defined terminology, it is documented and used; specialized tokens carry minimal
+  semantic value.
+  - Arbitrary numbers that start with the digit zero, `0<n>T` (`01T`), name tracks with no interlocked
+    switches that govern no signal: isolated or auxiliary track segments (the owner's examples: plain
+    stretch blocks, specialized detector circuits, crossing approaches, storage tracks, some yard tracks,
+    isolated sidings). The prefix is the digit zero, not the letter O (owner, V4).
+  - Single digits (`1T` to `9T`) serve the same purpose in a plant whose dispatcher-visible and
+    cross-interlocking items use milepost-based numbers (owner, V4; D11).
+  - The hot box token is `HBA` (hot box alarm), not `HBD`. The owner changed Sargent.
+  - The traffic indicators are `EFLK`/`WFLK` or `SFLK`/`NFLK`: direction letter, `F` (traffic), `LK`
+    (traffic locking indicator). They replace `TL` and `TR`, which also collided with `TR` (track relay).
+    The owner updated the schematics.
+  - None of these is a track circuit. The pasted ATCS and F-token material (Appendix A, second round) is
+    a lead: a summary with no checked source. The AAR status of `HBA`, `[NSEW]FLK` and the zero prefix is
+    unverified until the 1946 document is checked (V2, V3, V4).
+- D6. Section letter placement (Q5, V5). Open. The owner answered "The former: 784LAT" (letter after
+  the signal number, before T). The same round's statement of the AAR rule gives the letter as a
+  prefix: "A10T, B10T, and C10T" for successive circuits governing signal 10. The two answers conflict;
+  the owner picks one. It matters only when the tooling must generate an approach name (D4).
 - D7. Crossover ends (Q6). Base plus letter. A simple crossover is `815`, `815A`; a double crossover is
-  `815`, `815A`, `815B`, `815C`.
-- D8. Dependent derail (Q7). Keep `<switch>D` (`795D`). The letter `D` after a switch name therefore
-  stays reserved, so a crossover end is never `D` (the owner noted that `815D` is used as a derail
-  reference).
+  `815`, `815A`, `815B`, `815C`. D8 gives the general gang rule.
+- D8. Gangs and derails (owner, 2026-10-03; replaces the earlier D8, "keep `<switch>D`; `D` reserved").
+  Dependence and ganging are decided by the symbol kind and the name relation, not by the letter D.
+  - Names are unique. The full Value of an appliance is unique within an interlocking across switches,
+    locks and derails. A duplicate is a compiler error; the kind does not disambiguate it. Example: a
+    derail `815A` beside a switch `815A` is an error.
+  - A name is `<id>[<letter>]`, letter A to Z. The gang id of a Value is the Value with its trailing
+    letter removed (`815A` → `815`; `815` → `815`), so the rule holds when a gang has no bare member
+    (`815A`, `815B` only).
+  - Ganged switches: `APPLIANCE`/`SWITCH` or `APPLIANCE`/`LOCK` symbols whose Values share one gang id
+    are one gang, worked by one lever: `815`, `815A`; a double to `815C`.
+  - Dependent derail: an `APPLIANCE`/`DERAIL` symbol whose gang id matches a switch or lock gang in the
+    same interlocking is dependent on that gang. Example: a derail `815D` beside switches `815A` and
+    `815B`.
+  - Independent derail: an `APPLIANCE`/`DERAIL` symbol whose gang id matches no switch or lock gang.
+  - The letter D is the convention, not the mechanism: a dependent derail is named `<id>D` (`795D`, as
+    kept by the Q7 response); an independent derail has no letter or D. D is not reserved: a switch
+    may be named `815D` when no other appliance has that name.
 - D9. Head letters (Q8). Do not limit them. Every single letter A–Z is usable.
 - D10. One-head signal (Q11). Always a letter, also on a signal with one head.
 - D11. Local items (Q10). Items that only local crews see or control, such as a hand-throw switch, do
   not take milepost names. They take arbitrary numbers, with or without a zero prefix (`0<n>T`, or
   `[1..9]T`). Corporal SW901 and Sargent SW3 keep `1`.
-- D12. Maintainer call (Q13). Keep `MC<n>`. The owner supplied a summary that states `MC` is the AAR
-  designation for the maintainer call (lever, toggle and lamp); this is unverified until the 1946
-  document is checked. The summary is in Appendix A, verbatim.
+- D12. Maintainer call (Q13, V1). `MC` is the AAR abbreviation for the maintainer call, per the owner:
+  AAR Signal Manual Part 33 (circuit nomenclature) and Part 91 (lamp abbreviations), with control token
+  `MCS` and indication `MCK`; a Conrail CS-4000 (1981) lamp list also has `MC` (Maintainer's call). The
+  1946 document in `docs/reference` is likely Part 33 itself; to verify there (V1). FieldUnit
+  `MC<n>S`/`MC<n>K` adds an instance number, so one interlocking can have several calls. Keep `MC<n>`.
 - D13. Watsonville staging yards (Q12). Withdrawn by the owner; model-layout yards are supported by the
   tooling later. The Watsonville schematic was updated on 2026-10-02 and can be re-checked.
 - D14. Prefixes and normalization. ADR 0001 D12 (amended) decides them: a KiCad name has no `CP_` or
   `CP ` prefix, a model board may add `CP ` for display, and a space becomes `-` in a topic or key. This
   ADR adds no prefix rule and no normalization.
 
+- D15. AAR naming as the owner reads it (V6, 2026-10-03).
+  - Inside interlocking limits a track circuit that encloses switch 11 is `11T`; the OS circuit of
+    switch 11 is `11T1`. So `833T` and `833T1` are different circuits (D3).
+  - Outside interlocking limits a track circuit is numbered from the signal that governs over it
+    (`10T`); successive circuits that govern one signal get progressive letters (placement: D6).
+  - Tracks with no interlocked switches that govern no signal get arbitrary numbers that start with
+    zero (D5).
+  - The directional coded-track form is track number, direction, T (`1WT`, `1ET`: track 1, west or
+    east side of the insulated joint). It is the source of `1SAT` ("track 1, southbound approach") and
+    the like.
+
 Open:
 
-- O1 (D6). Where the section letter of a generated approach circuit goes (`784LAT` or `A784LT`).
-  Needed only when the tooling must generate an approach name. The owner asked whether Q5 relates to
-  the 1946 document; item V5 of the check list covers it.
+- O1 (D6). Section letter: after the signal number (`784LAT`, the owner's answer) or before it
+  (`A10T`, the owner's statement of the AAR rule). Needed: the owner's pick; V5 may settle it.
 - O2 (D2). Where a layout records its style (W/E, N/S or L/R) for tokens and panel displays, so that
   the generator reads one source. Today FieldUnit `WireCodec.h` writes N and S for LEFT and RIGHT, and
-  Luchessa mixes axes (masts E/W, circuits N/S; Appendix B, B1.4 item 6). Needed: the owner's choice
-  of source.
-- O3 (D5). Which symbol and `Kind` carry `HBD` and `TL`/`TR`. Q9 also asked whether they get their own
-  kinds; the response does not say. Needed: the owner's choice. A candidate is `AUXILIARY` with
-  `Functions` = `INDICATION` (ADR 0002).
+  Luchessa mixes axes (masts E/W, circuits N/S; Appendix B, B1.4 item 6). Not answered in the second
+  round. Needed: the owner's choice of source.
+- O3 (D5). Which symbol and `Kind` carry `HBA` and `[NSEW]FLK`. Not answered in the second round.
+  Needed: the owner's choice. A candidate is `AUXILIARY` with `Functions` = `INDICATION` (ADR 0002).
 
 ### The grammar that follows
 
@@ -82,12 +117,14 @@ number       = digit1 , [ digit ] , [ digit ] , [ digit ] ;   (* 1–9999 *)
 lever        = [ "0" ] , number ;                (* 783 (milepost); 1 or 01 (local, D11) *)
 side         = "L" | "R"                         (* code and panel *)
              | "N" | "S" | "E" | "W" ;           (* drawn style; N, W = L; S, E = R (D1) *)
-end          = "A" | "B" | "C" ;
 letter       = "A" | … | "Z" ;
 
-switch       = lever , [ end ] ;                 (* 783; crossover 815, 815A; double to 815C (D7) *)
-derail       = lever                             (* independent derail with its own lever *)
-             | switch , "D" ;                    (* dependent derail: 795D (D8) *)
+id           = lever ;
+name         = id , [ letter ] ;                 (* gang id = name without its trailing letter (D8) *)
+switch       = name ;                            (* SWITCH or LOCK kind; 783; gang 815, 815A, 815B... (D7, D8) *)
+derail       = name ;                            (* DERAIL kind; dependent when its gang id names a switch
+                                                    or lock gang: 795D; else independent: 5, 5D (D8) *)
+(* every name is unique in the interlocking across switches, locks and derails (D8) *)
 signal       = lever , side ;                    (* lever position: 784L, 784R; drawn 784E, 784W *)
 head         = signal , letter ;                 (* 784LB; the KiCad head Value is the letter only (D9, D10) *)
 mast         = signal , letter , { letter } ;    (* 784LBC: the letters of its heads, top to bottom, ascending *)
@@ -95,7 +132,7 @@ mast         = signal , letter , { letter } ;    (* 784LBC: the letters of its h
 track_circuit = drawn_tc | os_tc | local_tc ;
 drawn_tc     = { letter | digit } , "T" , [ digit ] ;   (* as drawn: 1SAT, 2NAAT (D4) *)
 os_tc        = ( switch | derail ) , "T1" ;      (* generated: 783T1, 815AT1 (D3) *)
-local_tc     = [ "0" ] , number , [ letter ] , "T" ;    (* 01T; cut sections 01AT, 01BT (D5, D11) *)
+local_tc     = [ "0" ] , number , [ letter ] , "T" ;    (* 01T; 1T; cut sections 01AT, 01BT (D5, D11) *)
 
 maintainer_call = "MC" , number ;                (* MC1 (D12) *)
 reference    = interlocking , ":" , name ;       (* Corporal:1NAT; cross-plant reference only *)
@@ -111,8 +148,7 @@ Regular expressions (compared case-insensitively; case preserved when produced):
 | Kind | Regex | Examples |
 |---|---|---|
 | lever | `^0?[1-9]\d{0,3}$` | `783`, `1`, `01` |
-| switch | `^0?[1-9]\d{0,3}[A-C]?$` | `783`, `815`, `815A` |
-| derail | `^0?[1-9]\d{0,3}([A-C]?D)?$` | `5`, `795D` |
+| switch, lock, derail (name) | `^(0?[1-9]\d{0,3})([A-Z]?)$`; group 1 is the gang id | `783`, `815A`, `795D`, `5` |
 | mast | `^(0?[1-9]\d{0,3})([LRNSEW])([A-Z]+)$`, letters ascending | `784LBC`, `784EAB`, `774NE` |
 | head (KiCad Value) | `^[A-Z]$` | `B` |
 | track circuit | `^[0-9A-Z]*T[0-9]?$` | `783T1`, `1SAT`, `01T`, `01AT` |
@@ -128,9 +164,12 @@ Rules:
    appliances closer than 0.1 mile take adjacent numbers. Odd for switches and even for signals is a
    project habit. The compiler may warn on it. It is not an error (`vocabulary-review.md` F25 and §6). A local item takes
    an arbitrary short number, with or without a zero prefix (D11).
-3. A crossover is one lever. Its ends are the lever number and the lever number plus A, B, C (D7). The
-   base number names the lever and its first end.
-4. An independent derail has its own lever number. A dependent derail is its switch name plus D (D8).
+3. Switches and locks whose Values share a gang id are one gang on one lever (D8). A crossover is one
+   gang: `815`, `815A`; a double crossover runs to `815C` (D7).
+4. A switch, lock or derail Value is unique in the interlocking; a duplicate is an error (D8). A
+   derail is dependent when its gang id is the id of a switch or lock gang in the same interlocking,
+   and independent otherwise. The symbol kind, not the letter, makes it a derail. Convention: a
+   dependent derail ends in D (`795D`); an independent derail has no letter or D (D8).
 5. A signal is a lever position: lever number plus a side letter. The code uses L and R. A drawing,
    a token and a panel display use the local style, mapped by D1.
 6. A head is a signal plus one letter, any of A–Z (D9). A head always has a letter (D10). Letters are
@@ -157,8 +196,8 @@ Meaning of each letter:
 
 | Letter | Position | Meaning | Source |
 |---|---|---|---|
-| A, B, C | after a switch lever | crossover end (function of the lever); the base number is the first end | AAR56 p. 34; D7 |
-| D | after a switch name | dependent derail; reserved | project (D8); AAR56 p. 32 gives D other meanings |
+| A–Z | after a switch, lock or derail id | gang member letter; a crossover uses A, B, C; the base number is the first end | AAR56 p. 34; D7, D8 |
+| D | after an id, on a derail | dependent derail by convention; not reserved | project (D8); AAR56 p. 32 gives D other meanings |
 | L, R | after a lever | signal lever position left, right (code and panel) | AAR56 p. 34, Figs. 18, 22; D1 |
 | N, S, E, W | after a lever | drawn side in the local style: N, W = L; S, E = R | D1 |
 | A–Z | after the side letter, last letters of a head or mast | signal function (head) | AAR56 p. 34, Fig. 26; D9 |
@@ -166,7 +205,8 @@ Meaning of each letter:
 | T | last letter of a track circuit, or before a final digit | track section | AAR56 p. 34; D4 |
 | T1 | after a switch or derail name | generated OS track circuit | project (D3); no source |
 | 0 | first digit of a track circuit | arbitrary section, no switch, no signal | D5; AAR56 p. 31 prints `O1T` (letter or digit unverified) |
-| MC | prefix | maintainer call | project; AAR claim unverified (D12) |
+| MC | prefix | maintainer call | AAR Signal Manual Parts 33 and 91 per the owner; to verify in AAR46 (D12, V1) |
+| F | traffic, in `EFLK`, `WFLK`, `NFLK`, `SFLK` | traffic direction; `FLK` traffic indicator | owner (D5); unverified (V3) |
 | NW, RW | token | normal, reverse of the switch | AAR56 p. 35 |
 | WL | token | electric switch lock | AAR56 p. 35 |
 | G | token | signal mechanism | AAR56 p. 32 |
@@ -178,7 +218,7 @@ Meaning of each letter:
 
 ## Principle (owner, 2026-10-02)
 
-- A symbol that is local to one drawing uses a short number and a tag: switch `1`, signal `2`, circuit `1SAT`.
+- A symbol that is local to one drawing uses a short number and a tag: switch `1`, signal `2`, circuit `1SAT`, or follows the AAR56 rules for arbitrary numbers with a zero prefix (`0<n>T`)
 - A symbol that is not local, because another sheet uses it or the dispatcher sees it, uses milepost
   numbering, so that the reference is explicit: switch `783`, signal `784`, circuit `783T1`.
 - A track circuit name ends in `T` or `T<digit>`. A name given on the drawing is used as drawn. A
@@ -213,7 +253,14 @@ What TT52 supports: on the SP Coast Line the timetable direction is east/west, a
 the milepost in tenths (the timetable's Rule 105 entry, which bounds sidings by automatic signal numbers;
 p. 28).
 
-What neither settles: mast names, head order, the form of control tokens, `T1`, dependent derail names, odd/even numbering, and whether milepost numbers apply to switches and CTC signals. Appendix B, B1, lists the evidence and the points where the references allow two readings.
+Drawing conventions today (owner, 2026-10-03): the track diagrams and code line charts the owner has
+use several conventions over several eras. The South-cTc schematics do not follow the AAR forms; they
+follow ATCS-inspired forms that may be layman-derived (for example the directional , D15). This
+is context, not a rule.
+
+What neither settles: mast names, head order, the form of control tokens, `T1`, dependent derail names, odd/even numbering, and whether milepost numbers apply to switches and CTC signals. For longevity, most railroads used milepost-based IDs for switches and signals used by the dispatcher.
+
+Appendix B, B1, lists the evidence and the points where the references allow two readings.
 
 ## Consequences
 
@@ -231,7 +278,7 @@ name is not a track circuit but sits on a `Track Circuit` symbol. Compass-letter
 | Corporal | `IND` | 1 |
 | GilroyCalTrain | `1SA`, `1NA`; `TK1`, `TK2`, `TK3` | 5 |
 | GilroyInterchange | `1SA`; `INTER`; `TK1` | 3 |
-| Sargent | `1SA`, `2SA`, `1NA`; `HBD` (not a track circuit, D5, O3); `Corporal:2NA` (no final T, and Corporal has no `2NA`) | 5 |
+| Sargent | `1SA`, `2SA`, `1NA`; `HBD` (not a track circuit; now `HBA`, changed by the owner on 2026-10-03, to be re-checked; D5, O3); `Corporal:2NA` (no final T, and Corporal has no `2NA`) | 5 |
 | Total | | 33 |
 
 Watsonville is excluded (as of 2026-10-01, changed by the owner on 2026-10-02, to be re-checked).
@@ -240,11 +287,12 @@ GilroyCalTrain (as of 2026-10-01, changed by the owner on 2026-10-02, to be re-c
 
 Desk netlist (`South-cTc.net`, B2.5): the 14 OS names in `T1` form fit. 10 track circuit names fail:
 the 6 approach names (`1SA`, `1NA`, `2SA`, `2NA`, `2NAA`, `SA1`), `TK1`–`TK3` and `XNA`. `SDT`, `ART`,
-`ALT` and `SAT` fit the syntax. `HBD`, `TL` and `TR` are not track circuits (D5, O3).
+`ALT` and `SAT` fit the syntax. `HBD`, `TL` and `TR` are not track circuits; the owner renamed them
+`HBA` and `[NSEW]FLK` on 2026-10-03 (D5, O3; to be re-checked in a new netlist).
 
 Profiles, FieldUnit examples and FieldUnit docs are not recounted. The same test applies: approach
 names without a final T (`1SA`, `1WA`, `1EA`), mnemonics (`IND`, `TK1`, `EA1`, `INTER`) and `HBD`,
-`TL`, `TR`. Mixed-case masts (`2Nab`) fit, because names are compared case-insensitively. The counts
+`TL`, `TR` (now `HBA`, `[NSEW]FLK`). Mixed-case masts (`2Nab`) fit, because names are compared case-insensitively. The counts
 under the earlier proposal are kept in Appendix B, B2.
 
 Also affected, not counted: FieldUnit-Subdivision tests and fixtures hard-code Luchessa names (`tests/test_kicad_plant_graph.py`, `tests/test_controller_graph.py`, `tests/fixtures/kicad/Luchessa.plant-model.json`, `tools/run_plant_graph_smoke.sh`, `runtime/plant_host/spcoast_virtual_plant.cpp`). Per AGENTS.md they change in a separate step.
@@ -273,37 +321,46 @@ Order of authority: the relay model and AAR practice first, then FieldUnit `src/
 | `_DEFAULT_MAST_DIRECTION_MAP`, `mast_direction_map` parameter, `PlantGraph.mast_direction_map` | N/W → LEFT, S/E → RIGHT | One fixed map (D1): L, N, W → LEFT; R, S, E → RIGHT. The parameter goes, because the mapping is fixed. |
 | `bad_mast_value` message | says `<signal><N\|S><heads>` while the regex accepts NSEW | Message follows the regex. |
 | `_derive_os_circuits` default | `f"{name}T1"` | No change (D3). Validate each `TC` entry against the track circuit rule (D4). A list in one `TC` field names a block (ADR 0002 D16); it is not an error. |
-| Switch Value | any non-empty string | `^0?[1-9]\d{0,3}[A-C]?$`. Diagnostic `bad_switch_value`. |
-| Derail Value | `(\d+)(D)?` after `upper()` | `^0?[1-9]\d{0,3}([A-C]?D)?$`. Dependent-derail lookup strips `D` as today. |
+| Switch Value | any non-empty string | See the next row. Diagnostic `bad_switch_value`. |
+| Switch, lock and derail Values | compiler.py:907 `(\d+)(D)?`; `_check_dependent_derail_allocations` (compiler.py:1461) keys on `endswith("D")`; `_derail_models` (model.py:516, 528, 533) sets dependence and `controllingSwitch` from a trailing D; the crossover group (model.py:540-555) keys on a trailing `B` | `^(0?[1-9]\d{0,3})([A-Z]?)$` (D8). Error on a Value used twice across switches, locks and derails. Gang = switches and locks with one gang id. A derail is dependent when its gang id matches a gang; `controllingSwitch` names that gang. Nothing keys on the letter D or B. |
 | Head Value | `^[A-E]$` | `^[A-Z]$` (D9). Empty `~` heads already fail (D10). |
 | Track Circuit Value | any non-empty string | Ends in `T` or `T<digit>` (D4), a warning first. Accept `<Interlocking>:` references. The proposed side-letter check is dropped: drawn names are used as drawn. |
 | MaintainerCall Value | not checked | `^MC[1-9]\d{0,3}$` (D12). |
 | Lever parity | not checked | Optional warning: switch even or signal odd. Not an error (§6, F25). |
-| `_PART_KIND` | 25 parts | Goes (ADR 0002 D2). Observed in the netlists and missing from the map today: `Switch_HandThrow`, `Switch_Powered_NO_TC`, `Track Circuit_Yellow`, `Rule6.13-Yard Limits`. These raise `unknown_symbol` today. The kind for `HBD` and `TL`/`TR` is O3. |
+| `_PART_KIND` | 25 parts | Goes (ADR 0002 D2). Observed in the netlists and missing from the map today: `Switch_HandThrow`, `Switch_Powered_NO_TC`, `Track Circuit_Yellow`, `Rule6.13-Yard Limits`. These raise `unknown_symbol` today. The kind for `HBA` and `[NSEW]FLK` is O3. |
 
 Outside the plant compiler: the desk `IndicationToken` fields and `configureDesk()` change with the plants. The desk linker pairs by normalized name.
+
+### Outside the plant compiler (D8)
+
+The derail and gang rule (D8) also touches:
+
+- FieldUnit `InterlockingPlant::addDerail` (`src/InterlockingPlant.h`): it parses a trailing D, takes
+  the rest as the base switch, and refuses a `*D` name with no base. It changes to take dependence from
+  the model (an explicit base, as the portable model's `controllingSwitch` already carries). FieldUnit
+  `PlantSerializer.h` (derails "dependent *D", lines 346 and 598) follows. An issue is to be filed.
+- FieldUnit `docs/how-to/05_derails_and_os_binding.md` section 2 ("`D` is reserved for derails. The
+  suffix `D` must not name a crossover end."). Listed here; not edited.
+- The glossary entries "dependent derail", "independent derail", "crossover" and §10.2, and the
+  AGENTS.md line on the dependent derail Value: updated with this ADR.
 
 ### To check in the 1946 AAR document
 
 One sitting with `FieldUnit/docs/reference/AAR. Signal Section. Circuit nomenclature, written circuits,
-and graphical symbols. 1946-10.pdf` (AAR46). For each item, note the page and the exact form.
+and graphical symbols. 1946-10.pdf` (AAR46; likely AAR Signal Manual Part 33, per the owner). For each
+item, note the page and the exact form. The owner's second-round answers (Appendix A) give the
+expected result; the check confirms it in the document.
 
-- V1. `MC`. Is `MC` listed, and as what: maintainer call, a lamp, a control, a relay? The owner's
-  summary (Appendix A, Q13) cites this document as its source [2] and also claims the AAR lamp classes
-  "LL (Lever Light)" and "IND (Indication)". Check each claim (D12).
-- V2. `HBD`. Is `HBD` listed as hot box detector (D5)?
-- V3. `TL`, `TR`. Are they listed as left and right traffic indications (D5)? AAR56 p. 34 uses `TR` for
-  the track relay (glossary `TR`). Note whether AAR46 gives `TR` both meanings, and how position
-  separates them.
-- V4. Zero prefix. Is the arbitrary track circuit number written with the digit zero (`01T`) or the
-  letter O (`O1T`, as AAR56 p. 31 reads in our copy)? Does the rule cover "isolated or auxiliary"
-  segments (plain stretch, detector circuits, crossing approaches), or only circuits "in which there
-  are no interlocked switches and which do not govern signals" (AAR56 wording) (D5)?
-- V5. Section letter (Q5, O1). Is there an example of "progressive alphabetical prefixes" that shows
-  where the letter goes (`784LAT` or `A784LT`)?
-- V6. Optional. Does AAR46 state the track circuit rule as AAR56 p. 31 does (number plus T; frog,
-  switch, derail preference), and does it read a trailing digit as a wire's contact count (AAR56 p. 32),
-  which bears on `T1` (D3)?
+- V1. `MC`: listed as maintainer call, with `MCS` and `MCK` (owner: Parts 33 and 91)? (D12)
+- V2. `HBA` (hot box alarm): listed in AAR46? The owner's source is ATCS 250 material, a later
+  standard. (D5)
+- V3. `F` (traffic) and `FLK` (traffic indicator) with a direction letter (`EFLK`, `WFLK`, `NFLK`,
+  `SFLK`): listed in AAR46? (D5)
+- V4. Zero prefix: the owner answers the digit zero. Confirm the AAR46 form (`01T`; AAR56 p. 31 reads
+  `O1T` in our copy) and the scope of the rule. (D5)
+- V5. Section letter: which form does AAR46 show, `784LAT` or `A10T`? This can settle D6.
+- V6. Optional. The track circuit rule (number plus T; frog, switch, derail preference) and the reading
+  of a trailing digit as a wire's contact count (AAR56 p. 32), which bears on `T1` (D3, D15).
 
 ## Appendix A: the questions and the owner's responses, verbatim
 
@@ -369,32 +426,23 @@ In standard AAR signal manuals and standard railroad plans (such as Conrail or A
 Here is how the AAR standards govern the levers, switches, and lamps for these systems:
 ### 1. The AAR Token & Lamp Specifications (MC)
 
-* Nomenclature: On a signal circuit drawing or control board layout, a lamp designated as MC explicitly stands for Maintainer's Call. [1] 
-* AAR Bulb Standards: The AAR Signal Manual (specifically Part 91) categorizes bulbs by manufacturing dimensions, base styles, and filaments (such as those detailed under AAR drawings 1541, 1542, and 1543). [1] 
-* Physical Lamp Purpose: When a dispatcher activates the MC system, it lights a steady white or clear bulb inside a weatherproof housing mounted on the exterior wall of a wayside signal bungalow or relay house at an interlocking. [3, 4] 
+* Nomenclature: On a signal circuit drawing or control board layout, a lamp designated as MC explicitly stands for Maintainer's Call.
+* AAR Bulb Standards: The AAR Signal Manual (specifically Part 91) categorizes bulbs by manufacturing dimensions, base styles, and filaments (such as those detailed under AAR drawings 1541, 1542, and 1543). 
+* Physical Lamp Purpose: When a dispatcher activates the MC system, it lights a steady white or clear bulb inside a weatherproof housing mounted on the exterior wall of a wayside signal bungalow or relay house at an interlocking. 
 
 ### 2. Control Machine Levers and Toggles
-On vintage Union Switch & Signal (US&S) or General Railway Signal (GRS) Centralized Traffic Control (CTC) machines, the maintainer call function is assigned a control interface directly beneath the track model board: [5] 
+On vintage Union Switch & Signal (US&S) or General Railway Signal (GRS) Centralized Traffic Control (CTC) machines, the maintainer call function is assigned a control interface directly beneath the track model board: 
 
 * The Toggle Switch: Because maintainer calls do not require mechanical safety interlocking logic (they don't change track switches or clear trains), they do not use the large "Armstrong" or heavy rotary levers. Instead, they use small two-position toggle switches or push-buttons located on the console panel. [4, 5, 6] 
-* Operation Sequence: To signal a maintainer, the train dispatcher flips the field station's MC toggle switch to "ON" and hits the Code Start button to send a pneumatic or electronic code out to that field location. [4] 
+* Operation Sequence: To signal a maintainer, the train dispatcher flips the field station's MC toggle switch to "ON" and hits the Code Start button to send a pneumatic or electronic code out to that field location. 
 
 ### 3. Indication Lamps on the Console
 
-* The Repeater Lamp: Right next to or directly below the field code buttons on the dispatcher's console, there is a small panel indication lamp. [4] 
-* AAR Classification: This is an AAR-standardized LL (Lever Light) or IND (Indication) lamp. It illuminates on the dispatcher's board to confirm that the code successfully went out and that the field MC light is actively burning on the wayside bungalow. [1, 4] 
+* The Repeater Lamp: Right next to or directly below the field code buttons on the dispatcher's console, there is a small panel indication lamp. 
+* AAR Classification: This is an AAR-standardized LL (Lever Light) or IND (Indication) lamp. It illuminates on the dispatcher's board to confirm that the code successfully went out and that the field MC light is actively burning on the wayside bungalow. 
 
 ### Historic Context
-Before the widespread adoption of two-way locomotive and trackside radios, the Maintainer Call system was vital. While called a "Maintainer" call, railroad operating rulebooks typically mandated that any railroad employee (including conductors or engineers) who spotted a lit MC lamp on a wayside building had to immediately stop at the nearest wayside telephone box to contact the dispatcher. [3, 4] 
-
-[1] [https://multimodalways.org](http://multimodalways.org/docs/railroads/companies/CR/CR%20Standard%20Plans/CR%20CS-4000-6%204-15-1981.pdf)
-[2] [https://www.jonroma.net](https://www.jonroma.net/media/signaling/standards/na/aar/AAR.%20Signal%20Section.%20Circuit%20nomenclature%2C%20written%20circuits%2C%20and%20graphical%20symbols.%201946-10.pdf)
-[3] [https://www.trainorders.com](https://www.trainorders.com/discussion/read.php?11,4849511)
-[4] [https://ctcparts.com](http://ctcparts.com/?page_id=322)
-[5] [https://ctcparts.com](http://ctcparts.com/?page_id=322)
-[6] [https://forum.trains.com](https://forum.trains.com/t/interlocking-levers-how-did-they-work/143927)
-
-
+Before the widespread adoption of two-way locomotive and trackside radios, the Maintainer Call system was vital. While called a "Maintainer" call, railroad operating rulebooks typically mandated that any railroad employee (including conductors or engineers) who spotted a lit MC lamp on a wayside building had to immediately stop at the nearest wayside telephone box to contact the dispatcher. 
 
 
 
@@ -405,6 +453,148 @@ Questions not asked:
   RESPONSE: The Watsonville schematic has been updated and can now be rechecked.
   
 - ADR 0001 D12 (as amended) answers any question about a `CP_` or `CP ` prefix and about normalizing names. A KiCad name has no prefix, a model board may add `CP ` for display, and a space becomes `-` in a topic or key. This ADR adds no prefix rule and no normalization.
+
+
+### Second round (2026-10-03)
+
+The owner typed these into the first final-review form. They are kept unchanged.
+
+Inline edit of D5 (Q9):
+
+- D5. Circuits with no switch and no signal; specialized tokens (Q9). The AAR scheme is part of the
+  layout designer documentation, although these South-cTc plans do not use it. Where AAR has defined
+  terminology, it is documented and used; specialized tokens carry minimal semantic value.
+  - Arbitrary numbers with a zero prefix, `0<n>T` (`01T`), name isolated or auxiliary track segments
+    where no switch points exist and no governing signal is directly attached (the owner's examples:
+    plain stretch blocks, specialized detector circuits, crossing approaches).
+  - `HBD` (NOW HBA - Hot Box Alarm) is a hot box detector. `TL` and `TR` (now [N,S,E,W]FLK) are left and right traffic indications. None of them is
+    a track circuit. They came from forum threads and may not be AAR.
+      - The AAR status of `HBD`, `TL`/`TR` and the zero prefix is unverified until the 1946 AAR nomenclature
+        document is checked (see Consequences, "To check in the 1946 AAR document").
+
+Responses under the 1946 check list:
+
+### To check in the 1946 AAR document
+
+One sitting with `FieldUnit/docs/reference/AAR. Signal Section. Circuit nomenclature, written circuits,
+and graphical symbols. 1946-10.pdf` (AAR46). For each item, note the page and the exact form.
+
+- V1. `MC`. Is `MC` listed, and as what: maintainer call, a lamp, a control, a relay? The owner's
+  summary (Appendix A, Q13) cites this document as its source [2] and also claims the AAR lamp classes
+  "LL (Lever Light)" and "IND (Indication)". Check each claim (D12).
+
+RESPONSE:
+The reference is Part 33 Circuit Nomenclature.
+AAR Maintainer Call (MC) tokens and abbreviations are defined in the Association of American Railroads (AAR) Signal Manual, specifically under Part 33 (Circuit Nomenclature and Written Circuits) and Part 91 (Lamp Use and Abbreviations).
+
+* AAR Signal Manual Part 33 (Circuit Nomenclature): Dictates the standard alphabetic term sequencing and prefix rules used to define electrically operated railroad signal units, wire labels, and relays.
+* AAR Signal Manual Part 91: Defines standard material categories, design drawings (e.g., drawings 1541, 1542, 1543), and operational abbreviations. Under this section, MC is designated as the abbreviation for a Maintainer's Call indicator lamp or feature.
+* Conrail's CS-4000 standard (1981) for electric lamps defines lamp abbreviations:
+CGA - crossing gate arm
+CTI - Chart Track Indicator
+ESL - Electric Switch Lock
+HCD - High Car Detector
+HBR - Hot Box Recorder
+IND - Indication
+LL  - Lever Light
+MC  - Maintainer's call
+PT  - Pole Target
+SL  - Switch Lamp
+TO  - Train Order
+
+* Control Token: MCS, ECS or MCR (Maintainer Call Relay) — This represents the control code sent from the dispatcher's machine to the field location to activate the maintainer's call light or horn.
+* Indication Token: MCK (Maintainer Call Indication / "Keep" light) or ECK — This represents the return indication code sent back from the field to the dispatcher's console, illuminating the indication lamp to confirm that the maintainer call is actively operating in the field
+
+- V2. `HBD`. Is `HBD` listed as hot box detector (D5)?
+HBA seems to be the proper name.  I changed Sargent's use.
+
+Defined in the ATCS series of communication standards
+
+The AAR (Association of American Railroads) standardizes wayside defect data and Centralized Traffic Control (CTC) codeline commands through the Advanced Train Control System (ATCS) Specification 200 series (specifically ATCS 250). 
+In ATCS network protocol formatting, data fields are designated as tokens or byte flags that represent specific control actions and indication telemetry sent between the central office (CAD system) and the wayside equipment shelter. 
+
+Indication Tokens (Wayside-to-Office)
+Indication bytes pass telemetry back to the dispatcher's office or network management server when a train transitions over a detector:
+
+* HBA (Hot Box Alarm): A high-level boolean token indicating that at least one journal bearing has exceeded the critical temperature threshold. 
+* HWA (Hot Wheel Alarm): Triggered when a dragging brake or locked wheel causes a wheel rim to overheat. 
+* DED (Dragging Equipment Detector): Flags that a dragging object has broken or struck the trackside structural plates.
+* AXLE_CNT (Axle Count): On digital codelines, a numeric token providing the total integer count of passing axles used to verify train integrity and pinpoint defect positions.
+* DET_SYS_OK / FLT: A health status token verifying system calibration and functionality, or indicating a localized hardware failure. 
+
+Control Tokens (Office-to-Wayside)
+Control bytes allow the dispatcher or centralized management system to interact directly with the field installation: 
+
+* ALM_RST (Alarm Reset): Remotely resets the wayside visual indicator lamps, alarm stick relays, or talker sub-systems after an inspection is completed.
+* SYS_EN / SYS_DIS (System Enable/Disable): Toggles the operational state of the monitoring site or forces an override state.
+* DIAG_REQ (Diagnostics Request): Prompts the field microprocessor to run self-calibration routines and transmit back DET_SYS_OK and an event log. 
+
+
+- V3. `TL`, `TR`. Are they listed as left and right traffic indications (D5)? AAR56 p. 34 uses `TR` for
+  the track relay (glossary `TR`). Note whether AAR46 gives `TR` both meanings, and how position
+  separates them.
+
+  RESPONSE: These should be EFLK/WFLK or SFLK/NFLK.  I updated the schematics.
+
+==========
+  In the Association of American Railroads (AAR) standard signal nomenclature for Centralized Traffic Control (CTC) and codeline transmission, the primary letter token designated for Traffic Direction is F.
+To control and indicate the directional flow of traffic across a codeline circuit, F is paired with geographical direction prefixes and functional suffixes:
+
+**Geographical Direction Prefixes**  
+These tokens are placed before F to specify the direction of train movement being authorized or indicated:
+
+* E – East / Eastward
+* W – West / Westward
+* N – North / Northward
+* S – South / Southward
+
+**Standard Codeline Control & Indication Tokens**  
+These mnemonic combinations are mapped directly to specific bits in the codeline byte structure to control and read back traffic status:
+
+| Token | Meaning & System Role |
+|---|---|
+| FR | Traffic Relay – The basic unit or bit state defining traffic direction authority. |
+| FSR | Traffic Stick Relay – Used to lock and hold the requested traffic direction until a block clears. |
+| EFSR / WFSR | East / West Traffic Stick Relay – Specific directional stick controls/indications transmitted via the codeline. |
+| EFR / WFR | Eastward / Westward Traffic Relay – Active bits representing established traffic direction (or NFR / SFR for North/South lines). |
+| FLR | Traffic Locking Relay – Ensures a traffic direction request cannot be reversed while a route is lined or a block is occupied. |
+| FLK | Traffic Indicator – The indication code sent back to the dispatcher's office to illuminate the panel status. |
+
+==========
+
+- V4. Zero prefix. Is the arbitrary track circuit number written with the digit zero (`01T`) or the
+  letter O (`O1T`, as AAR56 p. 31 reads in our copy)? Does the rule cover "isolated or auxiliary"
+  segments (plain stretch, detector circuits, crossing approaches), or only circuits "in which there
+  are no interlocked switches and which do not govern signals" (AAR56 wording) (D5)?
+
+  RESPONSE:  the number ZERO (0).  In addition single digits serve the same purpose in a plant where dispatcher- and cross-interlocking items use milepost-based numbers.
+
+- V5. Section letter (Q5, O1). Is there an example of "progressive alphabetical prefixes" that shows
+  where the letter goes (`784LAT` or `A784LT`)?
+
+      RESPONSE: The latter: A784LT which conflicts with the practice used in these schematics.  The failure case in the schematics is the slight ambiguity with head letters.
+
+- V6. Optional. Does AAR46 state the track circuit rule as AAR56 p. 31 does (number plus T; frog,
+  switch, derail preference), and does it read a trailing digit as a wire's contact count (AAR56 p. 32),
+  which bears on `T1` (D3)?
+
+    RESPONSE:   The track diagrams and codeline charts I have use several conventions over several eras; the South-cTc schematics DO NOT correctly follow the AAR forms, but do follow ATCS-inspired forms that may be layman derived and thus misinformed.
+
+    my understanding is that 
+    - Within Interlocking Limits (switches and derails) a track circuit enclosing Switch #11 is named 11T, or if the TC is the OS circuit, 11T1
+    - Outside Interlocking Limits (signals), a TC should be numbered based on the roadway signal governing over it,
+       - If multiple sequential track circuits govern a single signal, progressive alphabetical letters are added to differentiate the sections.
+           - Example: The primary track circuit directly ahead of Signal 10 is named 10T.
+           - Example: If there are three successive track circuits approaching or governing Signal 10, they are prefixed sequentially as A10T, B10T, and C10T
+    - For tracks that feature no interlocked switches and do not govern any active block signals (such as storage tracks, specific yard tracks, or isolated sidings), arbitrary sequential numbers starting with zero are assigned
+    - Directional Coded Track (e.g., 1WT / 1ET): In modern Coded Track Circuit territory, a circuit may combine the track number, direction, and the letter T (e.g., Track 1, West side of the insulated joint = 1WT).  This is where "1SAT" and friends come from - 1SAT -> southbound approach...
+
+Rule change given in chat (owner, 2026-10-03), as relayed: "dependence and ganging are decided by the
+symbol kind and the name relation, not by the letter D"; a name is `<id>[<letter>]`; the full Value is
+unique within an interlocking across switches, locks and derails, and a derail `815A` beside a switch
+`815A` is a name collision and a compiler error; gang id = Value minus its trailing letter; a DERAIL
+whose gang id matches a switch or lock gang is dependent on it, otherwise independent; the letter D is
+the convention, not the mechanism. This replaces the earlier D8.
 
 ## Appendix B: evidence and inventory
 
@@ -456,7 +646,7 @@ three numbers. It gives no example of a milepost number on a CTC or interlocked 
 
 "Proposed" in this table marks the earlier proposal. The Decisions settle R1 (D1, D2: L and R in the
 code, the local style on drawings), R3 (D3: `<switch>T1`), R4 and R5 (D4, D6: drawn names are kept;
-the generated form waits for O1) and R7 (D8: `<switch>D`). R6 follows the Principle: milepost numbers
+the generated form waits for O1) and R7 (D8: dependence by symbol kind and gang id; `D` by convention). R6 follows the Principle: milepost numbers
 for non-local items, arbitrary numbers for local ones (D11). R2 stands as evidence.
 
 | # | Question | Reading 1 | Reading 2 | Cost of the proposal |

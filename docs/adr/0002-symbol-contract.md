@@ -1,6 +1,6 @@
 # 0002. The symbol contract: what each KiCad symbol records
 
-- Status: proposed (final review)
+- Status: proposed; frozen 2026-10-03 until the cleanup pass (issue #30) rewrites this ADR to rules. The owner's review: too complicated and unfocused to approve as-is.
 - Date: 2026-10-02 (responses), 2026-10-03 (final form)
 
 Not committed. This ADR changes no library, schematic or code by itself. The owner changed the

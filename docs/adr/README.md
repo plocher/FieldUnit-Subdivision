@@ -7,8 +7,8 @@ One list of what is decided and what waits for the owner. Each proposed ADR open
 
 | ADR | Subject | Asked of the owner |
 |---|---|---|
-| [0002](0002-symbol-contract.md) | What each KiCad symbol records | Final review: 17 decisions folded from the owner's responses; three open items (O1-O3). Accept, or amend. |
-| [0003](0003-name-grammar.md) | One grammar for the names of appliances, signals and track circuits | Final review: 14 decisions folded from the owner's responses; three open items; six items to validate against the 1946 AAR scan (FieldUnit #26). Nothing is renamed until accepted. |
+| [0002](0002-symbol-contract.md) | What each KiCad symbol records | Frozen 2026-10-03: too complicated to approve as-is. Rewritten to rules after the cleanup pass (#30), then approved. |
+| [0003](0003-name-grammar.md) | One grammar for the names of appliances, signals and track circuits | Frozen 2026-10-03, same reason; the owner's in-progress edits are committed as they stood. Rewritten to rules after #30. |
 
 ## Accepted
 
