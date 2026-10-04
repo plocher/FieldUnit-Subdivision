@@ -109,6 +109,31 @@ the owner on 2026-10-03. D4 and D5 were decided before the requests.
       hand-thrown switch connects through the field's hardware mapping: in the model, device to I/O
       unit. Fascia-mounted lamps and levers are still to be designed.
 
+- D18. Every field on a placed symbol is carried into the model with that symbol (owner, 2026-10-03).
+    The compiler copies all fields of an instance into the model entity verbatim, keyed by field name,
+    as `fields: {name: value}`, with the instance's sheet path, reference and `lib_id` beside them. It
+    interprets the fields that the symbol contract names for that Role and Kind, and passes the others
+    through untouched. A consumer (generator, model board, glass panel, linker) reads what it needs.
+    Adding a field to a symbol needs no grammar, schema or compiler change. Removing or renaming a
+    field is a contract change and gets an ADR.
+    - Diagnostics: an unknown field is not an error. A contract field with a bad value is an error. A
+      field that the contract has retired is a warning, so drift is reported instead of silently
+      changing behaviour.
+    - A field is not semantics. `Color` on a lamp passes through and the model board reads it; the
+      compiler does not need to understand it. `Address` on `PanelColumn-MAX7313` passes through and
+      the drive-bit code reads it.
+    - The pass-through is not a licence to put facts in Values. A Value is an identifier (the railroad
+      name) or a human label. Meaning comes from Role, Kind, pins and named fields. Where a Value's
+      letters carry AAR meaning (direction, head letters, the gang letter), the compiler may read them to
+      check against the drawn structure and report a difference, never as the only source; the gang id
+      (ADR 0003 D8) is the one stated exception.
+    - Changed by the owner on 2026-10-03 under this rule: `PanelColumn-MAX7313` gains `Address` (the
+      expander address was in the Value) and its `BusKind` is renamed `Kind`, so the symbol follows the
+      Role/Kind pattern; the compiler reads the field, not the Value. Lamp colour is the `Color` field,
+      kept in the model for the model board and the glass panel; today no phase reads it, and the
+      `PanelLamp-RED`/`-YELLOW` variants only preset it.
+    - This supersedes P2 below where P2 says a field that no phase reads "goes": it is passed through.
+
 Closed on 2026-10-03 by the owner's second responses (verbatim in Appendix A, "Second round"):
 O1 (by D6), O2 (by D17), and the encoding Value of O3 (by D9).
 
@@ -159,7 +184,7 @@ The changes below follow these principles.
 | # | Principle | Test |
 |---|---|---|
 | P1 | One fact, one place. | If two fields (or a field and a pin connection, a sheet name or a title block) record one fact, one of them goes. |
-| P2 | A phase reads it. | The compiler, the linker or the generator reads the field. If no phase reads it, it goes, or it becomes documentation in the symbol description. |
+| P2 | A phase interprets the contract fields; every field is carried (D18). | The contract names the fields a phase interprets for each Role and Kind. A field no phase interprets is carried in `fields` and not removed. A field that duplicates another fact goes under P1, not P2. |
 | P3 | Names, not policy. | A field records a drawn fact (a name, a membership, an authored address). It does not record what the generator must do (a topic pattern, a token spelling, a target). The generator owns policy (ADR 0001 D6). |
 | P4 | Library facts stay in the library. | A fact that is the same for every instance of a symbol (`Role`, `Kind`, `Color`, `BusKind`, `Direction` on a one-direction marker) is read from the library by `lib_id`. The copy that KiCad puts in each instance is not read. A copy that differs from the library is a warning ("update symbol from library") (D2). |
 | P5 | Instance facts have an empty default. | A name, a membership or an address has an empty library default, so a missing value is found. Placeholders (`XX`, `FIXME`, `COLUMN#`, `79.0`, `S`, `Luchessa`) go. |
@@ -173,6 +198,17 @@ controller compiler reads the instance `Kind`, so it treats lock lever 795 as a 
 plant compiler reads neither; it classifies by symbol name (`_PART_KIND`).
 
 Operator roles: dispatcher, tower operator, maintainer. The machine keeps a type that means its panel style.
+
+### Field pass-through (D18)
+
+| Place | Change |
+|---|---|
+| `schemas/interlocking-plant/v1.json` | each entity gets an open `fields` map (string values, `additionalProperties: true`) beside its interpreted properties, which stay closed |
+| `tools/kicad_services/netlist_reader.py` | already exposes every field of a component as `fields`; no change |
+| plant and desk compilers | copy the field map onto the entity first, then interpret the contract fields; stop dropping unknown fields |
+| symbol contract | which fields a Role and Kind require, and their types, becomes data in the SPCoast repo (like the code line type definitions, D10), so a new Kind is a data change |
+| `docs/design/layout-model.md` | every entity gains `fields` |
+| test | compile Luchessa, pick any placed symbol, assert that every field in the netlist appears in the model entity's `fields`. This test fails today. |
 
 ### Plant library: fields that change
 
