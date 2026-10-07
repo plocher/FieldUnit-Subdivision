@@ -1028,8 +1028,6 @@ def _route_start_lane(
     terminal_lanes: dict[str, int],
 ) -> int:
     """Return a route's visual source lane without promoting internal circuits."""
-    if route.entry_designation == "2SA" and "MT" in terminal_lanes:
-        return terminal_lanes["MT"]
     return terminal_lanes.get(route.entry_designation, 2)
 
 
@@ -1447,8 +1445,6 @@ def _model_board_terminal_lanes(graph: PlantGraph) -> dict[str, int]:
                 "Industry": 0,
             }
         )
-        if "2SA" in lanes:
-            lanes["2SA"] = 2
     return lanes
 
 

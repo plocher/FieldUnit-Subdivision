@@ -6,14 +6,14 @@ first; this file adds what an agent needs that the README does not say.
 ## What this repo owns
 
 FieldUnit-Subdivision is the operating-territory layer (SPCoast South: 7
-controlled points, one 14-column US&S cTc desk). It owns:
+interlockings, one 14-column desk: the SPCoast CTC machine, US&S style). It owns:
 
 - **KiCad → data tooling**: reading plant and desk schematics and emitting the
-  portable model, FieldUnit plant JSON, board pictures, and (planned) desk
+  portable model, FieldUnit interlocking model JSON, board pictures, and (planned) desk
   firmware.
 - **Subdivision runtime**: virtual plants, train progression, board and crew views.
 
-It does **not** own vital logic. Plants run FieldUnit's `InterlockingPlant`;
+It does **not** own vital logic. Plants run FieldUnit's interlocking logic (`InterlockingPlant`);
 never copy or reimplement interlocking rules here.
 
 ## Related repos and sources of truth
@@ -22,7 +22,7 @@ never copy or reimplement interlocking rules here.
 | --- | --- | --- |
 | `~/Dropbox/KiCad/Railroad/SPCoast/<Project>/` | KiCad projects (git) | Plant topology and desk wiring as drawn |
 | `~/Dropbox/KiCad/InterlockingPlant/symbols/` | `Railroad.kicad_sym` (plant), `RailroadPanel.kicad_sym` (desk) | Symbol and field contracts. **Not in git.** Parked outside this repo while they evolve; expected to move into this repo. |
-| `~/Dropbox/Arduino/libraries/FieldUnit` | Header-only C++17 library (git) | Vital engine, codecs, `PlantSerializer`, `cTcMachine`, and the `examples/spcoast_ctc` desk sketch |
+| `~/Dropbox/Arduino/libraries/FieldUnit` | Header-only C++17 library (git) | Interlocking logic, codecs, `PlantSerializer`, `cTcMachine`, and the `examples/spcoast_ctc` desk sketch |
 | this repo | Tooling and runtime | Everything derived from the above |
 
 The symbol libraries are registered globally in
@@ -31,7 +31,7 @@ The symbol libraries are registered globally in
 ## Commands
 
 ```zsh
-python3 -m unittest discover -s tests -q      # 122 tests, Python 3.14
+python3 -m unittest discover -s tests -q      # 123 tests, Python 3.14
 tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-cli
 ```
 
@@ -65,6 +65,7 @@ tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-
 - `schemas/interlocking-plant/v1.json`: portable model schema.
 - `profiles/spcoast_south/cps/`: station JSON. `CP_*.json` are legacy harvests; `generated/` holds KiCad-derived interlockings (only `Luchessa` so far). The plant host prefers `generated/<name>.json` over the legacy file.
 - `runtime/plant_host/`: the only runtime code. `graph/`, `traffic/` and `web/*` are empty placeholders.
+- `docs/archive/vocabulary-review.md` and FieldUnit `docs/GLOSSARY.md` (`~/Dropbox/Arduino/libraries/FieldUnit/docs/GLOSSARY.md`): the sources of truth for vocabulary. Use their terms in prose; code names keep their spelling.
 - `docs/review/`: design notes and handoffs. `ctc-panel-hardware-binding.md` covers desk wiring.
 
 ## KiCad conventions the compiler relies on
@@ -73,12 +74,12 @@ tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-
 `tools/plant_graph/compiler.py`; any other part raises `unknown_symbol`.
 
 - The Value is the railroad name for every named part (switch `783`, mast `784EAB`, circuit `1NA`). References (`SW1`, `S7`) are KiCad annotation artifacts. Use them only as netlist identities, never to derive or check names.
-- Dependent derail Value is `<switch>D`, e.g. `795D`.
-- Mast Value matches `^\d+[NSEW][A-E]+$`, e.g. `784EAB`. N/W normalise to LEFT, S/E to RIGHT.
+- Switch, lock and derail Values are unique in an interlocking. Gang id = Value minus its trailing letter (A–Z); switches and locks with one gang id are one gang (`815`, `815A`). A derail whose gang id matches a gang is dependent on it, by convention `<id>D` (e.g. `795D`); the letter D is not the mechanism (ADR 0003 D8, proposed). A dependent derail takes the same position as its switch. Derail NORMAL is derailing; REVERSE is clear. The derail symbol's through pin is `R` (pin 2).
+- Mast Value matches `^\d+[NSEW][A-E]+$` in the compiler today, e.g. `784EAB`; ADR 0003 D9 allows any letter A to Z (compiler to follow). N/W normalise to LEFT, S/E to RIGHT (ADR 0003 D1).
 - Head Value is one letter, A–E. The Track Circuit marker's Value is the authoritative circuit name.
 - A switch's OS circuit defaults to `<switch>T1`; a `TC` field overrides it.
 - `CP` must equal a MAIN HOUSE Value.
-- Direction and policy markers need `Rulebook`, and `Direction` where applicable.
+- Direction and policy markers: the symbol's Kind/Role records the rule. It replaces the `Rulebook` field. The compiler still requires `Rulebook` (it is behind; to be updated). `Direction` where applicable.
 - Track nets need labels, except OS legs, dark track and derail nets.
 
 **Desk schematics (RailroadPanel lib).** Compiled by `tools/controller_graph/` (CLI `parse_kicad_controller.py`) and cross-checked against plants by `tools/link_subdivision.py`.
@@ -96,6 +97,7 @@ tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-
 3. Update `loadStations()` and the self-test in `spcoast_virtual_plant.cpp`.
 4. Update the desk names in FieldUnit `examples/spcoast_ctc` (`configureDesk()`) and in `tools/test_ctc_desk.py`.
 5. Verify with unittest, the smoke script, `--test`, and an `arduino-cli compile` of the sketch.
+6. Update FieldUnit docs that quote the station. Corporal: primer Act V and Tutorial 2 quote the legacy `CP_Corporal.ino`.
 
 Tests and the smoke script hard-code Luchessa facts. When a change to them is intended, make it in a separate step.
 
@@ -106,6 +108,30 @@ generates a complete desk sketch, compiles it with arduino-cli and uploads it.
 FieldUnit `examples/spcoast_ctc` is a working placeholder and a possible
 template, not a constraint. The output form (runtime JSON, generated header, or
 full sketch) is still open. Propose options; do not pick one on your own.
+
+## Working agreements (owner, 2026-10-01 to 03)
+
+- **Order of authority.** (1) The relay model of the interlocking logic and AAR practice: the design
+  principle (`FieldUnit/docs/GLOSSARY.md` section 10.6). (2) FieldUnit `src/`: where it differs from
+  (1), the code has a defect. (3) KiCad-derived interlocking models. (4) Legacy sketches and
+  XML-harvested profiles: evidence only, never a reference. Never rewrite a principle to match weaker
+  code; file the difference as a code defect.
+- **Vocabulary.** `FieldUnit/docs/GLOSSARY.md` is the source of truth. Use its terms exactly. Its
+  section 11 lists retired terms. Decisions live in `docs/adr/`; `docs/adr/README.md` is the index.
+- **Facts, not symbols.** A rule that reads "is there a symbol on this sheet" is a placeholder for a
+  fact that lives elsewhere. Find the fact (ADR 0001 D15).
+- **Proposals are ADRs.** Anything that needs the owner's decision goes in `docs/adr/` as a proposed
+  ADR that opens with the decisions requested, one line each, with a default. Keep records and
+  spikes out of `docs/review/`; they go to `docs/archive/` when superseded.
+- **Baseline before editing.** The owner's design drafts are in scope and collaborative. Commit the
+  current version before changing one, so the change is an auditable diff.
+- **Watsonville.** Its schematic was incomplete until 2026-10-02. Re-check before citing a count or a
+  rule derived from it.
+- **Briefing agents.** State the order of authority. Do not say "document what the code does" for
+  interlocking logic. Do not name a legacy sketch as the reference. Exclude evidence the owner has
+  ruled out. Ask for one consolidated list of pending decisions back, not a narrative.
+- **Goldens.** A frozen golden encodes facts that go stale (the desk fixture, title blocks, the
+  `0x25` lookup). Prefer behavioural gates; when a golden must change, change it in its own commit.
 
 ## Design rules
 
@@ -121,7 +147,7 @@ full sketch) is still open. Propose options; do not pick one on your own.
 - Naming:
   - AAR tokens: `783NWS`, `784SGK`, `1SA`.
   - Interlocking: `Luchessa` (no `CP`); this is the plant name and the MQTT station key.
-  - Controlled point: `CP Luchessa` (MAIN HOUSE Value; one desk column each).
+  - The three `CP <name>` houses: `CP Luchessa`, `CP Gilroy`, `CP Carnadero` (MAIN HOUSE Values; one desk column each). Each is a control point: a `MAIN HOUSE` symbol declares it and its bungalow. On a 506-style code line each is one field station with the same name. The interlocking `Luchessa` contains all three.
   - Plant id: `spcoast.<Interlocking>`.
   - Names are case-preserved when produced and compared case-insensitively when consumed. Only case is folded, so `Luchessa` and `CP Luchessa` stay distinct.
   - Legacy stations still named `CP_<X>` are renamed when each is cut over, after checking whether it is an interlocking or a single CP.

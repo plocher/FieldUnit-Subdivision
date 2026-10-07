@@ -70,11 +70,11 @@ def _route(
         mast_name="784EAB",
         head_letters="AB",
         entry_terminal="CP1",
-        entry_net="1SA",
+        entry_net="1SAT",
         entry_designation="MT",
         entry_rulebook="261",
         exit_terminal="CP2",
-        exit_net="3NA",
+        exit_net="3NAT",
         exit_designation="Branch",
         exit_rulebook="261",
         end_kind=end_kind,
@@ -82,11 +82,11 @@ def _route(
         exit_face_signal="",
         exit_face_direction="",
         switch_alignments=(("799", switch_position),),
-        circuit_roles=(("2SA", CircuitRole.HOME_CLEAR),),
-        clear_track_circuits=("2SA",),
+        circuit_roles=(("2SAT", CircuitRole.HOME_CLEAR),),
+        clear_track_circuits=("2SAT",),
         os_track_circuits=(),
-        path_track_circuits=("2SA",),
-        path_nets=("2SA",),
+        path_track_circuits=("2SAT",),
+        path_nets=("2SAT",),
         head_names=("A", "B"),
     )
 
@@ -200,7 +200,7 @@ class RouteSignalingPolicyTests(unittest.TestCase):
                 )
             },
             track_circuits={
-                "2SA": TrackCircuitRuntimeState(vacant=True, healthy=True)
+                "2SAT": TrackCircuitRuntimeState(vacant=True, healthy=True)
             },
         )
 
@@ -496,9 +496,9 @@ class RouteSignalingPolicyTests(unittest.TestCase):
         graph = _graph()
         graph.nets = [
             PlantNet(
-                name="2SA",
+                name="2SAT",
                 net_class=NetClass.TRACK,
-                raw_name="/2SA",
+                raw_name="/2SAT",
                 nodes=(("SW799", "1"),),
                 authoritative_label=True,
             )
@@ -506,7 +506,7 @@ class RouteSignalingPolicyTests(unittest.TestCase):
         graph.routes = [
             replace(
                 _route("R"),
-                path_nets=("2SA", "switch:799:R"),
+                path_nets=("2SAT", "switch:799:R"),
             )
         ]
 
@@ -514,7 +514,7 @@ class RouteSignalingPolicyTests(unittest.TestCase):
 
         self.assertIn("digraph PlantTopology", dot)
         self.assertIn('rankdir=LR, size="8.5,11!", ratio=fill', dot)
-        self.assertIn("Track\\n2SA", dot)
+        self.assertIn("Track\\n2SAT", dot)
         self.assertIn("Route: MT-Branch", dot)
         self.assertIn("penwidth=3", dot)
         self.assertIn("style=invis, weight=100", dot)
@@ -691,14 +691,14 @@ class RouteSignalingPolicyTests(unittest.TestCase):
             signal_demands={"784": "RIGHT"},
             switches=self._ready_state().switches,
             track_circuits={
-                "2SA": TrackCircuitRuntimeState(vacant=False, healthy=True)
+                "2SAT": TrackCircuitRuntimeState(vacant=False, healthy=True)
             },
         )
 
         result = policy.evaluate(route, _graph(), state)
 
         self.assertEqual(result.indication, Indication.STOP)
-        self.assertEqual(result.blockers, ("track_circuit_occupied:2SA",))
+        self.assertEqual(result.blockers, ("track_circuit_occupied:2SAT",))
 
     def test_valid_runtime_predicates_return_static_indication(self) -> None:
         policy = RouteSignalingPolicy()
@@ -788,20 +788,20 @@ class RouteSignalingPolicyTests(unittest.TestCase):
                     switches=ready.switches,
                     track_circuits={},
                 ),
-                ("track_circuit_unavailable:2SA",),
+                ("track_circuit_unavailable:2SAT",),
             ),
             (
                 RouteEvaluationState(
                     signal_demands=ready.signal_demands,
                     switches=ready.switches,
                     track_circuits={
-                        "2SA": TrackCircuitRuntimeState(
+                        "2SAT": TrackCircuitRuntimeState(
                             vacant=True,
                             healthy=False,
                         )
                     },
                 ),
-                ("track_circuit_unhealthy:2SA",),
+                ("track_circuit_unhealthy:2SAT",),
             ),
         )
 

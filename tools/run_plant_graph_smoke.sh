@@ -61,8 +61,8 @@ assert {route["name"] for route in g["routes"]} == {
     "MT-Branch",
     "MT-MT1",
     "MT-MT2",
-    "2SA-Branch",
-    "2SA-MT1",
+    "2SAT-Branch",
+    "2SAT-MT1",
 }
 indications_by_route = {
     route["name"]: route["static_indication"]
@@ -127,7 +127,7 @@ connections_by_name = {
     for connection in connections
 }
 assert connections_by_name["Net-(B10-A)"]["start_port_id"] == "irj:B10:left"
-assert connections_by_name["2SA"]["start_port_id"] == "irj:B10:right"
+assert connections_by_name["2SAT"]["start_port_id"] == "irj:B10:right"
 for connection in connections:
     endpoint_ids = (connection["start_port_id"], connection["end_port_id"])
     if any(port_id.endswith(":R") for port_id in endpoint_ids):
@@ -229,7 +229,7 @@ for mast_name, switch_name in (("784EAB", "783"), ("784EC", "795"), ("784WD", "7
 assert abs(anchor_positions[turnout_anchors["783"]] - 0.45) < 1e-9
 assert abs(anchor_positions[turnout_anchors["795"]] - 1.35) < 1e-9
 assert abs(anchor_positions[turnout_anchors["799"]] - 2.25) < 1e-9
-two_naa = next(span for span in layout["spans"] if span["name"] == "2NAA")
+two_naa = next(span for span in layout["spans"] if span["name"] == "2NAAT")
 assert abs(
     (anchor_positions[two_naa["start_anchor"]]
      + anchor_positions[two_naa["end_anchor"]]) / 2
@@ -239,7 +239,7 @@ assert abs(
 edge_circuit_spans = {
     span["circuit_name"]: span
     for span in layout["spans"]
-    if span["circuit_name"] in {"1SA", "2NA", "3NA"}
+    if span["circuit_name"] in {"1SAT", "2NAT", "3NAT"}
 }
 for circuit_name, span in edge_circuit_spans.items():
     assert (
@@ -256,7 +256,7 @@ assert {
     for turnout in layout["turnouts"]
 } == {"783": False, "795": True, "799": False}
 assert {lamp["circuit_name"] for lamp in layout["track_circuit_lamps"]} == {
-    "1SA", "2SA", "1NA", "2NAA", "2NA", "3NA"
+    "1SAT", "2SAT", "1NAT", "2NAAT", "2NAT", "3NAT"
 }
 assert len(layout["signal_bases"]) == 5, layout["signal_bases"]
 assert all(span["row_name"] for span in layout["spans"]), layout["spans"]

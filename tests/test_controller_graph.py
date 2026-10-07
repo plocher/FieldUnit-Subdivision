@@ -124,8 +124,8 @@ class ApplianceTokenTests(unittest.TestCase):
             if a.kind == "LAMP"
         }
         self.assertEqual(lamps[("783T1",)].column, 5)
-        self.assertEqual(lamps[("1NA",)].column, 6)
-        self.assertEqual(lamps[("795T1", "2NAA", "799T1")].column, 6)
+        self.assertEqual(lamps[("1NAT",)].column, 6)
+        self.assertEqual(lamps[("795T1", "2NAAT", "799T1")].column, 6)
         self.assertEqual(lamps[("MC1K",)].column, 6)
         mcall = next(
             a for a in fragment.appliances if a.kind == "MAINTAINER_CALL"
@@ -165,8 +165,8 @@ class DriveBitGoldenTests(unittest.TestCase):
         self.assertEqual(bound[("CODE", "CODE")], ("0x26", 12))
         # Lamps, identified by their indication tokens
         self.assertEqual(bound[("783T1",)], ("0x24", 3))
-        self.assertEqual(bound[("1NA",)], ("0x25", 3))
-        self.assertEqual(bound[("795T1", "2NAA", "799T1")], ("0x25", 4))
+        self.assertEqual(bound[("1NAT",)], ("0x25", 3))
+        self.assertEqual(bound[("795T1", "2NAAT", "799T1")], ("0x25", 4))
         self.assertEqual(bound[("MC1K",)], ("0x25", 8))
 
 
@@ -679,7 +679,7 @@ class LinkerApplianceCrossCheckTests(unittest.TestCase):
             for d in model.diagnostics
             if d.code == "circuit-unlamped"
         ]
-        self.assertEqual(sorted(unlamped), ["1SA", "2NA", "2SA", "3NA"])
+        self.assertEqual(sorted(unlamped), ["1SAT", "2NAT", "2SAT", "3NAT"])
         # Known gap: maintainer calls are not in the plant model yet, so
         # MC1S/MC1K are reported uncheckable, not silently accepted.
         self.assertIn("mcall-uncheckable", infos)
@@ -728,7 +728,7 @@ class LinkerApplianceCrossCheckTests(unittest.TestCase):
         controller = compile_controller(read_golden())
         controller.appliances = [
             replace(a, indication_tokens=("999T9",))
-            if a.indication_tokens == ("1NA",)
+            if a.indication_tokens == ("1NAT",)
             else a
             for a in controller.appliances
         ]

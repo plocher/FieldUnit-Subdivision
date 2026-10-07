@@ -1,8 +1,8 @@
-# KiCad-projected plant JSON
+# KiCad-projected interlocking model JSON
 
 FieldUnit runtime payloads generated from KiCad. One file per **interlocking**
-(e.g. `Luchessa`), not per controlled point (`CP Luchessa`, `CP Gilroy`,
-`CP Carnadero` are its members; see the sidecar's `controlledPoints`).
+(e.g. `Luchessa`), not per `CP <name>` house (`CP Luchessa`, `CP Gilroy`,
+`CP Carnadero`; see the sidecar's `controlledPoints`).
 
 ```zsh
 python3 tools/parse_kicad_plant.py \
@@ -15,7 +15,7 @@ python3 tools/parse_kicad_plant.py \
 ```
 
 Then move `projectionDeferred` into the `.projectionDeferred.json` sidecar. The
-plant name is already the interlocking name, which is also the CodeLine (MQTT)
+plant name is already the interlocking name, which is also the code line (MQTT)
 station key, so no manual rename is needed.
 
 The same output is produced by `make json` in

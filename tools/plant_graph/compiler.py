@@ -434,8 +434,6 @@ class PlantGraphCompiler:
             if terminal.designation == "MT" and terminal.net_name in adjacent
         ]
         if not pending:
-            pending = [name for name in ("1SA",) if name in adjacent]
-        if not pending:
             pending = sorted(adjacent)
         for seed in pending:
             lanes[seed] = 0

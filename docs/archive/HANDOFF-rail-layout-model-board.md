@@ -2,10 +2,10 @@
 ## Purpose
 Continue the "part C" KiCad-to-Plant-Data-Model transition. The immediate vertical slice is a typed, compiler-derived rail-layout seam that can support a dispatcher model board, a compressed CTC overview, and later cTc lever/lamp realization.  Current state is refactoring from an incorrect treatment of SVG output as the model
 ## Read first
-- Original Part C meta-plan: `docs/review/HANDOFF-part-c-kicad-transition.md`
+- Original Part C meta-plan: `docs/archive/HANDOFF-part-c-kicad-transition.md`
 - Active implementation plan: Warp plan `5fd653cb-2d1e-4a9a-8072-cb5451d2037c`
-- Plant/CTC design lock: `docs/review/ctc-subdivision-design-layer.md`
-- Earlier KiCad spike handoff: `docs/review/SPIKE_HANDOFF_kicad-plant-graph.md`
+- Plant/CTC design lock: `docs/archive/ctc-subdivision-design-layer.md`
+- Earlier KiCad spike handoff: `docs/archive/SPIKE_HANDOFF_kicad-plant-graph.md`
 - Current visual review markup: `docs/review/markup-luchessa.png`
 - KiCad Luchessa schematic: `~/Dropbox/KiCad/Railroad/SPCoast/CP_Luchessa/CP_Luchessa.kicad_sch`
 ## Meta-plan checkpoint
