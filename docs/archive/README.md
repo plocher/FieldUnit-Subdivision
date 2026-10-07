@@ -13,3 +13,4 @@ old path `docs/review/`.
 | `ctc-subdivision-design-layer.md` | Early design of the subdivision layer | `docs/design/layout-model.md` |
 | `HANDOFF-part-c-kicad-transition.md`, `HANDOFF-rail-layout-model-board.md`, `SPIKE_HANDOFF_kicad-plant-graph.md` | Session handoffs | the code and tests they led to |
 | `TBD-shared-kicad-python-api.md` | A note on sharing the KiCad readers | `tools/kicad_services/` |
+| `part-c-ontology/` | The 2026-09-16 ontology checkpoint (five authority domains, evidence ledger, track-diagram contract, the first documentation packet generator) and the 2026-09-24 goals note, from two unmerged branches now kept as `archive/*` tags | glossary and ADRs for the vocabulary; `docs/design/goals.md` for the goals; its README lists what carried forward and what has no home yet |
