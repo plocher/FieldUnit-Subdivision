@@ -8,7 +8,7 @@ echo '== unit tests =='
 python3 -m unittest tests.test_kicad_plant_graph -q
 
 LIB="${KICAD_RAILROAD_LIB:-$HOME/Dropbox/KiCad/InterlockingPlant/symbols/Railroad.kicad_sym}"
-SCH="${KICAD_LUCHESSA_SCH:-$HOME/Dropbox/KiCad/Railroad/SPCoast/Luchessa/Luchessa.kicad_sch}"
+SCH="${KICAD_LUCHESSA_SCH:-$HOME/Dropbox/KiCad/Railroad/Archive/SPCoast/Luchessa/Luchessa.kicad_sch}"
 
 if [[ ! -f "$LIB" || ! -f "$SCH" ]]; then
   echo 'SKIP Luchessa integration (set KICAD_RAILROAD_LIB / KICAD_LUCHESSA_SCH)'

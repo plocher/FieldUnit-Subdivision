@@ -16,7 +16,7 @@ def libsyms(path):
         if re.search(r'_\d+_\d+$',n): continue
         out[n]=props(b)
     return out
-R=Path.home()/'Dropbox/KiCad/Railroad/SPCoast'
+R=Path.home()/'Dropbox/KiCad/Railroad/Archive/SPCoast'
 for libname,libfile,files in [('Railroad',Path.home()/'Dropbox/KiCad/InterlockingPlant/symbols/Railroad.kicad_sym',[f for p in ['Christopher','Corporal','GilroyCalTrain','GilroyInterchange','Luchessa','Sargent','Watsonville'] for f in [R/p/f'{p}.kicad_sch']]),
    ('RailroadPanel',Path.home()/'Dropbox/KiCad/InterlockingPlant/symbols/RailroadPanel.kicad_sym',sorted((R/'South-cTc').glob('*.kicad_sch')))]:
     lib=libsyms(libfile)

@@ -2,7 +2,7 @@
 """Resolve the field I/O symbols of one plant project against its plant and drivers.
 
 Usage (from the FieldUnit-Subdivision repo root, after `make -B netlist` in the project):
-    python3 docs/review/handoff-field-io-cleanup/field_resolve.py ~/Dropbox/KiCad/Railroad/SPCoast/Sargent/Sargent.net
+    python3 docs/review/handoff-field-io-cleanup/field_resolve.py ~/Dropbox/KiCad/Railroad/Archive/SPCoast/Sargent/Sargent.net
 
 Reports, for every RailroadField / RailroadPanel symbol on the sheet: the plant
 item its Value resolves to (switch, circuit, head, auxiliary, or none), each pin's

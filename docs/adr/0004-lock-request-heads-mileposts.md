@@ -1,6 +1,6 @@
 # 0004. The crew's unlock request, head appliances, milepost anchors, and the field I/O review
 
-- Status: proposed. D1–D11 record the owner's rulings of 2026-10-07; only R5 is asked.
+- Status: proposed. D1–D13 record the owner's rulings of 2026-10-07; only R5 is asked.
 - Date: 2026-10-07
 - Amends: FieldUnit `docs/adr/0003-field-io-symbols.md` (frozen), closing its O1 and O3.
 - Order of authority: the relay model and AAR practice (FieldUnit `docs/GLOSSARY.md` §10.6), then FieldUnit `src/`.
@@ -56,6 +56,11 @@ Answered 2026-10-07: R1 (stick rule) and R4 (desk display) accepted; R2 and R3 r
 
 - D8. Driver symbols have no direction or polarity of their own: pins are bidirectional and take both from what is wired to them; the generator enables a pull-up where an active-low input is attached (no `Pullups` attribute; amends D6). One convention: Kind `I2C-<chip>` (`I2C-MCP23017`, `I2C-PCA9685`, `I2C-MAX7313`), pins `A1..A8`, `B1..B8`, pin N is chip bit N-1 (amends D10). `PanelColumn-MAX7313` is `Driver-I2C-MAX7313`.
 - D9. Asserted-low `~{X}` is the norm for field inputs and outputs and for every desk lever and lamp pin; families are checked for exceptions. `Device-Head-3LED-Mux2` `S0`, `S1` are plain (a select code has no asserted state). `PanelAuxiliary` takes Role `PANEL` with the other desk symbols.
+
+### The unified project (owner, 2026-10-07)
+
+- D12. Hierarchy. Layout 1:M machines 1:M plants; no plant is under two machines. A symbol belongs to the `INTERLOCKING` on its own sheet or, failing that, the nearest ancestor sheet that has one; likewise for `MACHINE`. At most one of each per sheet, and a plant's `INTERLOCKING` sits on its machine's sheet or below it. Nothing else in the hierarchy carries meaning: Trackplan, Panel and Field I/O sheets, and how many there are, are drafting conventions; a plant may be one sheet holding all of them. Symbols are classified by Role, and a net that mixes kinds is an error (track nets join only `TRACK`/`APPLIANCE`/`POLICY` pins; `DEVICE` and `PANEL` pins join only `IODRIVER` pins, plus `PANEL` Column pins to `COLUMN`). Wiring between plants is deferred; `NextCP` names stay.
+- D13. Field units. With no `FIELD_UNIT` symbol, a plant has one field unit, named after the interlocking, hosting every house and driver (the common case). One field unit per MAIN HOUSE is the other form: a `FIELD_UNIT` symbol on the trackplan, its pin wired to that house, and each driver names its field unit in a `FieldUnit` attribute. The forms are not mixed in one plant; every house belongs to exactly one field unit. A device must be on the field unit that hosts its appliance; a field unit may still consume another unit's indications from the code line (remote track circuits, e.g. Watsonville `1SAT`), which needs no device.
 
 ## Consequences
 

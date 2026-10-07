@@ -16,7 +16,7 @@ from refresh_embedded import embedded_form  # noqa: E402
 from symlib_edit import end_of, split  # noqa: E402
 
 LIBDIR = Path.home() / "Dropbox/KiCad/InterlockingPlant/symbols"
-SHEET = Path.home() / "Dropbox/KiCad/Railroad/SPCoast/Sargent/Sargent.kicad_sch"
+SHEET = Path.home() / "Dropbox/KiCad/Railroad/Archive/SPCoast/Sargent/Sargent.kicad_sch"
 MAP = {
     "RailroadField:Device-I2C-IOx4": "RailroadField:Driver-I2C-MCP23017",
     "RailroadField:Device-I2C-PWMx4": "RailroadField:Driver-I2C-PCA9685",
