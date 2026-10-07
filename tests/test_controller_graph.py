@@ -196,6 +196,20 @@ class DiagnosticBaselineTests(unittest.TestCase):
         self.assertEqual([c.number for c in fragment.columns], [1])
         self.assertFalse(fragment.codelines[0].stub)
 
+    def test_panel_role_with_asserted_low_pins(self):
+        """ADR 0003: Role PANEL; a ~{X} pin is function X, asserted-low."""
+
+        def mutate(text):
+            text = text.replace('(field (name "Role") "APPLIANCE")', '(field (name "Role") "PANEL")')
+            return text.replace('(pinfunction "NWS_2")', '(pinfunction "~{NWS}_2")')
+
+        fragment = compile_minimal(mutate=mutate)
+        self.assertEqual(fragment.diagnostics, [])
+        nws = [b for b in fragment.bindings if b.function == "NWS"]
+        rws = [b for b in fragment.bindings if b.function == "RWS"]
+        self.assertEqual([b.active_low for b in nws], [True])
+        self.assertEqual([b.active_low for b in rws], [False])
+
     def test_golden_netlist_has_no_errors(self):
         self.assertEqual(errors(compile_controller(read_golden())), [])
 

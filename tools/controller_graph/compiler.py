@@ -22,7 +22,10 @@ from controller_graph.types import (
 # Transport parameters exported on CODELINE symbols (design doc §4).
 _CODELINE_PARAMS = ("Broker", "TopicRoot", "Topic", "Port", "Baud")
 
-_ROLES = ("MACHINE", "COLUMN", "APPLIANCE", "IODRIVER", "CODELINE")
+# PANEL is the operator-interface Role (FieldUnit ADR 0003 D8). APPLIANCE is its
+# pre-ADR spelling, still in the frozen desk golden; accepted until that changes.
+_PANEL_ROLES = ("PANEL", "APPLIANCE")
+_ROLES = ("MACHINE", "COLUMN", *_PANEL_ROLES, "IODRIVER", "CODELINE")
 _APPLIANCE_KINDS = (
     "SWITCH_LEVER",
     "LOCK_LEVER",
@@ -41,6 +44,17 @@ _BIT_PIN = re.compile(r"^bit(\d+)$")
 def _pin_function(pinfunction: str) -> str:
     """Function name from a netlist pinfunction like 'NWS_2' or 'Column_1'."""
     return pinfunction.rsplit("_", 1)[0]
+
+
+# A pin named ~{X} (KiCad overbar) is function X, asserted-low (ADR 0003 D6).
+_ASSERTED_LOW = re.compile(r"^~\{(.+)\}$")
+
+
+def _function_polarity(pinfunction: str) -> tuple[str, bool]:
+    """(function, active_low) from a pinfunction like '~{NWS}_2'."""
+    name = _pin_function(pinfunction)
+    match = _ASSERTED_LOW.match(name)
+    return (match.group(1), True) if match else (name, False)
 
 
 def _tokens(comp: NetlistComponent, field_name: str) -> tuple[str, ...]:
@@ -104,7 +118,7 @@ def compile_controller(netlist: NetlistModel) -> ControllerFragment:
                     message=f"{comp.reference} has unknown Role {role!r}",
                 )
             )
-        elif role == "APPLIANCE":
+        elif role in _PANEL_ROLES:
             kind = comp.fields.get("Kind", "")
             if kind not in _APPLIANCE_KINDS:
                 diagnostics.append(
@@ -185,7 +199,7 @@ def compile_controller(netlist: NetlistModel) -> ControllerFragment:
             )
             columns.append(column)
             column_by_ref[comp.reference] = column
-        elif role == "APPLIANCE":
+        elif role in _PANEL_ROLES:
             appliance_refs.append(comp)
 
     if machine_count != 1:
@@ -330,7 +344,7 @@ def compile_controller(netlist: NetlistModel) -> ControllerFragment:
         net_columns: list[Column] = []
         members: list[str] = []
         driver_bits: list[tuple[NetlistComponent, int]] = []
-        functions: list[tuple[str, str]] = []
+        functions: list[tuple[str, str, bool]] = []
         for node in net.nodes:
             if node.reference in column_by_ref:
                 net_columns.append(column_by_ref[node.reference])
@@ -341,11 +355,11 @@ def compile_controller(netlist: NetlistModel) -> ControllerFragment:
                         (drivers[node.reference], int(match.group(1)))
                     )
             elif node.reference in appliance_by_ref:
-                function = _pin_function(node.pinfunction)
+                function, active_low = _function_polarity(node.pinfunction)
                 if function == "Column":
                     members.append(node.reference)
                 else:
-                    functions.append((node.reference, function))
+                    functions.append((node.reference, function, active_low))
         for ref in members:
             appliance_columns.setdefault(ref, set()).update(
                 c.number for c in net_columns
@@ -365,7 +379,7 @@ def compile_controller(netlist: NetlistModel) -> ControllerFragment:
             )
         elif len(driver_bits) == 1:
             driver, bit = driver_bits[0]
-            for ref, function in functions:
+            for ref, function, active_low in functions:
                 bindings.append(
                     DriveBinding(
                         appliance=ref,
@@ -373,10 +387,11 @@ def compile_controller(netlist: NetlistModel) -> ControllerFragment:
                         driver=driver.value,
                         bus_kind=driver.fields.get("BusKind", ""),
                         bit=bit,
+                        active_low=active_low,
                     )
                 )
         else:
-            for ref, function in functions:
+            for ref, function, _ in functions:
                 diagnostics.append(
                     Diagnostic(
                         severity="error",
