@@ -31,7 +31,15 @@ Answered 2026-10-07: R1 (stick rule) and R4 (desk display) accepted; R2 and R3 r
   | Desk lock lever is at R with its R lamp dark: out of correspondence until the dispatcher restores it, as `SGK` drops for a signal knocked down by a train (D11); no extra blink | desk | | |
 
 - D4. Desk `PanelLock` (Kind `LOCK_LEVER_2LAMP_2CONTACT`): pins unchanged (N contact `WLS`, R contact `~{WLS}`, R lamp `~{WLK}`, N lamp `WLK`). The N lamp blinking on `WLQK` belongs to the Kind's logic block, not to a pin.
-- D5. Fascia `Local-Lock` (Kind `LOCK_LEVER`; ADR 0003's `Local-Lock-2Lamp`, the one-lamp plate dropped): `~{WLQ}` the crew's key or lever (the request), replacing `~{WLS}` (the dispatcher's control, drawn there by mistake in the first pass); R lamp `~{WLK}` (unlocked); N lamp `WLK` (locked), which mirrors the desk: steady when locked, blinking while the request waits. A crew "now unlock" lever is a later variant: until then approval means unlocked. Variants are separate symbols with Kinds of one family (`LOCK_*`), as ADR 0003 D7 requires.
+- D5. Fascia `Local-Lock` (Kind `LOCK_LEVER`; ADR 0003's `Local-Lock-2Lamp`, the one-lamp plate dropped). Its two lamps are two concepts, not complements:
+
+  | Pin | Lamp | Shows |
+  |---|---|---|
+  | `~{WLQ}` | (key or lever) | the crew's request, replacing `~{WLS}` (the dispatcher's control, drawn there by mistake in the first pass) |
+  | `~{WLQK}` | amber, UNLCK | off; blinking while the request waits (out of correspondence); steady once the field unit has unlocked (`WLK`) |
+  | `WLK` (unbarred) | green, LOCK | lit while locked (`WLK` down) |
+
+  The blink-then-steady behaviour belongs to the `LOCK_LEVER` logic block.
 
 - D10. A `SWITCH_LOCK` has a motor: the field unit controls the points and can always restore them, so a crew relock drives them to N first. A `SWITCH_LOCK` whose device has no motor (`SWITCH_SENSE` alone) is an error. An electrically locked hand-thrown switch (points feedback interlocked with a mechanical points lock, its own rulebook process) is not supported yet. This amends ADR 0003 D4 and its worked example for Sargent 835 (`Device-Switch-Sense` alone).
 - D11. An unlock is used up (stick rule; was R1), and the desk shows the knocked-down lock lever by its dark R lamp (was R4).

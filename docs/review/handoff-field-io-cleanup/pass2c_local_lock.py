@@ -12,18 +12,37 @@ sys.path.insert(0, str(Path(__file__).parent))
 from symlib_edit import add_prop, del_prop, edit_pin, join, pin_names, rename, set_prop, split  # noqa: E402
 
 FIELD = Path.home() / "Dropbox/KiCad/InterlockingPlant/symbols/RailroadField.kicad_sym"
-head, blocks, tail = split(FIELD.read_text())
-out = []
-for n, b in blocks:
-    if n == "Local-Lock":
-        continue
-    if n == "Local-Lock-2Lamp":
-        n = "Local-Lock"
-        b = rename(b, "Local-Lock-2Lamp", n)
-        b = set_prop(b, "Kind", "LOCK_LEVER")
-        b = edit_pin(b, "1", name="~{WLQ}")
-        b = add_prop(del_prop(b, "WLS"), "WLQ", "")
-        print(n, pin_names(b))
-    out.append((n, b))
-out.sort(key=lambda nb: nb[0])
-FIELD.write_text(join(head, out, tail))
+if "--lamps" not in sys.argv:
+    head, blocks, tail = split(FIELD.read_text())
+    out = []
+    for n, b in blocks:
+        if n == "Local-Lock":
+            continue
+        if n == "Local-Lock-2Lamp":
+            n = "Local-Lock"
+            b = rename(b, "Local-Lock-2Lamp", n)
+            b = set_prop(b, "Kind", "LOCK_LEVER")
+            b = edit_pin(b, "1", name="~{WLQ}")
+            b = add_prop(del_prop(b, "WLS"), "WLQ", "")
+            print(n, pin_names(b))
+        out.append((n, b))
+    out.sort(key=lambda nb: nb[0])
+    FIELD.write_text(join(head, out, tail))
+
+
+# Owner, 2026-10-07: the two lamps are two concepts, not complements. Amber is the request
+# lamp (~{WLQK}: blinks while the request waits, steady once WLK); green is the lock (WLK down).
+def lamps_are_two_concepts():
+    head, blocks, tail = split(FIELD.read_text())
+    out = []
+    for n, b in blocks:
+        if n == "Local-Lock":
+            b = edit_pin(b, "2", name="~{WLQK}")
+            b = add_prop(b, "WLQK", "")
+            print(n, pin_names(b))
+        out.append((n, b))
+    FIELD.write_text(join(head, out, tail))
+
+
+if "--lamps" in sys.argv:
+    lamps_are_two_concepts()
