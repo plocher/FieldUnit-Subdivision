@@ -1,16 +1,15 @@
 # 0004. The crew's unlock request, head appliances, milepost anchors, and the field I/O review
 
-- Status: proposed. D1–D9 record the owner's rulings of 2026-10-07; only the decisions below are asked.
+- Status: proposed. D1–D11 record the owner's rulings of 2026-10-07; only R5 is asked.
 - Date: 2026-10-07
 - Amends: FieldUnit `docs/adr/0003-field-io-symbols.md` (frozen), closing its O1 and O3.
 - Order of authority: the relay model and AAR practice (FieldUnit `docs/GLOSSARY.md` §10.6), then FieldUnit `src/`.
 
 ## Decisions requested
 
-- R1. An unlock is used up: after the crew relocks, a new unlock needs `WLS` to go to N and back to R (a stick rule, as for a signal knocked down by a train). Default: yes.
-- R2. A crew relock with the points reversed: the lock does not re-engage, `WLK` stays up, and the switch reports out of correspondence until the points are normal. Default: yes.
-- R3. A crew relock on a switch with a motor drives the points to N first, then relocks. Default: yes.
-- R4. The desk shows the knocked-down lock lever by its R lamp going dark while the lever stays at R (as `SGK` drops for a signal); no extra blink. Default: yes.
+- R5. The local switch lever while locked and at unlock: while `HAND_LOCKED`, the field unit ignores the lever and its N/R lamps show the points, so a moved lever is visibly out of correspondence. After an unlock, or after a relock has driven the points to N, the lever's demand is honoured only once the lever has been seen in correspondence with the points (no movement on release). Default: yes.
+
+Answered 2026-10-07: R1 (stick rule) and R4 (desk display) accepted; R2 and R3 replaced by D10.
 
 ## Rulings recorded (owner, 2026-10-07)
 
@@ -28,11 +27,14 @@
   | Field unit releases the lock (removes `HAND_LOCKED`); approval means unlocked | field to desk | `835WLK` up; desk R lamp lit | yes |
   | Crew operates the points (hand, or `Local-Switch`) | fascia | none on the code line | the field unit uses the sensed position in all route logic; the dispatcher never sees it |
   | Crew returns the key or lever to N | fascia | `WLQK` down | no |
-  | Field unit relocks (R2, R3), drops the release (R1) | field to desk | `835WLK` down | yes |
-  | Desk lock lever is at R with its R lamp dark: out of correspondence until the dispatcher restores it (R4) | desk | | |
+  | Field unit drives the points to N, relocks once they are normal and in correspondence (D10), and drops the release: a new unlock needs `WLS` to N and back to R (D11) | field to desk | `835WLK` down | yes |
+  | Desk lock lever is at R with its R lamp dark: out of correspondence until the dispatcher restores it, as `SGK` drops for a signal knocked down by a train (D11); no extra blink | desk | | |
 
 - D4. Desk `PanelLock` (Kind `LOCK_LEVER_2LAMP_2CONTACT`): pins unchanged (N contact `WLS`, R contact `~{WLS}`, R lamp `~{WLK}`, N lamp `WLK`). The N lamp blinking on `WLQK` belongs to the Kind's logic block, not to a pin.
 - D5. Fascia `Local-Lock`: the lever or key pin is the request, `~{WLQ}`, replacing `~{WLS}` (the dispatcher's control, drawn there by mistake in the first pass). R lamp `~{WLK}`; the N lamp, where drawn, mirrors the desk (steady locked, blinking while the request waits). A crew "now unlock" lever is a later variant: until then approval means unlocked. Variants are separate symbols with Kinds of one family (`LOCK_*`), as ADR 0003 D7 requires.
+
+- D10. A `SWITCH_LOCK` has a motor: the field unit controls the points and can always restore them, so a crew relock drives them to N first. A `SWITCH_LOCK` whose device has no motor (`SWITCH_SENSE` alone) is an error. An electrically locked hand-thrown switch (points feedback interlocked with a mechanical points lock, its own rulebook process) is not supported yet. This amends ADR 0003 D4 and its worked example for Sargent 835 (`Device-Switch-Sense` alone).
+- D11. An unlock is used up (stick rule; was R1), and the desk shows the knocked-down lock lever by its dark R lamp (was R4).
 
 ### Heads
 
@@ -49,6 +51,6 @@
 
 ## Consequences
 
-- FieldUnit: `WLQK` in `WireCodec` and the glossary; the stick rule on `WLS`; relock on the crew's return with R2/R3; the N-lamp blink in the desk's lock logic.
+- FieldUnit: `WLQK` in `WireCodec` and the glossary; the stick rule on `WLS`; relock on the crew's return (drive to N, then lock); the local lever rule (R5); the N-lamp blink in the desk's lock logic.
 - InterlockingPlant: `Local-Lock`/`-2Lamp` pins to `~{WLQ}`; head symbols to Role `APPLIANCE` and the Kinds above; `Milepost` gains its track pin (owner's symbol design).
 - Compiler (#30 step 3): head Kinds into `_PART_KIND` and the `(Role, Kind)` table; milepost anchors and derived positions.
