@@ -29,6 +29,7 @@ _ROLES = ("MACHINE", "COLUMN", *_PANEL_ROLES, "IODRIVER", "CODELINE")
 _APPLIANCE_KINDS = (
     "SWITCH_LEVER",
     "LOCK_LEVER",
+    "LOCK_LEVER_2LAMP_2CONTACT",
     "SIGNAL_LEVER",
     "LAMP",
     "CODE",
@@ -37,8 +38,25 @@ _APPLIANCE_KINDS = (
 )
 _TRANSPORTS = ("VIRTUAL", "MQTT", "CMRInet")
 
-# Bit numbers carry meaning only on IODRIVER pins, named bit<N>.
-_BIT_PIN = re.compile(r"^bit(\d+)$")
+# Bit numbers carry meaning only on IODRIVER pins: A1..A8 are bits 0..7 and
+# B1..B8 bits 8..15 (ADR 0003 driver convention); bit<N> is the pre-ADR
+# spelling still in the frozen desk golden.
+_BIT_PIN = re.compile(r"^(?:bit(\d+)|([AB])([1-8]))$")
+
+
+def _driver_bit(pinfunction: str) -> int | None:
+    """Chip bit of an IODRIVER pin, or None when the pin is not a bit."""
+    match = _BIT_PIN.match(_pin_function(pinfunction))
+    if not match:
+        return None
+    if match.group(1) is not None:
+        return int(match.group(1))
+    return (0 if match.group(2) == "A" else 8) + int(match.group(3)) - 1
+
+
+def _is_lock_lever(kind: str) -> bool:
+    """LOCK_LEVER and its variants (pin sets differ, the family is one)."""
+    return kind == "LOCK_LEVER" or kind.startswith("LOCK_LEVER_")
 
 
 def _pin_function(pinfunction: str) -> str:
@@ -349,11 +367,9 @@ def compile_controller(netlist: NetlistModel) -> ControllerFragment:
             if node.reference in column_by_ref:
                 net_columns.append(column_by_ref[node.reference])
             elif node.reference in drivers:
-                match = _BIT_PIN.match(_pin_function(node.pinfunction))
-                if match:
-                    driver_bits.append(
-                        (drivers[node.reference], int(match.group(1)))
-                    )
+                bit = _driver_bit(node.pinfunction)
+                if bit is not None:
+                    driver_bits.append((drivers[node.reference], bit))
             elif node.reference in appliance_by_ref:
                 function, active_low = _function_polarity(node.pinfunction)
                 if function == "Column":
@@ -490,7 +506,7 @@ def compile_controller(netlist: NetlistModel) -> ControllerFragment:
             switch_levers = [
                 a
                 for a in on_column
-                if a.kind in ("SWITCH_LEVER", "LOCK_LEVER")
+                if a.kind == "SWITCH_LEVER" or _is_lock_lever(a.kind)
             ]
             signal_levers = [a for a in on_column if a.kind == "SIGNAL_LEVER"]
             if (

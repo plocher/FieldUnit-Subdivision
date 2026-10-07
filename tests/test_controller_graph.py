@@ -210,6 +210,19 @@ class DiagnosticBaselineTests(unittest.TestCase):
         self.assertEqual([b.active_low for b in nws], [True])
         self.assertEqual([b.active_low for b in rws], [False])
 
+    def test_driver_pins_a1_to_b8_are_bits_0_to_15(self):
+        from controller_graph.compiler import _driver_bit
+
+        self.assertEqual([_driver_bit(f"A{i}_{i}") for i in range(1, 9)], list(range(8)))
+        self.assertEqual([_driver_bit(f"B{i}_{i + 8}") for i in range(1, 9)], list(range(8, 16)))
+        self.assertEqual(_driver_bit("bit12_13"), 12)
+        self.assertIsNone(_driver_bit("A9_9"))
+        fragment = compile_minimal(
+            mutate=lambda t: t.replace('(pinfunction "bit7_8")', '(pinfunction "A8_8")')
+        )
+        self.assertEqual(fragment.diagnostics, [])
+        self.assertEqual([b.bit for b in fragment.bindings if b.function == "NWS"], [7])
+
     def test_golden_netlist_has_no_errors(self):
         self.assertEqual(errors(compile_controller(read_golden())), [])
 
