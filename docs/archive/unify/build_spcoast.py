@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Build the unified SPCoast KiCad project from the archived per-project drawings.
 
+RETIRED at the owner's cutover (2026-10-07): Railroad/SPCoast is now maintained by hand in KiCad.
+Kept as the record of the migration. It refuses to write into Railroad/SPCoast; set SPCOAST_OUT
+to rebuild into a scratch folder (e.g. to compare against the hand-maintained project).
+
 Owns ~/Dropbox/KiCad/Railroad/SPCoast/ until the owner's cutover: fixes go here and the
 project is regenerated, never hand-edited. Deterministic: UUIDs are derived from names,
 so a rebuild of unchanged sources writes identical files.
@@ -31,7 +35,7 @@ import sys
 import uuid
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "tools"))
 from kicad_services.sch_text import blocks, end_of, replace_spans  # noqa: E402
 
 RAILROAD = Path.home() / "Dropbox/KiCad/Railroad"
@@ -228,6 +232,8 @@ def plan():
 
 
 def build():
+    if OUT == RAILROAD / "SPCoast":
+        sys.exit("retired at cutover: Railroad/SPCoast is hand-maintained; set SPCOAST_OUT to a scratch folder")
     if list(OUT.glob("~*.lck")):
         sys.exit(f"{OUT} is open in KiCad (lock files); close it first")
     OUT.mkdir(exist_ok=True)
@@ -295,7 +301,8 @@ def build():
     pro["schematic"]["top_level_sheets"] = [{"filename": f"{PROJECT}.kicad_sch", "name": PROJECT, "uuid": root}]
     pro["schematic"]["used_designators"] = ""
     (OUT / f"{PROJECT}.kicad_pro").write_text(json.dumps(pro, indent=2) + "\n")
-    (OUT / "refmap.json").write_text(json.dumps(refmaps, indent=1, sort_keys=True) + "\n")
+    (OUT / "production").mkdir(exist_ok=True)
+    (OUT / "production" / "refmap.json").write_text(json.dumps(refmaps, indent=1, sort_keys=True) + "\n")
     print(f"built {OUT}: {len(sheets)} sheets, {sum(len(m) for m in refmaps.values())} symbols")
 
 
@@ -319,11 +326,12 @@ def export_netlist(sch: Path, out: Path):
 
 def check():
     ok = True
-    net = OUT / f"{PROJECT}.net"
+    (OUT / "production").mkdir(exist_ok=True)
+    net = OUT / "production" / f"{PROJECT}.net"
     export_netlist(OUT / f"{PROJECT}.kicad_sch", net)
     comps, nets = nets_of(net)
     print(f"new: {len(comps)} components, {len(nets)} nets")
-    refmaps = json.loads((OUT / "refmap.json").read_text())
+    refmaps = json.loads((OUT / "production" / "refmap.json").read_text())
     new_by_ref = {}
     for n in nets:
         for r, p in n:
@@ -361,7 +369,7 @@ def check():
                 print("     only archived:", sorted(n))
             for n in sorted(sub - mapped, key=sorted)[:5]:
                 print("     only new:     ", sorted(n))
-    erc = OUT / f"{PROJECT}-erc.rpt"
+    erc = OUT / "production" / f"{PROJECT}-erc.rpt"
     subprocess.run([KICAD_CLI, "sch", "erc", "--output", str(erc), str(OUT / f"{PROJECT}.kicad_sch")],
                    capture_output=True)
     summary = [ln for ln in erc.read_text().splitlines() if "ERC messages" in ln or "Errors" in ln]
