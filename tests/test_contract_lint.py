@@ -13,10 +13,10 @@ if str(TOOLS) not in sys.path:
 from contract.lint_libraries import lint, lint_keys  # noqa: E402
 
 ROW = {"role": "DEVICE", "kind": "DETECTOR_OPTICAL", "block": "x", "symbols": ["L:Det"],
-       "pins": {"OCC": "BIT"}, "attributes": {"Hold_ms": "hold"}}
+       "pins": {"OCC": "BIT out"}, "attributes": {"Hold_ms": "hold"}}
 
 
-def sym(role="DEVICE", kind="DETECTOR_OPTICAL", pins=(("~{OCC}", "1", "input"),), **props):
+def sym(role="DEVICE", kind="DETECTOR_OPTICAL", pins=(("~{OCC}", "1", "output"),), **props):
     return {"properties": {"Role": role, "Kind": kind, **props}, "pins": list(pins), "extends": None}
 
 
@@ -39,14 +39,14 @@ class LintTests(unittest.TestCase):
         self.assertEqual(found, ["BIT pin OCC has no polarity attribute OCC= (D6)"])
 
     def test_level_pin_must_not_carry_polarity(self):
-        row = {**ROW, "kind": "HEAD_3LED_MUX2", "pins": {"S0": "LEVEL"}, "attributes": {}}
-        found = errors(lint({"row": [row]}, {"L:Det": sym(kind="HEAD_3LED_MUX2", pins=(("S0", "1", "output"),),
+        row = {**ROW, "kind": "HEAD_3LED_MUX2", "pins": {"S0": "LEVEL in"}, "attributes": {}}
+        found = errors(lint({"row": [row]}, {"L:Det": sym(kind="HEAD_3LED_MUX2", pins=(("S0", "1", "input"),),
                                                           S0="")}))
         self.assertIn("LEVEL pin S0 carries a polarity attribute", found)
 
     def test_duplicate_pin_only_as_panel_two_state_token(self):
         row = {"role": "PANEL", "kind": "LOCK_LEVER_2LAMP_2CONTACT", "symbols": ["L:Det"],
-               "pins": {"WLS": "BIT"}}
+               "pins": {"WLS": "BIT out"}}
         two = (("WLS", "1", "output"), ("~{WLS}", "2", "output"))
         self.assertEqual(errors(lint({"row": [row]}, {"L:Det": sym("PANEL", row["kind"], two, WLS="")})), [])
         device = {**row, "role": "DEVICE"}
@@ -54,9 +54,9 @@ class LintTests(unittest.TestCase):
         self.assertTrue(any("appears 2 times" in m for m in found))
 
     def test_packaging_and_membership_pins_are_optional(self):
-        row = {**ROW, "packaging": {"X": "BIT"}, "membership": {"Column": "COLUMN"}}
+        row = {**ROW, "packaging": {"X": "BIT out"}, "membership": {"Column": "COLUMN"}}
         plain = sym(OCC="", Hold_ms="")
-        full = sym(pins=(("~{OCC}", "1", "input"), ("~{X}", "2", "input"), ("Column", "3", "passive")),
+        full = sym(pins=(("~{OCC}", "1", "output"), ("~{X}", "2", "output"), ("Column", "3", "passive")),
                    OCC="", X="", Hold_ms="")
         self.assertEqual(errors(lint({"row": [row]}, {"L:Det": plain})), [])
         self.assertEqual(errors(lint({"row": [row]}, {"L:Det": full})), [])
@@ -66,6 +66,23 @@ class LintTests(unittest.TestCase):
         found = errors(lint({"row": [row]}, {"L:Det": sym("COMPONENT", OCC="", Hold_ms="", Polarity="!OCC")}))
         self.assertTrue(any("naming axiom 4" in m for m in found))
         self.assertTrue(any("attribute Polarity" in m for m in found))
+
+
+class DirectionTests(unittest.TestCase):
+    def test_pin_type_must_match_the_direction(self):
+        found = errors(lint({"row": [ROW]}, {"L:Det": sym(pins=(("~{OCC}", "1", "input"),), OCC="", Hold_ms="")}))
+        self.assertTrue(any("pin ~{OCC} is input; DEVICE/DETECTOR_OPTICAL says output" in m for m in found))
+
+    def test_token_pins_follow_their_suffix(self):
+        row = {"role": "PANEL", "kind": "SWITCH_LEVER", "symbols": ["L:Lev"],
+               "pins": {"NWS": "BIT in", "NWK": "BIT in"}}
+        found = errors(lint({"row": [row]}, {}))
+        self.assertTrue(any("pin NWS: a ...S token pin drives its line (out)" in m for m in found))
+        self.assertFalse(any("pin NWK" in m for m in found))
+
+    def test_device_pins_need_a_direction(self):
+        row = {**ROW, "pins": {"OCC": "BIT"}}
+        self.assertTrue(any("pin OCC: no direction" in m for m in errors(lint({"row": [row]}, {}))))
 
 
 KEYS = {"namespace": {"timing": "durations"},

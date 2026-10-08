@@ -41,6 +41,17 @@ BINDING_ATTRIBUTES = {"Chain", "Index", "Address", "IndicationToken"}
 MODEL_ATTRIBUTES = {"Vital", "ControlToken"}
 KIND = re.compile(r"^[A-Z0-9]+(?:[_-][A-Z0-9]+)*$")
 BARRED = re.compile(r"^~\{(.+)\}$")
+# A pin entry is "TYPE [direction]"; direction is what the symbol does to its wire, as KiCad types it.
+DIRECTIONS = {"in": "input", "out": "output", "bidir": "bidirectional"}
+
+
+def pin_type(entry: str) -> str:
+    return entry.split()[0]
+
+
+def pin_direction(entry: str) -> str | None:
+    parts = entry.split()
+    return parts[1] if len(parts) > 1 else None
 
 
 @dataclass(frozen=True)
@@ -128,9 +139,19 @@ def lint(table: dict, libs: dict[str, dict], keys: dict | None = None) -> list[F
         if keys is not None:
             out += lint_delivery(row, key, by_attribute)
         types = {**row.get("pins", {}), **row.get("packaging", {}), **row.get("membership", {})}
-        for pin, ty in types.items():
-            if not set(ty.split("|")) <= PIN_TYPES:
-                out.append(Finding("error", key, f"pin {pin}: unknown type {ty!r}"))
+        for pin, entry in types.items():
+            if not set(pin_type(entry).split("|")) <= PIN_TYPES:
+                out.append(Finding("error", key, f"pin {pin}: unknown type {entry!r}"))
+            d = pin_direction(entry)
+            if d is not None and d not in DIRECTIONS:
+                out.append(Finding("error", key, f"pin {pin}: unknown direction {d!r}"))
+            if row["role"] == "PANEL" and d is not None:
+                want = "out" if pin.endswith("S") else "in" if pin.endswith("K") else None
+                if want and d != want:
+                    out.append(Finding("error", key, f"pin {pin}: a ...{pin[-1]} token pin drives "
+                                                     f"{'its line (out)' if want == 'out' else 'nothing (in)'}"))
+            if row["role"] in ("DEVICE", "PANEL", "IODRIVER") and pin != "Column" and d is None:
+                out.append(Finding("error", key, f"pin {pin}: no direction"))
         for sym in row.get("symbols", []):
             if sym in owner:
                 out.append(Finding("error", sym, f'in two rows: {owner[sym]["kind"]} and {row["kind"]}'))
@@ -151,21 +172,25 @@ def lint(table: dict, libs: dict[str, dict], keys: dict | None = None) -> list[F
         required = row.get("pins", {})
         allowed = {**required, **row.get("packaging", {}), **row.get("membership", {})}
         names: dict[str, list[bool]] = {}
-        for pin, _num, _etype in s["pins"]:
+        for pin, _num, etype in s["pins"]:
             b, low = base(pin)
             names.setdefault(b, []).append(low)
+            d = pin_direction(allowed.get(b, ""))
+            if d in DIRECTIONS and etype != DIRECTIONS[d]:
+                out.append(Finding("error", sym, f"pin {pin} is {etype}; {key} says {DIRECTIONS[d]} "
+                                                 "(what the symbol does to its wire)"))
         for b in sorted(set(required) - set(names)):
-            out.append(Finding("error", sym, f"missing pin {b} ({required[b]}) required by {key}"))
+            out.append(Finding("error", sym, f"missing pin {b} ({pin_type(required[b])}) required by {key}"))
         for b in sorted(set(names) - set(allowed)):
             out.append(Finding("error", sym, f"pin {b} is not in {key}"))
         for b, lows in names.items():
             if len(lows) > 1 and b != "Column":
-                ok = row["role"] == "PANEL" and sorted(lows) == [False, True] and allowed.get(b) == "BIT"
+                ok = row["role"] == "PANEL" and sorted(lows) == [False, True] and pin_type(allowed.get(b, "-")) == "BIT"
                 if not ok:
                     out.append(Finding("error", sym, f"pin {b} appears {len(lows)} times; allowed only on a "
                                                      "PANEL symbol as X and ~{X} of a two-state token (D6)"))
         # polarity attributes: one per BIT pin (devices and panels), none on other pins
-        polarity = {b for b in names if allowed.get(b) == "BIT" and row["role"] != "IODRIVER"}
+        polarity = {b for b in names if pin_type(allowed.get(b, "-")) == "BIT" and row["role"] != "IODRIVER"}
         for b in sorted(polarity):
             if b not in props:
                 out.append(Finding("error", sym, f"BIT pin {b} has no polarity attribute {b}= (D6)"))
@@ -174,8 +199,8 @@ def lint(table: dict, libs: dict[str, dict], keys: dict | None = None) -> list[F
             if names[b] == [False] and row["role"] in ("DEVICE", "PANEL"):
                 out.append(Finding("note", sym, f"BIT pin {b} is asserted-high (the exception to D6)"))
         for b in sorted(names):
-            if b in props and b not in polarity and allowed.get(b) in ("LEVEL", "DUTY", "ANGLE"):
-                out.append(Finding("error", sym, f"{allowed[b]} pin {b} carries a polarity attribute"))
+            if b in props and b not in polarity and pin_type(allowed.get(b, "-")) in ("LEVEL", "DUTY", "ANGLE"):
+                out.append(Finding("error", sym, f"{pin_type(allowed[b])} pin {b} carries a polarity attribute"))
         attrs = row.get("attributes", {})
         for a in sorted(set(props) - {"Role", "Kind"} - polarity - set(attrs)):
             out.append(Finding("error", sym, f"attribute {a}={props[a]!r} is not in {key}"))
