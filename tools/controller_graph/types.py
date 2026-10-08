@@ -89,6 +89,7 @@ class DriveBinding:
     driver: str  # IODRIVER Value, e.g. "0x24"
     bus_kind: str  # e.g. "I2C-MAX7313"
     bit: int
+    active_low: bool = False  # pin drawn ~{X}: asserted when the line is low
 
 
 @dataclass

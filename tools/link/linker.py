@@ -224,7 +224,7 @@ def _cross_check_appliances(
     lamped: set[str] = set()
     mcall_reported = False
     for appliance in appliances:
-        if appliance.kind == "LOCK_LEVER":
+        if appliance.kind.startswith("LOCK_LEVER"):
             # Locks are not in the portable plant model yet: the same
             # known gap as maintainer calls, reported, never a false error.
             model.diagnostics.append(

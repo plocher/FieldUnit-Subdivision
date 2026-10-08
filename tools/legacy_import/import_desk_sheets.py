@@ -22,7 +22,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 import kicad_sexpr as S  # noqa: E402
 
-DESK = Path.home() / "Dropbox/KiCad/Railroad/SPCoast/South-cTc"
+DESK = Path.home() / "Dropbox/KiCad/Railroad/Archive/SPCoast/South-cTc"
 LEGACY = Path.home() / "Dropbox/workspace/ArduinoPoint/definitions"
 PANEL_LIB = Path.home() / "Dropbox/KiCad/InterlockingPlant/symbols/RailroadPanel.kicad_sym"
 TEMPLATE_SHEET = DESK / "Luchessa.kicad_sch"

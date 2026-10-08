@@ -9,6 +9,7 @@ One list of what is decided and what waits for the owner. Each proposed ADR open
 |---|---|---|
 | [0002](0002-symbol-contract.md) | What each KiCad symbol records | Frozen 2026-10-03: too complicated to approve as-is. Rewritten to rules after the cleanup pass (#30), then approved. |
 | [0003](0003-name-grammar.md) | One grammar for the names of appliances, signals and track circuits | Frozen 2026-10-03, same reason; the owner's in-progress edits are committed as they stood. Rewritten to rules after #30. |
+| [0004](0004-lock-request-heads-mileposts.md) | The crew's unlock request (`WLQK`), head appliances, milepost anchors, field I/O review | R5: the local switch lever while locked and at unlock. D1–D13 record the 2026-10-07 rulings, including the unified project hierarchy and field units. |
 
 ## Accepted
 

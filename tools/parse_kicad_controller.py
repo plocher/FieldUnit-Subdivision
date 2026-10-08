@@ -64,7 +64,8 @@ def main() -> int:
             )
         for binding in fragment.bindings:
             lines.append(
-                f"bind {binding.appliance}.{binding.function} -> "
+                f"bind {binding.appliance}."
+                f"{'~' if binding.active_low else ''}{binding.function} -> "
                 f"{binding.driver} bit {binding.bit}"
             )
         text = "\n".join(lines) + "\n"

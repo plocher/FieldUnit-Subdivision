@@ -19,6 +19,6 @@ plant name is already the interlocking name, which is also the code line (MQTT)
 station key, so no manual rename is needed.
 
 The same output is produced by `make json` in
-`~/Dropbox/KiCad/Railroad/SPCoast/Luchessa/` (as `Luchessa-field.json`).
+`~/Dropbox/KiCad/Railroad/Archive/SPCoast/Luchessa/` (as `Luchessa-field.json`).
 
 Legacy harvest files remain one directory up until each station is cut over.

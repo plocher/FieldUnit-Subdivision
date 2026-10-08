@@ -20,8 +20,9 @@ never copy or reimplement interlocking rules here.
 
 | Path | Role | Truth it owns |
 | --- | --- | --- |
-| `~/Dropbox/KiCad/Railroad/SPCoast/<Project>/` | KiCad projects (git) | Plant topology and desk wiring as drawn |
-| `~/Dropbox/KiCad/InterlockingPlant/symbols/` | `Railroad.kicad_sym` (plant), `RailroadPanel.kicad_sym` (desk) | Symbol and field contracts. **Not in git.** Parked outside this repo while they evolve; expected to move into this repo. |
+| `~/Dropbox/KiCad/Railroad/SPCoast/` | the unified KiCad project (git; hand-maintained since the 2026-10-07 cutover) | Plant topology, desk and field wiring as drawn |
+| `~/Dropbox/KiCad/Railroad/Archive/SPCoast/<Project>/` | the per-project drawings as of 2026-10-07 (read-only) | Reference for checking the unified project |
+| `~/Dropbox/KiCad/InterlockingPlant/symbols/` | `Railroad.kicad_sym` (plant), `RailroadPanel.kicad_sym` (desk), `RailroadField.kicad_sym` (field I/O) | Symbol and field contracts. In the InterlockingPlant git repo (no remote); expected to move into this repo. |
 | `~/Dropbox/Arduino/libraries/FieldUnit` | Header-only C++17 library (git) | Interlocking logic, codecs, `PlantSerializer`, `cTcMachine`, and the `examples/spcoast_ctc` desk sketch |
 | this repo | Tooling and runtime | Everything derived from the above |
 
@@ -48,10 +49,12 @@ tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-
   It needs mosquitto on `localhost:1883` (`brew services start mosquitto`). The
   root `spcoast_virtual_plant` binary is a gitignored build artifact. Run it from
   the repo root, or pass `--profiles <dir>` (default `profiles/spcoast_south/cps`).
-- KiCad project outputs (netlist, plant JSON, SVG) are rebuilt with `make` in each
-  `~/Dropbox/KiCad/Railroad/SPCoast/<Project>/`. The shared rules live in
-  `SPCoast/kicad.mk` while they are experimental and are expected to move into
-  this repo's `tools/`.
+- Archived KiCad project outputs (netlist, plant JSON, SVG) are rebuilt with `make` in each
+  `~/Dropbox/KiCad/Railroad/Archive/SPCoast/<Project>/` (shared rules in `Archive/SPCoast/kicad.mk`).
+  The unified `SPCoast` project is maintained by hand in KiCad since the 2026-10-07 cutover; its
+  migration script is retired in `docs/archive/unify/`. Derived files (netlists, ERC reports, JSON,
+  SVG) go in `<project>/production/`, never beside the schematics. The old compilers are proofs of concept,
+  kept to check the new project against the archive, not to compile it.
 - Set `PYTHONDONTWRITEBYTECODE=1` or clean up `__pycache__`. Stale caches reference removed modules.
 
 ## Layout
@@ -92,7 +95,9 @@ tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-
 
 ## Station cutover checklist (legacy → KiCad-derived)
 
-1. Draw the interlocking in `~/Dropbox/KiCad/Railroad/SPCoast/<Interlocking>/`, add a two-line `Makefile` (`KIND := plant` / `include ../kicad.mk`), and run `make all`.
+Superseded by the unification (2026-10-07); kept for the archived per-project flow.
+
+1. Draw the interlocking in `~/Dropbox/KiCad/Railroad/Archive/SPCoast/<Interlocking>/`, add a two-line `Makefile` (`KIND := plant` / `include ../kicad.mk`), and run `make all`.
 2. Run `parse_kicad_plant.py --format fieldunit-json --plant-name <Interlocking> --plant-id spcoast.<Interlocking>` into `profiles/spcoast_south/cps/generated/<Interlocking>.json`, then split `projectionDeferred` into a sidecar (see `generated/README.md`).
 3. Update `loadStations()` and the self-test in `spcoast_virtual_plant.cpp`.
 4. Update the desk names in FieldUnit `examples/spcoast_ctc` (`configureDesk()`) and in `tools/test_ctc_desk.py`.

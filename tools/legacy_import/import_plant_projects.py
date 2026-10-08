@@ -35,7 +35,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 import kicad_sexpr as S  # noqa: E402
 
-SPCOAST = Path.home() / "Dropbox/KiCad/Railroad/SPCoast"
+SPCOAST = Path.home() / "Dropbox/KiCad/Railroad/Archive/SPCoast"
 LEGACY = Path.home() / "Dropbox/workspace/ArduinoPoint/definitions"
 TEMPLATE_DIR = SPCOAST / "Luchessa"
 
