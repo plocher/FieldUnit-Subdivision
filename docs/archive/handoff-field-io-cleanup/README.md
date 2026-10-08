@@ -1,3 +1,8 @@
+> **Archived 2026-10-07.** Done or superseded: passes 1–3 ran (scripts beside this file; InterlockingPlant
+> `fc17c73`…`712fd2f`, Railroad PR #3); the owner's review became ADR 0004 (accepted); the projects were
+> unified into `Railroad/SPCoast` (cutover, `docs/archive/unify/`); the generator POC (step 4) became the
+> Sargent end-to-end slice of the new compiler work (part C). The repo-state table below is out of date.
+
 # Handoff: field I/O symbol cleanup and the generator POC (2026-10-06)
 
 For a fresh session. Read AGENTS.md ("Working agreements") first, then `docs/design/goals.md` (PR #32) for the long-term
