@@ -19,8 +19,14 @@
 #   pins           required pins: base name (no ~{}) -> type.
 #   packaging      pins a symbol may add without changing the logic block (ADR 0003 D2), e.g. -OS.
 #   membership     pins that say where a symbol belongs, never what it does (a desk Column).
-#   attributes     attribute -> what it holds: a context key's drawing-level value (schemas/context/keys.toml),
-#                  a binding attribute (addressing, what it shows), or model data. Polarity attributes are not listed: every BIT pin
+#   attributes     on plant and machine rows: attribute -> meaning (model data).
+#                  on DEVICE, PANEL, IODRIVER rows: attribute -> { context, default_from?, lookup?, meaning }:
+#                    context = "appliance"  a device setting; this Kind's driver owns its meaning (FieldUnit ADR 0004)
+#                              "binding"    addressing, or what the symbol shows (Chain, Index, Address, IndicationToken)
+#                              "model"      data about the plant or code line (Vital, ControlToken)
+#                    default_from           a layout context key (schemas/context/keys.toml) used when the drawing is blank
+#                    lookup                 a layout context key the value is looked up in (a lamp Color in color.palette)
+#                  Polarity attributes are not listed: every BIT pin
 #                  carries one, named for the pin (ADR 0003 D6), and the lint checks that by rule.
 #   proposed       true when the row is a proposal waiting for the owner (not yet in an ADR).
 #
@@ -425,7 +431,7 @@ symbols = ["RailroadPanel:PanelLamp-AMBER", "RailroadPanel:PanelLamp-BLUE", "Rai
            "RailroadPanel:PanelLamp-RED", "RailroadPanel:PanelLamp-YELLOW", "RailroadField:Local-Lamp"]
 pins = { LAMP = "BIT in" }
 membership = { Column = "COLUMN" }
-attributes = { IndicationToken = "indications OR'd onto the lamp", Color = "lamp colour" }
+attributes = { IndicationToken = { context = "binding", meaning = "indications OR'd onto the lamp" }, Color = { context = "appliance", lookup = "color.palette", meaning = "lamp colour" } }
 
 [[row]]
 role = "PANEL"
@@ -434,7 +440,7 @@ block = "Lamp on a PWM channel"
 delivery = { tokens = "pin names are token suffixes (ADR 0003 axiom 5)" }
 symbols = ["RailroadField:Local-Lamp-PWM"]
 pins = { LAMP = "DUTY in" }
-attributes = { IndicationToken = "indications OR'd onto the lamp", Color = "lamp colour" }
+attributes = { IndicationToken = { context = "binding", meaning = "indications OR'd onto the lamp" }, Color = { context = "appliance", lookup = "color.palette", meaning = "lamp colour" } }
 proposed = true  # today PANEL/LAMP; D1 needs its own Kind (different logic block)
 
 [[row]]
@@ -444,7 +450,7 @@ block = "Lamp on a NeoPixel chain"
 delivery = { tokens = "pin names are token suffixes (ADR 0003 axiom 5)" }
 symbols = ["RailroadField:Local-Lamp-NeoPixel"]
 pins = {}
-attributes = { IndicationToken = "indications OR'd onto the lamp", Color = "lamp colour", Chain = "chain", Index = "index" }
+attributes = { IndicationToken = { context = "binding", meaning = "indications OR'd onto the lamp" }, Color = { context = "appliance", lookup = "color.palette", meaning = "lamp colour" }, Chain = { context = "binding", meaning = "chain" }, Index = { context = "binding", meaning = "index" } }
 proposed = true  # today PANEL/LAMP; D1 needs its own Kind (different logic block)
 
 [[row]]
@@ -464,7 +470,7 @@ delivery = { tokens = "pin names are token suffixes (ADR 0003 axiom 5)" }
 symbols = ["RailroadPanel:PanelMCall"]
 pins = { SW = "BIT out" }
 membership = { Column = "COLUMN" }
-attributes = { Vital = "NO", ControlToken = "control token, default <Value>S" }
+attributes = { Vital = { context = "model", meaning = "NO" }, ControlToken = { context = "model", meaning = "control token, default <Value>S" } }
 
 [[row]]
 role = "PANEL"
@@ -474,7 +480,7 @@ delivery = { tokens = "pin names are token suffixes (ADR 0003 axiom 5)" }
 symbols = ["RailroadPanel:PanelAuxiliary"]
 pins = { SW = "BIT out" }
 membership = { Column = "COLUMN" }
-attributes = { Vital = "NO", ControlToken = "control token, default <Value>S" }
+attributes = { Vital = { context = "model", meaning = "NO" }, ControlToken = { context = "model", meaning = "control token, default <Value>S" } }
 
 # ================================================================== DEVICE (field hardware)
 
@@ -493,7 +499,7 @@ block = "MockSwitchDriver: stall motor, simulated feedback"
 delivery = { class = "MockSwitchDriver", family = "SWITCH", implements = "ApplianceDriver" }
 symbols = ["RailroadField:Device-Switch-StallMotor-Sim"]
 pins = { M = "LEVEL in" }
-attributes = { NormalIs = "HIGH | LOW", Travel_ms = "simulated travel time" }
+attributes = { NormalIs = { context = "appliance", meaning = "HIGH | LOW" }, Travel_ms = { context = "appliance", default_from = "timing.travel_ms", meaning = "simulated travel time" } }
 
 [[row]]
 role = "DEVICE"
@@ -503,7 +509,7 @@ delivery = { class = "SwitchDriver", family = "SWITCH", implements = "ApplianceD
 symbols = ["RailroadField:Device-Switch-StallMotor-Sensed", "RailroadField:Device-Switch-StallMotor-Sensed-OS"]
 pins = { M = "LEVEL in", N = "BIT out", R = "BIT out" }
 packaging = { OCC = "BIT out" }
-attributes = { NormalIs = "HIGH | LOW" }
+attributes = { NormalIs = { context = "appliance", meaning = "HIGH | LOW" } }
 
 [[row]]
 role = "DEVICE"
@@ -512,7 +518,7 @@ block = "Servo switch driver, simulated feedback (new)"
 delivery = { class = "ServoSwitchSimDriver", family = "SWITCH", implements = "ApplianceDriver" }
 symbols = ["RailroadField:Device-Switch-Servo-Sim"]
 pins = { CH = "ANGLE in" }
-attributes = { NormalIs = "LOW_ANGLE | HIGH_ANGLE", Normal_deg = "degrees", Reverse_deg = "degrees", Speed = "speed" }
+attributes = { NormalIs = { context = "appliance", meaning = "LOW_ANGLE | HIGH_ANGLE" }, Normal_deg = { context = "appliance", meaning = "degrees" }, Reverse_deg = { context = "appliance", meaning = "degrees" }, Speed = { context = "appliance", default_from = "motion.speed", meaning = "speed" } }
 
 [[row]]
 role = "DEVICE"
@@ -521,7 +527,7 @@ block = "Servo switch driver with point contacts (new)"
 delivery = { class = "ServoSwitchDriver", family = "SWITCH", implements = "ApplianceDriver" }
 symbols = ["RailroadField:Device-Switch-Servo-Sensed"]
 pins = { CH = "ANGLE in", N = "BIT out", R = "BIT out" }
-attributes = { NormalIs = "LOW_ANGLE | HIGH_ANGLE", Normal_deg = "degrees", Reverse_deg = "degrees", Speed = "speed" }
+attributes = { NormalIs = { context = "appliance", meaning = "LOW_ANGLE | HIGH_ANGLE" }, Normal_deg = { context = "appliance", meaning = "degrees" }, Reverse_deg = { context = "appliance", meaning = "degrees" }, Speed = { context = "appliance", default_from = "motion.speed", meaning = "speed" } }
 
 [[row]]
 role = "DEVICE"
@@ -530,7 +536,7 @@ block = "TrackCircuitDriver with release hold (optical detectors have no hystere
 delivery = { class = "OpticalDetectorDriver", family = "DETECTOR", implements = "ApplianceDriver" }
 symbols = ["RailroadField:Device-Detector-Optical"]
 pins = { OCC = "BIT out" }
-attributes = { Hold_ms = "release hold" }
+attributes = { Hold_ms = { context = "appliance", default_from = "timing.hold_ms", meaning = "release hold" } }
 
 [[row]]
 role = "DEVICE"
@@ -563,7 +569,7 @@ block = "PWM head driver (new)"
 delivery = { class = "Head3LedPwmDriver", family = "HEAD", implements = "ApplianceDriver" }
 symbols = ["RailroadField:Device-Head-3LED-PWM"]
 pins = { R = "DUTY in", Y = "DUTY in", G = "DUTY in" }
-attributes = { Fade_ms = "fade time" }
+attributes = { Fade_ms = { context = "appliance", default_from = "timing.fade_ms", meaning = "fade time" } }
 
 [[row]]
 role = "DEVICE"
@@ -580,7 +586,7 @@ block = "One-LED head on a NeoPixel chain (aspect logic)"
 delivery = { class = "Head1LedNeoPixelDriver", family = "HEAD", implements = "ApplianceDriver" }
 symbols = ["RailroadField:Device-Head-1LED-NeoPixel"]
 pins = {}
-attributes = { Chain = "chain", Index = "index" }
+attributes = { Chain = { context = "binding", meaning = "chain" }, Index = { context = "binding", meaning = "index" } }
 
 [[row]]
 role = "DEVICE"
@@ -589,7 +595,7 @@ block = "SemaphoreDriver"
 delivery = { class = "SemaphoreHeadDriver", family = "HEAD", implements = "ApplianceDriver" }
 symbols = ["RailroadField:Device-Head-Semaphore-Servo"]
 pins = { ARM = "ANGLE in", LAMP = "DUTY in" }
-attributes = { Stop_deg = "degrees", Approach_deg = "degrees", Clear_deg = "degrees" }
+attributes = { Stop_deg = { context = "appliance", meaning = "degrees" }, Approach_deg = { context = "appliance", meaning = "degrees" }, Clear_deg = { context = "appliance", meaning = "degrees" } }
 
 [[row]]
 role = "DEVICE"
@@ -614,7 +620,7 @@ block = "NeoPixel lamp"
 delivery = { class = "LampNeoPixelDriver", family = "LAMP", implements = "ApplianceDriver" }
 symbols = ["RailroadField:Device-Lamp-NeoPixel"]
 pins = {}
-attributes = { Chain = "chain", Index = "index" }
+attributes = { Chain = { context = "binding", meaning = "chain" }, Index = { context = "binding", meaning = "index" } }
 
 [[row]]
 role = "DEVICE"
@@ -633,7 +639,7 @@ block = "I2CexpanderIOBus; pins take direction and polarity from what is wired t
 delivery = { class = "I2CexpanderIOBus", implements = "IOBus" }
 symbols = ["RailroadField:Driver-I2C-MCP23017"]
 pins = { A1 = "BIT bidir", A2 = "BIT bidir", A3 = "BIT bidir", A4 = "BIT bidir", A5 = "BIT bidir", A6 = "BIT bidir", A7 = "BIT bidir", A8 = "BIT bidir", B1 = "BIT bidir", B2 = "BIT bidir", B3 = "BIT bidir", B4 = "BIT bidir", B5 = "BIT bidir", B6 = "BIT bidir", B7 = "BIT bidir", B8 = "BIT bidir" }
-attributes = { Address = "I2C address" }
+attributes = { Address = { context = "binding", meaning = "I2C address" } }
 
 [[row]]
 role = "IODRIVER"
@@ -642,7 +648,7 @@ block = "I2C expander (desk); pins take direction and polarity from what is wire
 delivery = { class = "Max7313IOBus", implements = "IOBus" }
 symbols = ["RailroadPanel:Driver-I2C-MAX7313"]
 pins = { A1 = "BIT bidir", A2 = "BIT bidir", A3 = "BIT bidir", A4 = "BIT bidir", A5 = "BIT bidir", A6 = "BIT bidir", A7 = "BIT bidir", A8 = "BIT bidir", B1 = "BIT bidir", B2 = "BIT bidir", B3 = "BIT bidir", B4 = "BIT bidir", B5 = "BIT bidir", B6 = "BIT bidir", B7 = "BIT bidir", B8 = "BIT bidir" }
-attributes = { Address = "I2C address" }
+attributes = { Address = { context = "binding", meaning = "I2C address" } }
 
 [[row]]
 role = "IODRIVER"
@@ -651,4 +657,4 @@ block = "PCA9685 bus (new: duty write); 0x40-0x7F"
 delivery = { class = "Pca9685IOBus", implements = "IOBus" }
 symbols = ["RailroadField:Driver-I2C-PCA9685"]
 pins = { A1 = "DUTY|ANGLE out", A2 = "DUTY|ANGLE out", A3 = "DUTY|ANGLE out", A4 = "DUTY|ANGLE out", A5 = "DUTY|ANGLE out", A6 = "DUTY|ANGLE out", A7 = "DUTY|ANGLE out", A8 = "DUTY|ANGLE out", B1 = "DUTY|ANGLE out", B2 = "DUTY|ANGLE out", B3 = "DUTY|ANGLE out", B4 = "DUTY|ANGLE out", B5 = "DUTY|ANGLE out", B6 = "DUTY|ANGLE out", B7 = "DUTY|ANGLE out", B8 = "DUTY|ANGLE out" }
-attributes = { Address = "I2C address" }
+attributes = { Address = { context = "binding", meaning = "I2C address" } }

@@ -7,9 +7,9 @@ Checks, per table row: Role and Kind spelling, unique keys, listed symbols exist
 Per library symbol: it is in exactly one row; its Role and Kind match that row; its pins are the
 row's required pins plus optional packaging and membership pins; every BIT pin carries a polarity
 attribute named for it and no other pin does (ADR 0003 D6); its attributes are the row's.
-Per row, also: its delivery takes one of the FieldUnit ADR 0004 forms, and each DEVICE, PANEL or
-IODRIVER attribute is exactly one of a context key (keys.toml), a binding attribute or model data.
-The key registry itself: unique keys, known namespaces and levels, one key per attribute.
+Per row, also: its delivery takes one of the FieldUnit ADR 0004 forms; each DEVICE, PANEL or
+IODRIVER attribute declares its context (appliance, binding, model) and links only to registered
+layout keys. The layout registry itself: unique keys, declared namespaces, layout-side levels only.
 Exit status 1 when any error is found. Warnings and notes never fail the run.
 """
 
@@ -35,10 +35,8 @@ LIBRARIES = ("Railroad", "RailroadPanel", "RailroadField")
 ROLES = {"APPLIANCE", "PANEL", "DEVICE", "IODRIVER", "TRACK", "POLICY", "STRUCTURE",
          "COLUMN", "MACHINE", "CODELINE_TRANSPORT", "CODELINE_ENCODING"}
 PIN_TYPES = {"BIT", "LEVEL", "DUTY", "ANGLE", "TRACK", "SIGNAL", "HEAD", "HOUSE", "COLUMN", "CODELINE", "ENCODING"}
-LEVELS = {"drawing", "plant", "layout", "profile", "runtime"}
-# Attributes that are not context (FieldUnit ADR 0004): addressing / what a symbol shows, and model data.
-BINDING_ATTRIBUTES = {"Chain", "Index", "Address", "IndicationToken"}
-MODEL_ATTRIBUTES = {"Vital", "ControlToken"}
+LEVELS = {"plant", "layout", "profile", "runtime"}           # layout context (FieldUnit ADR 0004)
+CONTEXTS = {"appliance", "binding", "model"}                  # where a device/panel/driver attribute belongs
 KIND = re.compile(r"^[A-Z0-9]+(?:[_-][A-Z0-9]+)*$")
 BARRED = re.compile(r"^~\{(.+)\}$")
 # A pin entry is "TYPE [direction]"; direction is what the symbol does to its wire, as KiCad types it.
@@ -67,32 +65,27 @@ def base(pin: str) -> tuple[str, bool]:
     return (m.group(1), True) if m else (pin, False)
 
 
-def lint_keys(keys: dict) -> tuple[list[Finding], dict[str, str]]:
-    """Check the key registry; return findings and {attribute: key}."""
+def lint_keys(keys: dict) -> tuple[list[Finding], dict[str, dict]]:
+    """Check the layout context registry; return findings and {key: entry}."""
     out: list[Finding] = []
     spaces = set(keys.get("namespace", {}))
-    seen: set[str] = set()
-    by_attribute: dict[str, str] = {}
+    registry: dict[str, dict] = {}
     for k in keys.get("key", []):
         name = k["key"]
-        if name in seen:
+        if name in registry:
             out.append(Finding("error", name, "duplicate key"))
-        seen.add(name)
+        registry[name] = k
         if name.split(".")[0] not in spaces:
             out.append(Finding("error", name, "namespace is not declared in [namespace]"))
         if not set(k.get("levels", [])) <= LEVELS or not k.get("levels"):
             out.append(Finding("error", name, f"levels {k.get('levels')} not within {sorted(LEVELS)}"))
-        attr = k.get("attribute")
-        if attr:
-            if attr in by_attribute:
-                out.append(Finding("error", name, f"attribute {attr} already sets {by_attribute[attr]}"))
-            by_attribute[attr] = name
-            if "drawing" not in k.get("levels", []):
-                out.append(Finding("error", name, f"attribute {attr} sets it, but drawing is not a level"))
-    return out, by_attribute
+        if "attribute" in k:
+            out.append(Finding("error", name, "a layout key is not set by a symbol attribute; "
+                                              "appliance settings belong to their (Role, Kind) row"))
+    return out, registry
 
 
-def lint_delivery(row: dict, key: str, by_attribute: dict[str, str]) -> list[Finding]:
+def lint_delivery(row: dict, key: str, registry: dict[str, dict]) -> list[Finding]:
     out: list[Finding] = []
     d = row.get("delivery", {})
     role, kind = row["role"], row["kind"]
@@ -110,19 +103,27 @@ def lint_delivery(row: dict, key: str, by_attribute: dict[str, str]) -> list[Fin
     elif "model" not in d:
         out.append(Finding("error", key, "delivery must be { model = … }"))
     if role in ("DEVICE", "PANEL", "IODRIVER"):
-        for a in row.get("attributes", {}):
-            homes = [a in by_attribute, a in BINDING_ATTRIBUTES, a in MODEL_ATTRIBUTES]
-            if sum(homes) != 1:
-                out.append(Finding("error", key, f"attribute {a} must be exactly one of: a context key, "
-                                                 f"a binding attribute, model data (found {sum(homes)})"))
+        for a, spec in row.get("attributes", {}).items():
+            if not isinstance(spec, dict) or spec.get("context") not in CONTEXTS:
+                out.append(Finding("error", key, f"attribute {a} must declare context = one of {sorted(CONTEXTS)}"))
+                continue
+            for link in ("default_from", "lookup"):
+                ref = spec.get(link)
+                if ref is not None and ref not in registry:
+                    out.append(Finding("error", key, f"attribute {a}: {link} {ref!r} is not a layout key"))
+            ref = spec.get("lookup")
+            if ref in registry and registry[ref].get("type") != "palette":
+                out.append(Finding("error", key, f"attribute {a}: lookup {ref!r} is not a palette"))
+            if spec["context"] != "appliance" and ("default_from" in spec or "lookup" in spec):
+                out.append(Finding("error", key, f"attribute {a}: only appliance settings link to the layout context"))
     return out
 
 
 def lint(table: dict, libs: dict[str, dict], keys: dict | None = None) -> list[Finding]:
     out: list[Finding] = []
-    by_attribute: dict[str, str] = {}
+    registry: dict[str, dict] = {}
     if keys is not None:
-        found, by_attribute = lint_keys(keys)
+        found, registry = lint_keys(keys)
         out += found
     rows = table.get("row", [])
     owner: dict[str, dict] = {}
@@ -137,7 +138,7 @@ def lint(table: dict, libs: dict[str, dict], keys: dict | None = None) -> list[F
             out.append(Finding("error", key, "duplicate (Role, Kind) row"))
         seen.add((row["role"], row["kind"]))
         if keys is not None:
-            out += lint_delivery(row, key, by_attribute)
+            out += lint_delivery(row, key, registry)
         types = {**row.get("pins", {}), **row.get("packaging", {}), **row.get("membership", {})}
         for pin, entry in types.items():
             if not set(pin_type(entry).split("|")) <= PIN_TYPES:

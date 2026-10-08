@@ -85,14 +85,16 @@ class DirectionTests(unittest.TestCase):
         self.assertTrue(any("pin OCC: no direction" in m for m in errors(lint({"row": [row]}, {}))))
 
 
-KEYS = {"namespace": {"timing": "durations"},
-        "key": [{"key": "timing.hold_ms", "type": "ms", "levels": ["drawing", "layout"], "attribute": "Hold_ms"}]}
+KEYS = {"namespace": {"timing": "durations", "color": "colours"},
+        "key": [{"key": "timing.hold_ms", "type": "ms", "levels": ["layout"]},
+                {"key": "color.palette", "type": "palette", "levels": ["layout"]}]}
 DELIVERED = {**ROW, "delivery": {"class": "OpticalDetectorDriver", "family": "DETECTOR",
-                                 "implements": "ApplianceDriver"}}
+                                 "implements": "ApplianceDriver"},
+             "attributes": {"Hold_ms": {"context": "appliance", "default_from": "timing.hold_ms", "meaning": "hold"}}}
 
 
-class DeliveryAndKeyTests(unittest.TestCase):
-    def test_device_row_with_seam_and_registered_key_is_clean(self):
+class DeliveryAndContextTests(unittest.TestCase):
+    def test_device_row_with_seam_and_linked_setting_is_clean(self):
         self.assertEqual(errors(lint({"row": [DELIVERED]}, {"L:Det": sym(OCC="", Hold_ms="")}, KEYS)), [])
 
     def test_family_must_match_the_kind(self):
@@ -100,23 +102,29 @@ class DeliveryAndKeyTests(unittest.TestCase):
         found = errors(lint({"row": [row]}, {"L:Det": sym(OCC="", Hold_ms="")}, KEYS))
         self.assertIn("family HEAD is not the Kind's family DETECTOR", found)
 
-    def test_device_attribute_needs_a_home(self):
-        row = {**DELIVERED, "attributes": {"Hold_ms": "hold", "Mystery": "?"}}
-        found = errors(lint({"row": [row]}, {"L:Det": sym(OCC="", Hold_ms="", Mystery="")}, KEYS))
-        self.assertTrue(any("attribute Mystery must be exactly one of" in m for m in found))
+    def test_attribute_needs_a_context_and_real_links(self):
+        row = {**DELIVERED, "attributes": {
+            "Hold_ms": {"context": "appliance", "default_from": "timing.nope"},
+            "Color": {"context": "appliance", "lookup": "timing.hold_ms"},
+            "Chain": {"context": "binding", "default_from": "timing.hold_ms"},
+            "Mystery": "?"}}
+        found = errors(lint({"row": [row]}, {"L:Det": sym(OCC="", Hold_ms="", Color="", Chain="", Mystery="")}, KEYS))
+        self.assertIn("attribute Hold_ms: default_from 'timing.nope' is not a layout key", found)
+        self.assertIn("attribute Color: lookup 'timing.hold_ms' is not a palette", found)
+        self.assertIn("attribute Chain: only appliance settings link to the layout context", found)
+        self.assertTrue(any("attribute Mystery must declare context" in m for m in found))
 
-    def test_key_registry_rules(self):
+    def test_layout_registry_rules(self):
         bad = {"namespace": {"timing": ""}, "key": [
-            {"key": "timing.a", "levels": ["drawing"], "attribute": "A"},
-            {"key": "timing.a", "levels": ["drawing"]},
-            {"key": "colour.b", "levels": ["layout"], "attribute": "A"},
-            {"key": "timing.c", "levels": ["somewhere"]}]}
+            {"key": "timing.a", "levels": ["layout"]},
+            {"key": "timing.a", "levels": ["layout"]},
+            {"key": "colour.b", "levels": ["layout"]},
+            {"key": "timing.c", "levels": ["drawing"], "attribute": "C"}]}
         found = [f.message for f in lint_keys(bad)[0]]
         self.assertIn("duplicate key", found)
         self.assertIn("namespace is not declared in [namespace]", found)
-        self.assertTrue(any("already sets timing.a" in m for m in found))
-        self.assertTrue(any("drawing is not a level" in m for m in found))
         self.assertTrue(any("not within" in m for m in found))
+        self.assertTrue(any("a layout key is not set by a symbol attribute" in m for m in found))
 
 
 if __name__ == "__main__":

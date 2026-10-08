@@ -1,22 +1,20 @@
-# The context key registry (FieldUnit ADR 0004 R7, R8).
+# The layout context registry (FieldUnit ADR 0004).
 #
-# The vocabulary of settings a driver may read: namespaces fixed now, keys added as the need
-# arises. Static keys resolve most specific first: drawing (a symbol attribute) -> plant (the
-# INTERLOCKING) -> layout (the root sheet) -> era profile -> library default; the compiler resolves
-# them per symbol instance. Runtime keys come from the field unit.
+# The vocabulary of layout-wide settings any driver may read: namespaces fixed now, keys added as
+# the need arises. Static keys resolve most specific first: plant (the INTERLOCKING) -> layout (the
+# root sheet) -> era profile -> library default; runtime keys come from the field unit.
+#
+# Not here: the appliance context. A device's own settings (polarity per pin, NormalIs, Hold_ms,
+# angles, a lamp's Color …) are defined by its (Role, Kind) row and interpreted by that Kind's
+# driver; a row may name a key here as an attribute's default (default_from) or as the table its
+# value is looked up in (lookup).
 #
 # Key fields
 #   key         namespace.name
 #   type        string | int | bool | ms | deg | ratio | color | palette | enum:A|B
-#   levels      where it may be set: drawing, plant, layout, profile, runtime
+#   levels      where it may be set: plant, layout, profile, runtime
 #   default     the library default ("" = none yet)
-#   attribute   the symbol attribute that sets it at drawing level, if any (ADR 0003 axiom 6 spelling)
 #   meaning     one line
-#
-# Not context (and so not here): binding attributes that address a channel or say what a symbol
-# shows (Chain, Index, Address, IndicationToken), and model data about the plant (CP, TC,
-# Indications, Direction, Vital, ControlToken). The library lint checks every attribute lands in
-# exactly one of the three.
 
 version = 1
 
@@ -24,13 +22,11 @@ version = 1
 era      = "the era represented"
 rulebook = "the rulebook represented; which aspect each signal indication takes"
 timing   = "durations: flash, fade, travel, hold, steps"
-motion   = "servo angles, speeds, direction of travel"
+motion   = "layout-wide motion defaults (servo speed)"
 color    = "named colours and their values, era-appropriate"
 light    = "layout-wide lamp rendering: gamma, brightness, dimming"
 clock    = "time of day, daylight (runtime)"
 mode     = "lamp test, maintainer test (runtime; may need the interlocking's consent, FieldUnit ADR 0004)"
-
-# ---------------------------------------------------------------- era, rulebook
 
 [[key]]
 key = "era.name"
@@ -46,8 +42,6 @@ levels = ["layout", "plant"]
 default = ""
 meaning = "the rulebook whose charts map signal indications to aspects, e.g. SP1985"
 
-# ---------------------------------------------------------------- timing
-
 [[key]]
 key = "timing.flash_ms"
 type = "ms"
@@ -58,86 +52,30 @@ meaning = "flash period (one shared phase per field unit)"
 [[key]]
 key = "timing.hold_ms"
 type = "ms"
-levels = ["profile", "layout", "plant", "drawing"]
+levels = ["profile", "layout", "plant"]
 default = "1500"
-attribute = "Hold_ms"
-meaning = "optical detector release hold (bridges inter-car gaps)"
+meaning = "optical detector release hold, the layout default"
 
 [[key]]
 key = "timing.travel_ms"
 type = "ms"
-levels = ["profile", "layout", "drawing"]
+levels = ["profile", "layout"]
 default = "2000"
-attribute = "Travel_ms"
-meaning = "simulated switch travel time"
+meaning = "simulated switch travel time, the layout default"
 
 [[key]]
 key = "timing.fade_ms"
 type = "ms"
-levels = ["profile", "layout", "drawing"]
+levels = ["profile", "layout"]
 default = ""
-attribute = "Fade_ms"
-meaning = "lamp cross-fade time"
-
-# ---------------------------------------------------------------- motion
-
-[[key]]
-key = "motion.normal_is"
-type = "enum:HIGH|LOW|LOW_ANGLE|HIGH_ANGLE"
-levels = ["drawing"]
-default = ""
-attribute = "NormalIs"
-meaning = "which output level or angle end is the normal position"
-
-[[key]]
-key = "motion.normal_deg"
-type = "deg"
-levels = ["drawing"]
-default = ""
-attribute = "Normal_deg"
-meaning = "servo switch normal angle"
-
-[[key]]
-key = "motion.reverse_deg"
-type = "deg"
-levels = ["drawing"]
-default = ""
-attribute = "Reverse_deg"
-meaning = "servo switch reverse angle"
+meaning = "lamp cross-fade time, the layout default"
 
 [[key]]
 key = "motion.speed"
 type = "int"
-levels = ["profile", "layout", "drawing"]
+levels = ["profile", "layout"]
 default = ""
-attribute = "Speed"
-meaning = "servo speed"
-
-[[key]]
-key = "motion.stop_deg"
-type = "deg"
-levels = ["drawing"]
-default = ""
-attribute = "Stop_deg"
-meaning = "semaphore arm at stop"
-
-[[key]]
-key = "motion.approach_deg"
-type = "deg"
-levels = ["drawing"]
-default = ""
-attribute = "Approach_deg"
-meaning = "semaphore arm at approach"
-
-[[key]]
-key = "motion.clear_deg"
-type = "deg"
-levels = ["drawing"]
-default = ""
-attribute = "Clear_deg"
-meaning = "semaphore arm at clear"
-
-# ---------------------------------------------------------------- color, light
+meaning = "servo speed, the layout default"
 
 [[key]]
 key = "color.palette"
@@ -145,14 +83,6 @@ type = "palette"
 levels = ["profile", "layout"]
 default = ""
 meaning = "named colours (red, amber, yellow, green, blue, lunar, …) to values; era-appropriate"
-
-[[key]]
-key = "color.lamp"
-type = "color"
-levels = ["drawing"]
-default = ""
-attribute = "Color"
-meaning = "the lamp's colour, a name in color.palette"
 
 [[key]]
 key = "light.gamma"
@@ -167,8 +97,6 @@ type = "ratio"
 levels = ["layout", "plant"]
 default = ""
 meaning = "layout-wide brightness"
-
-# ---------------------------------------------------------------- runtime
 
 [[key]]
 key = "clock.time_of_day"
