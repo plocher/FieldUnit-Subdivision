@@ -10,7 +10,7 @@ TOOLS = Path(__file__).resolve().parents[1] / "tools"
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
-from contract.lint_libraries import lint  # noqa: E402
+from contract.lint_libraries import lint, lint_keys  # noqa: E402
 
 ROW = {"role": "DEVICE", "kind": "DETECTOR_OPTICAL", "block": "x", "symbols": ["L:Det"],
        "pins": {"OCC": "BIT"}, "attributes": {"Hold_ms": "hold"}}
@@ -66,6 +66,40 @@ class LintTests(unittest.TestCase):
         found = errors(lint({"row": [row]}, {"L:Det": sym("COMPONENT", OCC="", Hold_ms="", Polarity="!OCC")}))
         self.assertTrue(any("naming axiom 4" in m for m in found))
         self.assertTrue(any("attribute Polarity" in m for m in found))
+
+
+KEYS = {"namespace": {"timing": "durations"},
+        "key": [{"key": "timing.hold_ms", "type": "ms", "levels": ["drawing", "layout"], "attribute": "Hold_ms"}]}
+DELIVERED = {**ROW, "delivery": {"class": "OpticalDetectorDriver", "family": "DETECTOR",
+                                 "implements": "ApplianceDriver"}}
+
+
+class DeliveryAndKeyTests(unittest.TestCase):
+    def test_device_row_with_seam_and_registered_key_is_clean(self):
+        self.assertEqual(errors(lint({"row": [DELIVERED]}, {"L:Det": sym(OCC="", Hold_ms="")}, KEYS)), [])
+
+    def test_family_must_match_the_kind(self):
+        row = {**DELIVERED, "delivery": {**DELIVERED["delivery"], "family": "HEAD"}}
+        found = errors(lint({"row": [row]}, {"L:Det": sym(OCC="", Hold_ms="")}, KEYS))
+        self.assertIn("family HEAD is not the Kind's family DETECTOR", found)
+
+    def test_device_attribute_needs_a_home(self):
+        row = {**DELIVERED, "attributes": {"Hold_ms": "hold", "Mystery": "?"}}
+        found = errors(lint({"row": [row]}, {"L:Det": sym(OCC="", Hold_ms="", Mystery="")}, KEYS))
+        self.assertTrue(any("attribute Mystery must be exactly one of" in m for m in found))
+
+    def test_key_registry_rules(self):
+        bad = {"namespace": {"timing": ""}, "key": [
+            {"key": "timing.a", "levels": ["drawing"], "attribute": "A"},
+            {"key": "timing.a", "levels": ["drawing"]},
+            {"key": "colour.b", "levels": ["layout"], "attribute": "A"},
+            {"key": "timing.c", "levels": ["somewhere"]}]}
+        found = [f.message for f in lint_keys(bad)[0]]
+        self.assertIn("duplicate key", found)
+        self.assertIn("namespace is not declared in [namespace]", found)
+        self.assertTrue(any("already sets timing.a" in m for m in found))
+        self.assertTrue(any("drawing is not a level" in m for m in found))
+        self.assertTrue(any("not within" in m for m in found))
 
 
 if __name__ == "__main__":
