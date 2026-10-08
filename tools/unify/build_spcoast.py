@@ -116,28 +116,35 @@ def sheet_instances(path: str, page: int) -> str:
             f'\t\t\t\t\t(page "{page}")\n\t\t\t\t)\n\t\t\t)\n\t\t)')
 
 
+# The owner's Panel link (Gilroy Caltrain, 2026-10-07): just above the title block, text inside.
+PANEL_LINK = dict(at=(226.06, 164.86), size=(40.21, 6.59), fill="255 229 191 1",
+                  name_at=(227.33, 167.132), file_at=(227.584, 168.148))
+
+
 def sheet_block(name: str, file: str, sheet_uuid: str, parent_path: str, page: int,
-                at=(235.0, 15.0), size=(30.0, 10.0)) -> str:
+                at=(235.0, 15.0), size=(30.0, 10.0), fill="0 0 0 0", name_at=None, file_at=None) -> str:
     x, y = at
     w, h = size
+    nx, ny = name_at or (x, round(y - 0.7116, 4))
+    fx, fy = file_at or (x, round(y + h + 0.5846, 4))
+    autoplaced = "" if name_at else "\n\t\t(fields_autoplaced yes)"
     return f"""(sheet
 		(at {x} {y})
 		(size {w} {h})
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
+		(dnp no){autoplaced}
 		(stroke
 			(width 0.1524)
 			(type solid)
 		)
 		(fill
-			(color 0 0 0 0)
+			(color {fill})
 		)
 		(uuid "{sheet_uuid}")
 		(property "Sheetname" "{name}"
-			(at {x} {round(y - 0.7116, 4)} 0)
+			(at {nx} {ny} 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -148,7 +155,7 @@ def sheet_block(name: str, file: str, sheet_uuid: str, parent_path: str, page: i
 			)
 		)
 		(property "Sheetfile" "{file}"
-			(at {x} {round(y + h + 0.5846, 4)} 0)
+			(at {fx} {fy} 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -176,6 +183,14 @@ def insert_before_end(text: str, block: str) -> str:
     return text[:i] + "\n\t" + block + text[i:]
 
 
+def embedded_worksheet() -> str:
+    """The project's page layout (kicad-embed://SPCoast.kicad_wks) lives in the root file."""
+    t = (ARCHIVE / MACHINE / f"{MACHINE}.kicad_sch").read_text()
+    for s, e in blocks(t, "embedded_files", 1):
+        return t[s:e]
+    return ""
+
+
 ROOT_TEMPLATE = """(kicad_sch
 	(version 20260306)
 	(generator "eeschema")
@@ -191,6 +206,7 @@ ROOT_TEMPLATE = """(kicad_sch
 		)
 	)
 	(embedded_fonts no)
+	{embedded_files}
 )
 """
 
@@ -243,6 +259,7 @@ def build():
         edits.append((s, e, b))
     t = replace_spans(t, edits)
     t = set_title_block(t, "South cTc")
+    t = set_file_uuid(t, uid(f"file/{MACHINE}"))  # its archived uuid was the old project's root
     (OUT / f"{MACHINE}.kicad_sch").write_text(t)
     sheets = [[root, "Root"], [machine_uuid, MACHINE]]
     for name, pdir, deskfile, sid in plants:
@@ -256,7 +273,8 @@ def build():
         pt = set_file_uuid(pt, uid(f"file/{pdir}"))
         pt = rewrite_symbols(pt, ppath, ppage, refmaps[str(src)])
         pt = set_title_block(pt, name)
-        pt = insert_before_end(pt, sheet_block("Panel", f"{pdir}-Panel.kicad_sch", panel_uuid, ppath, ppage + 1))
+        pt = insert_before_end(pt, sheet_block("Panel", f"{pdir}-Panel.kicad_sch", panel_uuid, ppath, ppage + 1,
+                                                **PANEL_LINK))
         (OUT / f"{pdir}.kicad_sch").write_text(pt)
         # panel sheet
         dsrc = ARCHIVE / MACHINE / deskfile
@@ -268,11 +286,14 @@ def build():
         (OUT / f"{pdir}-Panel.kicad_sch").write_text(dt)
         sheets += [[sid, name], [panel_uuid, "Panel"]]
     (OUT / f"{PROJECT}.kicad_sch").write_text(ROOT_TEMPLATE.format(
-        root=root, title_block=title_block("South cTc"), sheet=sheet_block(MACHINE, f"{MACHINE}.kicad_sch", machine_uuid, f"/{root}", 2,
+        root=root, title_block=title_block("South cTc"), embedded_files=embedded_worksheet(), sheet=sheet_block(MACHINE, f"{MACHINE}.kicad_sch", machine_uuid, f"/{root}", 2,
                                      at=(40.0, 40.0), size=(60.0, 30.0))))
     pro = json.loads((ARCHIVE / MACHINE / f"{MACHINE}.kicad_pro").read_text())
     pro["meta"]["filename"] = f"{PROJECT}.kicad_pro"
     pro["sheets"] = sheets
+    # KiCad 10 takes the root from here, not from the file name
+    pro["schematic"]["top_level_sheets"] = [{"filename": f"{PROJECT}.kicad_sch", "name": PROJECT, "uuid": root}]
+    pro["schematic"]["used_designators"] = ""
     (OUT / f"{PROJECT}.kicad_pro").write_text(json.dumps(pro, indent=2) + "\n")
     (OUT / "refmap.json").write_text(json.dumps(refmaps, indent=1, sort_keys=True) + "\n")
     print(f"built {OUT}: {len(sheets)} sheets, {sum(len(m) for m in refmaps.values())} symbols")
@@ -345,8 +366,15 @@ def check():
                    capture_output=True)
     summary = [ln for ln in erc.read_text().splitlines() if "ERC messages" in ln or "Errors" in ln]
     print("ERC:", " | ".join(summary) or erc.read_text()[-300:])
-    bad = [p.name for p in OUT.glob("*.kicad_*") if "87b90fc6-5e27-4e06-8416-fb28e674fdea" in p.read_text()]
-    print("root-UUID copies:", bad or "none")
+    old_roots = {json.loads(p.read_text())["sheets"][0][0] for p in ARCHIVE.glob("*/*.kicad_pro")}
+    old_roots.add("87b90fc6-5e27-4e06-8416-fb28e674fdea")
+    bad = [f"{p.name}:{u[:8]}" for p in OUT.glob("*.kicad_*") for u in old_roots if u in p.read_text()]
+    pro = json.loads((OUT / f"{PROJECT}.kicad_pro").read_text())
+    top = pro["schematic"]["top_level_sheets"]
+    root_uuid = re.search(r'\(uuid "([^"]+)"', (OUT / f"{PROJECT}.kicad_sch").read_text()).group(1)
+    if [s["uuid"] for s in top] != [root_uuid] or top[0]["filename"] != f"{PROJECT}.kicad_sch":
+        bad.append(f"top_level_sheets {top}")
+    print("archived root UUIDs / top level:", bad or "none; root is SPCoast.kicad_sch")
     return ok and not bad
 
 
