@@ -1,13 +1,13 @@
-# The driver environment: a view for review (2026-10-09, rev 4)
+# The driver environment: a view for review (2026-10-09, rev 5)
 
-- Status: a view, written top-down for discussion. Rev 4 replaces capability lists with native capabilities plus generator-inserted transformers. Decided items are marked **(owner)**. Changes are listed at the end.
+- Status: a view, written top-down for discussion, revised in rev 5 to match the design checkpoint (`io-design-checkpoint-2026-10-10.md`, rev 8). Decided items cite the checkpoint (E = explicit, I = implicit). Changes are listed at the end.
 - Governs: `driver-architecture-foundation.md`. The foundation says a driver "runs in an environment that supplies context" and that the environment "contains contextual data, utility functions and lifecycle support" (§2 principle 5, §3.5). This view gives that sentence a structure.
 - The per-type pattern of commands, attributes and notifications is in `driver-types-view-2026-10-09.md`.
 
 ## 1. Two things called "driver"
 
-- A **driver class** is source code. It owns: its signature, which is the set of function pins it exposes, each with one native capability (§4.2); its commands, attributes and notifications (the driver types view); the settings it reads, by name; the rules that validate a command and a configuration; the transform itself; and helper functions that encapsulate the transform's context checks, such as `isCommandedNormal()`.
-- A **driver instance** is a runtime object. It owns its identity, its bindings, its resolved settings, and its mechanism state: where a searchlight wheel is, how far a fade has gone, the last sampled contact. It owns no decision state. It is constructed complete; it never discovers anything.
+- A **driver class** is source code, keyed by Role, Appliance, Style and pin set (I9): a symbol is one logic block. It owns: its signature, which is the set of function pins it exposes, each with one native capability and its polarity (§4.2); its commands, attributes and notifications (the driver types view); the settings it reads, by name, each with a factory default (I15); the rules that validate a command and a configuration; the transform itself; and helper functions that encapsulate the transform's context checks.
+- A **driver instance** is a runtime object. It owns its identity, its bindings, its resolved settings, and its mechanism state: where a searchlight wheel is, how far a fade has gone, the last sampled contact. It owns no decision state. It is constructed complete; it never discovers anything (E20).
 
 The environment is what the instance is given. The class is what reads it.
 
@@ -24,122 +24,136 @@ Plus one thing done to it, not by it: construction and release, computed by the 
 
 ## 3. An example before the structure
 
-A powered switch, say `783` at Luchessa, with a device whose signature is `M`, `OCC`, `N`, `R`. No such device is drawn yet. The only drawn switch device, at `835` in Sargent, serves an electric lock and is the test case in §6.
+A powered switch, `783` on the Scratch sheet, with `Device-Switch` abutted on an MCP23017: signature `M`, `~{N}`, `~{R}`, `~{OCC}`.
 
 | What the instance needs | Where it comes from | Example |
 |---|---|---|
-| Who it serves | derived from the Value `783` and the plant sheet | switch 783, powered, dispatcher-controlled |
-| `M` is wired to | derived from the net | expander 0x20, pin B1 |
-| What that pin natively is | the I/O symbol's `Pin.B1` property, as configured | binary out |
-| What `M` natively is | the device symbol's `Pin.M` property | binary out |
-| The transformer, if the two differ | the generator's table; none here | direct |
-| Which binary value means NORMAL | setting `motor.normal_is`, through the scopes | HIGH |
-| If `M` had landed on a PWM pin instead | the two-point transformer's `M.low`, `M.high`, through the scopes | 400, 3700 |
+| Who it serves | the device symbol's Value, joined to the plant symbol of equal Appliance and Style in the same interlocking hierarchy (E34, I9, I13) | `Switch_Powered 783` |
+| `M` is wired to | the net | expander `0x20`, pin `B1` |
+| What that pin natively is | the I/O symbol's `IC` and its library `Pin.*` properties; a bidirectional chip pin is configured by what lands on it (E36, I5) | binary out |
+| What `M` natively is | the device symbol's library `Pin.M` property (I5) | binary out |
+| Which level means REVERSE | the pin name: `M` asserted is REVERSE; a device wired the other way is drawn with `~{M}` (I7) | asserted high |
+| The cast, if the two ends differ | the cast index (E13, I2); none here | direct |
+| If `M` had landed on a PWM pin instead | the two-point cast's `low`, `high`, `fade_ms`, through the scopes | `low = 400`, `high = 3700`, as the `Setting` on that net says |
 | Now, in ms | service | |
-| The last commanded position, restored at power-up | the store, keyed by `783` | REVERSE |
-| Construction with all of the above | generated setup code | |
+| The last commanded position, restored at power-up | the store, keyed by `783` (E17) | REVERSE |
+| Which processor runs it | the one `MAIN HOUSE` in the sheet's scope, or `Processor` on the I/O symbol when there are several (E44) | field unit Scratch |
+| Construction with all of the above | generated setup code (E20) | |
 
-The driver class's helper `isCommandedNormal()` hides the scope lookup. The class's `M` code writes a binary value and nothing else. Whether that value becomes a pin level, a PWM duty or a servo angle is the transformer's business, inserted by the generator. The instance never knows what chip the pin is on, and never knows which scope answered.
+The class's `M` code writes a binary value and nothing else. Whether that value becomes a pin level, a PWM duty or a servo angle is the cast's business, inserted by the generator. The instance never knows what chip the pin is on, never inverts (I7), and never knows which scope answered.
 
 ## 4. The structure: five parts
 
 ### 4.1 Identity
 
-What the instance serves. Derived by the compiler, never typed.
+What the instance serves. Derived by the compiler, never typed beyond the Value.
 
-- The appliance name as the vital logic knows it (`783`, `836NAB`, `1NAT`), and the part when the appliance has parts: head `B` of `836NAB`, column 6 of the machine for a desk lamp.
-- The place a library call may need (R7): which head from the top, dwarf or high, the head's display type.
+- The appliance name as the vital logic knows it (`783`, `836NAB`, `1NAT`), and the part when the appliance has parts: head `B` of `836NAB` is `836NB` (I12); column 6 of the machine for a desk lamp (E41).
+- The place a library call may need: which head from the top, dwarf or high, the head's Style.
+- The processor that owns it, which is the consumer of what it observes (E43, E44).
 
-Identity is readable. A driver may put it in a fault or a debug message, and may pass it to a library call such as the one that turns a signal indication into what head `B` shows. The rule is: no driver needs identity to do its transform.
+Identity is readable. A driver may put it in a fault or a debug message, and may pass it to a library call such as the one that turns a signal indication into what head `B` shows. The rule is: no driver needs identity to do its transform (E21).
 
 Identity holds no state. Stored state is a service (§4.4).
 
 ### 4.2 Bindings
 
-What the instance is wired to, one binding per function pin. Derived from the netlist.
+What the instance is wired to, one binding per function pin. Derived from the netlist (learned 1).
 
-- The I/O pin: which I/O symbol instance and which of its pins (`0x20.B1`).
-- The transformer on the wire, if the two ends differ, with its settings.
+- The I/O pin: which I/O symbol instance and which of its pins (`0x20.B1`), and the chip it is, from the symbol's `IC` (E36).
+- The cast on the wire, if the two ends differ, with its settings.
+- On a bus, the device's slot: its `Address` (E14, E30).
 
-Every pin on a device symbol and every pin on an I/O symbol has one **native capability**, from one vocabulary, direction inside, stated from the unit's point of view on both sides **(owner)**. Nothing downstream does direction arithmetic. A device pin's native capability is the natural type of its function: a motor demand is binary, a lamp is binary, an arm is a position, a contact is binary in. An I/O pin's native capability is what the chip does on that pin; a chip whose pin can do two things gets one symbol variant per use.
+**One binding mechanism** (learned 3). A device symbol pin on a net with an I/O pin. Abutting the pins is the ergonomic form; a wire is the same binding; the one-pin `Terminal` symbol, Value `<part>.<function>`, is the escape hatch for a wire that would have to cross sheets or that the geometry will not allow (E38). Terminals are placed in pairs, one on each end, and the compiler merges the pair's nets by Value within the interlocking hierarchy (E39, I24). A missing end is an error, which is how a missed pin is caught. Text labels are out (E11).
+
+**Capabilities.** Every pin on a device symbol and every pin on an I/O symbol has one **native capability**, from one vocabulary, direction inside, stated from the unit's point of view on both sides (E8, E9). The vocabulary today: binary in, binary out, level in, level out, position out, colour out, pixel out, message in, message out (I1). It is not a file: it is the set of words in the libraries' `Pin.*` fields and in the casts' from and to declarations, and the lint reports a word that appears in one and not the other. A device pin's native capability is the natural type of its function; an I/O pin's is what the chip does on that pin; a chip whose pin can do two things is drawn as one symbol per use (I3, I22).
 
 | Pin | Native capability |
 |---|---|
-| MCP23017 pin | binary in, or binary out, per the configured direction |
-| PCA9685 pin, PWM variant | level out |
-| PCA9685 pin, servo variant | position out |
-| processor ADC pin | level in |
+| `IC` MCP23017 or MAX7313 pin | binary in, or binary out, configured by what lands on it |
+| `IC` PCA9685, `-PWM` symbol | level out, chip setting `frequency_hz` |
+| `IC` PCA9685, `-Servo` symbol | position out, 50 Hz fixed, settings `min_us`, `max_us` |
+| `Driver-GPIO-Digital` `D` | binary in or binary out, configured by what lands on it |
+| `Driver-GPIO-Analog` `D` | level in |
+| `Driver-GPIO-PWM` `D` | level out |
+| `Driver-GPIO-Servo` `D` | position out |
+| `Driver-GPIO-Pixel` `D` | pixel out, a bus |
 | switch machine `M` | binary out |
-| switch machine `OCC`, `N`, `R` | binary in |
-| colour-light head lamp | binary out |
-| semaphore arm | position out |
+| switch machine `~{OCC}`, `~{N}`, `~{R}` | binary in, asserted low |
+| colour-light head `~{R}`, `~{Y}`, `~{G}` | binary out |
+| one-lamp colour head `RGB` | colour out |
+| semaphore `ARM`, searchlight `VANE` | position out |
+| desk lever contact, desk lamp | binary in, binary out, asserted low |
 
-When the two ends of a net have the same native capability, the binding is direct. When they differ, the generator inserts a **transformer** from a bounded table **(owner)**, one per pin, with its own settings resolved through the scopes. When the table has no entry, the net is an error.
+**Polarity** is in the pin name: `~{OCC}` is an asserted-low contact, `~{LAMP}` an asserted-low lamp (E27, I7). It is an electrical fact of the device. The generator turns it into I/O-pin configuration, inversion in the chip's register where the chip has one, in the I/O driver otherwise, and a pull-up where an asserted-low input lands on a programmable pin. No device driver inverts. `~{}` means asserted low and nothing else: a plate with two contacts or two lamps names them as two functions (E45).
 
-| From device pin | To I/O pin | Transformer | Settings, with factory defaults |
+**Casts.** When the two ends of a net have the same native capability the binding is direct. When they differ the generator inserts a **cast** from a bounded index, one per pin, with its own settings resolved through the scopes (E9, E13). Casts are one to one (E12); they may chain, the generator finds the path, and two paths is an error the author resolves with a `cast` setting on the net (I2). When the index has no path, the net is an error. The index is not a file: it is what the FieldUnit source tree declares, published as the index document (§5).
+
+| From device pin | To I/O pin | Cast | Settings, with factory defaults |
 |---|---|---|---|
-| binary out | level out | two-point | `low = 0%`, `high = 100%`; optional `fade_ms = 0` |
+| binary out | level out | two-point | `low = 0%`, `high = 100%`, `fade_ms = 0` |
 | binary out | position out | two-angle | `low_deg`, `high_deg`, `speed` |
 | binary out | colour out | one-point | `color`, `brightness` |
 | level out | level out | scale | `gamma`, `scale = 100%` |
-| position out | level out | servo pulse | `min_us`, `max_us` (only if the servo variant is not used) |
 | level in | binary in | threshold | `threshold = 60%`, `hysteresis = 0%` |
-| binary in | binary in | direct | |
-| level in | level in | direct | |
+| same word | same word | direct | |
 | any out | any in, or the reverse | none: error | |
 
-Transformers are one-to-one and inserted by the generator. Anything that changes the number of wires, a 2-to-4 selector, a pixel chain, a shift register, is an encoder, drawn as a symbol by the designer. That is the boundary.
+There is no servo-pulse cast: a servo is drawn on the `-Servo` symbol or the `Driver-GPIO-Servo` symbol, whose pins are position out, and the I/O type owns the pulse mapping (I3).
 
-A servo on a PCA9685 needs no symbol variant: the device pin is position out, the chip pin is level out, and the servo-pulse transformer between them carries `min_us` and `max_us`. The chip's servo mode is that transformer's configuration on that pin.
+**Bus and wire** (E14). A wire-capability pin admits one device pin on its net; a bus-capability pin admits many, each carrying an `Address` for its slot. A pixel chain is a net on a `pixel out` pin (E30): a bus pin offers `colour out` to each slot, so a one-lamp colour head's `RGB` pin lands on it directly and a plain lamp's `~{LAMP}` lands on it through the one-point cast with its `color`. Gaps in the addresses are tolerated and the generator writes "off" (E31). An I2C expander is the same thing with its own `Address` on the bus; a CMRInet node is a remote expander (E32). Addresses are typed, never inferred from drawing order (E10, E40), and are scoped by the processor that owns the bus (I27).
 
-Colour is a capability of its own, **colour out**: a lit state and a colour value, dynamic. A device whose lamp changes colour has a colour-out pin: a one-lamp LED head, a searchlight-style head, a multi-colour indicator. A plain lamp stays binary out, and lands on a colour-out pin through a one-point transformer whose `color` setting gives it its fixed colour. A pixel chain's data pin, on the I/O side, is **pixel out**; nothing reaches it except a drawn chain encoder, whose device-side pins are colour out, one per slot, the slot being the encoder pin's number and the chain the encoder instance. An RGBW chain is an encoder variant. This is a paper design: it must be drawn in KiCad, with the encoder symbol and the colour-out pins, and compiled through the netlist before it counts as usable **(owner)**.
+**No encoders** (learned 6, E28). A mux-coded head is a device whose signature is the code we drive (`S0`, `S1`); the decoding, like a shift register on a head, is field hardware on the far side and out of scope. Casts cover one wire to one wire. Nothing is left for an encoder symbol to do.
 
-The vocabulary is a registry, like the settings registry, extended by adding a word together with the I/O pins that offer it, the device or encoder pins that use it, and its transformer entries, if any. Things that are not appliance I/O, a GPS or NTP time source, an RFID reader, a fast-clock listener, are drivers of a third kind: service sources. They are drawn with the same symbol-and-pin pattern, their capability is a stream (**message in**, **message out**), and their consumer is the unit's services, not an appliance.
+**Several device symbols per appliance** (E35, I25). The lock mechanism is `Device-Lock` beside `Device-Switch`, one Value; the crew's local lever and lamps are desk-style devices on the field expander. Completeness is checked over the union of their pins; a function bound twice is an error. A device symbol may list more than one Style: `Device-Switch` serves `powered` and `lock`.
 
-Consequences. A driver class is written for its native capabilities only; it adapts to nothing. The motor settings of the earlier example, `left_pwm` and `right_pwm`, are not the switch driver's: they are the two-point transformer's `low` and `high` on that one pin. A transformer's settings are addressed per instance pin, `M.high = 3700` as a field on the device instance, with layout and interlocking defaults above it.
+**Service sources.** Things that are not appliance I/O, a GPS or NTP time source, an RFID reader, a fast-clock listener, are drivers of a third kind. They are drawn with the same symbol-and-pin pattern, their capability is a stream (message in, message out), and their consumer is the unit's services, not an appliance.
 
-Where the native capability lives. KiCad has no per-pin properties, so it is a symbol property in the library, one per pin, in the same way `Role` and `Kind` are symbol properties today: `Pin.M = binary out`. The library is the one source; the value reaches the compiler through the netlist's component fields, so no new reader is needed; the lint checks each property against the pin's electrical type, which stays for ERC only.
+**Where it lives.** KiCad has no per-pin properties, so a native capability is a symbol property in the library, one per pin, `Pin.M = binary out` (I5). The library is the one source; the value reaches the compiler through the netlist's component fields, so no new reader is needed; the lint checks each property against the pin's electrical type, which stays for ERC only (I6). Nothing reads a symbol's name (learned 9, E36).
 
 ### 4.3 Settings
 
 Named values that parameterise the transform. Static for the life of the unit.
 
-- Each setting has a name, a type, a meaning and a factory default. One registry lists them, for field and desk alike. A driver class declares which settings it reads.
-- Each setting is resolved through four scopes, most specific wins:
+- Each setting has a name, a type, a meaning and a factory default, declared by the driver or cast class that reads it, in FieldUnit source (E16, I15). A class declares which settings it reads.
+- One pattern for every setting (E15): settings are fields on symbols. After the standard fields are removed (Reference, Value, Footprint, Datasheet, Description, Role, Appliance, Style, `IC`, `Pin.*`, `Address`, and KiCad's own), every field on a symbol is one setting (learned 7, I11). A `Setting` symbol (Role `SETTING`, one passive pin) attaches settings to a net, and whatever is on that net inherits them; its Value is a short displayed name and its `Description` is the reason (E37).
+- Each setting is resolved through the scopes, most specific wins (I15):
 
-| Scope | Authored by | Drawn where | How |
-|---|---|---|---|
-| factory default | the driver's author | the registry | |
-| layout | the layout designer, once | the root sheet | a setting symbol wired to the layout's anchor symbol |
-| interlocking | the layout designer, per plant | the plant sheet | a setting symbol wired to the `Interlocking` symbol **(owner)** |
-| symbol instance | the layout designer, per device | the device symbol | a field on the instance |
+| Scope | Authored by | Drawn where |
+|---|---|---|
+| factory | the driver's or cast's author | FieldUnit source, published in the index document |
+| layout | the layout designer, once | a `Setting` symbol on the layout anchor's net, root sheet |
+| interlocking | the layout designer, per plant | a `Setting` symbol on the `Interlocking` symbol's net |
+| binding | the layout designer, per function | a `Setting` symbol on that function's net |
+| instance | the layout designer, per device | fields on the device symbol |
+| calibrated | the unit, at run time | the store (§4.4) |
 
-- A setting symbol has Value = the setting's name and a field for its value, so the setting is visible when the sheet is viewed or printed. The root sheet needs an anchor symbol for the layout scope; none exists today.
-- A fifth source sits above the four scopes at run time: a **calibrated** value, written by the unit when a maintainer calibrates a device on the layout (a servo's end angles, a motor's PWM endpoints, a detector's threshold). It lives in the store (§4.4), keyed by identity, pin and setting, and wins over the drawing while present. How long it lives, across reboots and reflashes, is the generator's and the store's business and is not decided here. The maintainer's way of calibrating is one more interface to capture; it is listed in §7 and not designed here.
-- A value in the drawing survives a reflash by construction: it is regenerated into the firmware. That is the test for what is a setting and what is state: a servo's calibration angle is a setting; its last angle is state.
-- An instance gets one value per setting; it never sees the scopes. The compiler reports an instance field that no driver class reads, and a field that is not a registered setting.
-- Not settings: inversion and blinking. Inversion is an I/O-pin configuration the compiler computes from the binding and the generator installs in the chip where the chip can do it, else in the I/O symbol's code; a device driver never inverts. Blinking is rendering logic above the driver **(owner)**: the generator resolves a flashing appearance to lit or dark per tick from the regime, and the lamp driver writes what it is given.
+- A **calibrated** value is written by the unit when a maintainer calibrates a device on the layout (a servo's end angles, a motor's PWM endpoints, a detector's threshold). It lives in the store, keyed by identity, pin and setting, and wins over the drawing while present. Whether it survives a reflash is not to be codified (E24). The maintainer's way of calibrating is an interface to capture, not designed here (E25).
+- A value in the drawing is regenerated into the firmware. That is the test for what is a setting and what is state: a servo's calibration angle is a setting; its last angle is state.
+- An instance gets one value per setting; it never sees the scopes. The compiler reports an instance field that no class reads, and a setting name the index does not know.
+- Chip-wide settings, where a chip has one (`frequency_hz` on a PCA9685), are fields on the I/O symbol instance; a requirement on them from a cast or an I/O type that conflicts is a compile error (I4).
+- Not settings: inversion and blinking. Inversion is the pin name's polarity, installed by the generator (I7). Blinking is rendering logic above the driver (E19): the generator resolves a flashing appearance to lit or dark per tick from the regime, and the lamp driver writes what it is given.
 
 ### 4.4 Services
 
-Shared, changing facts and utilities. Owned by the unit, read by every instance, written by none except through the fault sink and the store.
+Shared, changing facts and utilities. Owned by the processor, read by every instance it owns, written by none except through the fault sink and the store.
 
 - Time: now, in ms, and a clock service for time of day and daylight. Its source is a layout policy: the processor's real clock, a fast clock from the layout, or a fixed value for a bench.
 - Flash regimes: named, synchronised flashers, each with a period and a pattern, defined at the layout scope. The unit's rendering logic reads them; a driver does not.
 - A fault sink: an instance reports a lamp out, a stalled servo, a lost pin. The unit decides what to do with it.
-- A store **(owner)**: state that must survive a reboot, keyed by identity. First use: each switch's last commanded position, restored before the first drive so that a switch under a parked train is not driven to a default at power-up. Rules: write on change only, never per tick; coalesce bursts; use the processor's wear-levelled store where one exists and a write budget where one does not. The store is unit-level; a driver instance reads its entry at construction and does not write it.
+- A store (E17): state that must survive a reboot, keyed by identity. First use: each switch's last commanded position, restored before the first drive so that a switch under a parked train is not driven to a default at power-up. Rules: write on change only, never per tick; coalesce bursts; use the processor's wear-levelled store where one exists and a write budget where one does not. The store is unit-level; a driver instance reads its entry at construction and does not write it.
 
-Operating modes are not a service to drivers. A lamp test is the unit issuing an ordinary command through the driver's command vocabulary; the driver types view requires every output type's vocabulary to cover every renderable state for that reason.
+Operating modes are not a service to drivers. A lamp test is the unit issuing an ordinary command through the driver's command vocabulary (E22); the driver types view requires every output type's vocabulary to cover every renderable state for that reason. Simulated travel is the field unit's, not a driver's (E23).
 
 ### 4.5 Construction and release
 
-Not a lifecycle the driver runs. Setup is computed by the compiler and generator, which see every driver instance and every I/O symbol on the unit, and executed by the unit in generated code.
+Not a lifecycle the driver runs (E20). Setup is computed by the compiler and generator, which see every driver instance and every I/O symbol a processor owns, and executed by the unit in generated code.
 
-1. The generator aggregates every binding's chosen capability and every I/O symbol's configuration (direction, inversion, pull-up, PWM frequency) per chip. Conflicts, such as two PWM frequencies on one PCA9685, are compile-time errors.
+1. The generator aggregates every binding's chosen capability and every I/O symbol's configuration (direction, inversion, pull-up, chip settings) per chip. Conflicts, such as a lamp on a `-Servo` symbol, are compile-time errors.
 2. The unit configures the I/O symbols from that aggregate.
 3. The unit restores the store, then constructs each driver instance complete, with identity, bindings and resolved settings. An instance has no "initialise yourself" step.
 4. Each tick the unit observes inputs through the instances and renders demands through them, in an order the unit owns.
-5. On shutdown, or on a fault the unit cannot tolerate, the unit applies the layout's release policy, a layout-scope setting. Two regimes define the pattern **(owner)**: everything to the restrictive state; or "no dispatcher", unlocked switches and automatic signals, for running trains without an office.
+5. On shutdown, or on a fault the unit cannot tolerate, the unit applies the layout's release policy, a layout-scope setting. Two regimes define the pattern (E18): everything to the restrictive state; or "no dispatcher", unlocked switches and automatic signals, for running trains without an office.
 
 ## 5. What this asks of the drawing and the model
 
@@ -147,31 +161,32 @@ Everything above comes out of the Layout Data Model, directly or indirectly.
 
 | Part | From the drawing | In the model |
 |---|---|---|
-| Identity | Values on appliance, part and device symbols; the plant sheet | derived, per device instance |
-| Bindings | nets between device pins and I/O pins | derived, per function pin, with the transformer and its resolved settings |
-| Native capabilities | `Pin.<name>` properties on library symbols | one copy per symbol and pin |
-| Transformer table | nothing drawn; the generator's | nothing; the model names the transformer per binding |
-| Settings | setting symbols on the root and plant sheets; fields on device instances; the registry | the raw scopes, and the resolved value per instance |
+| Identity | Values on appliance, device, desk and local symbols, joined by Value within the interlocking hierarchy; head letters; `Column` membership on the desk; the `MAIN HOUSE` or `CtcMachine` in scope, or `Processor` | derived, per device instance, with its processor |
+| Bindings | nets between device pins and I/O pins; Terminal pairs merged by Value; `Address` on bus devices | derived, per function pin, with the capability at each end, the cast path and its resolved settings |
+| Native capabilities, polarity | `Pin.<name>` properties and `~{}` pin names on library symbols; `IC` on I/O symbols | provenance: the library versions compiled against |
+| Cast index, factory defaults, type signatures | nothing drawn; FieldUnit publishes `fieldunit-index/v1` (I21) | provenance: the index version; per binding, the derived results only; never a copy |
+| Settings | `Setting` symbols on the layout anchor's, the `Interlocking` symbol's and a function's net; fields on device and I/O instances | the raw scopes, and the resolved value per instance |
 | Services | layout-scope settings: regimes, clock source, release policy | the layout scope |
 | Store | nothing drawn; which appliances persist is implied by type | nothing; a generator fact |
-| Construction | nothing drawn | generated from bindings and contracts |
+| Construction | nothing drawn | generated from bindings and the index |
 
-Three things have no home today: the `Pin.<name>` properties, the setting symbol and the layout anchor symbol on the root sheet, and the registry's content, which exists as a file whose entries are evidence only.
+Still without a home in the libraries: the `Pin.*` properties, `Appliance`, `Style` and `IC`, the `Setting` and `Terminal` symbols, the layout anchor on the root sheet, and the field-side processor symbol (I31). The index document is the first Part 2 question Part 1 depends on.
 
 ## 6. Test case: the electric lock at Sargent
 
-`835` is drawn with the right appliance symbol, `Railroad:Switch_Lock` **(owner)**. The device bound to it is `Device-Switch-StallMotor-Sensed-OS`, whose signature is a powered switch's: motor out, two point contacts in. At a lock the same four wires mean different things: the output is the lock release, and the two lamps show the request state and the lock state. The crew's lever and key on the same expander operate the switch when it is unlocked.
-
-Under this view the question the case poses is: does one device class serve both appliances with the same wires and different commands, or does a lock get its own device symbol and class? The driver types view takes the second position and marks it for confirmation. Either way the compiler must check the device's signature against the appliance's type, and both facts are in the model.
+Resolved by the checkpoint. `835` is drawn with the right appliance symbol, `Switch_Lock` (E26). The device bound to it today has a powered switch's signature and the wrong Style, which is why the Kind namespace was reviewed and replaced (I8). Under the three planes the drawing becomes: `Device-Switch` for the machine and its contacts, `Device-Lock` for the lock mechanism, one Value, two logic blocks (E35, I18, I25); and the crew's `Local-Switch` and `Local-Lock` as lever and lamp devices on the Sargent expander, consumed by the Sargent processor because that is the expander they land on (E43). The binding pass read all 26 of Sargent's bindings that way from the unchanged drawing, with the local levers on no column and the desk's `PanelLock` for 835 on column 13.
 
 ## 7. Open after this revision
 
-1. The lock device: its own symbol and class, or the powered switch's signature reinterpreted by appliance type. See the driver types view, type 3.
-2. The layout anchor symbol on the root sheet: a `Layout` symbol in the `Railroad` library with one pin for setting symbols.
-3. The capability vocabulary today: binary in, binary out, level in, level out, position out, colour out on both sides; pixel out on the I/O side only; message in and message out for service sources. A registry, extended as §4.2 says.
-4. Per-pin instance settings are addressed `<pin>.<setting>` on the device instance (`M.high`, `LAMP.color`). To confirm.
-5. Interfaces named here and not designed here, to be captured one by one: the maintainer's calibration interface; the store; the fault sink; the clock source.
-6. The pixel chain and colour-out design must be proven in KiCad before it is relied on: an encoder symbol, a one-lamp colour head, a plain lamp through the one-point transformer, all on a chain, compiled through the netlist.
+1. The layout anchor symbol on the root sheet, and the field-side processor symbol: whether a house without hardware is drawn differently (I31).
+2. `Device-Lock`'s sense input, `~{LOCKED}`, if the hardware has one; the Style word lists; whether a semaphore's two or three positions are a Style, a setting or a signature.
+3. Interfaces named here and not designed here (E25): the maintainer's calibration interface; the store; the fault sink; the clock source. Local logic for local hardware (E43).
+4. Chain address implications, to be learned from use (I26). MAX7313 per-port intensity and blink, unverified.
+5. Refusal of a `contact` nothing consumes (I23).
+
+## Changes in rev 5
+
+Aligned with the checkpoint rev 8. Transformers renamed casts and the servo-pulse cast withdrawn in favour of the two PCA9685 symbols and the five GPIO symbols (I3, I22); `~{}` polarity restored and `motor.normal_is` dropped for it (E27, I7); encoders retired and the pixel chain made a bus with typed addresses (E14, E28, E30, E31); `Terminal` pairs merged by Value (E38, E39, I24); several device symbols per appliance and the lock as its own block (E35, I25); `IC` and the rule that symbol names decide nothing (E36); settings as fields with the six scopes and the `Setting` symbol's short Value (E15, E37, I11, I15); the index document as provenance plus derived results (I21); processor ownership as the consumer (E43, E44, I27); the 835 case resolved (§6); the model table and open items rewritten.
 
 ## Changes in rev 4
 
