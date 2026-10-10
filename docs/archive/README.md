@@ -14,3 +14,5 @@ old path `docs/review/`.
 | `HANDOFF-part-c-kicad-transition.md`, `HANDOFF-rail-layout-model-board.md`, `SPIKE_HANDOFF_kicad-plant-graph.md` | Session handoffs | the code and tests they led to |
 | `TBD-shared-kicad-python-api.md` | A note on sharing the KiCad readers | `tools/kicad_services/` |
 | `part-c-ontology/` | The 2026-09-16 ontology checkpoint (five authority domains, evidence ledger, track-diagram contract, the first documentation packet generator) and the 2026-09-24 goals note, from two unmerged branches now kept as `archive/*` tags | glossary and ADRs for the vocabulary; `docs/design/goals.md` for the goals; its README lists what carried forward and what has no home yet |
+| `handoff-field-io-cleanup/` | The 2026-10-06 field I/O handoff and the scripts of the library passes 1–3 and the owner's review | ADR 0004, the InterlockingPlant libraries, the unified project |
+| `unify/` | `build_spcoast.py`, which generated the unified SPCoast project from `Railroad/Archive/SPCoast` (retired at the owner's cutover, 2026-10-07; refuses to write into the live project) | `Railroad/SPCoast`, hand-maintained |

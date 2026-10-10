@@ -1,0 +1,660 @@
+# The (Role, Kind) table: one row per logic block (FieldUnit ADR 0003 D1, naming axiom 1).
+#
+# One source for: which symbols implement a Kind, each pin's type, the attributes a Kind takes.
+# The libraries are linted against it (ADR 0003 rule 8: tools/contract/lint_libraries.py); the
+# compiler reads it. It states the target set by the accepted ADRs; where a library differs, the
+# lint reports it.
+#
+# Row fields
+#   role, kind     the key. Role is the namespace; a Kind is unique within its Role (D1).
+#   block          the logic block the row maps to, in words.
+#   delivery       the seam on the FieldUnit side, one of three forms (FieldUnit ADR 0004):
+#                    { class, family, implements = "ApplianceDriver" }   a device driver; family picks T
+#                    { class, implements = "IOBus" }                     a channel driver
+#                    { model = "…" }                                     a data-model element (plant, machine)
+#                    { tokens = "…" }                                    code-line tokens (PANEL)
+#                  A class FieldUnit does not have yet is still named here; the contract test reports it.
+#   symbols        library symbols implementing the row ("Library:Symbol"). Variants that differ
+#                  only in graphics (colour, diagonal) share a row.
+#   pins           required pins: base name (no ~{}) -> type.
+#   packaging      pins a symbol may add without changing the logic block (ADR 0003 D2), e.g. -OS.
+#   membership     pins that say where a symbol belongs, never what it does (a desk Column).
+#   attributes     on plant and machine rows: attribute -> meaning (model data).
+#                  on DEVICE, PANEL, IODRIVER rows: attribute -> { context, default_from?, lookup?, meaning }:
+#                    context = "appliance"  a device setting; this Kind's driver owns its meaning (FieldUnit ADR 0004)
+#                              "binding"    addressing, or what the symbol shows (Chain, Index, Address, IndicationToken)
+#                              "model"      data about the plant or code line (Vital, ControlToken)
+#                    default_from           a layout context key (schemas/context/keys.toml) used when the drawing is blank
+#                    lookup                 a layout context key the value is looked up in (a lamp Color in color.palette)
+#                  Polarity attributes are not listed: every BIT pin
+#                  carries one, named for the pin (ADR 0003 D6), and the lint checks that by rule.
+#   proposed       true when the row is a proposal waiting for the owner (not yet in an ADR).
+#
+# Pin types
+#   BIT       one asserted bit; ~{X} is asserted-low (the norm), X asserted-high (ADR 0003 D6)
+#   LEVEL     one bit with no asserted state (a motor's M, a mux select code); NormalIs where it applies
+#   DUTY      PWM duty            ANGLE   servo angle
+#   BIT|DUTY|ANGLE on a driver: what that driver pin can carry. A device pin wires only to a driver
+#             pin that can carry its type (LEVEL rides on BIT).
+#   TRACK     a track net leg     SIGNAL  mast to its IRJ     HEAD   head to its mast
+#   HOUSE     membership of a house, interlocking, maintainer call
+#   COLUMN    a desk column       CODELINE / ENCODING  machine to transport to encoding
+# Direction (device, panel and driver pins), after the type: what the symbol does to its wire, as
+# KiCad types the pin: out = drives it (a lever contact, a sense contact, a detector), in = is driven
+# (a lamp, head, motor, servo), bidir = either (a programmable expander pin). An expander pin is
+# configured as the complement of the device pin on its net (FieldUnit ADR 0004). A PANEL pin named
+# for a token agrees with the token: ...S out, ...K in.
+# A net joins pins of one family only (ADR 0004 D12): plant (TRACK/SIGNAL/HEAD/HOUSE), channel
+# (BIT/LEVEL/DUTY/ANGLE), column, code line.
+
+version = 1
+
+# ================================================================== plant: APPLIANCE
+
+[[row]]
+role = "APPLIANCE"
+kind = "SWITCH_REMOTE"
+block = "Switch (vital): the dispatcher commands it"
+delivery = { model = "plant appliances" }
+symbols = ["Railroad:Switch_Powered", "Railroad:Switch_Powered_Diag", "Railroad:Switch_Powered_NO_TC",
+           "Railroad:Switch_Powered_Small"]
+pins = { C = "TRACK", N = "TRACK", R = "TRACK" }
+attributes = { CP = "control point (MAIN HOUSE Value)", TC = "OS circuit; default <switch>T1", Indications = "N/R speed caps" }
+
+[[row]]
+role = "APPLIANCE"
+kind = "SWITCH_LOCK"
+block = "Switch (vital) with HAND_LOCKED: the crew operates it under an electric lock; has a motor (ADR 0004 D10)"
+delivery = { model = "plant appliances" }
+symbols = ["Railroad:Switch_Lock"]
+pins = { C = "TRACK", N = "TRACK", R = "TRACK" }
+attributes = { CP = "control point", TC = "OS circuit; default <switch>T1", Indications = "N/R speed caps" }
+
+[[row]]
+role = "APPLIANCE"
+kind = "SWITCH_MANUAL_SENSED"
+block = "Switch outside interlocking limits; position known (local lamps, devices)"
+delivery = { model = "plant appliances" }
+symbols = ["Railroad:Switch_Manual_Sensed"]
+pins = { C = "TRACK", N = "TRACK", R = "TRACK" }
+attributes = { CP = "control point", TC = "OS circuit", Indications = "N/R speed caps" }
+
+[[row]]
+role = "APPLIANCE"
+kind = "SWITCH_MANUAL"
+block = "Switch outside interlocking limits; position unknown"
+delivery = { model = "plant appliances" }
+symbols = ["Railroad:Switch_Manual"]
+pins = { C = "TRACK", N = "TRACK", R = "TRACK" }
+attributes = { CP = "control point", TC = "OS circuit", Indications = "N/R speed caps" }
+
+[[row]]
+role = "APPLIANCE"
+kind = "DERAIL"
+block = "Derail: NORMAL derails, REVERSE clear; a dependent derail follows its switch"
+delivery = { model = "plant appliances" }
+symbols = ["Railroad:Switch_Powered_Derail", "Railroad:Switch_Powered_Derail_TC"]
+pins = { C = "TRACK", R = "TRACK" }
+attributes = { CP = "control point", TC = "OS circuit", Indications = "N/R speed caps" }
+
+[[row]]
+role = "APPLIANCE"
+kind = "TRACK_CIRCUIT"
+block = "TrackCircuit: occupancy of the net it sits on; Value is the circuit name"
+delivery = { model = "plant appliances" }
+symbols = ["Railroad:Track Circuit", "Railroad:Track Circuit_RED", "Railroad:Track Circuit_Yellow"]
+pins = { TC = "TRACK" }
+attributes = { CP = "control point" }
+
+[[row]]
+role = "APPLIANCE"
+kind = "VIRTUAL_INDICATION"
+block = "An indication aggregating other circuits (e.g. a ladder 0100T); not on a track net"
+delivery = { model = "plant appliances" }
+symbols = ["Railroad:Virtual Indication"]
+pins = {}
+attributes = { IndicationToken = "the circuits it aggregates", CP = "control point", Display = "label text" }
+
+[[row]]
+role = "APPLIANCE"
+kind = "MAST_SINGLE"
+block = "Signal: the mast is its heads; route logic and the lever control it"
+delivery = { model = "plant appliances" }
+symbols = ["Railroad:Mast_Single"]
+pins = { SIGNAL = "SIGNAL", H = "HEAD" }
+
+[[row]]
+role = "APPLIANCE"
+kind = "MAST_DOUBLE"
+block = "Signal with two heads"
+delivery = { model = "plant appliances" }
+symbols = ["Railroad:Mast_Double"]
+pins = { SIGNAL = "SIGNAL", H1 = "HEAD", H2 = "HEAD" }
+
+[[row]]
+role = "APPLIANCE"
+kind = "MAST_DWARF"
+block = "Dwarf signal"
+delivery = { model = "plant appliances" }
+symbols = ["Railroad:Mast_Dwarf"]
+pins = { SIGNAL = "SIGNAL", H = "HEAD" }
+
+[[row]]
+role = "APPLIANCE"
+kind = "HEAD_COLOR_LIGHT"
+block = "Head: aspects a colour-light head can display (ADR 0004 D6)"
+delivery = { model = "plant appliances" }
+symbols = ["Railroad:Signal Head - CL"]
+pins = { M = "HEAD" }
+
+[[row]]
+role = "APPLIANCE"
+kind = "HEAD_SEMAPHORE_2POS"
+block = "Head: a two-position semaphore (ADR 0004 D6)"
+delivery = { model = "plant appliances" }
+symbols = ["Railroad:Signal Head - SemaphoreU2"]
+pins = { M = "HEAD" }
+
+[[row]]
+role = "APPLIANCE"
+kind = "HEAD_SEMAPHORE_3POS"
+block = "Head: a three-position semaphore (ADR 0004 D6)"
+delivery = { model = "plant appliances" }
+symbols = ["Railroad:Signal Head - SemaphoreU3"]
+pins = { M = "HEAD" }
+
+[[row]]
+role = "APPLIANCE"
+kind = "MAINTAINER_CALL"
+block = "Maintainer call (non-vital)"
+delivery = { model = "plant appliances" }
+symbols = ["Railroad:MaintainerCall"]
+pins = { MC = "HOUSE" }
+
+[[row]]
+role = "APPLIANCE"
+kind = "AUXILIARY"
+block = "Auxiliary function (non-vital)"
+delivery = { model = "plant appliances" }
+symbols = ["Railroad:AUXILIARY"]
+pins = { MC = "HOUSE" }
+attributes = { CP = "control point" }
+
+[[row]]
+role = "APPLIANCE"
+kind = "AUXILIARY_TRAFFIC"
+block = "Traffic auxiliary (direction of traffic)"
+delivery = { model = "plant appliances" }
+symbols = ["Railroad:AUXILIARY_TRAFFIC"]
+pins = { MC = "HOUSE" }
+attributes = { CP = "control point" }
+
+# ================================================================== plant: TRACK, POLICY, STRUCTURE
+
+[[row]]
+role = "TRACK"
+kind = "IRJ"
+block = "Insulated rail joint: a circuit boundary"
+delivery = { model = "plant topology" }
+symbols = ["Railroad:IRJ", "Railroad:IRJ_Diag"]
+pins = { A = "TRACK", B = "TRACK" }
+
+[[row]]
+role = "TRACK"
+kind = "IRJ_SIGNAL"
+block = "Insulated joint at a signal; carries the CP (the control point's signals)"
+delivery = { model = "plant topology" }
+symbols = ["Railroad:IRJ-Signal"]
+pins = { A = "TRACK", B = "TRACK", SIGNAL = "SIGNAL" }
+attributes = { CP = "control point" }
+
+[[row]]
+role = "TRACK"
+kind = "END_CTC"
+block = "Limit of CTC: routes beyond it are capped at RESTRICTING"
+delivery = { model = "plant topology" }
+symbols = ["Railroad:IRJ-END_CTC"]
+pins = { CTC = "TRACK", DARK = "TRACK" }
+
+[[row]]
+role = "TRACK"
+kind = "BUMPER"
+block = "Dead end: caps routes at RESTRICTING"
+delivery = { model = "plant topology" }
+symbols = ["Railroad:Bumper"]
+pins = { EoT = "TRACK" }
+
+[[row]]
+role = "TRACK"
+kind = "NEXT_CP"
+block = "The neighbouring interlocking, by name (ADR 0004 D12: wiring between plants deferred)"
+delivery = { model = "plant topology" }
+symbols = ["Railroad:NextCP"]
+pins = { To = "TRACK" }
+
+[[row]]
+role = "TRACK"
+kind = "MILEPOST"
+block = "Milepost anchor of the net it sits on; positions elsewhere are derived (ADR 0004 D7)"
+delivery = { model = "plant topology" }
+symbols = ["Railroad:Milepost"]
+pins = { Track = "TRACK" }
+
+[[row]]
+role = "POLICY"
+kind = "RULE_105"
+block = "Restricted speed"
+delivery = { model = "plant policy" }
+symbols = ["Railroad:Rule105-RestrictedSpeed"]
+pins = { To = "TRACK" }
+attributes = { Direction = "LEFT | RIGHT | BOTH" }
+
+[[row]]
+role = "POLICY"
+kind = "RULE_251"
+block = "Current of traffic"
+delivery = { model = "plant policy" }
+symbols = ["Railroad:Rule251-DoT-Left", "Railroad:Rule251-DoT-Right"]
+pins = { To = "TRACK" }
+attributes = { Direction = "LEFT | RIGHT | BOTH" }
+
+[[row]]
+role = "POLICY"
+kind = "RULE_261"
+block = "Signalled for both directions"
+delivery = { model = "plant policy" }
+symbols = ["Railroad:Rule261-DoT-BiDirectional"]
+pins = { Track = "TRACK" }
+attributes = { Direction = "LEFT | RIGHT | BOTH" }
+
+[[row]]
+role = "POLICY"
+kind = "RULE_93"
+block = "Yard limits"
+delivery = { model = "plant policy" }
+symbols = ["Railroad:Rule93-Yard Limits"]
+pins = { To = "TRACK" }
+attributes = { Direction = "LEFT | RIGHT | BOTH" }
+
+[[row]]
+role = "STRUCTURE"
+kind = "INTERLOCKING"
+block = "The plant: anchors plant membership (ADR 0004 D12)"
+delivery = { model = "plant structure" }
+symbols = ["Railroad:Interlocking"]
+pins = { Interlocking = "HOUSE" }
+
+[[row]]
+role = "STRUCTURE"
+kind = "CONTROL_POINT"
+block = "A MAIN HOUSE: a control point and its bungalow; one field station on a 506 code line"
+delivery = { model = "plant structure" }
+symbols = ["Railroad:MAIN HOUSE"]
+pins = { H = "HOUSE", Interlocking = "HOUSE" }
+attributes = { Milepost = "the house's milepost (ADR 0004 D7: open whether derived)" }
+
+# ================================================================== machine
+
+[[row]]
+role = "MACHINE"
+kind = "CTC"
+block = "A CTC machine: anchors machine membership (ADR 0004 D12)"
+delivery = { model = "machine" }
+symbols = ["RailroadPanel:CtcMachine"]
+pins = { Transports = "CODELINE" }
+attributes = { Type = "machine type, e.g. US&S506", Era = "era", Columns = "column count", Railroad = "railroad" }
+proposed = true  # the symbol has no Kind today; CTC leaves room for TOWER / LOCAL machines
+
+[[row]]
+role = "COLUMN"
+kind = "COLUMN"
+block = "A desk column: one control point's levers and lamps"
+delivery = { model = "machine columns" }
+symbols = ["RailroadPanel:PanelColumn"]
+pins = { Column = "COLUMN" }
+attributes = { Column = "column number", "CP Name" = "control point (MAIN HOUSE Value)", Interlocking = "derivable from the hierarchy (ADR 0004 D12); to check, then drop", Machine = "derivable from the hierarchy (ADR 0004 D12); to check, then drop" }
+proposed = true  # the symbol has no Kind today
+
+[[row]]
+role = "CODELINE_TRANSPORT"
+kind = "MQTT"
+block = "Code line over MQTT"
+delivery = { model = "code line" }
+symbols = ["RailroadPanel:Codeline-Transport-MQTT"]
+pins = { Codeline = "CODELINE", Encoding = "ENCODING" }
+attributes = { Broker = "host:port", Topic = "topic root", Railroad = "railroad", Station = "station name" }
+
+[[row]]
+role = "CODELINE_TRANSPORT"
+kind = "CMRI"
+block = "Code line over CMRInet"
+delivery = { model = "code line" }
+symbols = ["RailroadPanel:Codeline-Transport-CMRInet"]
+pins = { Codeline = "CODELINE", Encoding = "ENCODING" }
+attributes = { Baud = "baud", Port = "serial port" }
+
+[[row]]
+role = "CODELINE_TRANSPORT"
+kind = "LOCONET"
+block = "Code line over LocoNet"
+delivery = { model = "code line" }
+symbols = ["RailroadPanel:Codeline-Transport-Loconet"]
+pins = { Codeline = "CODELINE", Encoding = "ENCODING" }
+attributes = { Port = "port" }
+
+[[row]]
+role = "CODELINE_TRANSPORT"
+kind = "TIMECODE"
+block = "Time-coded code line (US&S DC long/short pulses)"
+delivery = { model = "code line" }
+symbols = ["RailroadPanel:Codeline-Transport-TimeCode"]
+pins = { Codeline = "CODELINE", Encoding = "ENCODING" }
+
+[[row]]
+role = "CODELINE_ENCODING"
+kind = "AAR"
+block = "AAR token encoding (FieldUnit WireCodec)"
+delivery = { model = "code line" }
+symbols = ["RailroadPanel:Codeline-Encoding-AAR"]
+pins = { Encoding = "ENCODING" }
+attributes = { Station = "station name" }
+
+[[row]]
+role = "CODELINE_ENCODING"
+kind = "BITS"
+block = "Bit-packed encoding with a code chart"
+delivery = { model = "code line" }
+symbols = ["RailroadPanel:Codeline-Encoding-Bits"]
+pins = { Encoding = "ENCODING" }
+attributes = { Chart = "code chart", Station = "station name", Address = "station address", ControlBytes = "bytes", IndicationBytes = "bytes" }
+
+[[row]]
+role = "CODELINE_ENCODING"
+kind = "USS506"
+block = "US&S 506 encoding"
+delivery = { model = "code line" }
+symbols = ["RailroadPanel:Codeline-Encoding-US&S-506"]
+pins = { Encoding = "ENCODING" }
+attributes = { Station = "station name", Address = "station address", Chart = "code chart" }
+
+# ================================================================== PANEL (desk, fascia, tower)
+
+[[row]]
+role = "PANEL"
+kind = "SWITCH_LEVER"
+block = "Switch lever: NWS/RWS out, NWK/RWK lamps (desk over the code line; fascia as a local client)"
+delivery = { tokens = "pin names are token suffixes (ADR 0003 axiom 5)" }
+symbols = ["RailroadPanel:PanelSwitch", "RailroadField:Local-Switch"]
+pins = { NWS = "BIT out", RWS = "BIT out", NWK = "BIT in", RWK = "BIT in" }
+membership = { Column = "COLUMN" }
+
+[[row]]
+role = "PANEL"
+kind = "SWITCH_LEVER_NOLAMP"
+block = "Switch lever without lamps"
+delivery = { tokens = "pin names are token suffixes (ADR 0003 axiom 5)" }
+symbols = ["RailroadField:Local-Switch-NoLamp"]
+pins = { NWS = "BIT out", RWS = "BIT out" }
+
+[[row]]
+role = "PANEL"
+kind = "SIGNAL_LEVER"
+block = "Signal lever: NGS/HS/SGS out, NGK/SGK/TEK lamps"
+delivery = { tokens = "pin names are token suffixes (ADR 0003 axiom 5)" }
+symbols = ["RailroadPanel:PanelSignal"]
+pins = { NGS = "BIT out", HS = "BIT out", SGS = "BIT out", NGK = "BIT in", SGK = "BIT in", TEK = "BIT in" }
+membership = { Column = "COLUMN" }
+
+[[row]]
+role = "PANEL"
+kind = "LOCK_LEVER_2LAMP_2CONTACT"
+block = "Desk lock lever: WLS on two contacts, WLK on two lamps; N lamp blinks on WLQK (ADR 0004 D4)"
+delivery = { tokens = "pin names are token suffixes (ADR 0003 axiom 5)" }
+symbols = ["RailroadPanel:PanelLock"]
+pins = { WLS = "BIT out", WLK = "BIT in" }
+membership = { Column = "COLUMN" }
+
+[[row]]
+role = "PANEL"
+kind = "LOCK_LEVER"
+block = "Fascia lock plate: WLQ key, WLQK request lamp, WLK lock lamp (ADR 0004 D5)"
+delivery = { tokens = "pin names are token suffixes (ADR 0003 axiom 5)" }
+symbols = ["RailroadField:Local-Lock"]
+pins = { WLQ = "BIT out", WLQK = "BIT in", WLK = "BIT in" }
+
+[[row]]
+role = "PANEL"
+kind = "LAMP"
+block = "Lamp on one bit showing one or more indications"
+delivery = { tokens = "pin names are token suffixes (ADR 0003 axiom 5)" }
+symbols = ["RailroadPanel:PanelLamp-AMBER", "RailroadPanel:PanelLamp-BLUE", "RailroadPanel:PanelLamp-GREEN",
+           "RailroadPanel:PanelLamp-RED", "RailroadPanel:PanelLamp-YELLOW", "RailroadField:Local-Lamp"]
+pins = { LAMP = "BIT in" }
+membership = { Column = "COLUMN" }
+attributes = { IndicationToken = { context = "binding", meaning = "indications OR'd onto the lamp" }, Color = { context = "appliance", lookup = "color.palette", meaning = "lamp colour" } }
+
+[[row]]
+role = "PANEL"
+kind = "LAMP_PWM"
+block = "Lamp on a PWM channel"
+delivery = { tokens = "pin names are token suffixes (ADR 0003 axiom 5)" }
+symbols = ["RailroadField:Local-Lamp-PWM"]
+pins = { LAMP = "DUTY in" }
+attributes = { IndicationToken = { context = "binding", meaning = "indications OR'd onto the lamp" }, Color = { context = "appliance", lookup = "color.palette", meaning = "lamp colour" } }
+proposed = true  # today PANEL/LAMP; D1 needs its own Kind (different logic block)
+
+[[row]]
+role = "PANEL"
+kind = "LAMP_NEOPIXEL"
+block = "Lamp on a NeoPixel chain"
+delivery = { tokens = "pin names are token suffixes (ADR 0003 axiom 5)" }
+symbols = ["RailroadField:Local-Lamp-NeoPixel"]
+pins = {}
+attributes = { IndicationToken = { context = "binding", meaning = "indications OR'd onto the lamp" }, Color = { context = "appliance", lookup = "color.palette", meaning = "lamp colour" }, Chain = { context = "binding", meaning = "chain" }, Index = { context = "binding", meaning = "index" } }
+proposed = true  # today PANEL/LAMP; D1 needs its own Kind (different logic block)
+
+[[row]]
+role = "PANEL"
+kind = "CODE"
+block = "Code button"
+delivery = { tokens = "pin names are token suffixes (ADR 0003 axiom 5)" }
+symbols = ["RailroadPanel:PanelCode"]
+pins = { CODE = "BIT out" }
+membership = { Column = "COLUMN" }
+
+[[row]]
+role = "PANEL"
+kind = "MAINTAINER_CALL"
+block = "Maintainer call button or switch"
+delivery = { tokens = "pin names are token suffixes (ADR 0003 axiom 5)" }
+symbols = ["RailroadPanel:PanelMCall"]
+pins = { SW = "BIT out" }
+membership = { Column = "COLUMN" }
+attributes = { Vital = { context = "model", meaning = "NO" }, ControlToken = { context = "model", meaning = "control token, default <Value>S" } }
+
+[[row]]
+role = "PANEL"
+kind = "AUXILIARY"
+block = "Auxiliary control"
+delivery = { tokens = "pin names are token suffixes (ADR 0003 axiom 5)" }
+symbols = ["RailroadPanel:PanelAuxiliary"]
+pins = { SW = "BIT out" }
+membership = { Column = "COLUMN" }
+attributes = { Vital = { context = "model", meaning = "NO" }, ControlToken = { context = "model", meaning = "control token, default <Value>S" } }
+
+# ================================================================== DEVICE (field hardware)
+
+[[row]]
+role = "DEVICE"
+kind = "SWITCH_SENSE"
+block = "Sense-only switch driver (point contacts)"
+delivery = { class = "SwitchSenseDriver", family = "SWITCH", implements = "ApplianceDriver" }
+symbols = ["RailroadField:Device-Switch-Sense"]
+pins = { N = "BIT out", R = "BIT out" }
+
+[[row]]
+role = "DEVICE"
+kind = "SWITCH_STALL_SIM"
+block = "MockSwitchDriver: stall motor, simulated feedback"
+delivery = { class = "MockSwitchDriver", family = "SWITCH", implements = "ApplianceDriver" }
+symbols = ["RailroadField:Device-Switch-StallMotor-Sim"]
+pins = { M = "LEVEL in" }
+attributes = { NormalIs = { context = "appliance", meaning = "HIGH | LOW" }, Travel_ms = { context = "appliance", default_from = "timing.travel_ms", meaning = "simulated travel time" } }
+
+[[row]]
+role = "DEVICE"
+kind = "SWITCH_STALL_SENSED"
+block = "SwitchDriver: stall motor with point contacts (the -OS packaging adds the OS detector)"
+delivery = { class = "SwitchDriver", family = "SWITCH", implements = "ApplianceDriver" }
+symbols = ["RailroadField:Device-Switch-StallMotor-Sensed", "RailroadField:Device-Switch-StallMotor-Sensed-OS"]
+pins = { M = "LEVEL in", N = "BIT out", R = "BIT out" }
+packaging = { OCC = "BIT out" }
+attributes = { NormalIs = { context = "appliance", meaning = "HIGH | LOW" } }
+
+[[row]]
+role = "DEVICE"
+kind = "SWITCH_SERVO_SIM"
+block = "Servo switch driver, simulated feedback (new)"
+delivery = { class = "ServoSwitchSimDriver", family = "SWITCH", implements = "ApplianceDriver" }
+symbols = ["RailroadField:Device-Switch-Servo-Sim"]
+pins = { CH = "ANGLE in" }
+attributes = { NormalIs = { context = "appliance", meaning = "LOW_ANGLE | HIGH_ANGLE" }, Normal_deg = { context = "appliance", meaning = "degrees" }, Reverse_deg = { context = "appliance", meaning = "degrees" }, Speed = { context = "appliance", default_from = "motion.speed", meaning = "speed" } }
+
+[[row]]
+role = "DEVICE"
+kind = "SWITCH_SERVO_SENSED"
+block = "Servo switch driver with point contacts (new)"
+delivery = { class = "ServoSwitchDriver", family = "SWITCH", implements = "ApplianceDriver" }
+symbols = ["RailroadField:Device-Switch-Servo-Sensed"]
+pins = { CH = "ANGLE in", N = "BIT out", R = "BIT out" }
+attributes = { NormalIs = { context = "appliance", meaning = "LOW_ANGLE | HIGH_ANGLE" }, Normal_deg = { context = "appliance", meaning = "degrees" }, Reverse_deg = { context = "appliance", meaning = "degrees" }, Speed = { context = "appliance", default_from = "motion.speed", meaning = "speed" } }
+
+[[row]]
+role = "DEVICE"
+kind = "DETECTOR_OPTICAL"
+block = "TrackCircuitDriver with release hold (optical detectors have no hysteresis)"
+delivery = { class = "OpticalDetectorDriver", family = "DETECTOR", implements = "ApplianceDriver" }
+symbols = ["RailroadField:Device-Detector-Optical"]
+pins = { OCC = "BIT out" }
+attributes = { Hold_ms = { context = "appliance", default_from = "timing.hold_ms", meaning = "release hold" } }
+
+[[row]]
+role = "DEVICE"
+kind = "DETECTOR_CURRENT"
+block = "TrackCircuitDriver"
+delivery = { class = "TrackCircuitDriver", family = "DETECTOR", implements = "ApplianceDriver" }
+symbols = ["RailroadField:Device-Detector-Current"]
+pins = { OCC = "BIT out" }
+
+[[row]]
+role = "DEVICE"
+kind = "HEAD_3LED"
+block = "SignalMastDriver head: three LEDs"
+delivery = { class = "Head3LedDriver", family = "HEAD", implements = "ApplianceDriver" }
+symbols = ["RailroadField:Device-Head-3LED"]
+pins = { R = "BIT in", Y = "BIT in", G = "BIT in" }
+
+[[row]]
+role = "DEVICE"
+kind = "HEAD_3LED_MUX2"
+block = "Mux head driver: three LEDs on a 2-bit select code (new)"
+delivery = { class = "Head3LedMux2Driver", family = "HEAD", implements = "ApplianceDriver" }
+symbols = ["RailroadField:Device-Head-3LED-Mux2"]
+pins = { S0 = "LEVEL in", S1 = "LEVEL in" }
+
+[[row]]
+role = "DEVICE"
+kind = "HEAD_3LED_PWM"
+block = "PWM head driver (new)"
+delivery = { class = "Head3LedPwmDriver", family = "HEAD", implements = "ApplianceDriver" }
+symbols = ["RailroadField:Device-Head-3LED-PWM"]
+pins = { R = "DUTY in", Y = "DUTY in", G = "DUTY in" }
+attributes = { Fade_ms = { context = "appliance", default_from = "timing.fade_ms", meaning = "fade time" } }
+
+[[row]]
+role = "DEVICE"
+kind = "HEAD_1LED_PWM"
+block = "One-LED head on a PWM channel (aspect logic)"
+delivery = { class = "Head1LedPwmDriver", family = "HEAD", implements = "ApplianceDriver" }
+symbols = ["RailroadField:Device-Head-1LED-PWM"]
+pins = { D = "DUTY in" }
+
+[[row]]
+role = "DEVICE"
+kind = "HEAD_1LED_NEOPIXEL"
+block = "One-LED head on a NeoPixel chain (aspect logic)"
+delivery = { class = "Head1LedNeoPixelDriver", family = "HEAD", implements = "ApplianceDriver" }
+symbols = ["RailroadField:Device-Head-1LED-NeoPixel"]
+pins = {}
+attributes = { Chain = { context = "binding", meaning = "chain" }, Index = { context = "binding", meaning = "index" } }
+
+[[row]]
+role = "DEVICE"
+kind = "HEAD_SEMAPHORE_SERVO"
+block = "SemaphoreDriver"
+delivery = { class = "SemaphoreHeadDriver", family = "HEAD", implements = "ApplianceDriver" }
+symbols = ["RailroadField:Device-Head-Semaphore-Servo"]
+pins = { ARM = "ANGLE in", LAMP = "DUTY in" }
+attributes = { Stop_deg = { context = "appliance", meaning = "degrees" }, Approach_deg = { context = "appliance", meaning = "degrees" }, Clear_deg = { context = "appliance", meaning = "degrees" } }
+
+[[row]]
+role = "DEVICE"
+kind = "LAMP_BIT"
+block = "Bit output"
+delivery = { class = "LampBitDriver", family = "LAMP", implements = "ApplianceDriver" }
+symbols = ["RailroadField:Device-Lamp-Bit"]
+pins = { OUT = "BIT in" }
+
+[[row]]
+role = "DEVICE"
+kind = "LAMP_PWM"
+block = "Duty output"
+delivery = { class = "LampPwmDriver", family = "LAMP", implements = "ApplianceDriver" }
+symbols = ["RailroadField:Device-Lamp-PWM"]
+pins = { D = "DUTY in" }
+
+[[row]]
+role = "DEVICE"
+kind = "LAMP_NEOPIXEL"
+block = "NeoPixel lamp"
+delivery = { class = "LampNeoPixelDriver", family = "LAMP", implements = "ApplianceDriver" }
+symbols = ["RailroadField:Device-Lamp-NeoPixel"]
+pins = {}
+attributes = { Chain = { context = "binding", meaning = "chain" }, Index = { context = "binding", meaning = "index" } }
+
+[[row]]
+role = "DEVICE"
+kind = "INPUT_BIT"
+block = "Bit input"
+delivery = { class = "InputBitDriver", family = "INPUT", implements = "ApplianceDriver" }
+symbols = ["RailroadField:Device-Input-Bit"]
+pins = { IN = "BIT out" }
+
+# ================================================================== IODRIVER
+
+[[row]]
+role = "IODRIVER"
+kind = "I2C-MCP23017"
+block = "I2CexpanderIOBus; pins take direction and polarity from what is wired to them (ADR 0004 D8)"
+delivery = { class = "I2CexpanderIOBus", implements = "IOBus" }
+symbols = ["RailroadField:Driver-I2C-MCP23017"]
+pins = { A1 = "BIT bidir", A2 = "BIT bidir", A3 = "BIT bidir", A4 = "BIT bidir", A5 = "BIT bidir", A6 = "BIT bidir", A7 = "BIT bidir", A8 = "BIT bidir", B1 = "BIT bidir", B2 = "BIT bidir", B3 = "BIT bidir", B4 = "BIT bidir", B5 = "BIT bidir", B6 = "BIT bidir", B7 = "BIT bidir", B8 = "BIT bidir" }
+attributes = { Address = { context = "binding", meaning = "I2C address" } }
+
+[[row]]
+role = "IODRIVER"
+kind = "I2C-MAX7313"
+block = "I2C expander (desk); pins take direction and polarity from what is wired to them"
+delivery = { class = "Max7313IOBus", implements = "IOBus" }
+symbols = ["RailroadPanel:Driver-I2C-MAX7313"]
+pins = { A1 = "BIT bidir", A2 = "BIT bidir", A3 = "BIT bidir", A4 = "BIT bidir", A5 = "BIT bidir", A6 = "BIT bidir", A7 = "BIT bidir", A8 = "BIT bidir", B1 = "BIT bidir", B2 = "BIT bidir", B3 = "BIT bidir", B4 = "BIT bidir", B5 = "BIT bidir", B6 = "BIT bidir", B7 = "BIT bidir", B8 = "BIT bidir" }
+attributes = { Address = { context = "binding", meaning = "I2C address" } }
+
+[[row]]
+role = "IODRIVER"
+kind = "I2C-PCA9685"
+block = "PCA9685 bus (new: duty write); 0x40-0x7F"
+delivery = { class = "Pca9685IOBus", implements = "IOBus" }
+symbols = ["RailroadField:Driver-I2C-PCA9685"]
+pins = { A1 = "DUTY|ANGLE out", A2 = "DUTY|ANGLE out", A3 = "DUTY|ANGLE out", A4 = "DUTY|ANGLE out", A5 = "DUTY|ANGLE out", A6 = "DUTY|ANGLE out", A7 = "DUTY|ANGLE out", A8 = "DUTY|ANGLE out", B1 = "DUTY|ANGLE out", B2 = "DUTY|ANGLE out", B3 = "DUTY|ANGLE out", B4 = "DUTY|ANGLE out", B5 = "DUTY|ANGLE out", B6 = "DUTY|ANGLE out", B7 = "DUTY|ANGLE out", B8 = "DUTY|ANGLE out" }
+attributes = { Address = { context = "binding", meaning = "I2C address" } }

@@ -1,0 +1,127 @@
+# The layout context registry (FieldUnit ADR 0004).
+#
+# The vocabulary of layout-wide settings any driver may read: namespaces fixed now, keys added as
+# the need arises. Static keys resolve most specific first: plant (the INTERLOCKING) -> layout (the
+# root sheet) -> era profile -> library default; runtime keys come from the field unit.
+#
+# Not here: the appliance context. A device's own settings (polarity per pin, NormalIs, Hold_ms,
+# angles, a lamp's Color …) are defined by its (Role, Kind) row and interpreted by that Kind's
+# driver; a row may name a key here as an attribute's default (default_from) or as the table its
+# value is looked up in (lookup).
+#
+# Key fields
+#   key         namespace.name
+#   type        string | int | bool | ms | deg | ratio | color | palette | enum:A|B
+#   levels      where it may be set: plant, layout, profile, runtime
+#   default     the library default ("" = none yet)
+#   meaning     one line
+
+version = 1
+
+[namespace]
+era      = "the era represented"
+rulebook = "the rulebook represented; which aspect each signal indication takes"
+timing   = "durations: flash, fade, travel, hold, steps"
+motion   = "layout-wide motion defaults (servo speed)"
+color    = "named colours and their values, era-appropriate"
+light    = "layout-wide lamp rendering: gamma, brightness, dimming"
+clock    = "time of day, daylight (runtime)"
+mode     = "lamp test, maintainer test (runtime; may need the interlocking's consent, FieldUnit ADR 0004)"
+
+[[key]]
+key = "era.name"
+type = "string"
+levels = ["layout", "plant"]
+default = ""
+meaning = "the era represented, e.g. 1985"
+
+[[key]]
+key = "rulebook.name"
+type = "string"
+levels = ["layout", "plant"]
+default = ""
+meaning = "the rulebook whose charts map signal indications to aspects, e.g. SP1985"
+
+[[key]]
+key = "timing.flash_ms"
+type = "ms"
+levels = ["profile", "layout"]
+default = "1000"
+meaning = "flash period (one shared phase per field unit)"
+
+[[key]]
+key = "timing.hold_ms"
+type = "ms"
+levels = ["profile", "layout", "plant"]
+default = "1500"
+meaning = "optical detector release hold, the layout default"
+
+[[key]]
+key = "timing.travel_ms"
+type = "ms"
+levels = ["profile", "layout"]
+default = "2000"
+meaning = "simulated switch travel time, the layout default"
+
+[[key]]
+key = "timing.fade_ms"
+type = "ms"
+levels = ["profile", "layout"]
+default = ""
+meaning = "lamp cross-fade time, the layout default"
+
+[[key]]
+key = "motion.speed"
+type = "int"
+levels = ["profile", "layout"]
+default = ""
+meaning = "servo speed, the layout default"
+
+[[key]]
+key = "color.palette"
+type = "palette"
+levels = ["profile", "layout"]
+default = ""
+meaning = "named colours (red, amber, yellow, green, blue, lunar, …) to values; era-appropriate"
+
+[[key]]
+key = "light.gamma"
+type = "ratio"
+levels = ["layout"]
+default = ""
+meaning = "layout-wide gamma"
+
+[[key]]
+key = "light.brightness"
+type = "ratio"
+levels = ["layout", "plant"]
+default = ""
+meaning = "layout-wide brightness"
+
+[[key]]
+key = "clock.time_of_day"
+type = "int"
+levels = ["runtime"]
+default = ""
+meaning = "minutes since midnight, layout time"
+
+[[key]]
+key = "clock.daylight"
+type = "bool"
+levels = ["runtime"]
+default = ""
+meaning = "daylight (a semaphore lamp is lit at night)"
+
+[[key]]
+key = "mode.lamp_test"
+type = "bool"
+levels = ["runtime"]
+default = ""
+meaning = "lamp test"
+
+[[key]]
+key = "mode.maintainer"
+type = "bool"
+levels = ["runtime"]
+default = ""
+meaning = "maintainer test mode"

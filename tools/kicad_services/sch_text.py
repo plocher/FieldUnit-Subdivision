@@ -45,3 +45,26 @@ def replace_spans(text: str, edits: list[tuple[int, int, str]]) -> str:
         out += [text[pos:s], new]
         pos = e
     return "".join(out) + text[pos:]
+
+
+_STANDARD_PROPERTIES = frozenset({"Reference", "Value", "Footprint", "Datasheet", "Description",
+                                  "ki_keywords", "ki_fp_filters"})
+
+
+def library_symbols(text: str) -> dict[str, dict]:
+    """Top-level symbols of a .kicad_sym text.
+
+    Returns {name: {"properties": {...}, "pins": [(name, number, electrical_type)], "extends": str|None}};
+    "properties" omits KiCad's standard fields.
+    """
+    out = {}
+    for s, e in blocks(text, "symbol", 1):
+        b = text[s:e]
+        name = re.match(r'\(symbol "([^"]+)"', b).group(1)
+        props = {k: v for k, v in re.findall(r'\n\t\t\(property "([^"]+)" "([^"]*)"', b)
+                 if k not in _STANDARD_PROPERTIES}
+        pins = [(n, num, ty) for ty, n, num in
+                re.findall(r'\(pin (\w+) \w+[\s\S]*?\(name "([^"]*)"[\s\S]*?\(number "([^"]*)"', b)]
+        ext = re.search(r'\n\t\t\(extends "([^"]+)"', b)
+        out[name] = {"properties": props, "pins": pins, "extends": ext.group(1) if ext else None}
+    return out
