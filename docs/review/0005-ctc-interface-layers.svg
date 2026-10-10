@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="1820" viewBox="0 0 1120 1820" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#cfd6e0"/>
+    </marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6aa0ff"/>
+    </marker>
+    <style>
+      .bg   { fill:#1b1d23; }
+      .grp  { fill:#232631; stroke:#7b8396; stroke-width:2; }
+      .gt   { fill:#ffffff; font-size:19px; font-weight:bold; }
+      .box  { fill:#2f3442; stroke:#a9b2c3; stroke-width:1.5; }
+      .safe { fill:#3a2a2e; stroke:#ff6b6b; stroke-width:3; }
+      .t    { fill:#f2f4f8; font-size:16px; }
+      .tb   { fill:#ffffff; font-size:16px; font-weight:bold; }
+      .ts   { fill:#c9d0dc; font-size:14px; }
+      .seam { fill:#f2c94c; stroke:#b8860b; stroke-width:2; }
+      .st   { fill:#111111; font-size:16px; font-weight:bold; }
+      .ss   { fill:#222222; font-size:14px; }
+      .cat  { fill:#1f3350; stroke:#6aa0ff; stroke-width:1.5; }
+      .ln   { stroke:#cfd6e0; stroke-width:2; fill:none; marker-start:url(#a); marker-end:url(#a); }
+      .dl   { stroke:#6aa0ff; stroke-width:2; fill:none; stroke-dasharray:7 5; marker-end:url(#b); }
+      .dlt  { fill:#9cc0ff; font-size:15px; font-style:italic; }
+      .h1   { fill:#ffffff; font-size:24px; font-weight:bold; }
+      .p    { fill:#d6dce6; font-size:15px; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1120" height="1820"/>
+
+  <!-- Title & notes (right column) -->
+  <text class="h1" x="700" y="50">cTc Architecture</text>
+  <text class="h1" x="700" y="80">Interface Layers</text>
+  <text class="p" x="700" y="1560">Two seams (yellow):</text>
+  <text class="p" x="715" y="1584">• Seam 1, Codeline: office ↔ field logic</text>
+  <text class="p" x="715" y="1608">• Seam 2, Hardware I/O: panel side</text>
+  <text class="p" x="728" y="1630">and field side</text>
+  <text class="p" x="700" y="1666">Any transport in the catalog can be</text>
+  <text class="p" x="700" y="1688">bound to any seam (dashed blue).</text>
+  <text class="p" x="700" y="1724">Office and field logic may run on</text>
+  <text class="p" x="700" y="1746">separate processors, or in one app</text>
+  <text class="p" x="700" y="1768">(in-process codeline).</text>
+
+  <!-- Panel devices -->
+  <rect class="box" x="150" y="30" width="380" height="60" rx="8"/>
+  <text class="tb" x="340" y="55" text-anchor="middle">Panel devices</text>
+  <text class="ts" x="340" y="76" text-anchor="middle">levers · buttons · lamps</text>
+
+  <!-- PANEL I/O -->
+  <rect class="grp" x="50" y="120" width="580" height="210" rx="10"/>
+  <text class="gt" x="70" y="148">PANEL I/O</text>
+  <rect class="box" x="70" y="200" width="240" height="70" rx="8"/>
+  <text class="tb" x="190" y="228" text-anchor="middle">Local I/O</text>
+  <text class="ts" x="190" y="250" text-anchor="middle">GPIO · I2C · SPI</text>
+  <rect class="box" x="370" y="160" width="240" height="50" rx="8"/>
+  <text class="tb" x="490" y="191" text-anchor="middle">Remote I/O node(s)</text>
+  <rect class="box" x="370" y="250" width="240" height="60" rx="8"/>
+  <text class="tb" x="490" y="275" text-anchor="middle">Remote I/O adapter(s)</text>
+  <text class="ts" x="490" y="296" text-anchor="middle">one per transport</text>
+
+  <line class="ln" x1="190" y1="92" x2="190" y2="198"/>
+  <line class="ln" x1="490" y1="92" x2="490" y2="158"/>
+  <line class="ln" x1="490" y1="212" x2="490" y2="248"/>
+
+  <!-- SEAM 2 panel -->
+  <polygon class="seam" points="190,365 490,365 510,395 490,425 190,425 170,395"/>
+  <text class="st" x="340" y="391" text-anchor="middle">SEAM 2 — Hardware I/O</text>
+  <text class="ss" x="340" y="412" text-anchor="middle">panel side · inputs ▲ outputs ▼</text>
+  <line class="ln" x1="190" y1="272" x2="230" y2="363"/>
+  <line class="ln" x1="490" y1="312" x2="450" y2="363"/>
+
+  <!-- OFFICE LOGIC -->
+  <rect class="grp" x="130" y="460" width="420" height="320" rx="10"/>
+  <text class="gt" x="150" y="488">OFFICE LOGIC</text>
+  <text class="ts" x="530" y="488" text-anchor="end">cTc code machine</text>
+  <rect class="box" x="160" y="505" width="360" height="45" rx="8"/>
+  <text class="tb" x="340" y="533" text-anchor="middle">I/O manager</text>
+  <rect class="box" x="160" y="585" width="360" height="80" rx="8"/>
+  <text class="tb" x="340" y="609" text-anchor="middle">cTc logic</text>
+  <text class="ts" x="340" y="631" text-anchor="middle">lever state → controls</text>
+  <text class="ts" x="340" y="651" text-anchor="middle">indications → lamps</text>
+  <rect class="box" x="160" y="705" width="360" height="55" rx="8"/>
+  <text class="tb" x="340" y="728" text-anchor="middle">Codeline adapter</text>
+  <text class="ts" x="340" y="749" text-anchor="middle">office end</text>
+  <line class="ln" x1="340" y1="427" x2="340" y2="503"/>
+  <line class="ln" x1="340" y1="552" x2="340" y2="583"/>
+  <line class="ln" x1="340" y1="667" x2="340" y2="703"/>
+
+  <!-- SEAM 1 -->
+  <polygon class="seam" points="190,815 490,815 510,845 490,875 190,875 170,845"/>
+  <text class="st" x="340" y="841" text-anchor="middle">SEAM 1 — Codeline</text>
+  <text class="ss" x="340" y="862" text-anchor="middle">controls ▼ · indications ▲</text>
+  <line class="ln" x1="340" y1="762" x2="340" y2="813"/>
+
+  <!-- FIELD LOGIC -->
+  <rect class="grp" x="130" y="910" width="420" height="390" rx="10"/>
+  <text class="gt" x="150" y="938">FIELD LOGIC</text>
+  <text class="ts" x="530" y="938" text-anchor="end">one per location</text>
+  <rect class="box" x="160" y="955" width="360" height="55" rx="8"/>
+  <text class="tb" x="340" y="978" text-anchor="middle">Codeline adapter</text>
+  <text class="ts" x="340" y="999" text-anchor="middle">field end</text>
+  <rect class="box" x="160" y="1045" width="360" height="60" rx="8"/>
+  <text class="tb" x="340" y="1070" text-anchor="middle">Codeline handler</text>
+  <text class="ts" x="340" y="1091" text-anchor="middle">decode controls · encode indications</text>
+  <rect class="safe" x="160" y="1140" width="360" height="60" rx="8"/>
+  <text class="tb" x="340" y="1165" text-anchor="middle">Safety logic</text>
+  <text class="ts" x="340" y="1186" text-anchor="middle">interlocking · locking · timing</text>
+  <rect class="box" x="160" y="1235" width="360" height="45" rx="8"/>
+  <text class="tb" x="340" y="1263" text-anchor="middle">I/O manager</text>
+  <line class="ln" x1="340" y1="877" x2="340" y2="953"/>
+  <line class="ln" x1="340" y1="1012" x2="340" y2="1043"/>
+  <line class="ln" x1="340" y1="1107" x2="340" y2="1138"/>
+  <line class="ln" x1="340" y1="1202" x2="340" y2="1233"/>
+
+  <!-- SEAM 2 field -->
+  <polygon class="seam" points="190,1335 490,1335 510,1365 490,1395 190,1395 170,1365"/>
+  <text class="st" x="340" y="1361" text-anchor="middle">SEAM 2 — Hardware I/O</text>
+  <text class="ss" x="340" y="1382" text-anchor="middle">field side · outputs ▼ inputs ▲</text>
+  <line class="ln" x1="340" y1="1282" x2="340" y2="1333"/>
+
+  <!-- FIELD I/O -->
+  <rect class="grp" x="50" y="1430" width="580" height="220" rx="10"/>
+  <text class="gt" x="70" y="1458">FIELD I/O</text>
+  <rect class="box" x="70" y="1500" width="240" height="70" rx="8"/>
+  <text class="tb" x="190" y="1528" text-anchor="middle">Local I/O</text>
+  <text class="ts" x="190" y="1550" text-anchor="middle">GPIO · I2C · SPI</text>
+  <rect class="box" x="370" y="1475" width="240" height="60" rx="8"/>
+  <text class="tb" x="490" y="1500" text-anchor="middle">Remote I/O adapter(s)</text>
+  <text class="ts" x="490" y="1521" text-anchor="middle">one per transport</text>
+  <rect class="box" x="370" y="1580" width="240" height="50" rx="8"/>
+  <text class="tb" x="490" y="1611" text-anchor="middle">Remote I/O node(s)</text>
+  <line class="ln" x1="230" y1="1397" x2="190" y2="1498"/>
+  <line class="ln" x1="450" y1="1397" x2="490" y2="1473"/>
+  <line class="ln" x1="490" y1="1537" x2="490" y2="1578"/>
+
+  <!-- Field devices -->
+  <rect class="box" x="150" y="1700" width="380" height="80" rx="8"/>
+  <text class="tb" x="340" y="1724" text-anchor="middle">Field devices</text>
+  <text class="ts" x="340" y="1746" text-anchor="middle">switch motors · signal LEDs</text>
+  <text class="ts" x="340" y="1766" text-anchor="middle">optical &amp; current detectors</text>
+  <line class="ln" x1="190" y1="1572" x2="190" y2="1698"/>
+  <line class="ln" x1="490" y1="1632" x2="490" y2="1698"/>
+
+  <!-- TRANSPORT CATALOG -->
+  <rect class="grp" x="760" y="660" width="320" height="380" rx="10" style="stroke:#6aa0ff"/>
+  <text class="gt" x="780" y="688">TRANSPORT CATALOG</text>
+  <rect class="cat" x="780" y="708" width="280" height="40" rx="6"/>
+  <text class="t" x="920" y="733" text-anchor="middle">DC pulses over wires</text>
+  <rect class="cat" x="780" y="760" width="280" height="40" rx="6"/>
+  <text class="t" x="920" y="785" text-anchor="middle">MQTT</text>
+  <rect class="cat" x="780" y="812" width="280" height="40" rx="6"/>
+  <text class="t" x="920" y="837" text-anchor="middle">LocoNet</text>
+  <rect class="cat" x="780" y="864" width="280" height="40" rx="6"/>
+  <text class="t" x="920" y="889" text-anchor="middle">CMRInet</text>
+  <rect class="cat" x="780" y="916" width="280" height="40" rx="6"/>
+  <text class="t" x="920" y="941" text-anchor="middle">Other IoT protocols</text>
+  <rect class="cat" x="780" y="968" width="280" height="56" rx="6"/>
+  <text class="t" x="920" y="991" text-anchor="middle">Virtual / in-process</text>
+  <text class="t" x="920" y="1013" text-anchor="middle">/ simulated</text>
+
+  <!-- Bindings -->
+  <line class="dl" x1="758" y1="845" x2="514" y2="845"/>
+  <text class="dlt" x="636" y="835" text-anchor="middle">codeline</text>
+  <path class="dl" d="M 840 658 C 840 420, 700 280, 614 280"/>
+  <text class="dlt" x="855" y="440">panel remote I/O</text>
+  <path class="dl" d="M 840 1042 C 840 1280, 700 1505, 614 1505"/>
+  <text class="dlt" x="855" y="1250">field remote I/O</text>
+</svg>
+
