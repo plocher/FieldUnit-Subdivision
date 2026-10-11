@@ -1,7 +1,7 @@
 # I/O design checkpoint (2026-10-10, rev 8)
 
 - Status: a record of the design conversation of 2026-10-09 and 10, for the owner's confirmation. "Explicit" is what the owner said. "Implicit" is what followed from it in the drafts and the spike without being said; each one needs a yes or a no. Rev 2 applies the owner's review of rev 1; the changes are listed at the end.
-- Governs: `driver-architecture-foundation.md`. Companions: `environment-view-2026-10-09.md` (rev 4), `driver-types-view-2026-10-09.md`, `io-baseline-digest-2026-10-09.md`, and the spike in `~/Dropbox/KiCad/Railroad/Scratch/` (not git).
+- Governs: `driver-architecture-foundation.md`. Companions: `environment-view-2026-10-09.md` (rev 5), `driver-types-view-2026-10-09.md` (rev 2), and the spike in `~/Dropbox/KiCad/Railroad/Scratch/` (not git; generators and the binding pass in its `tools/`, reports in `production/`). The digest and survey that preceded this record are in git history only.
 - Scope: Part 1, the drawing side: the user's workflow, the symbol libraries, the schematics, the KiCad compiler and the Layout Data Model. Part 2, what consumes the model, is set aside and appears here only where it constrained Part 1.
 
 ## 1. What we learned
@@ -214,7 +214,7 @@ Part 1 task list, with status
 Next steps, in order
 1. Done: step 3, the binding pass over `Scratch.net` (17 bindings resolved, two true diagnostics) and over the real `SPCoast.net` (field side resolves; `836SB.ARM` exposes the missing `Pin.*` fields; the desk side needs its own rules). Done: step 4, the owner's verdict (E34 to E40).
 2. Done: the desk and fascia spike, `ScratchPanel.kicad_sch` and `binding_pass2.py`; the real desk reads clean under the rules.
-3. Revise the two views to match: capabilities and casts, `Terminal`, chain as a net, settings as fields, polarity restored, encoders retired, Appliance and Style, `IC`.
+3. Done: the two views revised to match (environment view rev 5, driver types view rev 2).
 4. The real libraries: `Appliance` and `Style` fields in place of `Kind`, `IC` on the I/O symbols, `Pin.*` fields, `~{}` names where missing, the `Setting`, `Terminal` and layout anchor symbols, the two PCA9685 symbols, `Device-Switch` plus `Device-Lock`, the lint updated. In a branch, after the owner's symbol review.
 5. The indexers: casts and settings from FieldUnit source; the symbol requirements report from the libraries. Their form in FieldUnit is the first Part 2 question that Part 1 depends on.
 6. Sargent redrawn under the new rules as the first real sheet, compiled, diagnostics read.
