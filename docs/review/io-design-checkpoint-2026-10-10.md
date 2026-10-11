@@ -1,7 +1,7 @@
-# I/O design checkpoint (2026-10-10, rev 8)
+# I/O design checkpoint (2026-10-10, rev 9)
 
 - Status: a record of the design conversation of 2026-10-09 and 10, for the owner's confirmation. "Explicit" is what the owner said. "Implicit" is what followed from it in the drafts and the spike without being said; each one needs a yes or a no. Rev 2 applies the owner's review of rev 1; the changes are listed at the end.
-- Governs: `driver-architecture-foundation.md`. Companions: `environment-view-2026-10-09.md` (rev 5), `driver-types-view-2026-10-09.md` (rev 2), and the spike in `~/Dropbox/KiCad/Railroad/Scratch/` (not git; generators and the binding pass in its `tools/`, reports in `production/`). The digest and survey that preceded this record are in git history only.
+- Governs: `driver-architecture-foundation.md`. Companions: `environment-view-2026-10-09.md` (rev 6), `driver-types-view-2026-10-09.md` (rev 3), and the spike in `~/Dropbox/KiCad/Railroad/Scratch/` (not git; generators and the binding pass in its `tools/`, reports in `production/`). The digest and survey that preceded this record are in git history only.
 - Scope: Part 1, the drawing side: the user's workflow, the symbol libraries, the schematics, the KiCad compiler and the Layout Data Model. Part 2, what consumes the model, is set aside and appears here only where it constrained Part 1.
 
 ## 1. What we learned
@@ -16,7 +16,8 @@
 8. **Hand-maintained registries are a liability.** The capability words, the casts and their settings, and the factory defaults all have one natural source, the FieldUnit source tree, and can be indexed from it. The symbol requirements have one natural source, the libraries, and can be reported from them. Nothing of this needs a file kept by hand.
 9. **Symbol names decide nothing.** Every decision reads a field: Role on every symbol, Appliance and Style on the plant and device sides, `IC` on the I/O side. A symbol's name and shape are the drafter's choice. The spike pass broke this in three places (chip by part name, masts and heads by part name, the Terminal by Kind), and the plant compiler breaks it today with its part-name table; the real compiler copies none of them.
 10. **The desk is the same mechanism.** A lever plate or lamp on an expander pin is a device pin on an I/O pin; the column backplane's coincident pins are membership; the join to the plant is the Value, or a token list for a lamp. The desk rules added for it (I27 to I31) ran over the real SPCoast desk, 137 bindings, with no diagnostics and no change to the drawing.
-11. **The method that worked.** Top-down views, a conversation that pushes back, then a drawing in KiCad before anything is relied on. The bottom-up documents and the hand-written sketches were demoted to evidence at the start and nothing was lost.
+11. **The asserted state follows the relay.** `WLK` asserted means released, because the lock relay is energized to unlock and both it and the gravity lock bar drop to locked when power fails. References that say "locked when 0" and "unlocked when active" describe the same relay. A ruling the other way stood for an hour on 2026-10-10 and was caught by asking what the relay does on loss of power; the glossary, the codecs, the how-to and ADR 0004 had been right (E55).
+12. **The method that worked.** Top-down views, a conversation that pushes back, then a drawing in KiCad before anything is relied on. The bottom-up documents and the hand-written sketches were demoted to evidence at the start and nothing was lost.
 
 ## 2. Explicit decisions (owner)
 
@@ -82,6 +83,18 @@ The desk and fascia spike (owner, 2026-10-10)
 - E44. Processor ownership of an I/O symbol is implied by the sheet context: the one MACHINE or MAIN HOUSE in scope. The attribute `Processor` (Value of that symbol) is required on each I/O symbol only when the context holds more than one; the compiler never guesses between two. On the field side the processor is a CP, declared by its `MAIN HOUSE`. Luchessa, three houses in one interlocking, either puts each CP's I/O on its own sub-sheet or types `Processor` on every I/O symbol.
 - E45. `PanelLock` is redone under the three planes: Appliance `lever`, Style `lock`, four distinct functions instead of `WLS`/`~{WLS}` and `WLK`/`~{WLK}`, since `~{}` means asserted low and nothing else. `PanelMCall`'s pin is renamed `S` so that every lever token derives as Value plus pin name.
 
+Driver types review (owner, 2026-10-10, on the driver types view rev 2)
+- E46. A driver type's key has two shapes: `Device : <Appliance> : <Style, or any> : <pins>` for Role DEVICE and PANEL, `IO : <IC> : <pins>` for Role IODRIVER. Role picks the family and nothing more. Every type states its key.
+- E47. A model searchlight is one RGB LED imitating a vane of coloured glass in front of a white lamp. Its signature is one colour-out pin, the same as the RGB colour-light head; the vane is in the rendering, so the difference is the Style, not the pins. The `VANE` position pin of rev 2 was the prototype's mechanism misread as the model's.
+- E48. The semaphore's quadrant is the Style: `semaphore_lq` (two positions, STOP and CLEAR, the arm drops) and `semaphore_uq` (three, STOP, APPROACH, CLEAR, the arm rises). The aspect set is an era fact, not a link-time check: before 1903 only lower quadrants existed and a route could show STOP or CLEAR only; both were in use to about 1908; uppers replaced lowers on busy routes through the WWI years; colour lights replaced semaphores on main lines by the 1940s. The era indication tables (FieldUnit's route indication tables) carry the aspect set with this history beside it, so that a two-position head asked for APPROACH is an era error. Recorded in FieldUnit's primer, section 17 (FieldUnit PR #33).
+- E49. Unused and unbound items are informational, never refusals. A layout under construction is full of them: a contact nothing consumes, an appliance with no device, a device with an unbound pin, a token nothing lists. The compiler refuses only contradictions.
+- E50. `Device-Lock`'s `~{LOCKED}` sense is optional. The layout owner may wire one; when they do not, the type simulates it from its own command, and the attribute carries the quality SIMULATED so that the vital logic and a maintainer can tell.
+- E51. No `lampOut` notification. Faults in the field unit and its hardware belong to the maintainer use cases, which are not explored yet.
+- E52. Style alone selects the handler class. The index of classes is open to the user-developer's source, which declares Appliance and Style the way FieldUnit's classes do; that is the deterministic way to extend or replace the logic. No override field, no second selector. Parameters stay settings.
+- E53. `Invert`, a field listing pin names, accepted on every symbol as a general mechanism, in place of one invert attribute per pin. A lamp listed is lit while its token is deasserted. It is a logical complement applied by the unit, distinct from `~{}`, the electrical polarity the generator installs, and it leaves the token derivation (Value plus pin name, I28) untouched.
+- E54. The lock plates. `PanelLock`: `Column`; `~{WLS}`, the R contact, the release control; `~{UNUSED}`, the N contact, kept because the machine's expander uses the same lever plate for switches and locks, so the connection is there and usable by nothing else; `~{WLK}` with `Invert=WLK`, the green locked lamp; `~{WLQK}`, the red request lamp. `Local-Lock`: `~{WLQ}`, `~{WLK}` with `Invert=WLK`, `~{WLQK}`. The unused contact is named so that it cannot be mistaken for a token; a three-pin plate may be forked later. E45's "four distinct names" becomes three names and one inverted lamp.
+- E55. `WLK` asserted means released, deasserted means locked: the fail-safe reading (learned 11). An earlier ruling the same day, "asserted means locked", is withdrawn. The exchange, lamp by lamp, with the AAR definitions of `WLS` and `WLK`, is FieldUnit's primer section 18, and the glossary's electric lock entry adds `WLQK` and the fail-safe reason (FieldUnit PR #33).
+
 Spike
 - E33. The spike lives in `~/Dropbox/KiCad/Railroad/Scratch/`, not under git. The owner completed the trackplan; the I/O side was rebuilt around it.
 
@@ -122,6 +135,9 @@ Environment and types
 - I29. Indication facts are a product of the plant compiler for each interlocking (circuits, switch and signal K tokens, fleet and traffic indications); token validation is a link-time check against them. The spike validated against a toy set and could not know `NFLK`.
 - I30. A signal lever's Value names its masts by number: `784` joins every mast whose Value starts `784`.
 - I31. The field-side processor symbol: the house declares the processor (E44). Whether a house without hardware (emulated) is drawn differently is open; the design note's `FIELDUNIT`/`HARDWARE` proposal is the candidate.
+- I32. `Invert` on a contact means the token is asserted while the contact is deasserted. Accepted with E53 as part of the general mechanism; nothing uses it yet.
+- I33. The `~{UNUSED}` pin (E54) needs no compiler rule: its token derives like every other, nothing consumes it, and the result is one informational line (E49). The bar stays so that the generator enables the pull-up on a bit wired to a real contact. The pin name is the literal word; KiCad does not expand text variables in library pin names, and the Value prefix already makes the token unique.
+- I34. A lever's `position` attribute reads only the named positions of its contact set. The lock lever's set has one, so it reads R or not R; out of correspondence is then R with `WLK` deasserted (release pending or refused) or not R with `WLK` asserted (crew still unlocked after the lever was restored). The N contact adds nothing the logic reads.
 - I23. The `contact` appliance. Who consumes a contact is its Style plus its Value: Style `lock_request` with Value `835` is the crew's unlock key for switch 835, consumed by the lock sequence; Style `auxiliary` or `button` with its own Value is consumed by no local logic. The Style selects the handler class in the generator. Whether a contact reaches the office is exposure by demand (owner, 2026-10-05): it is on the code line only because a desk symbol lists its token. No field says "local" or "code line". Open: whether the compiler refuses a contact that no handler and no desk symbol consumes, as a drawn input that goes nowhere.
 
 ## 4. Tables
@@ -140,7 +156,7 @@ Appliance symbols (Role APPLIANCE), today's Kinds mapped:
 | `Track Circuit` | track_circuit | | TRACK_CIRCUIT |
 | `Mast_Single`, `_Double`, `_Dwarf` | mast | single, double, dwarf | MAST_* |
 | `Signal Head - CL` | head | CL | HEAD_COLOR_LIGHT |
-| `Signal Head - SemaphoreU2`, `U3` | head | semaphore | HEAD_SEMAPHORE_2POS, _3POS (positions become a setting or a signature) |
+| `Signal Head - SemaphoreU2`, `U3` | head | semaphore_lq, semaphore_uq | HEAD_SEMAPHORE_2POS, _3POS (the quadrant is the Style and fixes the aspect set, E48) |
 | `MaintainerCall` | lamp | maintainer_call | MAINTAINER_CALL |
 | `AUXILIARY` | lamp | auxiliary | AUXILIARY |
 | `Contact` (new) | contact | auxiliary, button, door, … | the generic non-vital input, the complement of `AUXILIARY`; its office indication is `<Value>K` (was DEVICE/INPUT_BIT with no appliance) |
@@ -153,20 +169,20 @@ Device symbols (Role DEVICE). A device binds to an appliance of equal Appliance 
 |---|---|---|---|
 | `Device-Switch` | switch | powered, lock | `M` binary out; `~{N}`, `~{R}` binary in; `~{OCC}` binary in (packaging) |
 | `Device-Switch-ManualSensed` | switch | manual_sensed | `~{N}`, `~{R}` binary in |
-| `Device-Lock` | switch | lock | the lock mechanism: `UNLOCK` binary out, a lock sense `~{LOCKED}` binary in if the hardware has one (to confirm against FieldUnit's lock driver); one Value with its `Device-Switch` (E35, I25). Today's `Local-Switch` and `Local-Lock` on the Sargent sheet are not this: they are the crew's local lever and lamps, Role PANEL on a field sheet, the "local client" of task 4 |
+| `Device-Lock` | switch | lock | the lock mechanism: `UNLOCK` binary out; `~{LOCKED}` binary in, optional, simulated with quality SIMULATED when unbound (E50); one Value with its `Device-Switch` (E35, I25). Today's `Local-Switch` and `Local-Lock` on the Sargent sheet are not this: they are the crew's local lever and lamps, Role PANEL on a field sheet, the "local client" of task 4 |
 | `Device-TrackCircuit` | track_circuit | | `~{OCC}` binary in; setting `hold_ms` |
 | `Device-Head-CL-3Lamp` | head | CL | `~{R}`, `~{Y}`, `~{G}` binary out; `~{L}` (packaging) |
 | `Device-Head-CL-RGB` | head | CL | `RGB` colour out |
 | `Device-Head-CL-Mux2` | head | CL | `S0`, `S1` binary out (a select code: no asserted state) |
-| `Device-Head-Semaphore` | head | semaphore | `ARM` position out; `~{LAMP}` binary out |
-| `Device-Head-Searchlight` | head | searchlight | `VANE` position out; `~{LAMP}` binary out (not drawn yet) |
+| `Device-Head-Semaphore` | head | semaphore_lq, semaphore_uq | `ARM` position out; `~{LAMP}` binary out (E48) |
+| `Device-Head-Searchlight` | head | searchlight | `RGB` colour out; the vane is rendering (E47; not drawn yet) |
 | `Device-Lamp` | lamp | | `~{LAMP}` binary out |
 | `Device-Contact` | contact | | `~{IN}` binary in |
 | `Terminal` (was `Binding`) | any | any | one pin; Value `<part>.<function>`, the tag on the terminal; placed in pairs, merged by Value (E39, I24) |
 
 "Binding" stays as the name of the relation in the model, a function bound to an I/O pin. The symbol is named for the domain: a terminal on the bungalow's terminal board carries a tag naming the wire that lands on it, and `Terminal` with Value `1NAT.OCC` is exactly that. `Wire` or `Lead` would also do; `Pin` and `Connection` collide with KiCad's own words.
 
-Desk and fascia symbols (Role PANEL) are devices in their own right, Appliance `lever` or `lamp`, Style `switch`, `signal`, `lock`, `code`, `maintainer_call`, `indication`, bound by pin abutment like every device, joined by Value (levers), by Value or token list (lamps, E42), with the `Column` pin for membership (E41). `PanelLock` is redone and `PanelMCall`'s pin becomes `S` (E45). The spike copies are in `ScratchPanel.kicad_sym`.
+Desk and fascia symbols (Role PANEL) are devices in their own right, Appliance `lever` or `lamp`, Style `switch`, `signal`, `lock`, `code`, `maintainer_call`, `indication`, bound by pin abutment like every device, joined by Value (levers), by Value or token list (lamps, E42), with the `Column` pin for membership (E41). `PanelLock` is redone as `Column`, `~{WLS}`, `~{UNUSED}`, `~{WLK}` with `Invert=WLK`, `~{WLQK}`, and `Local-Lock` as `~{WLQ}`, `~{WLK}` with `Invert=WLK`, `~{WLQK}` (E45, E54); `PanelMCall`'s pin becomes `S` (E45). `Invert` is a field on any symbol, a list of pin names whose lamps show the complement of their token (E53). The spike copies are in `ScratchPanel.kicad_sym`.
 
 I/O symbols (Role IODRIVER) and the setting symbol. A pin has one capability, so a processor pin that can be several things is several symbols, one per use, Value = the pin. Every I/O symbol carries `IC`, the chip it stands for; the symbol's name and its unit partition are free (E36), so a 4-pins-per-unit `MCP23017` and a 16-pin one are the same chip to the compiler:
 
@@ -204,23 +220,27 @@ Part 1 task list, with status
 | # | Item | Status |
 |---|---|---|
 | 1 | Primitives on pins | Resolved as functions and capabilities (E6 to E9, I1 to I3). |
-| 2 | Kind grammar | Replaced: Appliance, Style and signature in three planes (I8, I9, §4.1). Open: the Style word lists, and whether a semaphore's two or three positions are a Style, a setting or a signature. |
+| 2 | Kind grammar | Replaced: Appliance, Style and signature in three planes (I8, I9, §4.1); the type key in two shapes (E46); the semaphore's quadrant a Style (E48). Open: the Style word lists. |
 | 3 | Encoder symbols | Retired (learned 6, E28, I17). |
 | 4 | Binding rules | Field side proven in the spike and passed the owner's usability verdict (E34 to E40). Desk and fascia side proven on the Scratch Panel sheet and on the real SPCoast desk (E41 to E45, I27 to I31): column membership, token lists on lamps, the local lever by processor ownership. |
-| 5 | Direction, polarity, complement | Direction inside the capability; polarity in the pin name (E27, I7); complement is never `~{}` (E45, `PanelLock`). To be written once in the environment view. |
+| 5 | Direction, polarity, complement | Direction inside the capability; polarity in the pin name (E27, I7); complement is never `~{}` (E45): it is `Invert` (E53), written once in the environment view §4.2. Closed. |
 | 6 | What is never drawn | Settled. Missing symbols: the layout anchor on the root sheet. |
 | 7 | The model section | Shape in the environment view §5: nodes, nets, binds with the cast path per binding, settings by scope, addresses, chip settings. Not yet a schema. |
 
 Next steps, in order
 1. Done: step 3, the binding pass over `Scratch.net` (17 bindings resolved, two true diagnostics) and over the real `SPCoast.net` (field side resolves; `836SB.ARM` exposes the missing `Pin.*` fields; the desk side needs its own rules). Done: step 4, the owner's verdict (E34 to E40).
 2. Done: the desk and fascia spike, `ScratchPanel.kicad_sch` and `binding_pass2.py`; the real desk reads clean under the rules.
-3. Done: the two views revised to match (environment view rev 5, driver types view rev 2).
-4. The real libraries: `Appliance` and `Style` fields in place of `Kind`, `IC` on the I/O symbols, `Pin.*` fields, `~{}` names where missing, the `Setting`, `Terminal` and layout anchor symbols, the two PCA9685 symbols, `Device-Switch` plus `Device-Lock`, the lint updated. In a branch, after the owner's symbol review.
+3. Done: the two views revised to match (environment view rev 5, driver types view rev 2), then revised again on the owner's review (rev 6, rev 3; E46 to E55).
+4. The real libraries: `Appliance` and `Style` fields in place of `Kind`, `IC` on the I/O symbols, `Pin.*` fields, `~{}` names where missing, `Invert` (E53), the `Setting`, `Terminal` and layout anchor symbols, the two PCA9685 symbols, the five GPIO symbols, `Device-Switch` plus `Device-Lock`, the searchlight's `RGB` pin (E47), the two semaphore Styles (E48), the lock plates (E54), `PanelMCall` pin `S`, the lint updated to read fields. In a branch, after the owner's symbol review.
 5. The indexers: casts and settings from FieldUnit source; the symbol requirements report from the libraries. Their form in FieldUnit is the first Part 2 question that Part 1 depends on.
 6. Sargent redrawn under the new rules as the first real sheet, compiled, diagnostics read.
 7. The compiler's I/O section and the model schema.
-8. Glossary amendments the foundation lists, plus the new terms: capability, cast, binding, setting scope, chip setting.
+8. Glossary amendments the foundation lists, plus the new terms: capability, cast, binding, setting scope, chip setting, `Invert`. Done ahead of this: the electric lock entry and `WLQK` (FieldUnit PR #33).
 9. The alternatives ADR for Part 2, with proposals #1, #2 and #3, once Part 1 is stable.
+
+## Changes in rev 9
+
+The owner's review of the driver types view rev 2, discussed first and applied on "good to go": the type key (E46); searchlight (E47); semaphore quadrant as Style with the aspect set an era fact (E48); absence informational (E49); the lock sense simulated (E50); `lampOut` dropped (E51); Style alone selects the class (E52); `Invert` (E53); the lock plates (E54); `WLK` asserted means released, fail-safe, after a same-day reversal (E55, learned 11); I32 to I34; §4.1 rows; task 2 and 5; next steps 3, 4 and 8. The FieldUnit side is PR #33 (primer sections 13, 17, 18; glossary).
 
 ## Changes in rev 8
 

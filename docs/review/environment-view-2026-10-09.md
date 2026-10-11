@@ -1,6 +1,6 @@
-# The driver environment: a view for review (2026-10-09, rev 5)
+# The driver environment: a view for review (2026-10-09, rev 6)
 
-- Status: a view, written top-down for discussion, revised in rev 5 to match the design checkpoint (`io-design-checkpoint-2026-10-10.md`, rev 8). Decided items cite the checkpoint (E = explicit, I = implicit). Changes are listed at the end.
+- Status: a view, written top-down for discussion, revised in rev 6 to match the design checkpoint (`io-design-checkpoint-2026-10-10.md`, rev 9). Decided items cite the checkpoint (E = explicit, I = implicit). Changes are listed at the end.
 - Governs: `driver-architecture-foundation.md`. The foundation says a driver "runs in an environment that supplies context" and that the environment "contains contextual data, utility functions and lifecycle support" (§2 principle 5, §3.5). This view gives that sentence a structure.
 - The per-type pattern of commands, attributes and notifications is in `driver-types-view-2026-10-09.md`.
 
@@ -81,11 +81,13 @@ What the instance is wired to, one binding per function pin. Derived from the ne
 | switch machine `M` | binary out |
 | switch machine `~{OCC}`, `~{N}`, `~{R}` | binary in, asserted low |
 | colour-light head `~{R}`, `~{Y}`, `~{G}` | binary out |
-| one-lamp colour head `RGB` | colour out |
-| semaphore `ARM`, searchlight `VANE` | position out |
+| one-lamp colour head `RGB`, searchlight `RGB` | colour out |
+| semaphore `ARM` | position out |
 | desk lever contact, desk lamp | binary in, binary out, asserted low |
 
 **Polarity** is in the pin name: `~{OCC}` is an asserted-low contact, `~{LAMP}` an asserted-low lamp (E27, I7). It is an electrical fact of the device. The generator turns it into I/O-pin configuration, inversion in the chip's register where the chip has one, in the I/O driver otherwise, and a pull-up where an asserted-low input lands on a programmable pin. No device driver inverts. `~{}` means asserted low and nothing else: a plate with two contacts or two lamps names them as two functions (E45).
+
+**`Invert`** is a different thing: a logical complement, not an electrical one (E53). It is a field listing pin names, accepted on every symbol as a general mechanism, contacts included (I32). A lamp pin listed is lit while its token is deasserted. The unit applies it when it computes what to write; the generator's pin configuration and the drivers never see it. Library default on the symbol, overridable per instance like every field. The lock plates need it because `WLK` asserted means released, the fail-safe reading, while the green lamp shows locked (E54, E55).
 
 **Casts.** When the two ends of a net have the same native capability the binding is direct. When they differ the generator inserts a **cast** from a bounded index, one per pin, with its own settings resolved through the scopes (E9, E13). Casts are one to one (E12); they may chain, the generator finds the path, and two paths is an error the author resolves with a `cast` setting on the net (I2). When the index has no path, the net is an error. The index is not a file: it is what the FieldUnit source tree declares, published as the index document (§5).
 
@@ -107,6 +109,8 @@ There is no servo-pulse cast: a servo is drawn on the `-Servo` symbol or the `Dr
 
 **Several device symbols per appliance** (E35, I25). The lock mechanism is `Device-Lock` beside `Device-Switch`, one Value; the crew's local lever and lamps are desk-style devices on the field expander. Completeness is checked over the union of their pins; a function bound twice is an error. A device symbol may list more than one Style: `Device-Switch` serves `powered` and `lock`.
 
+**Absence is information, contradiction is an error** (E49). The compiler refuses only what it cannot resolve: two valid joins, a function bound twice, a capability with no cast, two processors in scope. An appliance with no device, a device with an unbound pin, a contact or token nothing consumes, each gets one informational line and the generator stubs it, because a layout under construction is full of them. A `Device-Lock` with no sense pin is the worked case: the type simulates the sense and reports it with quality SIMULATED (E50).
+
 **Service sources.** Things that are not appliance I/O, a GPS or NTP time source, an RFID reader, a fast-clock listener, are drivers of a third kind. They are drawn with the same symbol-and-pin pattern, their capability is a stream (message in, message out), and their consumer is the unit's services, not an appliance.
 
 **Where it lives.** KiCad has no per-pin properties, so a native capability is a symbol property in the library, one per pin, `Pin.M = binary out` (I5). The library is the one source; the value reaches the compiler through the netlist's component fields, so no new reader is needed; the lint checks each property against the pin's electrical type, which stays for ERC only (I6). Nothing reads a symbol's name (learned 9, E36).
@@ -116,7 +120,7 @@ There is no servo-pulse cast: a servo is drawn on the `-Servo` symbol or the `Dr
 Named values that parameterise the transform. Static for the life of the unit.
 
 - Each setting has a name, a type, a meaning and a factory default, declared by the driver or cast class that reads it, in FieldUnit source (E16, I15). A class declares which settings it reads.
-- One pattern for every setting (E15): settings are fields on symbols. After the standard fields are removed (Reference, Value, Footprint, Datasheet, Description, Role, Appliance, Style, `IC`, `Pin.*`, `Address`, and KiCad's own), every field on a symbol is one setting (learned 7, I11). A `Setting` symbol (Role `SETTING`, one passive pin) attaches settings to a net, and whatever is on that net inherits them; its Value is a short displayed name and its `Description` is the reason (E37).
+- One pattern for every setting (E15): settings are fields on symbols. After the standard fields are removed (Reference, Value, Footprint, Datasheet, Description, Role, Appliance, Style, `IC`, `Pin.*`, `Address`, `Invert`, `IndicationToken`, `Processor`, and KiCad's own), every field on a symbol is one setting (learned 7, I11). A `Setting` symbol (Role `SETTING`, one passive pin) attaches settings to a net, and whatever is on that net inherits them; its Value is a short displayed name and its `Description` is the reason (E37).
 - Each setting is resolved through the scopes, most specific wins (I15):
 
 | Scope | Authored by | Drawn where |
@@ -132,7 +136,7 @@ Named values that parameterise the transform. Static for the life of the unit.
 - A value in the drawing is regenerated into the firmware. That is the test for what is a setting and what is state: a servo's calibration angle is a setting; its last angle is state.
 - An instance gets one value per setting; it never sees the scopes. The compiler reports an instance field that no class reads, and a setting name the index does not know.
 - Chip-wide settings, where a chip has one (`frequency_hz` on a PCA9685), are fields on the I/O symbol instance; a requirement on them from a cast or an I/O type that conflicts is a compile error (I4).
-- Not settings: inversion and blinking. Inversion is the pin name's polarity, installed by the generator (I7). Blinking is rendering logic above the driver (E19): the generator resolves a flashing appearance to lit or dark per tick from the regime, and the lamp driver writes what it is given.
+- Not settings: inversion, `Invert` and blinking. Inversion is the pin name's polarity, installed by the generator (I7); `Invert` is a join fact the unit applies (E53). Blinking is rendering logic above the driver (E19): the generator resolves a flashing appearance to lit or dark per tick from the regime, and the lamp driver writes what it is given.
 
 ### 4.4 Services
 
@@ -162,7 +166,7 @@ Everything above comes out of the Layout Data Model, directly or indirectly.
 | Part | From the drawing | In the model |
 |---|---|---|
 | Identity | Values on appliance, device, desk and local symbols, joined by Value within the interlocking hierarchy; head letters; `Column` membership on the desk; the `MAIN HOUSE` or `CtcMachine` in scope, or `Processor` | derived, per device instance, with its processor |
-| Bindings | nets between device pins and I/O pins; Terminal pairs merged by Value; `Address` on bus devices | derived, per function pin, with the capability at each end, the cast path and its resolved settings |
+| Bindings | nets between device pins and I/O pins; Terminal pairs merged by Value; `Address` on bus devices; `Invert` lists on plates | derived, per function pin, with the capability at each end, the cast path and its resolved settings |
 | Native capabilities, polarity | `Pin.<name>` properties and `~{}` pin names on library symbols; `IC` on I/O symbols | provenance: the library versions compiled against |
 | Cast index, factory defaults, type signatures | nothing drawn; FieldUnit publishes `fieldunit-index/v1` (I21) | provenance: the index version; per binding, the derived results only; never a copy |
 | Settings | `Setting` symbols on the layout anchor's, the `Interlocking` symbol's and a function's net; fields on device and I/O instances | the raw scopes, and the resolved value per instance |
@@ -179,10 +183,15 @@ Resolved by the checkpoint. `835` is drawn with the right appliance symbol, `Swi
 ## 7. Open after this revision
 
 1. The layout anchor symbol on the root sheet, and the field-side processor symbol: whether a house without hardware is drawn differently (I31).
-2. `Device-Lock`'s sense input, `~{LOCKED}`, if the hardware has one; the Style word lists; whether a semaphore's two or three positions are a Style, a setting or a signature.
-3. Interfaces named here and not designed here (E25): the maintainer's calibration interface; the store; the fault sink; the clock source. Local logic for local hardware (E43).
+2. The Style word lists; the form of the era indication tables in FieldUnit that carry a route's aspect set (E48).
+3. Interfaces named here and not designed here (E25): the maintainer's calibration interface, which also owns every hardware fault (E51); the store; the fault sink; the clock source. Local logic for local hardware (E43).
 4. Chain address implications, to be learned from use (I26). MAX7313 per-port intensity and blink, unverified.
-5. Refusal of a `contact` nothing consumes (I23).
+
+Closed in rev 6: the lock sense (E50), the semaphore's positions (E48), the unconsumed contact (E49).
+
+## Changes in rev 6
+
+The owner's review of the driver types view rev 2 (checkpoint E46 to E55): `Invert` as the logical complement beside `~{}` polarity, on every symbol (E53, I32); absence informational and contradiction an error, with the simulated lock sense as the worked case (E49, E50); the searchlight's pin made colour out (E47); the standard-field list completed; the open items reduced.
 
 ## Changes in rev 5
 
