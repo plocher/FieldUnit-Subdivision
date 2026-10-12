@@ -1,4 +1,4 @@
-# The driver environment: a view for review (2026-10-09, rev 7)
+# The driver environment: a view for review (2026-10-09, rev 8)
 
 - Status: a view, written top-down for discussion, revised in rev 6 to match the design checkpoint (`io-design-checkpoint-2026-10-10.md`, rev 9). Decided items cite the checkpoint (E = explicit, I = implicit). Changes are listed at the end.
 - Governs: `driver-architecture-foundation.md`. The foundation says a driver "runs in an environment that supplies context" and that the environment "contains contextual data, utility functions and lifecycle support" (§2 principle 5, §3.5). This view gives that sentence a structure.
@@ -66,7 +66,7 @@ What the instance is wired to, one binding per function pin. Derived from the ne
 
 **One binding mechanism** (learned 3). A device symbol pin on a net with an I/O pin. Abutting the pins is the ergonomic form; a wire is the same binding. A device whose pins want different chips is a multi-unit symbol, one unit per capability, each unit placed beside its chip, on any sheet of the hierarchy; KiCad joins the units by reference, enforces one Value, and reports a unit never placed through ERC, and the netlist shows one component with every unit's pins (E56). The `Terminal` symbol that reached across sheets is retired (E56). Text labels are out (E11).
 
-**Capabilities.** Every pin on a device symbol and every pin on an I/O symbol has one **native capability**, from one vocabulary, direction inside, stated from the unit's point of view on both sides (E8, E9). The vocabulary today: binary in, binary out, level in, level out, position out, color out, pixel out, message in, message out (I1). It is not a file: it is the set of words in the libraries' `Pin.*` fields and in the casts' from and to declarations, and the lint reports a word that appears in one and not the other. A device pin's native capability is the natural type of its function; an I/O pin's is what the chip does on that pin; a chip whose pin can do two things is drawn as one symbol per use (I3, I22).
+**Capabilities.** Every pin on a device symbol and every pin on an I/O symbol has one **native capability**, from one vocabulary, direction inside, stated from the unit's point of view on both sides (E8, E9). The vocabulary today: `binary`, `level`, `position`, `color`, `pixel`, `message`, one primary word with no direction; direction is the KiCad electrical type, and a binding is valid when the words match and the types are complementary (E66; was nine directed words, I1). It is not a file: it is the set of words in the libraries' `Pin.*` fields and in the casts' from and to declarations, and the lint reports a word that appears in one and not the other. A device pin's native capability is the natural type of its function; an I/O pin's is what the chip does on that pin; a chip whose pin can do two things is drawn as one symbol per use (I3, I22).
 
 | Pin | Native capability |
 |---|---|
@@ -188,6 +188,10 @@ Resolved by the checkpoint. `835` is drawn with the right appliance symbol, `Swi
 4. Chain address implications, to be learned from use (I26). MAX7313 per-port intensity and blink, unverified.
 
 Closed in rev 6: the lock sense (E50), the semaphore's positions (E48), the unconsumed contact (E49).
+
+## Changes in rev 8
+
+Capability words without direction (E66); the head Styles (E65) and the four libraries (E67) as named in the checkpoint. Signatures written elsewhere in this view with `in` and `out` read as the word plus the pin type.
 
 ## Changes in rev 7
 

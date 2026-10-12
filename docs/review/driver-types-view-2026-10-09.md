@@ -1,4 +1,4 @@
-# Driver types: commands, attributes, notifications (2026-10-09, rev 3)
+# Driver types: commands, attributes, notifications (2026-10-09, rev 4)
 
 - Status: a view for discussion, revised in rev 3 on the owner's review of rev 2 (checkpoint `io-design-checkpoint-2026-10-10.md`, rev 9, E46 to E55). Decided items cite the checkpoint (E = explicit, I = implicit); the rest is the pattern filled in and still open to the owner.
 - Governs: `driver-architecture-foundation.md`. Companion: `environment-view-2026-10-09.md` (what an instance is given).
@@ -230,6 +230,10 @@ Drivers of a third kind, for things that are not appliance I/O: a GPS or NTP tim
 3. The maintainer use cases, which own every hardware fault notification (E51).
 
 Closed in rev 3: the lock sense (E50), `lampOut` (E51), the semaphore's positions (E48), the unconsumed contact (E49), the `PanelLock` names (E54).
+
+## Changes in rev 4
+
+Checkpoint E65 and E66: head Styles are `CL` (one light source, one color at a time: searchlight or RGB), `CPL` (colored lamps in fixed positions: three-lamp or multiplexed), `LQ` and `UQ`; capability words carry no direction, direction is the KiCad pin type, so every signature below that says `binary in` or `binary out` reads as `binary` plus the pin type. The type key is `Device : head : CL : RGB` and `Device : head : CPL : ~{R} ~{Y} ~{G}`.
 
 ## Changes in rev 3
 

@@ -6,14 +6,15 @@
 Per symbol, by Role:
 - APPLIANCE: Appliance present; no Kind.
 - DEVICE, PANEL: Appliance present; no Kind; one `Pin.<base>` per function pin (Column excepted) and
-  no `Pin.*` without a pin; capability from the vocabulary; electrical type agrees with it (the
-  device is driven by an "out" capability, so the pin is input; it drives an "in", so output);
-  no retired field (a pin's base name as a field, ControlToken, Vital, NormalIs, Chain, Index);
-  every other field, the settings, is lower_snake_case; `Invert` names only this symbol's pins;
-  one capability per unit, so a symbol whose pins mix capabilities is multi-unit, with its units
-  not interchangeable and its Value not autoplaced (the units mesh and show one name).
-- IODRIVER: IC present; no Kind; `Pin.*` per pin; electrical type agrees (output for an "out"
-  capability, input for "in", bidirectional for "bidirectional"); Address or a GPIO Value rule.
+  no `Pin.*` without a pin; the capability is one primary word from the vocabulary (binary, level,
+  position, color, pixel, message); direction is the KiCad electrical type, which must be input,
+  output or bidirectional on a function pin (E66); no retired field (a pin's base name as a field,
+  ControlToken, Vital, NormalIs, Chain, Index); every other field, the settings, is
+  lower_snake_case; `Invert` names only this symbol's pins; one capability per unit, capability
+  meaning primary word plus electrical type, so a symbol whose pins mix them is multi-unit, with
+  its units not interchangeable and its Value not autoplaced (the units mesh and show one name).
+- IODRIVER: IC present; no Kind; `Pin.*` per pin, primary word, electrical type input, output or
+  bidirectional; Address or a GPIO Value rule.
 - SETTING: one passive pin, no Pin.*.
 - TRACK, POLICY, STRUCTURE, COLUMN, MACHINE, CODELINE_*: Kind allowed; nothing else checked.
 `--table` prints every symbol as a markdown row. Exit 1 on any error.
@@ -30,9 +31,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from kicad_services.sch_text import library_symbols  # noqa: E402
 
 LIBDIR = Path.home() / "Dropbox/KiCad/Railroad/symbols"
-LIBRARIES = ("RailroadPlant", "RailroadDevice", "RailroadDesk")
-VOCABULARY = {"binary in", "binary out", "binary bidirectional", "level in", "level out",
-              "level bidirectional", "position out", "color out", "pixel out", "message in", "message out"}
+LIBRARIES = ("Railroad-Trackplan", "Railroad-Office", "Railroad-Field", "Railroad-HardwareIO")
+VOCABULARY = {"binary", "level", "position", "color", "pixel", "message"}
+FUNCTION_ETYPES = {"input", "output", "bidirectional"}
 STRUCTURAL = {"TRACK", "POLICY", "STRUCTURE", "COLUMN", "MACHINE", "CODELINE_TRANSPORT", "CODELINE_ENCODING"}
 FUNCTIONAL = {"APPLIANCE", "DEVICE", "PANEL", "IODRIVER", "SETTING"}
 RETIRED_FIELDS = {"ControlToken", "Vital", "NormalIs", "Chain", "Index", "Kind"}
@@ -46,13 +47,6 @@ SNAKE = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 def base(pin: str) -> str:
     m = re.match(r"^~\{(.+)\}$", pin)
     return m.group(1) if m else pin
-
-
-def expected_etype(role: str, cap: str) -> str | None:
-    word = cap.split()[-1]
-    if role == "IODRIVER":
-        return {"in": "input", "out": "output", "bidirectional": "bidirectional"}.get(word)
-    return {"in": "output", "out": "input", "bidirectional": "bidirectional"}.get(word)
 
 
 def lint_symbol(lib: str, name: str, sym: dict) -> list[tuple[str, str]]:
@@ -82,11 +76,10 @@ def lint_symbol(lib: str, name: str, sym: dict) -> list[tuple[str, str]]:
                 err(f"pin {n} has no Pin.{base(n)}")
                 continue
             if cap not in VOCABULARY:
-                err(f"Pin.{base(n)} = {cap!r} is not in the vocabulary")
+                err(f"Pin.{base(n)} = {cap!r} is not in the vocabulary (one primary word; direction is the pin type)")
                 continue
-            want = expected_etype(role, cap)
-            if want and ty != want:
-                err(f"pin {n} is {ty}; {cap!r} on a {role} pin wants {want}")
+            if ty not in FUNCTION_ETYPES:
+                err(f"pin {n} is {ty}; a function pin is input, output or bidirectional")
         for p in pin_caps:
             if p not in bases:
                 err(f"Pin.{p} names no pin")
@@ -100,12 +93,13 @@ def lint_symbol(lib: str, name: str, sym: dict) -> list[tuple[str, str]]:
     if role == "IODRIVER" and "Address" not in props and props.get("IC") != "GPIO":
         err("Address missing on a bus device")
     if role in {"DEVICE", "PANEL"}:
-        caps = {pin_caps.get(base(n), "?") for n, _, _ in function_pins}
+        etype = {n: ty for n, _, ty in pins}
+        caps = {f"{pin_caps.get(base(n), '?')} {ty}" for n, _, ty in function_pins}
         pin_units = {u: p for u, p in sym["units"].items() if p}
         for u, names in pin_units.items():
-            unit_caps = {pin_caps.get(base(n), "?") for n in names if n not in MEMBERSHIP_PINS}
+            unit_caps = {f"{pin_caps.get(base(n), '?')} {etype.get(n)}" for n in names if n not in MEMBERSHIP_PINS}
             if len(unit_caps) > 1:
-                err(f"unit {u} mixes {', '.join(sorted(unit_caps))}; one capability per unit")
+                err(f"unit {u} mixes {', '.join(sorted(unit_caps))}; one capability (word and pin type) per unit")
         if len(caps) > 1 and len(pin_units) < 2:
             err(f"pins mix {', '.join(sorted(caps))} in one unit; split the symbol into units")
         if len(pin_units) > 1:

@@ -3,7 +3,7 @@
 
     python3 tools/contract/symbol_contact_sheet.py [--libdir DIR] [--out DIR]
 
-Renders RailroadPlant, RailroadDevice and RailroadDesk with `kicad-cli sym export svg` into
+Renders the four Railroad libraries with `kicad-cli sym export svg` into
 <out>/svg-<library>/, one SVG per unit, and writes <out>/contact-sheet.html: one row per symbol
 with its Role, Appliance, Style or IC and all of its units. The default <out> is the Railroad
 repo's `symbols/production/`, which is gitignored. The render is also the parse check.
@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from kicad_services.sch_text import library_symbols  # noqa: E402
 
 LIBDIR = Path.home() / "Dropbox/KiCad/Railroad/symbols"
-LIBRARIES = ("RailroadPlant", "RailroadDevice", "RailroadDesk")
+LIBRARIES = ("Railroad-Trackplan", "Railroad-Office", "Railroad-Field", "Railroad-HardwareIO")
 KICAD_CLI = os.environ.get("KICAD_CLI") or shutil.which("kicad-cli") or "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
 STYLE = ("body{font:13px sans-serif}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px;"
          "vertical-align:top}img{max-width:260px;max-height:200px;background:#fff;margin:2px}")
