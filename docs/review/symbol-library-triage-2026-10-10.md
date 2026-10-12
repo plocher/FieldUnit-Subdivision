@@ -59,6 +59,7 @@ Topology, policy and structure, 20 symbols, all `keep`: `Bumper`, `IRJ`, `IRJ-EN
 | `Signal Head - SemaphoreU2` | rename | `Signal Head - SemaphoreLQ2` | APPLIANCE | head | semaphore_lq | drop `Kind` | two positions, arm drops (E48) |
 | `Signal Head - SemaphoreU3` | rename | `Signal Head - SemaphoreUQ3` | APPLIANCE | head | semaphore_uq | drop `Kind` | three positions, arm rises (E48) |
 | `Switch_Powered`, `_Diag`, `_NO_TC`, `_Small` | retag | same | APPLIANCE | switch | powered | keep `CP`, `TC`; `Indications` to `IndicationCeiling`; drop `Kind` | four graphic forks kept |
+| `Switch_Powered` | copy | `Switch_Dual` | APPLIANCE | switch | dual | as above | dual-control switch (E63) |
 | `Switch_Lock` | retag | same | APPLIANCE | switch | lock | keep `CP`, `TC`, `Indications`; drop `Kind` | |
 | `Switch_Manual` | retag | same | APPLIANCE | switch | manual | as above | |
 | `Switch_Manual_Sensed` | retag | same | APPLIANCE | switch | manual_sensed | as above | |
@@ -89,11 +90,11 @@ Topology, policy and structure, 20 symbols, all `keep`: `Bumper`, `IRJ`, `IRJ-EN
 | `Device-Lamp-NeoPixel` | retire | | | | | | `Device-Lamp` with `Address` on a pixel bus |
 | `Device-Lamp-PWM` | retire | | | | | | `Device-Lamp` through the two-point cast |
 | `Device-Switch-Sense` | rename | `Device-Switch-ManualSensed` | switch | manual_sensed | `~{N}`, `~{R}`: binary in | drop `Kind`, `N`, `R` | |
-| `Device-Switch-StallMotor-Sensed` | rename | `Device-Switch` | switch | powered, lock | `M`: binary out; `~{N}`, `~{R}`: binary in | drop `Kind`, `N`, `R`, `NormalIs` | one type for stall, PWM and servo machines; `~{M}` is a fork if a machine is wired the other way |
-| `Device-Switch-StallMotor-Sensed-OS` | rename | `Device-Switch-OS` | switch | powered, lock | as above plus `~{OCC}`: binary in | drop `Kind`, `N`, `R`, `OCC`, `NormalIs` | the 4-pin unit shape |
+| `Device-Switch-StallMotor-Sensed` | rename | `Device-Switch` | switch | powered, lock, dual | `M`: binary out; `~{N}`, `~{R}`: binary in | drop `Kind`, `N`, `R`, `NormalIs` | one type for stall, PWM and servo machines; `~{M}` is a fork if a machine is wired the other way |
+| `Device-Switch-StallMotor-Sensed-OS` | rename | `Device-Switch-OS` | switch | powered, lock, dual | as above plus `~{OCC}`: binary in | drop `Kind`, `N`, `R`, `OCC`, `NormalIs` | the 4-pin unit shape |
 | `Device-Switch-Servo-Sensed` | retire | | | | | | `Device-Switch` through the two-angle cast |
 | `Device-Switch-Servo-Sim`, `Device-Switch-StallMotor-Sim` | retire | | | | | | a simulated machine is not a driver type (E23) |
-| `Device-Lock` | copy of `Device-Switch-Sense` | `Device-Lock` | switch | lock | `~{N}` to `UNLOCK`: binary out, electrical output; `~{R}` to `~{LOCKED}`: binary in | `settle_ms` (blank) | the sense pin is optional on the sheet (E50) |
+| `Device-Lock` | copy of `Device-Switch-Sense` | `Device-Lock` | switch | lock, dual | `~{N}` to `UNLOCK`: binary out, electrical output; `~{R}` to `~{LOCKED}`: binary in | `settle_ms` (blank) | the sense pin is optional on the sheet (E50) |
 | `Driver-I2C-MCP23017` | retag | same | | | `A1..B8`: binary bidirectional | `IC=MCP23017`; keep `Address`; drop `Kind` | 4-pins-per-unit shape kept (E36) |
 | `Driver-I2C-MAX7313` | retag, moved from the panel library | same | | | `A1..B8`: binary bidirectional | `IC=MAX7313`; keep `Address`; drop `Kind` | |
 | `Driver-I2C-PCA9685` | copy | `Driver-I2C-PCA9685-PWM` | | | `A1..B8`: level out | `IC=PCA9685`; keep `Address`; `frequency_hz` (blank); drop `Kind` | I3 |
@@ -134,10 +135,10 @@ Structure, 9 symbols, all `keep`: `Codeline-Encoding-AAR`, `-Bits`, `-US&S-506`,
 |---|---|---|---|---|
 | keep | 14 | 0 | 9 | 23 |
 | retag or rename, mechanical | 20 | 12 | 15 | 47 |
-| copy, mechanical | 2 | 8 | 0 | 10 |
+| copy, mechanical | 3 | 8 | 0 | 11 |
 | made, with a pin added by the script | 0 | 2 | 0 | 2 |
 | retire | 1 | 8 | 2 | 11 |
-| output symbols | 37 | 20 | 24 | 81 |
+| output symbols | 38 | 20 | 24 | 82 |
 | of which split into units (E56) | 0 | 4 | 5 | 9 |
 | of which hand-finished and carried over (E57) | 0 | 2 | 3 | 5 |
 
@@ -179,6 +180,7 @@ The gate for each sheet: a netlist exported before and after, compared by refere
 8. Done (2026-10-11): the owner's `Terminal` question, discussed first. Singletons were the owner's expectation; the answer was multi-unit symbols, which retire `Terminal` outright (checkpoint E56). The owner drew `PanelLock`, `PanelSwitch` and `PanelSignal` as two-unit symbols in the editor (a paste had doubled every pin and some graphics; deduplicated by text, exact duplicate items within a unit) and gave the PCA9685 PWM and Servo symbols differentiation graphics.
 9. Done: `Terminal` deleted; the recipe reads InterlockingPlant, splits the other six symbols by capability, carries the five hand-finished symbols over (`HAND_FINISHED`), writes symbols in KiCad's sorted order so the editor's saves diff small; the lint checks one capability per unit, `ki_locked` and the fixed Value, and the shared parser reports units. 80 symbols, 0 errors; the owner's five symbols byte-identical through a regeneration.
 10. Done: the vocabulary check before the cutover (E58 to E61): `non_vital` for `auxiliary`, `color out`, `Signal Head - Searchlight`, the head Styles defined in the glossary (FieldUnit branch `docs/head-styles`). 81 symbols, 0 errors.
+11. Done: switch Styles settled (E63): `manual` kept, `Switch_Dual` added, `dual` on the switch and lock device Style lists; the switch terms in the glossary and FieldUnit ADR 0006 proposed. 82 symbols, 0 errors.
 
 ## 7. Open after the run
 

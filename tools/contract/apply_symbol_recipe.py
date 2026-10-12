@@ -94,6 +94,9 @@ P(dict(src=("Railroad", "Signal Head - SemaphoreU3"), out="RailroadPlant", name=
                    "CLEAR (vertical). The aspect set is an era fact; see FieldUnit's primer section 17."))
 for s in ("Switch_Powered", "Switch_Powered_Diag", "Switch_Powered_NO_TC", "Switch_Powered_Small"):
     P(dict(src=("Railroad", s), out="RailroadPlant", appliance="switch", style="powered", **SWITCH_FIELDS))
+P(dict(src=("Railroad", "Switch_Powered"), out="RailroadPlant", name="Switch_Dual", appliance="switch", style="dual", **SWITCH_FIELDS,
+       description="Dual-control switch: a powered switch the crew may also work by hand at the location, under a release "
+                   "from the dispatcher; while released the control is ignored and the switch is out of correspondence (E63)."))
 P(dict(src=("Railroad", "Switch_Lock"), out="RailroadPlant", appliance="switch", style="lock", **SWITCH_FIELDS))
 P(dict(src=("Railroad", "Switch_Manual"), out="RailroadPlant", appliance="switch", style="manual", **SWITCH_FIELDS))
 P(dict(src=("Railroad", "Switch_Manual_Sensed"), out="RailroadPlant", appliance="switch", style="manual_sensed", **SWITCH_FIELDS))
@@ -146,16 +149,16 @@ P(dict(src=(F, "Device-Lamp-Bit"), out="RailroadDevice", name="Device-Lamp",
 P(dict(src=(F, "Device-Switch-Sense"), out="RailroadDevice", name="Device-Switch-ManualSensed",
        appliance="switch", style="manual_sensed", drop=["Kind", "N", "R"], caps={"N": BI, "R": BI}))
 P(dict(src=(F, "Device-Switch-StallMotor-Sensed"), out="RailroadDevice", name="Device-Switch",
-       appliance="switch", style="powered, lock", drop=["Kind", "N", "R", "NormalIs"],
+       appliance="switch", style="powered, lock, dual", drop=["Kind", "N", "R", "NormalIs"],
        caps={"M": BO, "N": BI, "R": BI},
        description="Switch machine: M is a binary demand (asserted = REVERSE), ~{N} and ~{R} the point contacts. "
                    "One device for a stall motor, a PWM motor and a servo: the cast on M's wire decides."))
 P(dict(src=(F, "Device-Switch-StallMotor-Sensed-OS"), out="RailroadDevice", name="Device-Switch-OS",
-       appliance="switch", style="powered, lock", drop=["Kind", "N", "R", "OCC", "NormalIs"],
+       appliance="switch", style="powered, lock, dual", drop=["Kind", "N", "R", "OCC", "NormalIs"],
        caps={"M": BO, "N": BI, "R": BI, "OCC": BI},
        description="Switch machine with its OS circuit detector packaged on the same unit: Device-Switch plus ~{OCC}."))
 P(dict(src=(F, "Device-Switch-Sense"), out="RailroadDevice", name="Device-Lock",
-       appliance="switch", style="lock", drop=["Kind", "N", "R"], add={"settle_ms": ""},
+       appliance="switch", style="lock, dual", drop=["Kind", "N", "R"], add={"settle_ms": ""},
        pins={"~{N}": ("UNLOCK", "input"), "~{R}": "~{LOCKED}"}, caps={"UNLOCK": BO, "LOCKED": BI},
        texts={"SW ${VALUE}": "LOCK ${VALUE}"},
        description="Electric lock mechanism: UNLOCK is the demand, ~{LOCKED} the optional plunger sense. "

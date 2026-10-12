@@ -42,7 +42,7 @@ The types the SPCoast drawings need today, one per device symbol in the checkpoi
 
 | Field | |
 |---|---|
-| Key | `Device : switch : powered, lock : M ~{N} ~{R} ~{OCC}` |
+| Key | `Device : switch : powered, lock, dual : M ~{N} ~{R} ~{OCC}` |
 | Serves | switch, Styles `powered` and `lock` (the machine half of a locked switch, I25) |
 | Signature | `M` [BO]; `~{N}`, `~{R}` [BI] as packaging; `~{OCC}` [BI] as packaging |
 | Commands | `drive(NORMAL)`, `drive(REVERSE)` |

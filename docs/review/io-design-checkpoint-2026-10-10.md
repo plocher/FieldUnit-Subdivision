@@ -85,7 +85,8 @@ Vocabulary check before the cutover (owner, 2026-10-11)
 - E59. `lever` stays the Appliance noun for every plate, the code button included: a code button is a pushbutton lever, the maintainer call lever could be one too, and "switch" is ambiguous with the track appliance.
 - E60. The capability word is `color out`, American spelling, like the glossary and the `Color` field.
 - E61. The plant gets `Signal Head - Searchlight`, Style `searchlight`, a copy of the CL head, because a device binds to an appliance of equal Appliance and Style (I9) and the searchlight device had none.
-- E62. The head Styles stay as words (`CL`, `searchlight`, `semaphore_lq`, `semaphore_uq`) and are defined in the glossary from this session's definitions. The switch Styles are under discussion: `manual` against `local`, and dual control as a new Style (owner's pasted comparison of electrically locked and dual-control switches).
+- E62. The head Styles stay as words (`CL`, `searchlight`, `semaphore_lq`, `semaphore_uq`) and are defined in the glossary from this session's definitions.
+- E63. Switch Styles. `manual` and `manual_sensed` stay: the Style names who moves the points (by hand, or by a switch machine), and `local` would name the other axis, who controls, which the `Local-*` plates already carry; "hand-throw" is history, not the term. Dual control is the new Style `dual`: `Switch_Dual` on the plant, a copy of `Switch_Powered`, served by `Device-Switch` plus `Device-Lock` (Style lists `powered, lock, dual` and `lock, dual`) with a `Local-Switch` plate; the model has no crank, so hand mode is the local lever driving the motor under a release, the electric lock flow applied to a powered switch, and while released the dispatcher's control is ignored and the switch is out of correspondence. A selector contact `~{HAND}` is a later pin if a layout has one. The behaviour is vital logic and goes to FieldUnit as a proposed ADR (0006), with the owner's comparison of electrically locked and dual-control switches as its source.
 
 The desk and fascia spike (owner, 2026-10-10)
 - E41. Column membership stays as drawn: a `Column` pin on each desk appliance meeting the column symbol's backplane pins. The column matters for rendering the model and the panel boards. A machine with another arrangement forks the expander symbol; the `IC` is unchanged.
@@ -161,6 +162,7 @@ Appliance symbols (Role APPLIANCE), today's Kinds mapped:
 |---|---|---|---|
 | `Switch_Powered` and variants | switch | powered | SWITCH_REMOTE |
 | `Switch_Lock` | switch | lock | SWITCH_LOCK |
+| `Switch_Dual` (new) | switch | dual | copy of `Switch_Powered`: a powered switch with local hand operation under a release (E63) |
 | `Switch_Manual_Sensed` | switch | manual_sensed | SWITCH_MANUAL_SENSED |
 | `Switch_Manual` | switch | manual | SWITCH_MANUAL |
 | `Derail` (was `Switch_Powered_Derail`) | switch | derail | DERAIL |
@@ -179,7 +181,7 @@ Device symbols (Role DEVICE). A device binds to an appliance of equal Appliance 
 
 | Symbol | Appliance | Style | Signature (capability; `~{}` = asserted low) |
 |---|---|---|---|
-| `Device-Switch` | switch | powered, lock | `M` binary out; `~{N}`, `~{R}` binary in; `~{OCC}` binary in (packaging) |
+| `Device-Switch` | switch | powered, lock, dual | `M` binary out; `~{N}`, `~{R}` binary in; `~{OCC}` binary in (packaging) |
 | `Device-Switch-ManualSensed` | switch | manual_sensed | `~{N}`, `~{R}` binary in |
 | `Device-Lock` | switch | lock | the lock mechanism: `UNLOCK` binary out; `~{LOCKED}` binary in, optional, simulated with quality SIMULATED when unbound (E50); one Value with its `Device-Switch` (E35, I25). Today's `Local-Switch` and `Local-Lock` on the Sargent sheet are not this: they are the crew's local lever and lamps, Role PANEL on a field sheet, the "local client" of task 4 |
 | `Device-TrackCircuit` | track_circuit | | `~{OCC}` binary in; setting `hold_ms` |
@@ -251,7 +253,7 @@ Next steps, in order
 
 ## Changes in rev 10
 
-The owner's question on `Terminal` (2026-10-11), discussed first: `Terminal` retired for multi-unit symbols, one unit per capability, with the owner's unit-0 drawing rule (E56); the libraries hand-maintained with the recipe as the regeneration path and the baseline read from InterlockingPlant (E57); E38, E39, I10 and I24 superseded; the §4.1 Terminal row removed; next step 4 closed. Same day, the vocabulary check before the cutover (E58 to E62): `non_vital`, `lever` kept, `color out`, the searchlight plant head, the head Styles in the glossary.
+The owner's question on `Terminal` (2026-10-11), discussed first: `Terminal` retired for multi-unit symbols, one unit per capability, with the owner's unit-0 drawing rule (E56); the libraries hand-maintained with the recipe as the regeneration path and the baseline read from InterlockingPlant (E57); E38, E39, I10 and I24 superseded; the §4.1 Terminal row removed; next step 4 closed. Same day, the vocabulary check before the cutover (E58 to E62): `non_vital`, `lever` kept, `color out`, the searchlight plant head, the head Styles in the glossary; then the switch Styles settled, `manual` kept and `dual` added (E63).
 
 ## Changes in rev 9
 
