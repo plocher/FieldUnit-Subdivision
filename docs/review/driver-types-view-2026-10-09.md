@@ -32,7 +32,7 @@ Two rules hold across the compiler's reading of the types.
 
 Two families share the pattern. Device types (§2) talk to the unit in appliance vocabulary. I/O types (§4) talk in pin vocabulary. Service sources (§5) feed the unit's services. Encoder types are retired (§3).
 
-Capabilities below: BI = binary in, BO = binary out, PO = position out, CO = colour out. `~{}` in a pin name means asserted low (I7). A device pin never names a chip or a domain; when it lands on a pin of another capability, the generator inserts a cast (environment view §4.2).
+Capabilities below: BI = binary in, BO = binary out, PO = position out, CO = color out. `~{}` in a pin name means asserted low (I7). A device pin never names a chip or a domain; when it lands on a pin of another capability, the generator inserts a cast (environment view §4.2).
 
 ## 2. Device types
 
@@ -205,7 +205,7 @@ An I/O type serves no appliance. It serves pins. Its key is `IO : <IC> : <pins>`
 | PCA9685, `-PWM` symbol | `A1..B8` level out | `frequency_hz` chip setting |
 | PCA9685, `-Servo` symbol | `A1..B8` position out | 50 Hz fixed; `min_us`, `max_us`; a lamp on it is refused (I3) |
 | GPIO, five symbols by use | `D` BI/BO, level in, level out, position out, pixel out | Value = the board core's pin name, checked by the C++ build (I22) |
-| pixel chain data pin | one bus pin offering colour out per slot | addresses typed; gaps off; past the strip silent (E31, I26) |
+| pixel chain data pin | one bus pin offering color out per slot | addresses typed; gaps off; past the strip silent (E31, I26) |
 | CMRInet node | a remote expander | to be proven later (E32) |
 | mock | any | for the bench and the virtual plant |
 

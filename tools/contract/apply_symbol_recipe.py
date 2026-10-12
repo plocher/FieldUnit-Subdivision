@@ -46,7 +46,7 @@ HAND_FINISHED = {"RailroadDesk": ["PanelSwitch", "PanelSignal", "PanelLock"],
 
 BI, BO, BB = "binary in", "binary out", "binary bidirectional"
 LI, LO = "level in", "level out"
-PO, CO, PX = "position out", "colour out", "pixel out"
+PO, CO, PX = "position out", "color out", "pixel out"
 EXPANDER = {f"{bank}{n}": BB for bank in "AB" for n in range(1, 9)}
 PCA_PWM = {f"{bank}{n}": LO for bank in "AB" for n in range(1, 9)}
 PCA_SERVO = {f"{bank}{n}": PO for bank in "AB" for n in range(1, 9)}
@@ -74,7 +74,7 @@ for s in PLANT_KEEP:
     P(dict(src=("Railroad", s), out="RailroadPlant", keep_kind=True))
 P(dict(src=("Railroad", "Milepost"), out="RailroadPlant", role="TRACK", add={"Kind": "MILEPOST"}, keep_kind=True,
        description="Milepost: a track anchor carrying the milepost of the point it sits on."))
-P(dict(src=("Railroad", "AUXILIARY"), out="RailroadPlant", appliance="lamp", style="auxiliary", drop=["Kind"]))
+P(dict(src=("Railroad", "AUXILIARY"), out="RailroadPlant", appliance="lamp", style="non_vital", drop=["Kind"]))
 P(dict(src=("Railroad", "AUXILIARY"), out="RailroadPlant", name="Contact", appliance="contact", drop=["Kind"],
        description="Contact: the generic non-vital input the office may see as <Value>K. "
                    "Style says who consumes it (lock_request, button, door, ...). Complement of AUXILIARY."))
@@ -82,6 +82,8 @@ P(dict(src=("Railroad", "MaintainerCall"), out="RailroadPlant", appliance="lamp"
 for s, st in (("Mast_Single", "single"), ("Mast_Double", "double"), ("Mast_Dwarf", "dwarf")):
     P(dict(src=("Railroad", s), out="RailroadPlant", appliance="mast", style=st, drop=["Kind"]))
 P(dict(src=("Railroad", "Signal Head - CL"), out="RailroadPlant", role="APPLIANCE", appliance="head", style="CL", drop=["Kind"]))
+P(dict(src=("Railroad", "Signal Head - CL"), out="RailroadPlant", name="Signal Head - Searchlight", role="APPLIANCE", appliance="head",
+       style="searchlight", drop=["Kind"], description="Searchlight signal head: one lamp behind a moving coloured roundel; one colour at a time (E47)."))
 P(dict(src=("Railroad", "Signal Head - SemaphoreU2"), out="RailroadPlant", name="Signal Head - SemaphoreLQ2",
        role="APPLIANCE", appliance="head", style="semaphore_lq", drop=["Kind"],
        description="Lower-quadrant semaphore head, two positions: STOP (horizontal) and CLEAR (arm dropped). "
@@ -202,7 +204,7 @@ P(dict(src=(D, "PanelLock"), out="RailroadDesk", appliance="lever", style="lock"
 P(dict(src=(D, "PanelCode"), out="RailroadDesk", appliance="lever", style="code", drop=["Kind", "CODE"], caps={"CODE": BI}))
 P(dict(src=(D, "PanelMCall"), out="RailroadDesk", appliance="lever", style="maintainer_call",
        drop=["Kind", "Vital", "ControlToken", "SW"], pins={"~{SW}": "~{S}"}, caps={"S": BI}))
-P(dict(src=(D, "PanelAuxiliary"), out="RailroadDesk", appliance="lever", style="auxiliary",
+P(dict(src=(D, "PanelAuxiliary"), out="RailroadDesk", appliance="lever", style="non_vital",
        drop=["Kind", "Vital", "ControlToken", "SW"], pins={"~{SW}": "~{S}"}, caps={"S": BI}))
 for c in ("RED", "YELLOW", "GREEN", "AMBER", "BLUE"):
     P(dict(src=(D, f"PanelLamp-{c}"), out="RailroadDesk", appliance="lamp", style="indication",

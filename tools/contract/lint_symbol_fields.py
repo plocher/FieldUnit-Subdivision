@@ -32,7 +32,7 @@ from kicad_services.sch_text import library_symbols  # noqa: E402
 LIBDIR = Path.home() / "Dropbox/KiCad/Railroad/symbols"
 LIBRARIES = ("RailroadPlant", "RailroadDevice", "RailroadDesk")
 VOCABULARY = {"binary in", "binary out", "binary bidirectional", "level in", "level out",
-              "level bidirectional", "position out", "colour out", "pixel out", "message in", "message out"}
+              "level bidirectional", "position out", "color out", "pixel out", "message in", "message out"}
 STRUCTURAL = {"TRACK", "POLICY", "STRUCTURE", "COLUMN", "MACHINE", "CODELINE_TRANSPORT", "CODELINE_ENCODING"}
 FUNCTIONAL = {"APPLIANCE", "DEVICE", "PANEL", "IODRIVER", "SETTING"}
 RETIRED_FIELDS = {"ControlToken", "Vital", "NormalIs", "Chain", "Index", "Kind"}

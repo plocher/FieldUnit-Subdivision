@@ -40,7 +40,7 @@ Library cut, three libraries by where a symbol is used. Names are placeholders f
 | `RailroadDevice` | every DEVICE and IODRIVER symbol, used on field and desk sheets alike; `Setting` | `RailroadField.kicad_sym`, plus `Driver-I2C-MAX7313` from the panel library |
 | `RailroadDesk` | every PANEL symbol, desk and fascia; CODELINE, MACHINE, COLUMN | `RailroadPanel.kicad_sym`, plus the `Local-*` plates from the field library |
 
-Capability words used below: `binary in`, `binary out`, `binary bidirectional` (an expander or GPIO pin that becomes in or out by what lands on it, I3), `level in`, `level out`, `level bidirectional` (in the vocabulary, on no symbol yet), `position out`, `colour out`, `pixel out`; the Setting pin is passive and carries no capability.
+Capability words used below: `binary in`, `binary out`, `binary bidirectional` (an expander or GPIO pin that becomes in or out by what lands on it, I3), `level in`, `level out`, `level bidirectional` (in the vocabulary, on no symbol yet), `position out`, `color out`, `pixel out`; the Setting pin is passive and carries no capability.
 
 ## 2. Plant library (`Railroad.kicad_sym`, 36 symbols)
 
@@ -48,13 +48,14 @@ Topology, policy and structure, 20 symbols, all `keep`: `Bumper`, `IRJ`, `IRJ-EN
 
 | Symbol | Disposition | New name | Role | Appliance | Style | Fields | Notes |
 |---|---|---|---|---|---|---|---|
-| `AUXILIARY` | retag | same | APPLIANCE | lamp | auxiliary | keep `CP`; drop `Kind` | |
+| `AUXILIARY` | retag | same | APPLIANCE | lamp | non_vital | keep `CP`; drop `Kind` | Style word `non_vital`, the glossary's term (E58) |
 | `AUXILIARY_TRAFFIC` | retire | | | | | | holds `NFLK`/`SFLK` on Watsonville: fleet indications the plant compiler produces itself (I29); the two instances are removed when Watsonville migrates |
 | `MaintainerCall` | retag | same | APPLIANCE | lamp | maintainer_call | drop `Kind` | |
 | `Mast_Single` | retag | same | APPLIANCE | mast | single | drop `Kind` | |
 | `Mast_Double` | retag | same | APPLIANCE | mast | double | drop `Kind` | |
 | `Mast_Dwarf` | retag | same | APPLIANCE | mast | dwarf | drop `Kind` | |
 | `Signal Head - CL` | retag | same | APPLIANCE | head | CL | drop `Kind` | Role was COMPONENT; heads are appliances (ADR 0004 D6) |
+| `Signal Head - CL` | copy | `Signal Head - Searchlight` | APPLIANCE | head | searchlight | drop `Kind` | the plant head the searchlight device binds to (E61) |
 | `Signal Head - SemaphoreU2` | rename | `Signal Head - SemaphoreLQ2` | APPLIANCE | head | semaphore_lq | drop `Kind` | two positions, arm drops (E48) |
 | `Signal Head - SemaphoreU3` | rename | `Signal Head - SemaphoreUQ3` | APPLIANCE | head | semaphore_uq | drop `Kind` | three positions, arm rises (E48) |
 | `Switch_Powered`, `_Diag`, `_NO_TC`, `_Small` | retag | same | APPLIANCE | switch | powered | keep `CP`, `TC`; `Indications` to `IndicationCeiling`; drop `Kind` | four graphic forks kept |
@@ -78,8 +79,8 @@ Topology, policy and structure, 20 symbols, all `keep`: `Bumper`, `IRJ`, `IRJ-EN
 | `Device-Detector-Optical` | rename | `Device-TrackCircuit-Optical` | track_circuit | | `~{OCC}`: binary in | drop `Kind`, `OCC`; `Hold_ms` to `hold_ms` | convenience fork kept (I19) |
 | `Device-Head-3LED` | rename | `Device-Head-CL-3Lamp` | head | CL | `~{R}`, `~{Y}`, `~{G}`: binary out | drop `Kind`, `R`, `Y`, `G` | the optional `~{L}` packaging pin is hand work, deferred until a head needs it |
 | `Device-Head-3LED-Mux2` | rename | `Device-Head-CL-Mux2` | head | CL | `S0`, `S1`: binary out | drop `Kind` | a select code, no asserted state |
-| `Device-Head-1LED-NeoPixel` | rename, pin added | `Device-Head-CL-RGB` | head | CL | add `RGB`: colour out | drop `Kind`, `Chain`, `Index`; add `Address` (blank) | the only field symbol with no pin; the script adds one at the body's right edge, for the visual pass to tidy |
-| `Device-Head-Searchlight` | copy of `Device-Head-CL-RGB` | `Device-Head-Searchlight` | head | searchlight | `RGB`: colour out | `Address` (blank); `transition_ms` (blank) | after the RGB head exists (E47) |
+| `Device-Head-1LED-NeoPixel` | rename, pin added | `Device-Head-CL-RGB` | head | CL | add `RGB`: color out | drop `Kind`, `Chain`, `Index`; add `Address` (blank) | the only field symbol with no pin; the script adds one at the body's right edge, for the visual pass to tidy |
+| `Device-Head-Searchlight` | copy of `Device-Head-CL-RGB` | `Device-Head-Searchlight` | head | searchlight | `RGB`: color out | `Address` (blank); `transition_ms` (blank) | after the RGB head exists (E47) |
 | `Device-Head-1LED-PWM` | retire | | | | | | a single-colour PWM lamp is `Device-Lamp` on a level-out pin; lunar and position-light heads wait for their head types |
 | `Device-Head-3LED-PWM` | retire | | | | | | the two-point cast on a `level out` pin replaces it |
 | `Device-Head-Semaphore-Servo` | rename | `Device-Head-Semaphore` | head | semaphore_lq, semaphore_uq | `ARM`: position out; `LAMP` to `~{LAMP}`: binary out | drop `Kind`; `Stop_deg`, `Approach_deg`, `Clear_deg` to `stop_deg`, `approach_deg`, `clear_deg` | one symbol, two Styles (E48) |
@@ -116,7 +117,7 @@ Structure, 9 symbols, all `keep`: `Codeline-Encoding-AAR`, `-Bits`, `-US&S-506`,
 | `PanelLock` | rename pins | lever | lock | `WLS` to `~{UNUSED}`: binary in; `~{WLS}`: binary in; `~{WLK}` to `~{WLQK}`: binary out; `WLK` to `~{WLK}`: binary out | drop `Kind`, `WLS`, `WLK`; add `Invert=WLK` | E54, E55. Check the plate's graphic text for the old names (visual pass) |
 | `PanelCode` | retag | lever | code | `~{CODE}`: binary in | drop `Kind`, `CODE` | no join (I28) |
 | `PanelMCall` | retag | lever | maintainer_call | `~{SW}` to `~{S}`: binary in | drop `Kind`, `Vital`, `ControlToken`, `SW` | E45 |
-| `PanelAuxiliary` | retag | lever | auxiliary | `~{SW}` to `~{S}`: binary in | drop `Kind`, `Vital`, `ControlToken`, `SW` | token `<Value>S` |
+| `PanelAuxiliary` | retag | lever | non_vital | `~{SW}` to `~{S}`: binary in | drop `Kind`, `Vital`, `ControlToken`, `SW` | token `<Value>S` |
 | `PanelLamp-RED`, `-YELLOW`, `-GREEN`, `-AMBER`, `-BLUE` | retag | lamp | indication | `~{LAMP}`: binary out | keep `Color`, `IndicationToken`; drop `Kind`, `LAMP` | five colour forks kept |
 | `Local-Switch` | retag, moved from the field library | lever | switch | as `PanelSwitch` without `Column` | drop `Kind` and the four blanks | |
 | `Local-Switch-NoLamp` | retag, moved | lever | switch | `~{NWS}`, `~{RWS}`: binary in | drop `Kind`, `NWS`, `RWS` | fork kept |
@@ -133,10 +134,10 @@ Structure, 9 symbols, all `keep`: `Codeline-Encoding-AAR`, `-Bits`, `-US&S-506`,
 |---|---|---|---|---|
 | keep | 14 | 0 | 9 | 23 |
 | retag or rename, mechanical | 20 | 12 | 15 | 47 |
-| copy, mechanical | 1 | 8 | 0 | 9 |
+| copy, mechanical | 2 | 8 | 0 | 10 |
 | made, with a pin added by the script | 0 | 2 | 0 | 2 |
 | retire | 1 | 8 | 2 | 11 |
-| output symbols | 36 | 20 | 24 | 80 |
+| output symbols | 37 | 20 | 24 | 81 |
 | of which split into units (E56) | 0 | 4 | 5 | 9 |
 | of which hand-finished and carried over (E57) | 0 | 2 | 3 | 5 |
 
@@ -177,6 +178,7 @@ The gate for each sheet: a netlist exported before and after, compared by refere
 7. Left to the owner: the global `sym-lib-table` entries `RailroadPlant`, `RailroadDevice`, `RailroadDesk` beside the old nicknames; the old libraries stay registered until the last sheet migrates. Railroad's AGENTS.md reversed in the PR.
 8. Done (2026-10-11): the owner's `Terminal` question, discussed first. Singletons were the owner's expectation; the answer was multi-unit symbols, which retire `Terminal` outright (checkpoint E56). The owner drew `PanelLock`, `PanelSwitch` and `PanelSignal` as two-unit symbols in the editor (a paste had doubled every pin and some graphics; deduplicated by text, exact duplicate items within a unit) and gave the PCA9685 PWM and Servo symbols differentiation graphics.
 9. Done: `Terminal` deleted; the recipe reads InterlockingPlant, splits the other six symbols by capability, carries the five hand-finished symbols over (`HAND_FINISHED`), writes symbols in KiCad's sorted order so the editor's saves diff small; the lint checks one capability per unit, `ki_locked` and the fixed Value, and the shared parser reports units. 80 symbols, 0 errors; the owner's five symbols byte-identical through a regeneration.
+10. Done: the vocabulary check before the cutover (E58 to E61): `non_vital` for `auxiliary`, `color out`, `Signal Head - Searchlight`, the head Styles defined in the glossary (FieldUnit branch `docs/head-styles`). 81 symbols, 0 errors.
 
 ## 7. Open after the run
 
