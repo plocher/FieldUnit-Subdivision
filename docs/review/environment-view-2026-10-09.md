@@ -1,4 +1,4 @@
-# The driver environment: a view for review (2026-10-09, rev 6)
+# The driver environment: a view for review (2026-10-09, rev 7)
 
 - Status: a view, written top-down for discussion, revised in rev 6 to match the design checkpoint (`io-design-checkpoint-2026-10-10.md`, rev 9). Decided items cite the checkpoint (E = explicit, I = implicit). Changes are listed at the end.
 - Governs: `driver-architecture-foundation.md`. The foundation says a driver "runs in an environment that supplies context" and that the environment "contains contextual data, utility functions and lifecycle support" (§2 principle 5, §3.5). This view gives that sentence a structure.
@@ -64,9 +64,9 @@ What the instance is wired to, one binding per function pin. Derived from the ne
 - The cast on the wire, if the two ends differ, with its settings.
 - On a bus, the device's slot: its `Address` (E14, E30).
 
-**One binding mechanism** (learned 3). A device symbol pin on a net with an I/O pin. Abutting the pins is the ergonomic form; a wire is the same binding; the one-pin `Terminal` symbol, Value `<part>.<function>`, is the escape hatch for a wire that would have to cross sheets or that the geometry will not allow (E38). Terminals are placed in pairs, one on each end, and the compiler merges the pair's nets by Value within the interlocking hierarchy (E39, I24). A missing end is an error, which is how a missed pin is caught. Text labels are out (E11).
+**One binding mechanism** (learned 3). A device symbol pin on a net with an I/O pin. Abutting the pins is the ergonomic form; a wire is the same binding. A device whose pins want different chips is a multi-unit symbol, one unit per capability, each unit placed beside its chip, on any sheet of the hierarchy; KiCad joins the units by reference, enforces one Value, and reports a unit never placed through ERC, and the netlist shows one component with every unit's pins (E56). The `Terminal` symbol that reached across sheets is retired (E56). Text labels are out (E11).
 
-**Capabilities.** Every pin on a device symbol and every pin on an I/O symbol has one **native capability**, from one vocabulary, direction inside, stated from the unit's point of view on both sides (E8, E9). The vocabulary today: binary in, binary out, level in, level out, position out, colour out, pixel out, message in, message out (I1). It is not a file: it is the set of words in the libraries' `Pin.*` fields and in the casts' from and to declarations, and the lint reports a word that appears in one and not the other. A device pin's native capability is the natural type of its function; an I/O pin's is what the chip does on that pin; a chip whose pin can do two things is drawn as one symbol per use (I3, I22).
+**Capabilities.** Every pin on a device symbol and every pin on an I/O symbol has one **native capability**, from one vocabulary, direction inside, stated from the unit's point of view on both sides (E8, E9). The vocabulary today: binary in, binary out, level in, level out, position out, color out, pixel out, message in, message out (I1). It is not a file: it is the set of words in the libraries' `Pin.*` fields and in the casts' from and to declarations, and the lint reports a word that appears in one and not the other. A device pin's native capability is the natural type of its function; an I/O pin's is what the chip does on that pin; a chip whose pin can do two things is drawn as one symbol per use (I3, I22).
 
 | Pin | Native capability |
 |---|---|
@@ -81,7 +81,7 @@ What the instance is wired to, one binding per function pin. Derived from the ne
 | switch machine `M` | binary out |
 | switch machine `~{OCC}`, `~{N}`, `~{R}` | binary in, asserted low |
 | colour-light head `~{R}`, `~{Y}`, `~{G}` | binary out |
-| one-lamp colour head `RGB`, searchlight `RGB` | colour out |
+| one-lamp colour head `RGB`, searchlight `RGB` | color out |
 | semaphore `ARM` | position out |
 | desk lever contact, desk lamp | binary in, binary out, asserted low |
 
@@ -95,7 +95,7 @@ What the instance is wired to, one binding per function pin. Derived from the ne
 |---|---|---|---|
 | binary out | level out | two-point | `low = 0%`, `high = 100%`, `fade_ms = 0` |
 | binary out | position out | two-angle | `low_deg`, `high_deg`, `speed` |
-| binary out | colour out | one-point | `color`, `brightness` |
+| binary out | color out | one-point | `color`, `brightness` |
 | level out | level out | scale | `gamma`, `scale = 100%` |
 | level in | binary in | threshold | `threshold = 60%`, `hysteresis = 0%` |
 | same word | same word | direct | |
@@ -103,7 +103,7 @@ What the instance is wired to, one binding per function pin. Derived from the ne
 
 There is no servo-pulse cast: a servo is drawn on the `-Servo` symbol or the `Driver-GPIO-Servo` symbol, whose pins are position out, and the I/O type owns the pulse mapping (I3).
 
-**Bus and wire** (E14). A wire-capability pin admits one device pin on its net; a bus-capability pin admits many, each carrying an `Address` for its slot. A pixel chain is a net on a `pixel out` pin (E30): a bus pin offers `colour out` to each slot, so a one-lamp colour head's `RGB` pin lands on it directly and a plain lamp's `~{LAMP}` lands on it through the one-point cast with its `color`. Gaps in the addresses are tolerated and the generator writes "off" (E31). An I2C expander is the same thing with its own `Address` on the bus; a CMRInet node is a remote expander (E32). Addresses are typed, never inferred from drawing order (E10, E40), and are scoped by the processor that owns the bus (I27).
+**Bus and wire** (E14). A wire-capability pin admits one device pin on its net; a bus-capability pin admits many, each carrying an `Address` for its slot. A pixel chain is a net on a `pixel out` pin (E30): a bus pin offers `color out` to each slot, so a one-lamp colour head's `RGB` pin lands on it directly and a plain lamp's `~{LAMP}` lands on it through the one-point cast with its `color`. Gaps in the addresses are tolerated and the generator writes "off" (E31). An I2C expander is the same thing with its own `Address` on the bus; a CMRInet node is a remote expander (E32). Addresses are typed, never inferred from drawing order (E10, E40), and are scoped by the processor that owns the bus (I27).
 
 **No encoders** (learned 6, E28). A mux-coded head is a device whose signature is the code we drive (`S0`, `S1`); the decoding, like a shift register on a head, is field hardware on the far side and out of scope. Casts cover one wire to one wire. Nothing is left for an encoder symbol to do.
 
@@ -166,7 +166,7 @@ Everything above comes out of the Layout Data Model, directly or indirectly.
 | Part | From the drawing | In the model |
 |---|---|---|
 | Identity | Values on appliance, device, desk and local symbols, joined by Value within the interlocking hierarchy; head letters; `Column` membership on the desk; the `MAIN HOUSE` or `CtcMachine` in scope, or `Processor` | derived, per device instance, with its processor |
-| Bindings | nets between device pins and I/O pins; Terminal pairs merged by Value; `Address` on bus devices; `Invert` lists on plates | derived, per function pin, with the capability at each end, the cast path and its resolved settings |
+| Bindings | nets between device pins and I/O pins, each unit of a multi-unit device beside its chip; `Address` on bus devices; `Invert` lists on plates | derived, per function pin, with the capability at each end, the cast path and its resolved settings |
 | Native capabilities, polarity | `Pin.<name>` properties and `~{}` pin names on library symbols; `IC` on I/O symbols | provenance: the library versions compiled against |
 | Cast index, factory defaults, type signatures | nothing drawn; FieldUnit publishes `fieldunit-index/v1` (I21) | provenance: the index version; per binding, the derived results only; never a copy |
 | Settings | `Setting` symbols on the layout anchor's, the `Interlocking` symbol's and a function's net; fields on device and I/O instances | the raw scopes, and the resolved value per instance |
@@ -174,7 +174,7 @@ Everything above comes out of the Layout Data Model, directly or indirectly.
 | Store | nothing drawn; which appliances persist is implied by type | nothing; a generator fact |
 | Construction | nothing drawn | generated from bindings and the index |
 
-Still without a home in the libraries: the `Pin.*` properties, `Appliance`, `Style` and `IC`, the `Setting` and `Terminal` symbols, the layout anchor on the root sheet, and the field-side processor symbol (I31). The index document is the first Part 2 question Part 1 depends on.
+In the libraries since checkpoint step 4: the `Pin.*` properties, `Appliance`, `Style` and `IC`, the `Setting` symbol, the multi-unit devices and plates (E56). Still without a home: the layout anchor on the root sheet and the field-side processor symbol (I31). The index document is the first Part 2 question Part 1 depends on.
 
 ## 6. Test case: the electric lock at Sargent
 
@@ -189,9 +189,13 @@ Resolved by the checkpoint. `835` is drawn with the right appliance symbol, `Swi
 
 Closed in rev 6: the lock sense (E50), the semaphore's positions (E48), the unconsumed contact (E49).
 
+## Changes in rev 7
+
+`Terminal` retired for multi-unit symbols (checkpoint E56): the binding paragraph, the §5 table and the library status.
+
 ## Changes in rev 6
 
-The owner's review of the driver types view rev 2 (checkpoint E46 to E55): `Invert` as the logical complement beside `~{}` polarity, on every symbol (E53, I32); absence informational and contradiction an error, with the simulated lock sense as the worked case (E49, E50); the searchlight's pin made colour out (E47); the standard-field list completed; the open items reduced.
+The owner's review of the driver types view rev 2 (checkpoint E46 to E55): `Invert` as the logical complement beside `~{}` polarity, on every symbol (E53, I32); absence informational and contradiction an error, with the simulated lock sense as the worked case (E49, E50); the searchlight's pin made color out (E47); the standard-field list completed; the open items reduced.
 
 ## Changes in rev 5
 
