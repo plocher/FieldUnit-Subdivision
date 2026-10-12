@@ -1,13 +1,15 @@
-# Symbol library triage: the recipe for checkpoint step 4 (2026-10-10, rev 2)
+# Symbol library triage: the recipe for checkpoint step 4 (2026-10-10, rev 3)
 
-- Status: rev 2, the plan as executed. The owner's answers of 2026-10-10 are folded in; the recipe is `tools/contract/apply_symbol_recipe.py` (its `--table` prints it), the gate is `tools/contract/lint_symbol_fields.py`, and the result is the Railroad repo's `symbols/` (PR feat/symbol-libraries). Section 6 records what ran and what is left.
-- Governs: `io-design-checkpoint-2026-10-10.md` (rev 9) and its §4.1 symbol tables. Source inventory: the three libraries in `~/Dropbox/KiCad/InterlockingPlant/symbols/`, 83 symbols, at InterlockingPlant commit 96fc28f.
-- Owner's rulings, 2026-10-10: the new libraries are a copy made in `~/Dropbox/KiCad/Railroad/symbols/`, nothing edited in place; setting names are `lower_snake_case` and the compiler normalises before use; `SemaphoreU2` was meant as `LQ2` and `U3` as `UQ3`; the two detector symbols stay as convenience forks; graphic forks stay, they make compact drawings; Watsonville migrates like every sheet (its exclusion was about evidence, not scope); `Indications` becomes `IndicationCeiling`, the glossary's term; GPIO is `Digital` and `Pixel` only for now (YAGNI on level pins; the pixel pin is the first "protocol on a pin"); `Device-Head-1LED-PWM` retires, a single-colour PWM lamp is `Device-Lamp` through the two-point cast; the capability words for a pin that is in or out by what lands are `binary bidirectional` and `level bidirectional`.
+- Status: rev 3, the plan as executed, plus the owner's `Terminal` question of 2026-10-11 (checkpoint E56, E57): `Terminal` retired for multi-unit symbols, and the libraries hand-maintained with the recipe as the regeneration path. The recipe is `tools/contract/apply_symbol_recipe.py` (its `--table` prints it), the gate is `tools/contract/lint_symbol_fields.py`, the contact sheet is `tools/contract/symbol_contact_sheet.py`, and the result is the Railroad repo's `symbols/` (PR #6). Section 6 records what ran and what is left.
+- Governs: `io-design-checkpoint-2026-10-10.md` (rev 10) and its §4.1 symbol tables. Source inventory: the three libraries in `~/Dropbox/KiCad/InterlockingPlant/symbols/`, 83 symbols, at InterlockingPlant commit 96fc28f, read in place by the recipe and never edited; the copies first made in the Railroad repo were dropped (owner, 2026-10-11: obsolete files clutter the folder; the InterlockingPlant git holds them).
+- Owner's rulings, 2026-10-10: the new libraries are written to `~/Dropbox/KiCad/Railroad/symbols/`, nothing edited in place; setting names are `lower_snake_case` and the compiler normalises before use; `SemaphoreU2` was meant as `LQ2` and `U3` as `UQ3`; the two detector symbols stay as convenience forks; graphic forks stay, they make compact drawings; Watsonville migrates like every sheet (its exclusion was about evidence, not scope); `Indications` becomes `IndicationCeiling`, the glossary's term; GPIO is `Digital` and `Pixel` only for now (YAGNI on level pins; the pixel pin is the first "protocol on a pin"); `Device-Head-1LED-PWM` retires, a single-colour PWM lamp is `Device-Lamp` through the two-point cast; the capability words for a pin that is in or out by what lands are `binary bidirectional` and `level bidirectional`.
 - The `Pin.*` property is named for the pin's base name, `Pin.OCC` for pin `~{OCC}`: polarity is in the pin name, the capability belongs to the function.
 
 ## 1. Rules the recipe applies
 
-What is mechanical in a `.kicad_sym` (text edits, geometry untouched): rename a symbol and its unit blocks; rename a pin; delete a pin; change a pin's electrical type; add, rename or remove a property; copy a symbol to another library. What is hand work: add a pin, change a body, draw a new body.
+What is mechanical in a `.kicad_sym` (text edits, geometry untouched): rename a symbol and its unit blocks; rename a pin; delete a pin; change a pin's electrical type; add, rename or remove a property; copy a symbol to another library; split a symbol into units by capability (below). What is hand work: add a pin, change a body, draw a new body, distribute a split symbol's graphics between its units.
+
+Hand work survives regeneration: a symbol finished in the KiCad editor is named in the script's `HAND_FINISHED` list and carried over from the existing output byte for byte on every run (E57). The lint is the gate either way.
 
 | Disposition | Meaning |
 |---|---|
@@ -16,6 +18,7 @@ What is mechanical in a `.kicad_sym` (text edits, geometry untouched): rename a 
 | rename | copied under a new name; fields and pin names change as listed; body unchanged |
 | copy | a new symbol made from an existing one by rename and retag, no drawing |
 | hand | needs a pin added or a body drawn |
+| split | made multi-unit by the script, one unit per capability (E56) |
 | retire | not copied; the old library keeps it for the sheets that still reference it |
 
 Field rules on every copied symbol:
@@ -27,16 +30,17 @@ Field rules on every copied symbol:
 - Setting fields are renamed to `lower_snake_case`: `Hold_ms` to `hold_ms`, `Stop_deg` to `stop_deg`.
 - `~{}` is added to every asserted-low pin that lacks it (I7). `Invert` is added where a lamp shows a token's complement (E53).
 - `Description` is rewritten where the old text names a Kind or a hardware domain, and so are the body's graphic labels (`NeoPixel`, `I/O`, `12-bit PWM`): a `texts` action renames or deletes them.
+- A DEVICE or PANEL symbol whose pins carry more than one capability is split into units, one per capability in order of first appearance, passive pins (`Column`) with the first (E56). The body graphics go to the shared unit 0 and the Value is fixed in place, so the units mesh on the sheet and show one name; the units are not interchangeable (`ki_locked`). The script puts the whole body in unit 0; the owner's hand pattern (`PanelLock`, `PanelSwitch`, `PanelSignal`) moves each half's drawing into its unit and keeps only the shared outline in unit 0.
 
 Library cut, three libraries by where a symbol is used. Names are placeholders for the owner:
 
 | New library | Holds | From |
 |---|---|---|
 | `RailroadPlant` | plant symbols: TRACK, POLICY, STRUCTURE, APPLIANCE, the layout anchor | `Railroad.kicad_sym` |
-| `RailroadDevice` | every DEVICE and IODRIVER symbol, used on field and desk sheets alike; `Setting`, `Terminal` | `RailroadField.kicad_sym`, plus `Driver-I2C-MAX7313` from the panel library |
+| `RailroadDevice` | every DEVICE and IODRIVER symbol, used on field and desk sheets alike; `Setting` | `RailroadField.kicad_sym`, plus `Driver-I2C-MAX7313` from the panel library |
 | `RailroadDesk` | every PANEL symbol, desk and fascia; CODELINE, MACHINE, COLUMN | `RailroadPanel.kicad_sym`, plus the `Local-*` plates from the field library |
 
-Capability words used below: `binary in`, `binary out`, `binary bidirectional` (an expander or GPIO pin that becomes in or out by what lands on it, I3), `level in`, `level out`, `level bidirectional` (in the vocabulary, on no symbol yet), `position out`, `colour out`, `pixel out`; Setting and Terminal pins are passive and carry no capability.
+Capability words used below: `binary in`, `binary out`, `binary bidirectional` (an expander or GPIO pin that becomes in or out by what lands on it, I3), `level in`, `level out`, `level bidirectional` (in the vocabulary, on no symbol yet), `position out`, `colour out`, `pixel out`; the Setting pin is passive and carries no capability.
 
 ## 2. Plant library (`Railroad.kicad_sym`, 36 symbols)
 
@@ -96,7 +100,6 @@ Topology, policy and structure, 20 symbols, all `keep`: `Bumper`, `IRJ`, `IRJ-EN
 | `Driver-GPIO-Digital` | copy of `Device-Lamp` | | | | `~{LAMP}` to `D`: binary bidirectional, electrical bidirectional | `IC=GPIO`; Role IODRIVER | Value = the core's pin name (I22) |
 | `Driver-GPIO-Analog`, `-PWM`, `-Servo` | not made | | | | | | YAGNI (owner): copies of `Driver-GPIO-Digital` with another `Pin.D` when a layout needs one |
 | `Driver-GPIO-Pixel` | copy of `Device-Lamp` | | | | `D`: pixel out | `IC=GPIO` | a bus (E30) |
-| `Terminal` | copy of `Device-Lamp` | `Terminal` | any | any | one pin `T`, passive | Role TERMINAL; Value `<part>.<function>` | placed in pairs (E38, E39) |
 | `Setting` | copy of `Device-Lamp` | `Setting` | | | one pin `net`, passive | Role SETTING; Value short; `Description` the reason (E37) | |
 | field processor symbol | hand | open | | | | | I31: the house implies the processor today; a `FIELDUNIT` symbol only if the emulated case needs one |
 
@@ -130,12 +133,14 @@ Structure, 9 symbols, all `keep`: `Codeline-Encoding-AAR`, `-Bits`, `-US&S-506`,
 |---|---|---|---|---|
 | keep | 14 | 0 | 9 | 23 |
 | retag or rename, mechanical | 20 | 12 | 15 | 47 |
-| copy, mechanical | 1 | 9 | 0 | 10 |
+| copy, mechanical | 1 | 8 | 0 | 9 |
 | made, with a pin added by the script | 0 | 2 | 0 | 2 |
 | retire | 1 | 8 | 2 | 11 |
-| output symbols | 36 | 21 | 24 | 81 |
+| output symbols | 36 | 20 | 24 | 80 |
+| of which split into units (E56) | 0 | 4 | 5 | 9 |
+| of which hand-finished and carried over (E57) | 0 | 2 | 3 | 5 |
 
-Hand work left: the layout anchor body (task 6), the field processor symbol if I31 needs one, the optional `~{L}` pin on the three-lamp head when a head needs it, and the visual pass over the RGB head's pin placement. Everything else was the script.
+Hand work left: the layout anchor body (task 6), the field processor symbol if I31 needs one, the optional `~{L}` pin on the three-lamp head when a head needs it, the visual pass over the RGB head's pin placement, and the graphics of the six script-split symbols. Everything else was the script.
 
 ## 5a. On the SPCoast sheets
 
@@ -164,16 +169,18 @@ The gate for each sheet: a netlist exported before and after, compared by refere
 ## 6. Execution, as run (2026-10-10)
 
 1. Done: the owner's markup, as the rulings above.
-2. Done: Railroad branch `feat/symbol-libraries`, baseline commit bdb0fd9 with the three source libraries byte-identical under `symbols/`. The `.bak` snapshots were not copied.
+2. Done, then reversed: Railroad branch `feat/symbol-libraries`, baseline commit bdb0fd9 with the three source libraries byte-identical under `symbols/`; dropped again on 2026-10-11, the recipe reads InterlockingPlant directly.
 3. Done: `tools/contract/apply_symbol_recipe.py` wrote the three new libraries; the second commit is the recipe applied.
 4. Done by the script after all: `Device-Lock` and the GPIO symbols are copies with pins renamed; the RGB head and searchlight got their pin from the script. Left by hand: the layout anchor and, if needed, the processor symbol.
-5. Done: `tools/contract/lint_symbol_fields.py`, 81 symbols, 0 errors.
-6. Done: `kicad-cli sym export svg` renders all 81; `symbols/production/contact-sheet.html` shows each symbol baseline beside output, retired ones last. Inspected: PanelLock, Device-Lock, GPIO, the RGB head.
+5. Done: `tools/contract/lint_symbol_fields.py`, 81 symbols, 0 errors; 80 after step 9.
+6. Done: `kicad-cli sym export svg` renders every symbol; `tools/contract/symbol_contact_sheet.py` writes `symbols/production/contact-sheet.html`, each symbol baseline beside every unit of its output, retired ones last. Inspected: PanelLock, Device-Lock, GPIO, the RGB head, the split switch and semaphore.
 7. Left to the owner: the global `sym-lib-table` entries `RailroadPlant`, `RailroadDevice`, `RailroadDesk` beside the old nicknames; the old libraries stay registered until the last sheet migrates. Railroad's AGENTS.md reversed in the PR.
+8. Done (2026-10-11): the owner's `Terminal` question, discussed first. Singletons were the owner's expectation; the answer was multi-unit symbols, which retire `Terminal` outright (checkpoint E56). The owner drew `PanelLock`, `PanelSwitch` and `PanelSignal` as two-unit symbols in the editor (a paste had doubled every pin and some graphics; deduplicated by text, exact duplicate items within a unit) and gave the PCA9685 PWM and Servo symbols differentiation graphics.
+9. Done: `Terminal` deleted; the recipe reads InterlockingPlant, splits the other six symbols by capability, carries the five hand-finished symbols over (`HAND_FINISHED`), writes symbols in KiCad's sorted order so the editor's saves diff small; the lint checks one capability per unit, `ki_locked` and the fixed Value, and the shared parser reports units. 80 symbols, 0 errors; the owner's five symbols byte-identical through a regeneration.
 
 ## 7. Open after the run
 
-1. The visual pass in KiCad, from the contact sheet: the RGB head's pin position; any label the `texts` action did not know about.
+1. The visual pass in KiCad, from the contact sheet: the RGB head's pin position; any label the `texts` action did not know about; the six script-split symbols, whose every unit carries the whole body until their graphics are distributed by hand (then add each to `HAND_FINISHED`).
 2. Sargent's PCA9685 conflict (§5a), to resolve when Sargent is redrawn.
 3. The layout anchor symbol and the field processor symbol (checkpoint task 6, I31).
 4. `level bidirectional` is in the vocabulary and on no symbol; the GPIO level, servo and analog symbols wait for a need.

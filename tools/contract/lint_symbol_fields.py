@@ -9,10 +9,12 @@ Per symbol, by Role:
   no `Pin.*` without a pin; capability from the vocabulary; electrical type agrees with it (the
   device is driven by an "out" capability, so the pin is input; it drives an "in", so output);
   no retired field (a pin's base name as a field, ControlToken, Vital, NormalIs, Chain, Index);
-  every other field, the settings, is lower_snake_case; `Invert` names only this symbol's pins.
+  every other field, the settings, is lower_snake_case; `Invert` names only this symbol's pins;
+  one capability per unit, so a symbol whose pins mix capabilities is multi-unit, with its units
+  not interchangeable and its Value not autoplaced (the units mesh and show one name).
 - IODRIVER: IC present; no Kind; `Pin.*` per pin; electrical type agrees (output for an "out"
   capability, input for "in", bidirectional for "bidirectional"); Address or a GPIO Value rule.
-- TERMINAL, SETTING: one passive pin, no Pin.*.
+- SETTING: one passive pin, no Pin.*.
 - TRACK, POLICY, STRUCTURE, COLUMN, MACHINE, CODELINE_*: Kind allowed; nothing else checked.
 `--table` prints every symbol as a markdown row. Exit 1 on any error.
 """
@@ -32,7 +34,7 @@ LIBRARIES = ("RailroadPlant", "RailroadDevice", "RailroadDesk")
 VOCABULARY = {"binary in", "binary out", "binary bidirectional", "level in", "level out",
               "level bidirectional", "position out", "colour out", "pixel out", "message in", "message out"}
 STRUCTURAL = {"TRACK", "POLICY", "STRUCTURE", "COLUMN", "MACHINE", "CODELINE_TRANSPORT", "CODELINE_ENCODING"}
-FUNCTIONAL = {"APPLIANCE", "DEVICE", "PANEL", "IODRIVER", "TERMINAL", "SETTING"}
+FUNCTIONAL = {"APPLIANCE", "DEVICE", "PANEL", "IODRIVER", "SETTING"}
 RETIRED_FIELDS = {"ControlToken", "Vital", "NormalIs", "Chain", "Index", "Kind"}
 NOT_SETTINGS = {"Role", "Appliance", "Style", "IC", "Address", "Invert", "IndicationToken", "Color", "CP", "TC",
                 "IndicationCeiling", "Display", "Processor", "Milepost", "Reference", "Value", "Footprint",
@@ -97,7 +99,21 @@ def lint_symbol(lib: str, name: str, sym: dict) -> list[tuple[str, str]]:
                     err(f"Invert names {p}, not a pin of this symbol")
     if role == "IODRIVER" and "Address" not in props and props.get("IC") != "GPIO":
         err("Address missing on a bus device")
-    if role in {"TERMINAL", "SETTING"}:
+    if role in {"DEVICE", "PANEL"}:
+        caps = {pin_caps.get(base(n), "?") for n, _, _ in function_pins}
+        pin_units = {u: p for u, p in sym["units"].items() if p}
+        for u, names in pin_units.items():
+            unit_caps = {pin_caps.get(base(n), "?") for n in names if n not in MEMBERSHIP_PINS}
+            if len(unit_caps) > 1:
+                err(f"unit {u} mixes {', '.join(sorted(unit_caps))}; one capability per unit")
+        if len(caps) > 1 and len(pin_units) < 2:
+            err(f"pins mix {', '.join(sorted(caps))} in one unit; split the symbol into units")
+        if len(pin_units) > 1:
+            if not sym["locked"]:
+                err("units must be marked not interchangeable")
+            if sym["value_autoplace"]:
+                err("Value must not be autoplaced on a multi-unit symbol")
+    if role == "SETTING":
         if len(pins) != 1 or pins[0][2] != "passive":
             err("wants exactly one passive pin")
         if pin_caps:

@@ -3,11 +3,18 @@
 
     python3 tools/contract/apply_symbol_recipe.py [--src DIR] [--out DIR] [--table]
 
-Reads the three baseline libraries (Railroad, RailroadField, RailroadPanel) and writes the three
-new ones (RailroadPlant, RailroadDevice, RailroadDesk) by text-level edits that keep every
-untouched byte: rename a symbol, rename a pin, change a pin's electrical type, add, rename or
-remove a property, copy a symbol. The one geometric edit is adding a pin to a symbol that has
-none (the RGB head), placed at the body's right edge for the visual pass to tidy.
+Reads the three baseline libraries (Railroad, RailroadField, RailroadPanel, in the InterlockingPlant
+repo) and writes the three new ones (RailroadPlant, RailroadDevice, RailroadDesk, in the Railroad
+repo) by text-level edits that keep every untouched byte: rename a symbol, rename a pin, change a
+pin's electrical type, add, rename or remove a property, copy a symbol. Two geometric edits: a
+pin added to a symbol that has none (the RGB head), at the body's right edge; and the unit split,
+one unit per capability on a device or plate whose pins mix them (lever contacts and lamps, drive
+and sense, arm and lamp), with the body graphics in the shared unit 0 and the Value fixed in place so
+that the units mesh on the sheet and show one name. Both are left for the visual pass to tidy.
+
+Regeneration keeps hand work: every symbol named in HAND_FINISHED is carried over from the
+existing output library, byte for byte, instead of the generated block. Finish a symbol in the
+KiCad editor, add its name to the list, regenerate; the lint is the gate either way.
 
 The recipe is the RECIPE list below, one entry per output symbol. It is the machine form of
 docs/review/symbol-library-triage-2026-10-10.md; `--table` prints it as a markdown table so the
@@ -28,11 +35,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from kicad_services.sch_text import blocks, end_of, replace_spans  # noqa: E402
 
-SRC = Path.home() / "Dropbox/KiCad/Railroad/symbols"
-OUT = SRC
+SRC = Path.home() / "Dropbox/KiCad/InterlockingPlant/symbols"
+OUT = Path.home() / "Dropbox/KiCad/Railroad/symbols"
 SOURCES = {"Railroad": "Railroad.kicad_sym", "RailroadField": "RailroadField.kicad_sym",
            "RailroadPanel": "RailroadPanel.kicad_sym"}
 TARGETS = {"RailroadPlant": "Railroad", "RailroadDevice": "RailroadField", "RailroadDesk": "RailroadPanel"}
+# Hand-finished in the KiCad editor; carried over from the existing output on every run.
+HAND_FINISHED = {"RailroadDesk": ["PanelSwitch", "PanelSignal", "PanelLock"],
+                 "RailroadDevice": ["Driver-I2C-PCA9685-PWM", "Driver-I2C-PCA9685-Servo"]}
 
 BI, BO, BB = "binary in", "binary out", "binary bidirectional"
 LI, LO = "level in", "level out"
@@ -168,10 +178,6 @@ P(dict(src=(F, "Device-Lamp-Bit"), out="RailroadDevice", name="Driver-GPIO-Pixel
        texts={"I/O ${VALUE}": "PIXEL ${VALUE}"},
        description="Processor pin driving a pixel chain: a bus, one colour-out slot per Address. "
                    "Value = the board core's pin name."))
-P(dict(src=(F, "Device-Lamp-Bit"), out="RailroadDevice", name="Terminal", role="TERMINAL",
-       drop=["Kind", "OUT"], add={"Reference": "T"}, pins={"~{OUT}": ("T", "passive")}, texts={"I/O ${VALUE}": "${VALUE}"},
-       description="Terminal: one end of a wire that cannot be drawn. Placed in pairs with the same Value, "
-                   "<part>.<function>; the compiler merges the two nets within the interlocking hierarchy."))
 P(dict(src=(F, "Device-Lamp-Bit"), out="RailroadDevice", name="Setting", role="SETTING",
        drop=["Kind", "OUT"], add={"Reference": "SET"}, pins={"~{OUT}": ("net", "passive")}, texts={"I/O ${VALUE}": "SET ${VALUE}"},
        description="Setting: attaches settings to a net; everything on the net inherits them. Value is a short "
@@ -354,7 +360,52 @@ def apply(entry: dict, b: str) -> str:
         b = set_prop(b, f"Pin.{p}", cap)
     if "texts" in entry:
         b = edit_texts(b, entry["texts"])
+    if entry.get("role", "") in {"DEVICE", "PANEL"} or entry.get("appliance"):
+        b = split_units(b, name)
     return b
+
+
+def unit_items(ub: str) -> list[tuple[str, str]]:
+    """[(head, text)] of a unit block's children: graphics and pins, in file order."""
+    out = []
+    for m in re.finditer(r"\n\t\t\t\(([a-z_]+)", ub):
+        s = m.start() + 4
+        out.append((m.group(1), ub[s:end_of(ub, s)]))
+    return out
+
+
+def split_units(b: str, name: str) -> str:
+    """One unit per capability (triage §1). Unit 0 takes every graphic; pins group by their
+    Pin.<base> capability in order of first appearance; passive pins (Column) join the first
+    group. Only acts on a symbol whose pins mix capabilities and is not yet multi-unit."""
+    props = dict(re.findall(r'\n\t\t\(property "([^"]+)" "([^"]*)"', b))
+    units = list(blocks(b, "symbol", 2))
+    if len(units) > 2 or not units:
+        return b
+    items = [it for s, e in units for it in unit_items(b[s:e])]
+    graphics = [t for h, t in items if h != "pin"]
+    pins = [t for h, t in items if h == "pin"]
+    groups: dict[str, list[str]] = {}
+    for t in pins:
+        pname = re.search(r'\(name "([^"]*)"', t).group(1)
+        cap = props.get(f"Pin.{base(pname)}")
+        groups.setdefault(cap or "_", []).append(t)
+    if "_" in groups and len(groups) > 1:  # passive pins join the first capability group
+        first = next(w for w in groups if w != "_")
+        groups[first] = groups.pop("_") + groups[first]
+    if len(groups) < 2:
+        return b
+    def unit(n: int, body: list[str]) -> str:
+        return f'(symbol "{name}_{n}_1"' + "".join("\n\t\t\t" + t for t in body) + "\n\t\t)"
+    new = [unit(0, graphics)] + [unit(i + 1, g) for i, g in enumerate(groups.values())]
+    b = b[: units[0][0] - 3] + "".join("\n\t\t" + u for u in new) + b[units[-1][1]:]
+    v = re.search(r'\n\t\t\(property "Value" ', b)
+    vs, ve = v.start() + 3, end_of(b, v.start() + 3)
+    vb = b[vs:ve]
+    vb = (vb.replace("(do_not_autoplace no)", "(do_not_autoplace yes)") if "(do_not_autoplace" in vb
+          else vb.replace("\n\t\t\t(effects", "\n\t\t\t(do_not_autoplace yes)\n\t\t\t(effects", 1))
+    b = b[:vs] + vb + b[ve:]
+    return set_prop(b, "ki_locked", "")
 
 
 def symbol_blocks(text: str) -> tuple[str, dict[str, str]]:
@@ -418,9 +469,22 @@ def main(argv=None) -> int:
             return 1
     for target, src_lib in TARGETS.items():
         header = sources[src_lib][0]
-        text = header + "".join("\n\t" + b for b in outputs[target]) + "\n)\n"
-        (a.out / f"{target}.kicad_sym").write_text(text)
-        print(f"{target}.kicad_sym: {len(outputs[target])} symbols")
+        made = {re.match(r'\(symbol "((?:[^"\\]|\\.)*)"', b).group(1): b for b in outputs[target]}
+        out_path = a.out / f"{target}.kicad_sym"
+        existing = symbol_blocks(out_path.read_text())[1] if out_path.exists() else {}
+        kept = 0
+        for name in HAND_FINISHED.get(target, []):
+            if name not in made:
+                print(f"error: hand-finished {target}:{name} is not produced by the recipe", file=sys.stderr)
+                return 1
+            if name in existing:
+                made[name] = existing[name]
+                kept += 1
+            else:
+                print(f"warning: hand-finished {target}:{name} not in the existing output; generated block used")
+        text = header + "".join("\n\t" + made[n] for n in sorted(made)) + "\n)\n"
+        out_path.write_text(text)
+        print(f"{target}.kicad_sym: {len(made)} symbols, {kept} hand-finished carried over")
     return 0
 
 
