@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""Render the symbol libraries and write the contact sheet: baseline beside recipe output.
+"""Render the symbol libraries and write the contact sheet, every unit of every symbol.
 
-    python3 tools/contract/symbol_contact_sheet.py [--out DIR]
+    python3 tools/contract/symbol_contact_sheet.py [--libdir DIR] [--out DIR]
 
-Renders every symbol of the three baseline libraries (InterlockingPlant) and the three output
-libraries (Railroad) with `kicad-cli sym export svg` into <out>/svg-<library>/, one SVG per unit,
-and writes <out>/contact-sheet.html: one row per recipe entry with the baseline symbol on the
-left and every unit of the output symbol on the right, retired symbols last. The default <out>
-is the Railroad repo's `symbols/production/`, which is gitignored.
+Renders RailroadPlant, RailroadDevice and RailroadDesk with `kicad-cli sym export svg` into
+<out>/svg-<library>/, one SVG per unit, and writes <out>/contact-sheet.html: one row per symbol
+with its Role, Appliance, Style or IC and all of its units. The default <out> is the Railroad
+repo's `symbols/production/`, which is gitignored. The render is also the parse check.
 """
 
 from __future__ import annotations
@@ -20,9 +19,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from apply_symbol_recipe import OUT, RECIPE, RETIRED, SOURCES, SRC, TARGETS  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from kicad_services.sch_text import library_symbols  # noqa: E402
 
+LIBDIR = Path.home() / "Dropbox/KiCad/Railroad/symbols"
+LIBRARIES = ("RailroadPlant", "RailroadDevice", "RailroadDesk")
 KICAD_CLI = os.environ.get("KICAD_CLI") or shutil.which("kicad-cli") or "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
 STYLE = ("body{font:13px sans-serif}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px;"
          "vertical-align:top}img{max-width:260px;max-height:200px;background:#fff;margin:2px}")
@@ -36,37 +37,31 @@ def render(lib_file: Path, out_dir: Path) -> dict[str, list[str]]:
                    check=True, capture_output=True)
     files: dict[str, list[str]] = {}
     for f in sorted(out_dir.iterdir()):
-        name, _, unit = f.stem.rpartition("_unit")
+        name, _, _ = f.stem.rpartition("_unit")
         files.setdefault(name, []).append(f.name)
     return files
 
 
-def imgs(folder: str, names: list[str]) -> str:
-    return "".join(f'<img src="{folder}/{html.escape(n)}" title="{html.escape(n)}">' for n in names)
-
-
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--out", type=Path, default=OUT / "production")
+    ap.add_argument("--libdir", type=Path, default=LIBDIR)
+    ap.add_argument("--out", type=Path, default=None)
     a = ap.parse_args(argv)
-    rendered = {}
-    for lib, fn in SOURCES.items():
-        rendered[lib] = render(SRC / fn, a.out / f"svg-{lib}")
-    for lib in TARGETS:
-        rendered[lib] = render(OUT / f"{lib}.kicad_sym", a.out / f"svg-{lib}")
+    out = a.out or a.libdir / "production"
     rows = []
-    for e in RECIPE:
-        src_lib, src_name = e["src"]
-        out_lib, out_name = e["out"], e.get("name", src_name)
-        rows.append(f"<tr><td>{html.escape(src_lib)}:{html.escape(src_name)}</td><td>{imgs('svg-' + src_lib, rendered[src_lib].get(src_name, []))}</td>"
-                    f"<td>{imgs('svg-' + out_lib, rendered[out_lib].get(out_name, []))}</td><td>{html.escape(out_lib)}:{html.escape(out_name)}</td></tr>")
-    for src_lib, src_name in sorted(RETIRED):
-        rows.append(f"<tr><td>{html.escape(src_lib)}:{html.escape(src_name)}</td><td>{imgs('svg-' + src_lib, rendered[src_lib].get(src_name, []))}</td><td></td><td>retired</td></tr>")
+    for lib in LIBRARIES:
+        lib_file = a.libdir / f"{lib}.kicad_sym"
+        files = render(lib_file, out / f"svg-{lib}")
+        for name, sym in library_symbols(lib_file.read_text()).items():
+            p = sym["properties"]
+            key = " : ".join(x for x in (p.get("Role", ""), p.get("Appliance", p.get("IC", "")), p.get("Style", "")) if x)
+            imgs = "".join(f'<img src="svg-{lib}/{html.escape(f)}" title="{html.escape(f)}">' for f in files.get(name, []))
+            rows.append(f"<tr><td>{lib}</td><td>{html.escape(name)}</td><td>{html.escape(key)}</td><td>{imgs}</td></tr>")
     page = (f"<!doctype html><meta charset=utf-8><title>Symbol contact sheet</title><style>{STYLE}</style>\n"
-            "<h1>Symbol contact sheet: baseline beside recipe output (every unit)</h1>"
-            "<table><tr><th>Baseline</th><th>Old</th><th>New</th><th>Output</th></tr>\n" + "\n".join(rows) + "\n</table>\n")
-    (a.out / "contact-sheet.html").write_text(page)
-    print(f"{a.out / 'contact-sheet.html'}: {len(rows)} rows")
+            "<h1>Symbol contact sheet</h1><table><tr><th>Library</th><th>Symbol</th><th>Role : Appliance or IC : Style</th><th>Units</th></tr>\n"
+            + "\n".join(rows) + "\n</table>\n")
+    (out / "contact-sheet.html").write_text(page)
+    print(f"{out / 'contact-sheet.html'}: {len(rows)} rows")
     return 0
 
 
