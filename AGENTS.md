@@ -22,7 +22,7 @@ never copy or reimplement interlocking rules here.
 | --- | --- | --- |
 | `~/Dropbox/KiCad/Railroad/SPCoast/` | the unified KiCad project (git; hand-maintained since the 2026-10-07 cutover) | Plant topology, desk and field wiring as drawn |
 | `~/Dropbox/KiCad/Railroad/Archive/SPCoast/<Project>/` | the per-project drawings as of 2026-10-07 (read-only) | Reference for checking the unified project |
-| `~/Dropbox/KiCad/Railroad/symbols/` | `RailroadPlant`, `RailroadDevice`, `RailroadDesk.kicad_sym` | Symbol and field contracts, hand-maintained in KiCad since 2026-10-11; gate `tools/contract/lint_symbol_fields.py`, render check `tools/contract/symbol_contact_sheet.py`. Symbols are keyed by fields (Role, Appliance, Style, `IC`, `Pin.*`, `Invert`), never by name. The old `Railroad`, `RailroadPanel`, `RailroadField` libraries in `~/Dropbox/KiCad/InterlockingPlant/symbols/` stay registered only for sheets not yet migrated. |
+| `~/Dropbox/KiCad/Railroad/symbols/` | `Railroad-Trackplan`, `Railroad-Office`, `Railroad-Field`, `Railroad-HardwareIO.kicad_sym` | Symbol and field contracts, hand-maintained in KiCad since 2026-10-11; gate `tools/contract/lint_symbol_fields.py`, render check `tools/contract/symbol_contact_sheet.py`. Symbols are keyed by fields (Role, Appliance, Style, `IC`, `Pin.*`, `Invert`), never by name. The old `Railroad`, `RailroadPanel`, `RailroadField` libraries in `~/Dropbox/KiCad/InterlockingPlant/symbols/` stay registered only for sheets not yet migrated. |
 | `~/Dropbox/Arduino/libraries/FieldUnit` | Header-only C++17 library (git) | Interlocking logic, codecs, `PlantSerializer`, `cTcMachine`, and the `examples/spcoast_ctc` desk sketch |
 | this repo | Tooling and runtime | Everything derived from the above |
 

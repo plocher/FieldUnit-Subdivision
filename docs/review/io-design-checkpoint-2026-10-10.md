@@ -1,4 +1,4 @@
-# I/O design checkpoint (2026-10-10, rev 10)
+# I/O design checkpoint (2026-10-10, rev 11)
 
 - Status: a record of the design conversation of 2026-10-09 and 10, for the owner's confirmation. "Explicit" is what the owner said. "Implicit" is what followed from it in the drafts and the spike without being said; each one needs a yes or a no. Rev 2 applies the owner's review of rev 1; the changes are listed at the end.
 - Governs: `driver-architecture-foundation.md`. Companions: `environment-view-2026-10-09.md` (rev 6), `driver-types-view-2026-10-09.md` (rev 3), and the spike in `~/Dropbox/KiCad/Railroad/Scratch/` (not git; generators and the binding pass in its `tools/`, reports in `production/`). The digest and survey that preceded this record are in git history only.
@@ -89,6 +89,12 @@ Vocabulary check before the cutover (owner, 2026-10-11)
 - E63. Switch Styles. `manual` and `manual_sensed` stay: the Style names who moves the points (by hand, or by a switch machine), and `local` would name the other axis, who controls, which the `Local-*` plates already carry; "hand-throw" is history, not the term. Dual control is the new Style `dual`: `Switch_Dual` on the plant, a copy of `Switch_Powered`, served by `Device-Switch` plus `Device-Lock` (Style lists `powered, lock, dual` and `lock, dual`) with a `Local-Switch` plate; the model has no crank, so hand mode is the local lever driving the motor under a release, the electric lock flow applied to a powered switch, and while released the dispatcher's control is ignored and the switch is out of correspondence. A selector contact `~{HAND}` is a later pin if a layout has one. The behaviour is vital logic and goes to FieldUnit as a proposed ADR (0006), with the owner's comparison of electrically locked and dual-control switches as its source.
 - E64. Cutover. The recipe was worth keeping only while a bulk rule change was cheaper by script than by hand; the vocabulary check (E58 to E63) found none left, so the three libraries in the Railroad repo are the hand-maintained source from 2026-10-11. The recipe is removed by history-then-remove (last at Subdivision commit 3325807; the triage document rev 4 is its record); the lint stays as the field gate and the contact sheet as the render check; a future bulk field edit is a one-off in-place script committed beside what it changed. The InterlockingPlant libraries stay registered only for the sheets not yet migrated.
 
+Heads, pin words, four libraries, field layout (owner, 2026-10-12)
+- E65. Head Styles by what the head is, not how the model realises it. `CL`, color light: one light source showing one color at a time, the searchlight with its roundel on the prototype, one RGB point in the model; `Device-Head-CL` with `transition_ms` for the vane. `CPL`, color-position light: colored lamps in fixed positions, one lit at a time, the three-lamp head and the multiplexed head; `Device-Head-CPL` and `Device-Head-CPL-Encoder`. `PCL`, position-color light, the B&O system, and `PL`, position light, the PRR rows of amber, are reserved words with no symbols. Semaphore Styles are `LQ` and `UQ`. `Signal Head - Searchlight` and `Device-Head-Searchlight` are gone; `Signal Head - CPL` is added so a CPL device has an appliance to bind to (I9). The owner drew the device side in the editor; the plant side and the glossary follow.
+- E66. Capability words carry no direction. The word is the primary alone: `binary`, `level`, `position`, `color`, `pixel`, `message`. Direction is the KiCad electrical type, and a binding is valid when the primaries match and the types are complementary, ERC's own rule: input meets output, bidirectional meets either. Saying direction twice, from opposite points of view, was the confusion on `Device-Lock` (`UNLOCK` typed input, worded "binary out") and the reason the cTc MAX7313 needed a per-product variant with fixed pin types. A chip pin typed bidirectional and worded `binary` takes whatever lands on it (I3). The casts are primary to primary. "One capability per unit" now means one word and one pin type per unit. Earlier entries that say `binary in` or `binary out` read as the primary plus the pin type.
+- E67. Four libraries by use, named for the sheet they serve: `Railroad-Trackplan` (plant symbols, the layout anchor), `Railroad-Office` (the machine's plates, column, machine, code line), `Railroad-Field` (device symbols and the Local plates), `Railroad-HardwareIO` (chips, GPIO pins, `Setting`). "Plant" is in no library name; "Office" replaces "Desk", which the glossary retires. The owner's editor pass of 2026-10-11 and 12 is the baseline (CL and CPL devices, LQ and UQ devices, `Driver-I2C-MAX7311`, the cTc MAX7313 variant, `Device-Switch-OS` with `~{OCC}` in its own unit, `Local-Switch-NoLamp` retired). One-off scripts that change the libraries live in the Railroad repo at `symbols/edits/`, dated.
+- E68. The field layout, what and why, agreed in principle: a sheet for a location's local control panels, indicators and inputs on structures, crew diagrams and maintainer elements, read by the crew and maintainer, the runtime's crew view and the fascia builder, never by the firmware; it holds only facts the I/O sheet cannot (panel, position, label, pattern). Membership by pin is the office machine's structure and does not suit the field. Open until the grounding test: the owner sketches Sargent's field layout, every fact already on the I/O sheet is struck, and what survives decides whether the layout collapses into a `Panel` field or face units of the plates, or needs symbols of its own. `Local-Lamp` against `Device-Lamp` waits on that.
+
 The desk and fascia spike (owner, 2026-10-10)
 - E41. Column membership stays as drawn: a `Column` pin on each desk appliance meeting the column symbol's backplane pins. The column matters for rendering the model and the panel boards. A machine with another arrangement forks the expander symbol; the `IC` is unchanged.
 - E42. Desk lamp join. The Value is a human note like a setting. If the Value alone resolves to an indication, it is the join. If the Value does not resolve and `IndicationToken` is set, the token list is the join. Both resolving and different is a compiler error, "ambiguous symbol". An unprefixed token is scoped to the column's interlocking; `<interlocking>:<token>` names another's.
@@ -169,9 +175,10 @@ Appliance symbols (Role APPLIANCE), today's Kinds mapped:
 | `Derail` (was `Switch_Powered_Derail`) | switch | derail | DERAIL |
 | `Track Circuit` | track_circuit | | TRACK_CIRCUIT |
 | `Mast_Single`, `_Double`, `_Dwarf` | mast | single, double, dwarf | MAST_* |
-| `Signal Head - CL` | head | CL | HEAD_COLOR_LIGHT |
-| `Signal Head - Searchlight` (new) | head | searchlight | copy of the CL head; what `Device-Head-Searchlight` binds to (E61) |
-| `Signal Head - SemaphoreU2`, `U3` | head | semaphore_lq, semaphore_uq | HEAD_SEMAPHORE_2POS, _3POS (the quadrant is the Style and fixes the aspect set, E48) |
+| `Signal Head - CL` | head | CL | one light source, one color at a time: searchlight roundel or one RGB point (E65) |
+| `Signal Head - CPL` (new) | head | CPL | colored lamps in fixed positions, one lit at a time: three-lamp or multiplexed (E65) |
+| `Signal Head - SemaphoreLQ2` | head | LQ | two positions, STOP and CLEAR (E48, E65) |
+| `Signal Head - SemaphoreUQ3` | head | UQ | three positions, STOP, APPROACH, CLEAR (E48, E65) |
 | `MaintainerCall` | lamp | maintainer_call | MAINTAINER_CALL |
 | `AUXILIARY` | lamp | non_vital | AUXILIARY (Style word `non_vital`, E58) |
 | `Contact` (new) | contact | auxiliary, button, door, … | the generic non-vital input, the complement of `AUXILIARY`; its office indication is `<Value>K` (was DEVICE/INPUT_BIT with no appliance) |
@@ -186,11 +193,11 @@ Device symbols (Role DEVICE). A device binds to an appliance of equal Appliance 
 | `Device-Switch-ManualSensed` | switch | manual_sensed | `~{N}`, `~{R}` binary in |
 | `Device-Lock` | switch | lock | the lock mechanism: `UNLOCK` binary out; `~{LOCKED}` binary in, optional, simulated with quality SIMULATED when unbound (E50); one Value with its `Device-Switch` (E35, I25). Today's `Local-Switch` and `Local-Lock` on the Sargent sheet are not this: they are the crew's local lever and lamps, Role PANEL on a field sheet, the "local client" of task 4 |
 | `Device-TrackCircuit` | track_circuit | | `~{OCC}` binary in; setting `hold_ms` |
-| `Device-Head-CL-3Lamp` | head | CL | `~{R}`, `~{Y}`, `~{G}` binary out; `~{L}` (packaging) |
-| `Device-Head-CL-RGB` | head | CL | `RGB` color out |
-| `Device-Head-CL-Mux2` | head | CL | `S0`, `S1` binary out (a select code: no asserted state) |
-| `Device-Head-Semaphore` | head | semaphore_lq, semaphore_uq | `ARM` position out; `~{LAMP}` binary out (E48) |
-| `Device-Head-Searchlight` | head | searchlight | `RGB` color out; the vane is rendering (E47; not drawn yet) |
+| `Device-Head-CL` | head | CL | `RGB` color (input); `transition_ms` renders the vane (E47, E65) |
+| `Device-Head-CPL` | head | CPL | `~{R}`, `~{Y}`, `~{G}` binary (input) |
+| `Device-Head-CPL-Encoder` | head | CPL | `S0`, `S1` binary (input): a select code, no asserted state (E28) |
+| `Device-Head-Semaphore-LQ` | head | LQ | `ARM` position (input); `~{LAMP}` binary (input) (E48, E65) |
+| `Device-Head-Semaphore-UQ` | head | UQ | `ARM` position (input); `~{LAMP}` binary (input) (E48, E65) |
 | `Device-Lamp` | lamp | | `~{LAMP}` binary out |
 | `Device-Contact` | contact | | `~{IN}` binary in |
 
@@ -251,6 +258,10 @@ Next steps, in order
 7. The compiler's I/O section and the model schema.
 8. Glossary amendments the foundation lists, plus the new terms: capability, cast, binding, setting scope, chip setting, `Invert`. Done ahead of this: the electric lock entry and `WLQK` (FieldUnit PR #33).
 9. The alternatives ADR for Part 2, with proposals #1, #2 and #3, once Part 1 is stable.
+
+## Changes in rev 11
+
+Owner's notes on the libraries and the field layout (2026-10-12): head Styles CL, CPL, LQ, UQ (E65); capability words without direction (E66); the four libraries (E67); the field layout's what and why with the grounding test open (E68); §4.1 head rows.
 
 ## Changes in rev 10
 
