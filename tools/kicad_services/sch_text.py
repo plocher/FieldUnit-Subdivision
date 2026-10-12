@@ -49,6 +49,25 @@ def replace_spans(text: str, edits: list[tuple[int, int, str]]) -> str:
 
 _STANDARD_PROPERTIES = frozenset({"Reference", "Value", "Footprint", "Datasheet", "Description",
                                   "ki_keywords", "ki_fp_filters"})
+_PROPERTY = re.compile(r'\n\t\t\(property "((?:[^"\\]|\\.)*)" "((?:[^"\\]|\\.)*)"')
+
+
+def unquote(s: str) -> str:
+    """The value of a KiCad s-expression string body: undo the backslash escapes."""
+    return re.sub(r"\\(.)", lambda m: {"n": "\n", "t": "\t"}.get(m.group(1), m.group(1)), s)
+
+
+def library_standard_properties(text: str) -> dict[str, dict[str, str]]:
+    """{symbol name: {standard field: value}} for the fields library_symbols() omits.
+
+    Values are unescaped (a Description may hold a quoted word); fields a symbol lacks are absent.
+    """
+    out = {}
+    for s, e in blocks(text, "symbol", 1):
+        b = text[s:e]
+        name = re.match(r'\(symbol "([^"]+)"', b).group(1)
+        out[name] = {unquote(k): unquote(v) for k, v in _PROPERTY.findall(b) if k in _STANDARD_PROPERTIES}
+    return out
 
 
 def library_symbols(text: str) -> dict[str, dict]:
