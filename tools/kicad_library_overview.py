@@ -19,14 +19,18 @@ a right-click on a table header offers hide this column, hide its group, show on
 all. Fields that no symbol fills start hidden; hiding a column that is a sort key drops it from the
 sort. Column widths can be dragged at the header's right edge (the default width is the larger of a
 per-kind minimum and the measured header title at the current text size) and columns reordered by
-dragging a header onto another; the graphics have an S/M/L/XL size control (240, 480, 720 and
-1080 px: the length of each image's longer side, the shorter side following the SVG's own aspect
-ratio, read from the width and height kicad-cli writes on the root element and emitted on each img
-as `--ar`, so a tall symbol and a wide one are equally legible) and the text an S/M/L size control
-(10, 11.5 and 13.5 points) with a "pt" box for any other size; every text rule inherits the one
-`--fs` variable on the body, so the whole page scales together. The column set, order, dragged
-widths, image size, text size, sort keys and folded groups are remembered in localStorage when
-available (under a versioned key); the value filters and the measured default widths are not.
+dragging a header onto another; the graphics have an S/M/L/XL size control that sets one common
+scale for every image (2.5, 4, 6 and 9 px per mm of the drawing, read from the width and height
+kicad-cli writes on the root element and emitted on each img as `--w` and `--h` in mm), so pins,
+text and bodies are the same size across symbols and a 16-pin chip is simply taller than a 4-pin
+unit, with each image's longer side clamped between 120 px and four times the level's nominal size
+(240, 480, 720 and 1080 px) so a tiny marker stays legible and a huge symbol stays in the table (an
+image of unknown size is drawn in a nominal square); the Graphics column defaults to the nominal
+width and the units of a multi-unit symbol wrap within it. The text has an S/M/L size control (10,
+11.5 and 13.5 points) with a "pt" box for any other size; every text rule inherits the one `--fs`
+variable on the body, so the whole page scales together. The column set, order, dragged widths,
+image size, text size, sort keys and folded groups are remembered in localStorage when available
+(under a versioned key); the value filters and the measured default widths are not.
 
 The default <out> is <directory of the first library>/production/overview/ (the Railroad repo
 gitignores production/). `--no-render` skips kicad-cli and omits the graphics column.
@@ -64,7 +68,11 @@ _SNAKE_CASE = re.compile(r"^[a-z][a-z0-9_]*$")
 _SVG_NAME = re.compile(r"^(.*)_unit(\d+)$")
 _SVG_ROOT = re.compile(r"<svg\b[^>]*>", re.S)
 _SVG_LENGTH = re.compile(r'\b(width|height)\s*=\s*"\s*([0-9.]+)\s*([a-z%]*)\s*"')
-_SVG_UNITS_PER_INCH = {"": 96.0, "px": 96.0, "in": 1.0, "cm": 2.54, "mm": 25.4, "pt": 72.0, "pc": 6.0}
+_SVG_MM_PER_UNIT = {"": 25.4 / 96, "px": 25.4 / 96, "in": 25.4, "cm": 10.0, "mm": 1.0, "pt": 25.4 / 72, "pc": 25.4 / 6}
+IMG_SCALES = {"S": 2.5, "M": 4.0, "L": 6.0, "XL": 9.0}       # px per mm of drawing per size level
+IMG_NOMINAL = {"S": 240, "M": 480, "L": 720, "XL": 1080}    # px: the Graphics column width and the unknown-size square
+IMG_FLOOR = 120                                             # px: an image's longer side is at least this ...
+IMG_CEILING_FACTOR = 4                                      # ... and at most this times the level's nominal size
 
 
 @dataclass
@@ -76,7 +84,7 @@ class Symbol:
     units: dict[int, list[str]]               # unit number -> pin names (0 = common to all units)
     extends: str | None = None
     graphics: list[str] = field(default_factory=list)  # SVG paths relative to the page
-    aspects: dict[str, float] = field(default_factory=dict)  # SVG path -> width / height (1 when unknown)
+    sizes: dict[str, tuple[float, float]] = field(default_factory=dict)  # SVG path -> (width, height) mm; absent when unknown
 
 
 def find_kicad_cli() -> str | None:
@@ -149,28 +157,29 @@ def render(kicad_cli: str, lib_file: Path, svg_dir: Path) -> dict[str, list[str]
     return {name: [n for _, n in sorted(units)] for name, units in files.items()}
 
 
-def svg_aspect(svg_file: Path) -> float:
-    """width / height from the root <svg> tag's width and height attributes (any CSS length unit; kicad-cli
-    writes mm), or 1.0 when the file or either attribute is unreadable."""
+def svg_size_mm(svg_file: Path) -> tuple[float, float] | None:
+    """(width, height) in mm from the root <svg> tag's width and height attributes (any CSS length unit,
+    unitless counts as px; kicad-cli writes mm), or None when the file, the tag or either attribute is
+    unreadable or a side is not positive."""
     try:
         head = svg_file.read_text(errors="replace")[:4096]
     except OSError:
-        return 1.0
+        return None
     root = _SVG_ROOT.search(head)
     if not root:
-        return 1.0
+        return None
     lengths = {attr: (value, unit) for attr, value, unit in _SVG_LENGTH.findall(root.group(0))}
     sides = []
     for attr in ("width", "height"):
         value, unit = lengths.get(attr, ("", ""))
-        if unit not in _SVG_UNITS_PER_INCH:
-            return 1.0
+        if unit not in _SVG_MM_PER_UNIT:
+            return None
         try:
-            sides.append(float(value) / _SVG_UNITS_PER_INCH[unit])
+            sides.append(float(value) * _SVG_MM_PER_UNIT[unit])
         except ValueError:
-            return 1.0
+            return None
     width, height = sides
-    return width / height if width > 0 and height > 0 else 1.0
+    return (width, height) if width > 0 and height > 0 else None
 
 
 # --- page -----------------------------------------------------------------------------------
@@ -231,19 +240,18 @@ ul.pins,ul.units{margin:0;padding-left:1.1em}
 ul.pins .num{color:#666}
 ul.pins .etype{color:#36a}
 ul.pins .cap{color:#262}
-table[data-size=S]{--img:240px}
-table[data-size=M]{--img:480px}
-table[data-size=L]{--img:720px}
-table[data-size=XL]{--img:1080px}
-td.graphics img{width:calc(var(--img,720px) * min(1, var(--ar,1)));height:calc(var(--img,720px) * min(1, 1 / var(--ar,1)));
-  background:#fff;border:1px solid #ddd;box-sizing:border-box;margin:2px;vertical-align:top}
-"""
+td.graphics img{width:var(--nom,720px);height:var(--nom,720px);background:#fff;border:1px solid #ddd;box-sizing:content-box;margin:2px;vertical-align:top}
+td.graphics img.mm{--f:clamp(calc(var(--floor,120) / max(var(--w), var(--h))), var(--scale,6), calc(var(--ceil,2880) / max(var(--w), var(--h))));
+  width:calc(var(--w) * var(--f) * 1px);height:calc(var(--h) * var(--f) * 1px)}
+""" + "".join(f"table[data-size={s}]{{--scale:{IMG_SCALES[s]:g};--nom:{IMG_NOMINAL[s]}px;--floor:{IMG_FLOOR};"
+              f"--ceil:{IMG_CEILING_FACTOR * IMG_NOMINAL[s]}}}\n" for s in IMG_SCALES)
 
 SCRIPT = r"""
 (function () {
   'use strict';
   var KEY = 'kicad-library-overview:v3:' + document.title;   // v3: sort is a list of keys; closed column groups
-  var SIZES = { S: 240, M: 480, L: 720, XL: 1080 };           // each image's longer side per size setting (--img)
+  var NOMINAL = NOMINAL_LEVELS;                               // px per size level: the Graphics column width (the images
+                                                               // themselves scale by the level's --scale in the CSS)
   var FONTS = { S: 10, M: 11.5, L: 13.5 };                     // text size in points per size setting
   var FONT_MIN = 4, FONT_MAX = 72;
   var SORT_MARK = ' 9 ▼';                                 // the widest "<rank> ▼" a header appends
@@ -304,7 +312,7 @@ SCRIPT = r"""
         if (Array.isArray(s.sort)) { state.sort = s.sort.filter(isKey); } else if (isKey(s.sort)) { state.sort = [s.sort]; }
         if (s.widths && typeof s.widths === 'object') { state.widths = s.widths; }
         if (Array.isArray(s.order)) { state.order = s.order; }
-        if (SIZES[s.size]) { state.size = s.size; }
+        if (NOMINAL[s.size]) { state.size = s.size; }
         if (isFont(s.font)) { state.font = s.font; }
         if (Array.isArray(s.closed)) { state.closed = s.closed; }
       }
@@ -350,7 +358,7 @@ SCRIPT = r"""
     heads.forEach(function (th) { measured[th.dataset.col] = Math.ceil(ctx.measureText(th.dataset.col).width + extra); });
   }
   function kindWidth(col) {                                    // the per-kind minimum
-    if (col === 'Graphics') { return SIZES[state.size] + 16; }   // one image's longer side plus slack; more wrap
+    if (col === 'Graphics') { return NOMINAL[state.size] + 16; }   // the nominal size plus slack; the units wrap
     if (col === 'Pins' || col === 'Units') { return 220; }
     if (col === 'Description') { return 320; }
     if (col === 'Symbol') { return 160; }
@@ -726,7 +734,7 @@ SCRIPT = r"""
   document.getElementById('colshowall').addEventListener('click', showAll);
   if (sizeSelect) {
     sizeSelect.addEventListener('change', function () {
-      if (SIZES[sizeSelect.value]) { state.size = sizeSelect.value; save(); applySize(); }
+      if (NOMINAL[sizeSelect.value]) { state.size = sizeSelect.value; save(); applySize(); }
     });
   }
   fontSelect.addEventListener('change', function () {
@@ -761,7 +769,7 @@ SCRIPT = r"""
   load();
   applyAll();
 })();
-"""
+""".replace("NOMINAL_LEVELS", "{ " + ", ".join(f"{s}: {n}" for s, n in IMG_NOMINAL.items()) + " }")
 
 
 def esc(s: str) -> str:
@@ -792,10 +800,14 @@ def units_cell(sym: Symbol) -> str:
 
 
 def graphics_cell(sym: Symbol) -> str:
-    """One img per unit; `--ar` (width / height, 4 decimals) lets the CSS size each by its longer side."""
-    imgs = "".join(f'<img src="{esc(p)}" alt="{esc(Path(p).stem)}" title="{esc(p)}" loading="lazy" '
-                   f'style="--ar:{sym.aspects.get(p, 1.0):.4f}">' for p in sym.graphics)
-    return f'<td class="graphics" data-sort="{len(sym.graphics)}">{imgs}</td>'
+    """One img per unit, in a row that wraps. A known size goes on the img as `--w` and `--h` (mm, 2 decimals)
+    with the class `mm`, so the CSS draws it at the common scale; an image of unknown size has neither and is
+    drawn in the nominal square."""
+    def img(p: str) -> str:
+        size = sym.sizes.get(p)
+        sized = f' class="mm" style="--w:{size[0]:.2f};--h:{size[1]:.2f}"' if size else ""
+        return f'<img src="{esc(p)}" alt="{esc(Path(p).stem)}" title="{esc(p)}" loading="lazy"{sized}>'
+    return f'<td class="graphics" data-sort="{len(sym.graphics)}">{"".join(img(p) for p in sym.graphics)}</td>'
 
 
 def field_cell(sym: Symbol, name: str) -> str:
@@ -860,8 +872,9 @@ def build_page(symbols: list[Symbol], title: str, libraries: list[Path], graphic
                          f'&#9661;</button></div></th>'
                          for c in columns)
     toggles = "".join(column_groups_html(columns, shown, counts))
-    size_control = ('<label>Graphics <select id="imgsize" aria-label="graphics size">'
-                    + "".join(f'<option value="{s}"{" selected" if s == "L" else ""}>{s}</option>' for s in ("S", "M", "L", "XL"))
+    size_control = ('<label>Graphics <select id="imgsize" aria-label="graphics size (px per mm)">'
+                    + "".join(f'<option value="{s}"{" selected" if s == "L" else ""}>{s} ({IMG_SCALES[s]:g} px/mm)</option>'
+                              for s in IMG_SCALES)
                     + "</select></label>") if graphics else ""
     font_control = ('<label>Text <select id="fontsize" aria-label="text size">'
                     + "".join(f'<option value="{s}"{" selected" if s == "S" else ""}>{s}</option>' for s in ("S", "M", "L"))
@@ -969,7 +982,7 @@ def main(argv=None) -> int:
             files = render(kicad_cli, lib, svg_dir)
             for s in loaded:
                 s.graphics = [f"{svg_dir.name}/{f}" for f in files.get(s.name, [])]
-                s.aspects = {p: svg_aspect(out / p) for p in s.graphics}
+                s.sizes = {p: size for p in s.graphics if (size := svg_size_mm(out / p))}
         symbols += loaded
 
     page, _ = build_page(symbols, a.title, a.libraries, graphics=kicad_cli is not None)
