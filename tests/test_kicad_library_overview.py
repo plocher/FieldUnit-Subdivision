@@ -219,8 +219,8 @@ class OverviewTests(unittest.TestCase):
         self.assertEqual(len(self.table.rows), 2)
 
     def test_every_field_is_a_column_in_stable_order(self):
-        expected = ["Library", "Symbol", "Reference", "Value", "Footprint", "Datasheet", "Description",
-                    "Role", "Appliance", "Pin.EN", "Pin.OCC", "hold_ms", "Kind", "Pins", "Units"]
+        expected = ["Library", "Symbol", "Role", "Appliance", "Description", "Pins", "Units",
+                    "Reference", "Value", "Footprint", "Datasheet", "Pin.EN", "Pin.OCC", "hold_ms", "Kind"]
         self.assertEqual(self.table.headers, expected)  # no Graphics column with --no-render
         self.assertEqual(self.table.images, [])
 
@@ -250,6 +250,10 @@ class OverviewTests(unittest.TestCase):
         self.assertIn("sortable", self.table.classes)
         self.assertIn("filters", self.table.classes)
         self.assertEqual(self.page.count('type="checkbox"'), len(self.table.headers))
+        self.assertTrue({"colfilter", "colall", "colnone"} <= self.table.ids)
+        self.assertIn('value="Role" checked> Role', self.page)          # always shown
+        self.assertIn('value="Footprint"> Footprint', self.page)        # empty on every symbol: starts hidden
+        self.assertIn('value="hold_ms" checked> hold_ms', self.page)    # filled on one symbol: shown
         self.assertIn("localStorage", self.page)
         self.assertNotIn("<script src=", self.page)  # no external dependency
         self.assertNotIn("<link ", self.page)
@@ -257,7 +261,7 @@ class OverviewTests(unittest.TestCase):
     def test_property_column_order(self):
         names = {"zeta", "Alpha", "Pin.B", "Pin.A", "Invert", "Role", "Description", "Reference", "Style"}
         self.assertEqual(overview.property_columns(names),
-                         ["Reference", "Description", "Role", "Style", "Invert", "Pin.A", "Pin.B", "Alpha", "zeta"])
+                         ["Role", "Style", "Description", "Invert", "Reference", "Pin.A", "Pin.B", "Alpha", "zeta"])
 
     def test_pin_base(self):
         self.assertEqual(overview.pin_base("~{OCC}"), "OCC")

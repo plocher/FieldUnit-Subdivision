@@ -9,7 +9,8 @@ Role, Appliance, Style, IC, Address, Invert, then Pin.* sorted, then the rest so
 structure, and one SVG per unit from `kicad-cli sym export svg`, written to <out>/svg-<library>/
 and referenced by relative path. The page is plain HTML with inline CSS and JavaScript (no server,
 no CDN): the table sorts on any column, filters by a search box and per-column boxes, and shows
-or hides columns; the column set and sort order are remembered in localStorage when available.
+or hides columns (with a filter and All/None for the dozens of Pin.* fields); fields that no symbol
+fills start hidden; the column set and sort order are remembered in localStorage when available.
 
 The default <out> is <directory of the first library>/production/overview/ (the Railroad repo
 gitignores production/). `--no-render` skips kicad-cli and omits the graphics column.
@@ -32,10 +33,10 @@ from kicad_services.sch_text import library_standard_properties, library_symbols
 
 KICAD_CLI_APP = "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
 PAGE_NAME = "library-overview.html"
-STANDARD_FIELDS = ("Reference", "Value", "Footprint", "Datasheet", "Description")
-CONTRACT_FIELDS = ("Role", "Appliance", "Style", "IC", "Address", "Invert")
+LEAD_FIELDS = ("Role", "Appliance", "Style")            # shown first, before the graphics
+NAMED_FIELDS = ("Description", "IC", "Address", "Invert", "Reference", "Value", "Footprint", "Datasheet")
 FIXED_HEAD = ("Library", "Symbol", "Extends")
-FIXED_TAIL = ("Pins", "Units", "Graphics")
+ALWAYS_SHOWN = {"Library", "Symbol", "Extends", "Role", "Appliance", "Style", "Graphics", "Description", "Pins", "Units"}
 _SVG_NAME = re.compile(r"^(.*)_unit(\d+)$")
 
 
@@ -65,8 +66,9 @@ def pin_base(name: str) -> str:
 
 
 def property_columns(names: set[str]) -> list[str]:
-    """Stable column order for the union of field names across the symbols."""
-    head = [n for n in STANDARD_FIELDS + CONTRACT_FIELDS if n in names]
+    """Stable column order for the union of field names across the symbols: Role, Appliance, Style,
+    Description, the other named fields, Pin.* sorted, then everything else sorted."""
+    head = [n for n in LEAD_FIELDS + NAMED_FIELDS if n in names]
     pins = sorted(n for n in names if n.startswith("Pin."))
     rest = sorted(names - set(head) - set(pins), key=lambda n: (n.lower(), n))
     return head + pins + rest
@@ -154,14 +156,27 @@ SCRIPT = r"""
   rows.forEach(function (r, i) { r.dataset.index = i; });
   var search = document.getElementById('search');
   var count = document.getElementById('count');
-  var toggles = Array.prototype.slice.call(document.querySelectorAll('#columns input'));
-  var state = { hidden: [], sort: null };
+  var toggles = Array.prototype.slice.call(document.querySelectorAll('#columns input[type=checkbox]'));
+  var labels = toggles.map(function (b) { return b.parentNode; });
+  var colfilter = document.getElementById('colfilter');
+  var defaultHidden = toggles.filter(function (b) { return !b.checked; }).map(function (b) { return b.value; });
+  var state = { hidden: defaultHidden.slice(), sort: null };
 
   function load() {
     try {
       var s = JSON.parse(localStorage.getItem(KEY));
       if (s && Array.isArray(s.hidden)) { state = { hidden: s.hidden, sort: s.sort || null }; }
     } catch (e) { /* storage unavailable or corrupt: defaults */ }
+  }
+  function applyColumnFilter() {
+    var q = colfilter.value.toLowerCase();
+    labels.forEach(function (l, i) { l.hidden = !!q && toggles[i].value.toLowerCase().indexOf(q) < 0; });
+  }
+  function setVisibleToggles(on) {
+    toggles.forEach(function (b, i) { if (!labels[i].hidden) { b.checked = on; } });
+    state.hidden = toggles.filter(function (b) { return !b.checked; }).map(function (b) { return b.value; });
+    save();
+    applyColumns();
   }
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
@@ -238,11 +253,16 @@ SCRIPT = r"""
     });
   });
   search.addEventListener('input', applyFilter);
+  colfilter.addEventListener('input', applyColumnFilter);
+  document.getElementById('colall').addEventListener('click', function () { setVisibleToggles(true); });
+  document.getElementById('colnone').addEventListener('click', function () { setVisibleToggles(false); });
   filters.forEach(function (f) { if (f) { f.addEventListener('input', applyFilter); } });
   document.getElementById('reset').addEventListener('click', function () {
     search.value = '';
     filters.forEach(function (f) { if (f) { f.value = ''; } });
-    state = { hidden: [], sort: null };
+    colfilter.value = '';
+    applyColumnFilter();
+    state = { hidden: defaultHidden.slice(), sort: null };
     try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ }
     applyColumns();
     applySort();
@@ -303,26 +323,37 @@ def build_page(symbols: list[Symbol], title: str, libraries: list[Path], graphic
     """(html, column names)."""
     props = property_columns({n for s in symbols for n in s.fields})
     head = [c for c in FIXED_HEAD if c != "Extends" or any(s.extends for s in symbols)]
-    tail = [c for c in FIXED_TAIL if c != "Graphics" or graphics]
-    columns = head + props + tail
+    lead = [c for c in LEAD_FIELDS if c in props]
+    desc = ["Description"] if "Description" in props else []
+    rest = [p for p in props if p not in lead and p != "Description"]
+    columns = head + lead + (["Graphics"] if graphics else []) + desc + ["Pins", "Units"] + rest
     unfilterable = {"Graphics"}
+    # The rest of the fields start hidden when no symbol gives them a value; the Columns control shows them.
+    shown = {c for c in columns if c in ALWAYS_SHOWN or any(s.fields.get(c) for s in symbols)}
 
     header = "".join(f'<th class="sortable" data-col="{esc(c)}">{esc(c)}</th>' for c in columns)
     filter_row = "".join("<th></th>" if c in unfilterable else
                          f'<th><input type="search" placeholder="filter" aria-label="filter {esc(c)}"></th>'
                          for c in columns)
-    toggles = "".join(f'<label><input type="checkbox" value="{esc(c)}" checked> {esc(c)}</label>' for c in columns)
+    toggles = "".join(f'<label><input type="checkbox" value="{esc(c)}"{" checked" if c in shown else ""}> {esc(c)}</label>'
+                      for c in columns)
 
-    rows = []
-    for s in symbols:
-        cells = [f"<td>{esc(s.library)}</td>", f'<td class="symbol">{esc(s.name)}</td>']
-        if "Extends" in head:
-            cells.append(f"<td>{esc(s.extends or '')}</td>")
-        cells += [field_cell(s, p) for p in props]
-        cells += [pins_cell(s), units_cell(s)]
-        if graphics:
-            cells.append(graphics_cell(s))
-        rows.append("<tr>" + "".join(cells) + "</tr>")
+    def cell(s: Symbol, c: str) -> str:
+        if c == "Library":
+            return f"<td>{esc(s.library)}</td>"
+        if c == "Symbol":
+            return f'<td class="symbol">{esc(s.name)}</td>'
+        if c == "Extends":
+            return f"<td>{esc(s.extends or '')}</td>"
+        if c == "Graphics":
+            return graphics_cell(s)
+        if c == "Pins":
+            return pins_cell(s)
+        if c == "Units":
+            return units_cell(s)
+        return field_cell(s, c)
+
+    rows = ["<tr>" + "".join(cell(s, c) for c in columns) + "</tr>" for s in symbols]
 
     sources = ", ".join(esc(p.name) for p in libraries)
     page = f"""<!doctype html>
@@ -339,7 +370,10 @@ def build_page(symbols: list[Symbol], title: str, libraries: list[Path], graphic
 Pins read name (number) electrical type = Pin.&lt;base&gt; value. A middle dot marks a field that is present but empty.</p>
 <div class="controls">
 <input type="search" id="search" placeholder="search all columns" aria-label="search all columns">
-<details class="columns"><summary>Columns</summary><div id="columns">{toggles}</div></details>
+<details class="columns"><summary>Columns</summary><div id="columns">
+<p class="colctl"><input type="search" id="colfilter" placeholder="filter columns" aria-label="filter columns">
+<button type="button" id="colall">All</button> <button type="button" id="colnone">None</button></p>
+{toggles}</div></details>
 <button type="button" id="reset">Reset view</button>
 <span id="count"></span>
 </div>
