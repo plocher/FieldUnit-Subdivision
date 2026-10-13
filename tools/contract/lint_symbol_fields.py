@@ -15,6 +15,9 @@ Per symbol, by Role:
   its units not interchangeable and its Value not autoplaced (the units mesh and show one name).
 - IODRIVER: IC present; no Kind; `Pin.*` per pin, primary word, electrical type input, output or
   bidirectional; Address or a GPIO Value rule.
+- ADAPTER: a capability realised by several pins on the wire (E69): every pin has a `Pin.*` word
+  and is typed input or output; at least one output pin (the device side, it drives the device)
+  and one input pin (the chip side); the unit rule applies; no Appliance, no IC.
 - SETTING: one passive pin, no Pin.*.
 - TRACK, POLICY, STRUCTURE, COLUMN, MACHINE, CODELINE_*: Kind allowed; nothing else checked.
 `--table` prints every symbol as a markdown row. Exit 1 on any error.
@@ -35,7 +38,7 @@ LIBRARIES = ("Railroad-Trackplan", "Railroad-Office", "Railroad-Field", "Railroa
 VOCABULARY = {"binary", "level", "position", "color", "pixel", "message"}
 FUNCTION_ETYPES = {"input", "output", "bidirectional"}
 STRUCTURAL = {"TRACK", "POLICY", "STRUCTURE", "COLUMN", "MACHINE", "CODELINE_TRANSPORT", "CODELINE_ENCODING"}
-FUNCTIONAL = {"APPLIANCE", "DEVICE", "PANEL", "IODRIVER", "SETTING"}
+FUNCTIONAL = {"APPLIANCE", "DEVICE", "PANEL", "IODRIVER", "ADAPTER", "SETTING"}
 RETIRED_FIELDS = {"ControlToken", "Vital", "NormalIs", "Chain", "Index", "Kind"}
 NOT_SETTINGS = {"Role", "Appliance", "Style", "IC", "Address", "Invert", "IndicationToken", "Color", "CP", "TC",
                 "IndicationCeiling", "Display", "Processor", "Milepost", "Reference", "Value", "Footprint",
@@ -69,7 +72,7 @@ def lint_symbol(lib: str, name: str, sym: dict) -> list[tuple[str, str]]:
     pin_caps = {k[4:]: v for k, v in props.items() if k.startswith("Pin.")}
     function_pins = [(n, num, ty) for n, num, ty in pins if n not in MEMBERSHIP_PINS]
     bases = {base(n) for n, _, _ in function_pins}
-    if role in {"DEVICE", "PANEL", "IODRIVER"}:
+    if role in {"DEVICE", "PANEL", "IODRIVER", "ADAPTER"}:
         for n, num, ty in function_pins:
             cap = pin_caps.get(base(n))
             if cap is None:
@@ -92,7 +95,11 @@ def lint_symbol(lib: str, name: str, sym: dict) -> list[tuple[str, str]]:
                     err(f"Invert names {p}, not a pin of this symbol")
     if role == "IODRIVER" and "Address" not in props and props.get("IC") != "GPIO":
         err("Address missing on a bus device")
-    if role in {"DEVICE", "PANEL"}:
+    if role == "ADAPTER":
+        types = {ty for _, _, ty in function_pins}
+        if not {"input", "output"} <= types:
+            err("an adapter wants at least one output pin (its device side) and one input pin (its chip side)")
+    if role in {"DEVICE", "PANEL", "ADAPTER"}:
         etype = {n: ty for n, _, ty in pins}
         caps = {f"{pin_caps.get(base(n), '?')} {ty}" for n, _, ty in function_pins}
         pin_units = {u: p for u, p in sym["units"].items() if p}
