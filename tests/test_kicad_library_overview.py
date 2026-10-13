@@ -224,6 +224,7 @@ class OverviewTests(unittest.TestCase):
                     "Reference", "Value", "Footprint", "Datasheet", "Pin.EN", "Pin.OCC", "hold_ms", "Kind"]
         self.assertEqual(self.table.headers, expected)  # no Graphics column with --no-render
         self.assertEqual(self.table.images, [])
+        self.assertNotIn("--ar:", self.page)                 # no images, no aspect ratios
 
     def test_fields_pins_and_units_are_rendered(self):
         gadget = self.row("Gadget")
@@ -398,6 +399,7 @@ class GraphicsPageTests(unittest.TestCase):
         lib.write_text(FIXTURE)
         symbols = overview.load_library(lib)
         symbols[0].graphics = ["svg-Fixture/Gadget_unit1.svg", "svg-Fixture/Gadget_unit2.svg"]
+        symbols[0].aspects = {"svg-Fixture/Gadget_unit1.svg": 24.257 / 110.998}   # unit 2 unknown: defaults to 1
         cls.page, cls.columns = overview.build_page(symbols, "Graphics fixture", [lib], graphics=True)
         cls.table = TableReader()
         cls.table.feed(cls.page)
@@ -418,19 +420,55 @@ class GraphicsPageTests(unittest.TestCase):
             self.assertIn(f'<option value="{size}">{size}</option>', self.page)
         self.assertIn('<option value="L" selected>L</option>', self.page)
         self.assertIn('<table id="symbols" data-size="L">', self.page)
-        self.assertIn("table[data-size=L]{--imgw:720px;--imgh:500px}", self.page)
-        # The image box takes both dimensions from the size variables and contains the image, so a wide image
-        # fills the width and a tall one the height; neither depends on the aspect of the SVG (height:auto plus a
-        # max-height did), and max-width alone never enlarged the intrinsic size.
-        self.assertIn("td.graphics img{width:var(--imgw,720px);height:var(--imgh,500px);object-fit:contain", self.page)
+        # One variable per size level: the length of each image's longer side. The shorter side follows the
+        # image's own aspect ratio (--ar on the img), so a tall symbol and a wide one are equally legible; no
+        # common box, so no object-fit, and nothing depends on the intrinsic size (max-width never enlarged it).
+        for size, px in (("S", 240), ("M", 480), ("L", 720), ("XL", 1080)):
+            self.assertIn(f"table[data-size={size}]{{--img:{px}px}}", self.page)
+        self.assertNotIn("--imgw", self.page)
+        self.assertNotIn("--imgh", self.page)
+        self.assertIn("td.graphics img{width:calc(var(--img,720px) * min(1, var(--ar,1)));"
+                      "height:calc(var(--img,720px) * min(1, 1 / var(--ar,1)));", self.page)
         img_rule = re.search(r"td\.graphics img\{[^}]*\}", self.page).group(0)
-        self.assertNotIn("max-width", img_rule)
-        self.assertNotIn("max-height", img_rule)
-        self.assertNotIn("height:auto", img_rule)
-        self.assertIn("if (col === 'Graphics') { return SIZES[state.size] + 16; }", self.page)  # column = box + slack
+        for absent in ("max-width", "max-height", "height:auto", "object-fit"):
+            self.assertNotIn(absent, img_rule)
+        self.assertIn("if (col === 'Graphics') { return SIZES[state.size] + 16; }", self.page)  # column = longer side + slack
         n = len(self.table.headers)
         self.assertEqual(self.page.count('<button type="button" class="funnel"'), n - 1)  # Graphics has no value filter
         self.assertEqual(self.page.count('<span class="grip"'), n)
+
+    def test_image_aspect_is_emitted_as_a_custom_property(self):
+        # width / height to 4 decimals on each img; an image without a known aspect gets 1.
+        imgs = re.findall(r"<img [^>]*>", self.page)
+        self.assertEqual(len(imgs), 2)
+        self.assertIn('src="svg-Fixture/Gadget_unit1.svg"', imgs[0])
+        self.assertIn(' style="--ar:0.2185">', imgs[0])
+        self.assertIn('src="svg-Fixture/Gadget_unit2.svg"', imgs[1])
+        self.assertIn(' style="--ar:1.0000">', imgs[1])
+
+    def test_svg_aspect_reads_the_root_tag(self):
+        # kicad-cli writes width and height in mm on the root element; any unit works (only the ratio matters,
+        # and mixed units are converted); a missing or unparsable attribute, a zero side or a missing file -> 1.
+        def aspect(root: str) -> float:
+            f = Path(self.tmp.name) / "aspect.svg"
+            f.write_text('<?xml version="1.0" standalone="no"?>\n<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"\n'
+                         ' "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">\n' + root + "\n<title>width=\"9mm\"</title></svg>\n")
+            return overview.svg_aspect(f)
+
+        kicad = ('<svg\n  xmlns="http://www.w3.org/2000/svg"\n  version="1.1"\n'
+                 '  width="24.2570mm" height="110.9980mm" viewBox="0.0000 0.0000 24.2570 110.9980">')
+        self.assertAlmostEqual(aspect(kicad), 24.257 / 110.998, places=6)
+        self.assertAlmostEqual(aspect('<svg width="300px" height="150px">'), 2.0)
+        self.assertAlmostEqual(aspect('<svg height="150" width="300">'), 2.0)             # unitless, any order
+        self.assertAlmostEqual(aspect('<svg width="1in" height="25.4mm">'), 1.0)         # mixed units convert
+        self.assertEqual(aspect('<svg height="150px">'), 1.0)                            # width missing
+        self.assertEqual(aspect('<svg width="300px">'), 1.0)                             # height missing
+        self.assertEqual(aspect('<svg viewBox="0 0 300 150">'), 1.0)                     # neither
+        self.assertEqual(aspect('<svg width="100%" height="150px">'), 1.0)               # not a length
+        self.assertEqual(aspect('<svg width="300px" height="0px">'), 1.0)                # zero side
+        self.assertEqual(aspect('<svg width="abc" height="150px">'), 1.0)
+        self.assertEqual(overview.svg_aspect(Path(self.tmp.name) / "missing.svg"), 1.0)
+        self.assertEqual(overview.svg_aspect(Path(self.tmp.name) / "Fixture.kicad_sym"), 1.0)  # no <svg> tag
 
     def test_property_column_order(self):
         names = {"zeta", "Alpha", "Pin.B", "Pin.A", "Invert", "Role", "Description", "Reference", "Style"}

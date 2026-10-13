@@ -19,12 +19,14 @@ a right-click on a table header offers hide this column, hide its group, show on
 all. Fields that no symbol fills start hidden; hiding a column that is a sort key drops it from the
 sort. Column widths can be dragged at the header's right edge (the default width is the larger of a
 per-kind minimum and the measured header title at the current text size) and columns reordered by
-dragging a header onto another; the graphics have an S/M/L/XL size control (every image fills the
-size box in whichever dimension limits it) and the text an S/M/L size control (10, 11.5 and 13.5
-points) with a "pt" box for any other size; every text rule inherits the one `--fs` variable on the
-body, so the whole page scales together. The column set, order, dragged widths, image size, text
-size, sort keys and folded groups are remembered in localStorage when available (under a versioned
-key); the value filters and the measured default widths are not.
+dragging a header onto another; the graphics have an S/M/L/XL size control (240, 480, 720 and
+1080 px: the length of each image's longer side, the shorter side following the SVG's own aspect
+ratio, read from the width and height kicad-cli writes on the root element and emitted on each img
+as `--ar`, so a tall symbol and a wide one are equally legible) and the text an S/M/L size control
+(10, 11.5 and 13.5 points) with a "pt" box for any other size; every text rule inherits the one
+`--fs` variable on the body, so the whole page scales together. The column set, order, dragged
+widths, image size, text size, sort keys and folded groups are remembered in localStorage when
+available (under a versioned key); the value filters and the measured default widths are not.
 
 The default <out> is <directory of the first library>/production/overview/ (the Railroad repo
 gitignores production/). `--no-render` skips kicad-cli and omits the graphics column.
@@ -60,6 +62,9 @@ GROUPS = ("Core", "KiCad fields", "Contract", "Pin.*", "Settings", "Other")
 DEFAULT_CLOSED_GROUPS = ("Pin.*", "Settings")
 _SNAKE_CASE = re.compile(r"^[a-z][a-z0-9_]*$")
 _SVG_NAME = re.compile(r"^(.*)_unit(\d+)$")
+_SVG_ROOT = re.compile(r"<svg\b[^>]*>", re.S)
+_SVG_LENGTH = re.compile(r'\b(width|height)\s*=\s*"\s*([0-9.]+)\s*([a-z%]*)\s*"')
+_SVG_UNITS_PER_INCH = {"": 96.0, "px": 96.0, "in": 1.0, "cm": 2.54, "mm": 25.4, "pt": 72.0, "pc": 6.0}
 
 
 @dataclass
@@ -71,6 +76,7 @@ class Symbol:
     units: dict[int, list[str]]               # unit number -> pin names (0 = common to all units)
     extends: str | None = None
     graphics: list[str] = field(default_factory=list)  # SVG paths relative to the page
+    aspects: dict[str, float] = field(default_factory=dict)  # SVG path -> width / height (1 when unknown)
 
 
 def find_kicad_cli() -> str | None:
@@ -143,6 +149,30 @@ def render(kicad_cli: str, lib_file: Path, svg_dir: Path) -> dict[str, list[str]
     return {name: [n for _, n in sorted(units)] for name, units in files.items()}
 
 
+def svg_aspect(svg_file: Path) -> float:
+    """width / height from the root <svg> tag's width and height attributes (any CSS length unit; kicad-cli
+    writes mm), or 1.0 when the file or either attribute is unreadable."""
+    try:
+        head = svg_file.read_text(errors="replace")[:4096]
+    except OSError:
+        return 1.0
+    root = _SVG_ROOT.search(head)
+    if not root:
+        return 1.0
+    lengths = {attr: (value, unit) for attr, value, unit in _SVG_LENGTH.findall(root.group(0))}
+    sides = []
+    for attr in ("width", "height"):
+        value, unit = lengths.get(attr, ("", ""))
+        if unit not in _SVG_UNITS_PER_INCH:
+            return 1.0
+        try:
+            sides.append(float(value) / _SVG_UNITS_PER_INCH[unit])
+        except ValueError:
+            return 1.0
+    width, height = sides
+    return width / height if width > 0 and height > 0 else 1.0
+
+
 # --- page -----------------------------------------------------------------------------------
 
 STYLE = """
@@ -201,11 +231,11 @@ ul.pins,ul.units{margin:0;padding-left:1.1em}
 ul.pins .num{color:#666}
 ul.pins .etype{color:#36a}
 ul.pins .cap{color:#262}
-table[data-size=S]{--imgw:240px;--imgh:170px}
-table[data-size=M]{--imgw:480px;--imgh:340px}
-table[data-size=L]{--imgw:720px;--imgh:500px}
-table[data-size=XL]{--imgw:1080px;--imgh:760px}
-td.graphics img{width:var(--imgw,720px);height:var(--imgh,500px);object-fit:contain;
+table[data-size=S]{--img:240px}
+table[data-size=M]{--img:480px}
+table[data-size=L]{--img:720px}
+table[data-size=XL]{--img:1080px}
+td.graphics img{width:calc(var(--img,720px) * min(1, var(--ar,1)));height:calc(var(--img,720px) * min(1, 1 / var(--ar,1)));
   background:#fff;border:1px solid #ddd;box-sizing:border-box;margin:2px;vertical-align:top}
 """
 
@@ -213,7 +243,7 @@ SCRIPT = r"""
 (function () {
   'use strict';
   var KEY = 'kicad-library-overview:v3:' + document.title;   // v3: sort is a list of keys; closed column groups
-  var SIZES = { S: 240, M: 480, L: 720, XL: 1080 };           // image box width per size setting
+  var SIZES = { S: 240, M: 480, L: 720, XL: 1080 };           // each image's longer side per size setting (--img)
   var FONTS = { S: 10, M: 11.5, L: 13.5 };                     // text size in points per size setting
   var FONT_MIN = 4, FONT_MAX = 72;
   var SORT_MARK = ' 9 ▼';                                 // the widest "<rank> ▼" a header appends
@@ -320,7 +350,7 @@ SCRIPT = r"""
     heads.forEach(function (th) { measured[th.dataset.col] = Math.ceil(ctx.measureText(th.dataset.col).width + extra); });
   }
   function kindWidth(col) {                                    // the per-kind minimum
-    if (col === 'Graphics') { return SIZES[state.size] + 16; }
+    if (col === 'Graphics') { return SIZES[state.size] + 16; }   // one image's longer side plus slack; more wrap
     if (col === 'Pins' || col === 'Units') { return 220; }
     if (col === 'Description') { return 320; }
     if (col === 'Symbol') { return 160; }
@@ -762,7 +792,9 @@ def units_cell(sym: Symbol) -> str:
 
 
 def graphics_cell(sym: Symbol) -> str:
-    imgs = "".join(f'<img src="{esc(p)}" alt="{esc(Path(p).stem)}" title="{esc(p)}" loading="lazy">' for p in sym.graphics)
+    """One img per unit; `--ar` (width / height, 4 decimals) lets the CSS size each by its longer side."""
+    imgs = "".join(f'<img src="{esc(p)}" alt="{esc(Path(p).stem)}" title="{esc(p)}" loading="lazy" '
+                   f'style="--ar:{sym.aspects.get(p, 1.0):.4f}">' for p in sym.graphics)
     return f'<td class="graphics" data-sort="{len(sym.graphics)}">{imgs}</td>'
 
 
@@ -937,6 +969,7 @@ def main(argv=None) -> int:
             files = render(kicad_cli, lib, svg_dir)
             for s in loaded:
                 s.graphics = [f"{svg_dir.name}/{f}" for f in files.get(s.name, [])]
+                s.aspects = {p: svg_aspect(out / p) for p in s.graphics}
         symbols += loaded
 
     page, _ = build_page(symbols, a.title, a.libraries, graphics=kicad_cli is not None)
