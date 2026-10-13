@@ -328,6 +328,19 @@ class OverviewTests(unittest.TestCase):
         self.assertIn("funnel", self.table.classes)
         self.assertNotIn('id="imgsize"', self.page)  # no graphics, no size control
 
+    def test_text_size_control(self):
+        # S/M/L presets in points plus a "pt" box for any size; one body variable that every text rule inherits.
+        self.assertTrue({"fontsize", "fontpt"} <= self.table.ids)
+        self.assertIn('<select id="fontsize" aria-label="text size"><option value="S" selected>S</option>'
+                      '<option value="M">M</option><option value="L">L</option>', self.page)
+        self.assertIn('<input type="number" id="fontpt" min="4" max="72" step="0.5" value="10" '
+                      'aria-label="text size in points"> pt</label>', self.page)
+        self.assertIn("body{--fs:10pt;font-family:system-ui,sans-serif;font-size:var(--fs);", self.page)
+        self.assertIn("var FONTS = { S: 10, M: 11.5, L: 13.5 };", self.page)
+        self.assertIn("font: FONTS.S", self.page)                               # the default, restored by Reset view
+        self.assertIn("document.body.style.setProperty('--fs', state.font + 'pt')", self.page)
+        self.assertEqual(re.findall(r"font(?:-size)?:\s*[\d.]+px", self.page), [])  # no text size pinned in pixels
+
 
 class GraphicsPageTests(unittest.TestCase):
     """build_page with the graphics column, without kicad-cli: the size control and the Graphics count."""

@@ -18,8 +18,10 @@ filter and All/None act on the filtered entries; "Show only Core" and "Show all"
 a right-click on a table header offers hide this column, hide its group, show only Core and show
 all. Fields that no symbol fills start hidden. Column widths can be dragged at the header's right
 edge and columns reordered by dragging a header onto another; the graphics have an S/M/L/XL size
-control. The column set, order, widths, image size, sort keys and folded groups are remembered in
-localStorage when available (under a versioned key); the value filters are not.
+control and the text an S/M/L size control (10, 11.5 and 13.5 points) with a "pt" box for any other
+size; every text rule inherits the one `--fs` variable on the body, so the whole page scales
+together. The column set, order, widths, image size, text size, sort keys and folded groups are
+remembered in localStorage when available (under a versioned key); the value filters are not.
 
 The default <out> is <directory of the first library>/production/overview/ (the Railroad repo
 gitignores production/). `--no-render` skips kicad-cli and omits the graphics column.
@@ -141,12 +143,13 @@ def render(kicad_cli: str, lib_file: Path, svg_dir: Path) -> dict[str, list[str]
 # --- page -----------------------------------------------------------------------------------
 
 STYLE = """
-body{font:13px/1.4 system-ui,sans-serif;margin:1em;color:#222;background:#fff}
+body{--fs:10pt;font-family:system-ui,sans-serif;font-size:var(--fs);line-height:1.4;margin:1em;color:#222;background:#fff}
 h1{font-size:1.4em;margin:0 0 .3em}
 .meta{color:#666;margin-bottom:.8em}
 .controls{display:flex;flex-wrap:wrap;gap:.6em 1.2em;align-items:center;margin-bottom:.8em}
 .controls input[type=search]{font:inherit;padding:.3em .5em;width:22em;max-width:100%}
 .controls button,.controls select{font:inherit;padding:.25em .7em}
+.controls input[type=number]{font:inherit;padding:.25em .3em;width:4.5em}
 #count{color:#666}
 [hidden]{display:none!important}
 details.columns{position:relative}
@@ -208,6 +211,8 @@ SCRIPT = r"""
   'use strict';
   var KEY = 'kicad-library-overview:v3:' + document.title;   // v3: sort is a list of keys; closed column groups
   var SIZES = { S: 240, M: 480, L: 720, XL: 1080 };           // image box width per size setting
+  var FONTS = { S: 10, M: 11.5, L: 13.5 };                     // text size in points per size setting
+  var FONT_MIN = 4, FONT_MAX = 72;
   var table = document.getElementById('symbols');
   var headRow = table.tHead.rows[0], filterRow = table.tHead.rows[1];
   var rows = Array.prototype.slice.call(table.tBodies[0].rows);
@@ -227,6 +232,8 @@ SCRIPT = r"""
   });
   var colfilter = document.getElementById('colfilter');
   var sizeSelect = document.getElementById('imgsize');
+  var fontSelect = document.getElementById('fontsize');
+  var fontInput = document.getElementById('fontpt');
   var panel = document.getElementById('valuepanel');
   var valueSearch = document.getElementById('valuesearch');
   var valueList = document.getElementById('valuelist');
@@ -246,11 +253,12 @@ SCRIPT = r"""
 
   function defaults() {
     return { hidden: defaultHidden.slice(), sort: [], widths: {}, order: defaultOrder.slice(), size: 'L',
-             closed: defaultClosed.slice() };
+             font: FONTS.S, closed: defaultClosed.slice() };
   }
   state = defaults();
 
   function isKey(k) { return k && typeof k.col === 'string' && (k.dir === 'asc' || k.dir === 'desc'); }
+  function isFont(n) { return typeof n === 'number' && n >= FONT_MIN && n <= FONT_MAX; }
   function load() {
     try {
       var s = JSON.parse(localStorage.getItem(KEY));
@@ -261,6 +269,7 @@ SCRIPT = r"""
         if (s.widths && typeof s.widths === 'object') { state.widths = s.widths; }
         if (Array.isArray(s.order)) { state.order = s.order; }
         if (SIZES[s.size]) { state.size = s.size; }
+        if (isFont(s.font)) { state.font = s.font; }
         if (Array.isArray(s.closed)) { state.closed = s.closed; }
       }
     } catch (e) { /* storage unavailable or corrupt: defaults */ }
@@ -279,6 +288,15 @@ SCRIPT = r"""
   function colIndex(col) {
     for (var i = 0; i < heads.length; i++) { if (heads[i].dataset.col === col) { return i; } }
     return -1;
+  }
+
+  // --- text size: one variable on the body, in points; S/M/L presets or any value typed in the pt box ---
+  function applyFont() {
+    document.body.style.setProperty('--fs', state.font + 'pt');
+    var preset = '';
+    Object.keys(FONTS).forEach(function (k) { if (FONTS[k] === state.font) { preset = k; } });
+    fontSelect.value = preset;                                 // '' selects the hidden "custom" entry
+    if (parseFloat(fontInput.value) !== state.font) { fontInput.value = state.font; }
   }
 
   // --- columns: visibility, order, widths, image size ---
@@ -649,6 +667,13 @@ SCRIPT = r"""
       if (SIZES[sizeSelect.value]) { state.size = sizeSelect.value; save(); applySize(); }
     });
   }
+  fontSelect.addEventListener('change', function () {
+    if (FONTS[fontSelect.value]) { state.font = FONTS[fontSelect.value]; save(); applyFont(); }
+  });
+  fontInput.addEventListener('input', function () {
+    var n = parseFloat(fontInput.value);
+    if (isFont(n)) { state.font = n; save(); applyFont(); }
+  });
   document.getElementById('reset').addEventListener('click', function () {
     search.value = '';
     filters.forEach(function (f) { if (f) { f.value = ''; } });
@@ -666,6 +691,7 @@ SCRIPT = r"""
     applyColumns();
     applyColumnFilter();
     applySize();
+    applyFont();
     applySort();
     markFunnels();
     applyFilter();
@@ -773,6 +799,11 @@ def build_page(symbols: list[Symbol], title: str, libraries: list[Path], graphic
     size_control = ('<label>Graphics <select id="imgsize" aria-label="graphics size">'
                     + "".join(f'<option value="{s}"{" selected" if s == "L" else ""}>{s}</option>' for s in ("S", "M", "L", "XL"))
                     + "</select></label>") if graphics else ""
+    font_control = ('<label>Text <select id="fontsize" aria-label="text size">'
+                    + "".join(f'<option value="{s}"{" selected" if s == "S" else ""}>{s}</option>' for s in ("S", "M", "L"))
+                    + '<option value="" hidden>custom</option></select></label> '
+                    '<label><input type="number" id="fontpt" min="4" max="72" step="0.5" value="10" '
+                    'aria-label="text size in points"> pt</label>')
 
     def cell(s: Symbol, c: str) -> str:
         if c == "Library":
@@ -814,6 +845,7 @@ Pins read name (number) electrical type = Pin.&lt;base&gt; value. A middle dot m
 <button type="button" id="colall">All</button> <button type="button" id="colnone">None</button> <span class="n">(filtered entries)</span></p>
 {toggles}</div></details>
 {size_control}
+{font_control}
 <button type="button" id="reset">Reset view</button>
 <span id="count"></span>
 </div>
