@@ -16,12 +16,15 @@ them (Core, KiCad fields, Contract, Pin.*, Settings, Other), each group with a t
 checkbox, a shown/total count and a fold; shift-click selects a range within a group; a text
 filter and All/None act on the filtered entries; "Show only Core" and "Show all" are one click, and
 a right-click on a table header offers hide this column, hide its group, show only Core and show
-all. Fields that no symbol fills start hidden. Column widths can be dragged at the header's right
-edge and columns reordered by dragging a header onto another; the graphics have an S/M/L/XL size
-control and the text an S/M/L size control (10, 11.5 and 13.5 points) with a "pt" box for any other
-size; every text rule inherits the one `--fs` variable on the body, so the whole page scales
-together. The column set, order, widths, image size, text size, sort keys and folded groups are
-remembered in localStorage when available (under a versioned key); the value filters are not.
+all. Fields that no symbol fills start hidden; hiding a column that is a sort key drops it from the
+sort. Column widths can be dragged at the header's right edge (the default width is the larger of a
+per-kind minimum and the measured header title at the current text size) and columns reordered by
+dragging a header onto another; the graphics have an S/M/L/XL size control (every image fills the
+size box in whichever dimension limits it) and the text an S/M/L size control (10, 11.5 and 13.5
+points) with a "pt" box for any other size; every text rule inherits the one `--fs` variable on the
+body, so the whole page scales together. The column set, order, dragged widths, image size, text
+size, sort keys and folded groups are remembered in localStorage when available (under a versioned
+key); the value filters and the measured default widths are not.
 
 The default <out> is <directory of the first library>/production/overview/ (the Railroad repo
 gitignores production/). `--no-render` skips kicad-cli and omits the graphics column.
@@ -202,7 +205,7 @@ table[data-size=S]{--imgw:240px;--imgh:170px}
 table[data-size=M]{--imgw:480px;--imgh:340px}
 table[data-size=L]{--imgw:720px;--imgh:500px}
 table[data-size=XL]{--imgw:1080px;--imgh:760px}
-td.graphics img{width:var(--imgw,720px);height:auto;max-height:var(--imgh,500px);object-fit:contain;
+td.graphics img{width:var(--imgw,720px);height:var(--imgh,500px);object-fit:contain;
   background:#fff;border:1px solid #ddd;box-sizing:border-box;margin:2px;vertical-align:top}
 """
 
@@ -213,6 +216,8 @@ SCRIPT = r"""
   var SIZES = { S: 240, M: 480, L: 720, XL: 1080 };           // image box width per size setting
   var FONTS = { S: 10, M: 11.5, L: 13.5 };                     // text size in points per size setting
   var FONT_MIN = 4, FONT_MAX = 72;
+  var SORT_MARK = ' 9 ▼';                                 // the widest "<rank> ▼" a header appends
+  var WIDTH_SLACK = 4;                                         // px beyond the measured title
   var table = document.getElementById('symbols');
   var headRow = table.tHead.rows[0], filterRow = table.tHead.rows[1];
   var rows = Array.prototype.slice.call(table.tBodies[0].rows);
@@ -242,6 +247,7 @@ SCRIPT = r"""
   var defaultClosed = groups.filter(function (g) { return g.box.classList.contains('closed'); }).map(function (g) { return g.name; });
   var defaultOrder;
   var state, valueFilter = {}, panelCol = null, menuCol = null, resizing = false, dragCol = null;
+  var measured = {};                                           // col -> header title width at the current text size; never saved
 
   function readHeads() {
     heads = Array.prototype.slice.call(headRow.cells);
@@ -297,16 +303,30 @@ SCRIPT = r"""
     Object.keys(FONTS).forEach(function (k) { if (FONTS[k] === state.font) { preset = k; } });
     fontSelect.value = preset;                                 // '' selects the hidden "custom" entry
     if (parseFloat(fontInput.value) !== state.font) { fontInput.value = state.font; }
+    measureHeaders();                                          // the titles grew or shrank with the text
+    applyWidths();
   }
 
   // --- columns: visibility, order, widths, image size ---
-  function defaultWidth(col) {
+  function measureHeaders() {
+    // The width each header title needs at the current text size: the text in the header's own font, plus
+    // its padding (the right padding covers the grip), the sort mark and some slack. Measured, never saved,
+    // so it follows the text size; a width the user dragged (state.widths) wins over it in applyWidths.
+    var ctx = document.createElement('canvas').getContext('2d');
+    var cs = getComputedStyle(heads[0]);
+    ctx.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+    var extra = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + ctx.measureText(SORT_MARK).width + WIDTH_SLACK;
+    measured = {};
+    heads.forEach(function (th) { measured[th.dataset.col] = Math.ceil(ctx.measureText(th.dataset.col).width + extra); });
+  }
+  function kindWidth(col) {                                    // the per-kind minimum
     if (col === 'Graphics') { return SIZES[state.size] + 16; }
     if (col === 'Pins' || col === 'Units') { return 220; }
     if (col === 'Description') { return 320; }
     if (col === 'Symbol') { return 160; }
     return 120;
   }
+  function defaultWidth(col) { return Math.max(kindWidth(col), measured[col] || 0); }
   function applyWidths() {
     var total = 0;
     heads.forEach(function (th) {
@@ -354,9 +374,13 @@ SCRIPT = r"""
     });
   }
   function readToggles() {
+    // Every way a column gets hidden ends here: an entry click or shift-click range, a group parent, All/None,
+    // Show only Core, Show all, and the header menu's hide actions (through setToggles).
     state.hidden = toggles.filter(function (b) { return !b.checked; }).map(function (b) { return b.value; });
+    var resort = pruneSort();
     save();
     applyColumns();
+    if (resort) { applySort(); }
   }
   function setVisibleToggles(on) {
     toggles.forEach(function (b, i) { if (!labels[i].hidden) { b.checked = on; } });
@@ -420,10 +444,18 @@ SCRIPT = r"""
     });
     count.textContent = shown + ' of ' + rows.length + ' symbols';
   }
+  function pruneSort() {
+    // A hidden (or unknown) column is no sort key: drop it, keeping the others' order. Showing the column
+    // again does not restore it. True when a key went, so the caller re-sorts and redraws the ranks.
+    var kept = state.sort.filter(function (k) { return colIndex(k.col) >= 0 && state.hidden.indexOf(k.col) < 0; });
+    var changed = kept.length !== state.sort.length;
+    state.sort = kept;
+    return changed;
+  }
   function applySort() {
     // state.sort lists the keys by priority: [{col, dir}, ...]. Every sorting header shows "<rank> ▲|▼".
     heads.forEach(function (th) { th.classList.remove('asc', 'desc'); th.removeAttribute('data-rank'); });
-    state.sort = state.sort.filter(function (k) { return colIndex(k.col) >= 0; });
+    pruneSort();
     var keys = state.sort.map(function (k, rank) {
       var i = colIndex(k.col);
       heads[i].classList.add(k.dir);
@@ -688,10 +720,10 @@ SCRIPT = r"""
 
   function applyAll() {
     applyOrder();
+    applyFont();                                               // first: it measures the header titles the widths need
     applyColumns();
     applyColumnFilter();
     applySize();
-    applyFont();
     applySort();
     markFunnels();
     applyFilter();

@@ -318,6 +318,52 @@ class OverviewTests(unittest.TestCase):
         self.assertIn("state.sort.splice(i, 1)", self.page)         # descending -> removed
         self.assertIn("return a.dataset.index - b.dataset.index;   // stable", self.page)
 
+    def test_hiding_a_sort_column_drops_it_from_the_sort(self):
+        # pruneSort drops every key whose column is hidden (showing it again does not restore it) and reports
+        # whether one went; readToggles, the one path every hide action ends in, re-sorts when it did.
+        self.assertIn("function pruneSort() {", self.page)
+        self.assertIn("state.sort.filter(function (k) { return colIndex(k.col) >= 0 && state.hidden.indexOf(k.col) < 0; })",
+                      self.page)
+        self.assertIn("var resort = pruneSort();", self.page)
+        self.assertIn("if (resort) { applySort(); }", self.page)
+        self.assertIn("pruneSort();\n    var keys = state.sort.map(", self.page)   # a saved state is pruned at load too
+        script = self.page[self.page.index("<script>"):]
+        # Every way a column gets hidden calls readToggles: an entry click (shift-click range included), a group
+        # parent, All/None (setVisibleToggles) and the bulk and header-menu actions (setToggles).
+        self.assertGreaterEqual(script.count("readToggles();"), 4)
+        for fn in ("function setVisibleToggles(on) {\n    toggles.forEach(function (b, i) { if (!labels[i].hidden) { b.checked = on; } });\n    readToggles();",
+                   "function setToggles(wanted) {", "function showOnlyCore() { setToggles(", "function showAll() { setToggles(",
+                   "function hideColumn(col) { setToggles(", "function hideGroup(name) { setToggles(",
+                   "if (act === 'hide') { hideColumn(col); }", "else if (act === 'hidegroup') { hideGroup(groupOf[col]); }",
+                   "else if (act === 'core') { showOnlyCore(); }", "g.last = n;\n        readToggles();",
+                   "g.members.forEach(function (b) { b.checked = on; });\n      readToggles();"):
+            self.assertIn(fn, script)
+        self.assertIn("document.getElementById('colnone').addEventListener('click', function () { setVisibleToggles(false); });",
+                      script)
+        self.assertIn("document.getElementById('colcore').addEventListener('click', showOnlyCore);", script)
+
+    def test_default_widths_fit_the_header_titles(self):
+        # Each column's default width is the larger of its per-kind minimum and its measured title (canvas
+        # measureText in the header's font plus padding, sort mark and slack), re-measured on every text-size
+        # change and never saved; a width the user dragged (state.widths) wins.
+        self.assertIn("function measureHeaders() {", self.page)
+        self.assertIn("document.createElement('canvas').getContext('2d')", self.page)
+        self.assertIn("ctx.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;", self.page)
+        self.assertIn("parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + ctx.measureText(SORT_MARK).width + WIDTH_SLACK",
+                      self.page)
+        self.assertIn("measured[th.dataset.col] = Math.ceil(ctx.measureText(th.dataset.col).width + extra)", self.page)
+        self.assertIn("function defaultWidth(col) { return Math.max(kindWidth(col), measured[col] || 0); }", self.page)
+        for minimum in ("if (col === 'Pins' || col === 'Units') { return 220; }", "if (col === 'Description') { return 320; }",
+                        "if (col === 'Symbol') { return 160; }", "return 120;"):
+            self.assertIn(minimum, self.page)                   # the per-kind minimums stay
+        self.assertIn("measureHeaders();                                          // the titles grew or shrank with the text\n"
+                      "    applyWidths();", self.page)            # applyFont re-measures: S/M/L and the pt box both end there
+        self.assertIn("+state.widths[th.dataset.col] > 0 ? +state.widths[th.dataset.col] : defaultWidth(th.dataset.col)", self.page)
+        self.assertNotIn("measured:", self.page)                  # not part of state, so never saved
+        self.assertIn("widths: {}", self.page)
+        # The header keeps its ellipsis for a column the user drags narrower than its title.
+        self.assertIn("thead th.sortable{cursor:pointer;user-select:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;", self.page)
+
     def test_page_has_resize_reorder_and_value_filter_controls(self):
         n = len(self.table.headers)
         self.assertEqual(self.page.count('<th class="sortable" draggable="true" data-col='), n)
@@ -373,10 +419,15 @@ class GraphicsPageTests(unittest.TestCase):
         self.assertIn('<option value="L" selected>L</option>', self.page)
         self.assertIn('<table id="symbols" data-size="L">', self.page)
         self.assertIn("table[data-size=L]{--imgw:720px;--imgh:500px}", self.page)
-        # The image box follows the size variables: width set (not only capped, since the SVGs are smaller than
-        # every box), height by aspect up to --imgh, contained. max-width alone never enlarged the intrinsic size.
-        self.assertIn("td.graphics img{width:var(--imgw,720px);height:auto;max-height:var(--imgh,500px);object-fit:contain", self.page)
-        self.assertNotIn("td.graphics img{max-width", self.page)
+        # The image box takes both dimensions from the size variables and contains the image, so a wide image
+        # fills the width and a tall one the height; neither depends on the aspect of the SVG (height:auto plus a
+        # max-height did), and max-width alone never enlarged the intrinsic size.
+        self.assertIn("td.graphics img{width:var(--imgw,720px);height:var(--imgh,500px);object-fit:contain", self.page)
+        img_rule = re.search(r"td\.graphics img\{[^}]*\}", self.page).group(0)
+        self.assertNotIn("max-width", img_rule)
+        self.assertNotIn("max-height", img_rule)
+        self.assertNotIn("height:auto", img_rule)
+        self.assertIn("if (col === 'Graphics') { return SIZES[state.size] + 16; }", self.page)  # column = box + slack
         n = len(self.table.headers)
         self.assertEqual(self.page.count('<button type="button" class="funnel"'), n - 1)  # Graphics has no value filter
         self.assertEqual(self.page.count('<span class="grip"'), n)
