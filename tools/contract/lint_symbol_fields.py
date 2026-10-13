@@ -15,6 +15,8 @@ Per symbol, by Role:
   its units not interchangeable and its Value not autoplaced (the units mesh and show one name).
 - IODRIVER: IC present; no Kind; `Pin.*` per pin, primary word, electrical type input, output or
   bidirectional; Address or a GPIO Value rule.
+- PANEL is exactly a device in a CTC machine column: a PANEL symbol has a `Column` pin and a DEVICE
+  symbol has none (E72).
 - SETTING: one passive pin, no Pin.*.
 - TRACK, POLICY, STRUCTURE, COLUMN, MACHINE, CODELINE_*: Kind allowed; nothing else checked.
 `--table` prints every symbol as a markdown row. Exit 1 on any error.
@@ -92,6 +94,11 @@ def lint_symbol(lib: str, name: str, sym: dict) -> list[tuple[str, str]]:
                     err(f"Invert names {p}, not a pin of this symbol")
     if role == "IODRIVER" and "Address" not in props and props.get("IC") != "GPIO":
         err("Address missing on a bus device")
+    has_column = any(n in MEMBERSHIP_PINS for n, _, _ in pins)
+    if role == "PANEL" and not has_column:
+        err("Role PANEL without a Column pin; a plate outside the machine is a DEVICE")
+    if role == "DEVICE" and has_column:
+        err("Role DEVICE with a Column pin; a plate in the machine is PANEL")
     if role in {"DEVICE", "PANEL"}:
         etype = {n: ty for n, _, ty in pins}
         caps = {f"{pin_caps.get(base(n), '?')} {ty}" for n, _, ty in function_pins}
