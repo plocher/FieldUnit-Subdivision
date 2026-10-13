@@ -1,4 +1,4 @@
-# I/O design checkpoint (2026-10-10, rev 12)
+# I/O design checkpoint (2026-10-10, rev 13)
 
 - Status: a record of the design conversation of 2026-10-09 and 10, for the owner's confirmation. "Explicit" is what the owner said. "Implicit" is what followed from it in the drafts and the spike without being said; each one needs a yes or a no. Rev 2 applies the owner's review of rev 1; the changes are listed at the end.
 - Governs: `driver-architecture-foundation.md`. Companions: `environment-view-2026-10-09.md` (rev 6), `driver-types-view-2026-10-09.md` (rev 3), and the spike in `~/Dropbox/KiCad/Railroad/Scratch/` (not git; generators and the binding pass in its `tools/`, reports in `production/`). The digest and survey that preceded this record are in git history only.
@@ -96,8 +96,13 @@ Heads, pin words, four libraries, field layout (owner, 2026-10-12)
 - E68. The field layout, what and why, agreed in principle: a sheet for a location's local control panels, indicators and inputs on structures, crew diagrams and maintainer elements, read by the crew and maintainer, the runtime's crew view and the fascia builder, never by the firmware; it holds only facts the I/O sheet cannot (panel, position, label, pattern). Membership by pin is the office machine's structure and does not suit the field. Open until the grounding test: the owner sketches Sargent's field layout, every fact already on the I/O sheet is struck, and what survives decides whether the layout collapses into a `Panel` field or face units of the plates, or needs symbols of its own. `Local-Lamp` against `Device-Lamp` waits on that.
 
 Adapters (owner, 2026-10-12 and 13)
-- E69. A capability realised by several pins is an adapter symbol on the wire, not a device variant. `Adapter-Color-3Lamp`, Role ADAPTER, in HardwareIO: one `COLOR` pin typed output, because it drives the device's colour input, and `~{R}`, `~{Y}`, `~{G}` binary pins typed input, which land on expander or PWM outputs like any lamp, each in its own unit by the unit rule; settings are the colour table. A colour head or an RGB semaphore lamp on an I2C expander goes through it; on a pixel chain it needs nothing, a colour pin on a chain slot is a bus binding. The compiler composes head, adapter and three binary bindings from the netlist, each binding still free to take the two-point cast to a PWM level. The owner's `_3` device variants (three binary pins on the head itself) fold into the adapter; a device keeps one symbol per Style and per lamp kind.
-- E70. The semaphore's lamp pin is what the lamp is. A white lamp behind the arm's roundel is a binary lamp and lands on a pin directly: `Device-Head-Semaphore-LQ` and `-UQ`, `LAMP` binary. An RGB or pixel lamp is a colour point: `Device-Head-Semaphore-LQ-CL` and `-UQ-CL`, `LAMP` color, through the adapter or on a chain. Two symbols per quadrant, because a binary lamp and a colour point are different things, not two realisations of one. A one-lamp adapter, colour to lit, was proposed and rejected by the owner: it would encode nothing.
+- E69. Superseded by E71. A capability realised by several pins is an adapter symbol on the wire, not a device variant. `Adapter-Color-3Lamp`, Role ADAPTER, in HardwareIO: one `COLOR` pin typed output, because it drives the device's colour input, and `~{R}`, `~{Y}`, `~{G}` binary pins typed input, which land on expander or PWM outputs like any lamp, each in its own unit by the unit rule; settings are the colour table. A colour head or an RGB semaphore lamp on an I2C expander goes through it; on a pixel chain it needs nothing, a colour pin on a chain slot is a bus binding. The compiler composes head, adapter and three binary bindings from the netlist, each binding still free to take the two-point cast to a PWM level. The owner's `_3` device variants (three binary pins on the head itself) fold into the adapter; a device keeps one symbol per Style and per lamp kind.
+- E70. Superseded by E71. The semaphore's lamp pin is what the lamp is. A white lamp behind the arm's roundel is a binary lamp and lands on a pin directly: `Device-Head-Semaphore-LQ` and `-UQ`, `LAMP` binary. An RGB or pixel lamp is a colour point: `Device-Head-Semaphore-LQ-CL` and `-UQ-CL`, `LAMP` color, through the adapter or on a chain. Two symbols per quadrant, because a binary lamp and a colour point are different things, not two realisations of one. A one-lamp adapter, colour to lit, was proposed and rejected by the owner: it would encode nothing.
+
+The six-head set and the field layout's end (owner, 2026-10-13)
+- E71. Adapters are not cleaner; the use cases are. Three wires is a device signature: `Device-Head-CPL` lights one of R, Y, G; `Device-Head-CL` is one RGB LED with legs R, G, B, yellow being R plus G in the class, and on PWM each leg's brightness is the two-point cast's own setting; `Device-Head-Semaphore-RGB` is the arm plus the same three legs. A pixel is a device with one color pin: `Device-Head-CL-Pixel`. The white lamp and the pixel on a semaphore are one symbol, `Device-Head-Semaphore` with `LAMP` color: on a chain it lands directly; on an expander pin the color-to-binary cast applies, lit unless dark, which is a white lamp behind a roundel; on PWM the color-to-level cast. That cast is the mirror of the binary-to-pixel cast that gives a plain lamp its fixed colour (E30); the one-lamp adapter of E70 was that cast misnamed. The quadrant is a Style list on the semaphore devices (`LQ, UQ`), the angles are settings. Six head devices in all, the owner's count. Adapters, Role ADAPTER and `Adapter-Color-3Lamp` are withdrawn; E69 and E70 are superseded.
+- E72. The field layout's grounding test (E68) failed to find value: with the plates beside their chips, the I/O sheet already shows everything a fascia drawing would. There is no field layout sheet; the field I/O sheet is the documentation of a location, the crew view renders from the same model the firmware does, and a local panel is whatever plates share an expander, with any box or label on the sheet an annotation nothing reads. Consequences: `Local-Lamp` retires into `Device-Lamp` with its `IndicationToken` join (E42); `Local-Switch` and `Local-Lock` are Role DEVICE, Appliance lever; PANEL means exactly a device in a CTC machine column, so a PANEL symbol has a `Column` pin and a DEVICE symbol has none, and the lint holds that line.
+- E73. Reference prefixes name the device kind, for readability on the sheet and in reports: `DevHead`, `DevLamp`, `DevSW`, `DevLock`, `DevTC`, `DevContact` on the field devices. References stay KiCad annotation artifacts that no rule reads (AGENTS.md); symbols and instances are named by Value and symbol name in every discussion.
 
 The desk and fascia spike (owner, 2026-10-10)
 - E41. Column membership stays as drawn: a `Column` pin on each desk appliance meeting the column symbol's backplane pins. The column matters for rendering the model and the panel boards. A machine with another arrangement forks the expander symbol; the `IC` is unchanged.
@@ -180,9 +185,9 @@ Appliance symbols (Role APPLIANCE), today's Kinds mapped:
 | `Track Circuit` | track_circuit | | TRACK_CIRCUIT |
 | `Mast_Single`, `_Double`, `_Dwarf` | mast | single, double, dwarf | MAST_* |
 | `Signal Head - CL` | head | CL | one light source, one color at a time: searchlight roundel or one RGB point (E65) |
-| `Signal Head - CPL` (new) | head | CPL | colored lamps in fixed positions, one lit at a time: three-lamp or multiplexed (E65) |
-| `Signal Head - SemaphoreLQ2` | head | LQ | two positions, STOP and CLEAR (E48, E65) |
-| `Signal Head - SemaphoreUQ3` | head | UQ | three positions, STOP, APPROACH, CLEAR (E48, E65) |
+| `Signal Head - CPL` | head | CPL | colored lamps in fixed positions, one lit at a time: three-lamp or multiplexed (E65) |
+| `Signal Head - Semaphore-LQ` | head | LQ | two positions, STOP and CLEAR (E48, E65) |
+| `Signal Head - Semaphore-UQ` | head | UQ | three positions, STOP, APPROACH, CLEAR (E48, E65) |
 | `MaintainerCall` | lamp | maintainer_call | MAINTAINER_CALL |
 | `AUXILIARY` | lamp | non_vital | AUXILIARY (Style word `non_vital`, E58) |
 | `Contact` (new) | contact | auxiliary, button, door, … | the generic non-vital input, the complement of `AUXILIARY`; its office indication is `<Value>K` (was DEVICE/INPUT_BIT with no appliance) |
@@ -197,11 +202,12 @@ Device symbols (Role DEVICE). A device binds to an appliance of equal Appliance 
 | `Device-Switch-ManualSensed` | switch | manual_sensed | `~{N}`, `~{R}` binary in |
 | `Device-Lock` | switch | lock | the lock mechanism: `UNLOCK` binary out; `~{LOCKED}` binary in, optional, simulated with quality SIMULATED when unbound (E50); one Value with its `Device-Switch` (E35, I25). Today's `Local-Switch` and `Local-Lock` on the Sargent sheet are not this: they are the crew's local lever and lamps, Role PANEL on a field sheet, the "local client" of task 4 |
 | `Device-TrackCircuit` | track_circuit | | `~{OCC}` binary in; setting `hold_ms` |
-| `Device-Head-CL` | head | CL | `RGB` color (input); `transition_ms` renders the vane (E47, E65) |
-| `Device-Head-CPL` | head | CPL | `~{R}`, `~{Y}`, `~{G}` binary (input) |
+| `Device-Head-CPL` | head | CPL | `~{R}`, `~{Y}`, `~{G}` binary (input): one lamp per color |
 | `Device-Head-CPL-Encoder` | head | CPL | `S0`, `S1` binary (input): a select code, no asserted state (E28) |
-| `Device-Head-Semaphore-LQ` | head | LQ | `ARM` position (input); `~{LAMP}` binary (input) (E48, E65) |
-| `Device-Head-Semaphore-UQ` | head | UQ | `ARM` position (input); `~{LAMP}` binary (input) (E48, E65) |
+| `Device-Head-CL` | head | CL | `~{R}`, `~{G}`, `~{B}` binary (input): one RGB LED, yellow is R plus G in the class; brightness per leg is the cast's on PWM (E71) |
+| `Device-Head-CL-Pixel` | head | CL | `RGB` color (input): one point on a pixel chain, `Address` its slot (E71) |
+| `Device-Head-Semaphore` | head | LQ, UQ | `ARM` position (input); `LAMP` color (input): a pixel directly, a white lamp behind the roundel by the color-to-binary or color-to-level cast (E71) |
+| `Device-Head-Semaphore-RGB` | head | LQ, UQ | `ARM` position (input); `~{R}`, `~{G}`, `~{B}` binary (input) (E71) |
 | `Device-Lamp` | lamp | | `~{LAMP}` binary out |
 | `Device-Contact` | contact | | `~{IN}` binary in |
 
@@ -258,10 +264,14 @@ Next steps, in order
 3. Done: the two views revised to match (environment view rev 5, driver types view rev 2), then revised again on the owner's review (rev 6, rev 3; E46 to E55).
 4. Done: the real libraries (Railroad PR #6, Subdivision PR #38): `Appliance` and `Style` fields in place of `Kind`, `IC` on the I/O symbols, `Pin.*` fields, `~{}` names where missing, `Invert` (E53), the `Setting` symbol, the two PCA9685 symbols, the two GPIO symbols (I22 reduced to two by YAGNI), `Device-Switch` plus `Device-Lock`, the searchlight's `RGB` pin (E47), the two semaphore Styles (E48), the lock plates (E54), `PanelMCall` pin `S`, the lint reading fields; then the multi-unit split and `Terminal` retired (E56, E57). 80 symbols, lint clean. Left by hand: the layout anchor, the processor symbol if I31 needs one, the visual pass over the nine split symbols.
 5. The indexers: casts and settings from FieldUnit source; the symbol requirements report from the libraries. Their form in FieldUnit is the first Part 2 question that Part 1 depends on.
-6. Sargent redrawn under the new rules as the first real sheet, compiled, diagnostics read. Done 2026-10-12 to 13: every sheet migrated by text (Railroad PR #8, #9), the owner's cleanup of Sargent on the new symbols with a second PCA9685 for the servo. Left: the two heads DevSW6 and DevSW12 through `Adapter-Color-3Lamp` once it exists, and the `_3` variants folded (E69).
+6. Sargent redrawn under the new rules as the first real sheet, compiled, diagnostics read. Done 2026-10-12 to 13: every sheet migrated by text (Railroad PR #8, #9), the owner's cleanup of Sargent on the new symbols with a second PCA9685 for the servo. Then the six-head set applied and Sargent remapped by text (Railroad PR for `feat/head-set`, E71 to E73); left to the owner: the semaphore arm and the servo channels to wire.
 7. The compiler's I/O section and the model schema.
 8. Glossary amendments the foundation lists, plus the new terms: capability, cast, binding, setting scope, chip setting, `Invert`. Done ahead of this: the electric lock entry and `WLQK` (FieldUnit PR #33).
 9. The alternatives ADR for Part 2, with proposals #1, #2 and #3, once Part 1 is stable.
+
+## Changes in rev 13
+
+The owner's answers on adapters and the field layout: the six-head set with casts for the pixel and the white lamp (E71, superseding E69 and E70); the field layout closed, Local plates as devices, PANEL if and only if Column (E72); reference prefixes by kind (E73); §4.1 head rows; the lint loses Role ADAPTER and gains the PANEL rule.
 
 ## Changes in rev 12
 
