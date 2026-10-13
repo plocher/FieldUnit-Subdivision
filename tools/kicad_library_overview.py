@@ -8,13 +8,18 @@ Role, Appliance, Style, IC, Address, Invert, then Pin.* sorted, then the rest so
 (name, number, electrical type and the Pin.<base> value when the symbol has one), the unit
 structure, and one SVG per unit from `kicad-cli sym export svg`, written to <out>/svg-<library>/
 and referenced by relative path. The page is plain HTML with inline CSS and JavaScript (no server,
-no CDN): the table sorts on any column, filters by a search box, per-column text boxes and a
-per-column value picker (a funnel button listing the distinct values with counts), and shows or
-hides columns (each listed with the number of rows that fill it, with a filter and All/None for the
-dozens of Pin.* fields); fields that no symbol fills start hidden. Column widths can be dragged at
-the header's right edge and columns reordered by dragging a header onto another; the graphics have
-an S/M/L/XL size control. The column set, order, widths, image size and sort order are remembered
-in localStorage when available (under a versioned key); the value filters are not.
+no CDN): the table sorts on several columns at once (click a header to add it as the lowest key,
+again to reverse it, a third time to drop it; each sorting header shows its priority and direction),
+filters by a search box, per-column text boxes and a per-column value picker (a funnel button
+listing the distinct values with counts), and shows or hides columns. The Columns control groups
+them (Core, KiCad fields, Contract, Pin.*, Settings, Other), each group with a tri-state parent
+checkbox, a shown/total count and a fold; shift-click selects a range within a group; a text
+filter and All/None act on the filtered entries; "Show only Core" and "Show all" are one click, and
+a right-click on a table header offers hide this column, hide its group, show only Core and show
+all. Fields that no symbol fills start hidden. Column widths can be dragged at the header's right
+edge and columns reordered by dragging a header onto another; the graphics have an S/M/L/XL size
+control. The column set, order, widths, image size, sort keys and folded groups are remembered in
+localStorage when available (under a versioned key); the value filters are not.
 
 The default <out> is <directory of the first library>/production/overview/ (the Railroad repo
 gitignores production/). `--no-render` skips kicad-cli and omits the graphics column.
@@ -41,6 +46,14 @@ LEAD_FIELDS = ("Role", "Appliance", "Style")            # shown first, before th
 NAMED_FIELDS = ("Description", "IC", "Address", "Invert", "Reference", "Value", "Footprint", "Datasheet")
 FIXED_HEAD = ("Library", "Symbol", "Extends")
 ALWAYS_SHOWN = {"Library", "Symbol", "Extends", "Role", "Appliance", "Style", "Graphics", "Description", "Pins", "Units"}
+# Column groups of the Columns control, in display order. Core is ALWAYS_SHOWN; Pin.* is every Pin.<base>
+# field; Settings is every lower_snake_case field; Other is whatever is left (Kind, ki_* excluded by Settings).
+KICAD_FIELDS = ("Reference", "Value", "Footprint", "Datasheet")
+CONTRACT_FIELDS = ("IC", "Address", "Invert", "Color", "IndicationToken", "IndicationCeiling", "CP", "TC",
+                   "Processor", "Display", "Milepost")
+GROUPS = ("Core", "KiCad fields", "Contract", "Pin.*", "Settings", "Other")
+DEFAULT_CLOSED_GROUPS = ("Pin.*", "Settings")
+_SNAKE_CASE = re.compile(r"^[a-z][a-z0-9_]*$")
 _SVG_NAME = re.compile(r"^(.*)_unit(\d+)$")
 
 
@@ -76,6 +89,21 @@ def property_columns(names: set[str]) -> list[str]:
     pins = sorted(n for n in names if n.startswith("Pin."))
     rest = sorted(names - set(head) - set(pins), key=lambda n: (n.lower(), n))
     return head + pins + rest
+
+
+def column_group(name: str) -> str:
+    """The Columns-control group of a column: one of GROUPS."""
+    if name in ALWAYS_SHOWN:
+        return "Core"
+    if name in KICAD_FIELDS:
+        return "KiCad fields"
+    if name in CONTRACT_FIELDS:
+        return "Contract"
+    if name.startswith("Pin."):
+        return "Pin.*"
+    if _SNAKE_CASE.match(name):
+        return "Settings"
+    return "Other"
 
 
 def load_library(lib_file: Path) -> list[Symbol]:
@@ -120,18 +148,29 @@ h1{font-size:1.4em;margin:0 0 .3em}
 .controls input[type=search]{font:inherit;padding:.3em .5em;width:22em;max-width:100%}
 .controls button,.controls select{font:inherit;padding:.25em .7em}
 #count{color:#666}
+[hidden]{display:none!important}
 details.columns{position:relative}
 details.columns summary{cursor:pointer;user-select:none}
-details.columns div{position:absolute;z-index:3;background:#fff;border:1px solid #bbb;box-shadow:0 2px 8px #0003;
-  padding:.5em .8em;columns:3;column-gap:1.4em;min-width:36em;max-height:60vh;overflow:auto}
-details.columns label{display:block;white-space:nowrap;break-inside:avoid}
+#columns{position:absolute;z-index:3;background:#fff;border:1px solid #bbb;box-shadow:0 2px 8px #0003;
+  padding:.5em .8em;min-width:40em;max-height:70vh;overflow:auto}
+#columns p{margin:.2em 0 .5em}
+#columns .colgroup{border-top:1px solid #ddd;padding:.3em 0}
+#columns .grouphead{display:flex;align-items:center;gap:.3em;font-weight:600}
+#columns .grouphead .fold{font:inherit;width:1.6em;padding:0;border:0;background:none;cursor:pointer;color:#669}
+#columns .n{color:#666;font-weight:normal}
+#columns .members{columns:3;column-gap:1.4em;padding-left:1.9em}
+#columns .colgroup.closed .members{display:none}
+#columns label{display:block;white-space:nowrap;break-inside:avoid}
+#colmenu{position:absolute;z-index:5;background:#fff;border:1px solid #bbb;box-shadow:0 2px 8px #0003;padding:.3em 0;min-width:14em}
+#colmenu button{display:block;width:100%;text-align:left;font:inherit;padding:.3em 1em;border:0;background:none;cursor:pointer}
+#colmenu button:hover{background:#eef}
 table{border-collapse:collapse;table-layout:fixed}
 th,td{border:1px solid #ccc;padding:3px 5px;vertical-align:top;text-align:left;overflow-wrap:anywhere}
 thead th{position:sticky;top:0;background:#eef;z-index:2}
 thead th.sortable{cursor:pointer;user-select:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px}
 thead th.sortable::after{content:" \\2195";color:#99a}
-thead th.asc::after{content:" \\2191";color:#226}
-thead th.desc::after{content:" \\2193";color:#226}
+thead th.asc::after{content:" " attr(data-rank) " \\25b2";color:#226}
+thead th.desc::after{content:" " attr(data-rank) " \\25bc";color:#226}
 thead th.dragging{opacity:.5}
 thead th.dragover{outline:2px solid #58c;outline-offset:-2px}
 thead th .grip{position:absolute;top:0;right:0;width:7px;height:100%;cursor:col-resize;user-select:none}
@@ -160,13 +199,14 @@ table[data-size=S]{--imgw:240px;--imgh:170px}
 table[data-size=M]{--imgw:480px;--imgh:340px}
 table[data-size=L]{--imgw:720px;--imgh:500px}
 table[data-size=XL]{--imgw:1080px;--imgh:760px}
-td.graphics img{max-width:var(--imgw,720px);max-height:var(--imgh,500px);background:#fff;border:1px solid #ddd;margin:2px;vertical-align:top}
+td.graphics img{width:var(--imgw,720px);height:auto;max-height:var(--imgh,500px);object-fit:contain;
+  background:#fff;border:1px solid #ddd;box-sizing:border-box;margin:2px;vertical-align:top}
 """
 
 SCRIPT = r"""
 (function () {
   'use strict';
-  var KEY = 'kicad-library-overview:v2:' + document.title;   // v2: counts in labels, widths, order, size
+  var KEY = 'kicad-library-overview:v3:' + document.title;   // v3: sort is a list of keys; closed column groups
   var SIZES = { S: 240, M: 480, L: 720, XL: 1080 };           // image box width per size setting
   var table = document.getElementById('symbols');
   var headRow = table.tHead.rows[0], filterRow = table.tHead.rows[1];
@@ -175,18 +215,26 @@ SCRIPT = r"""
   var heads, filterCells, filters;                             // re-read from the DOM after a reorder
   var search = document.getElementById('search');
   var count = document.getElementById('count');
-  var toggles = Array.prototype.slice.call(document.querySelectorAll('#columns input[type=checkbox]'));
+  var columnsBox = document.getElementById('columns');
+  var toggles = Array.prototype.slice.call(columnsBox.querySelectorAll('.members input[type=checkbox]'));
   var labels = toggles.map(function (b) { return b.parentNode; });
-  var toggleFor = {};
-  toggles.forEach(function (b) { toggleFor[b.value] = b; });
+  var toggleFor = {}, groupOf = {};
+  toggles.forEach(function (b) { toggleFor[b.value] = b; groupOf[b.value] = b.closest('.colgroup').dataset.group; });
+  var groups = Array.prototype.slice.call(columnsBox.querySelectorAll('.colgroup')).map(function (g) {
+    return { name: g.dataset.group, box: g, parent: g.querySelector('.grouptoggle'), fold: g.querySelector('.fold'),
+             n: g.querySelector('.grouphead .n'),
+             members: toggles.filter(function (b) { return groupOf[b.value] === g.dataset.group; }), last: -1 };
+  });
   var colfilter = document.getElementById('colfilter');
   var sizeSelect = document.getElementById('imgsize');
   var panel = document.getElementById('valuepanel');
   var valueSearch = document.getElementById('valuesearch');
   var valueList = document.getElementById('valuelist');
+  var menu = document.getElementById('colmenu');
   var defaultHidden = toggles.filter(function (b) { return !b.checked; }).map(function (b) { return b.value; });
+  var defaultClosed = groups.filter(function (g) { return g.box.classList.contains('closed'); }).map(function (g) { return g.name; });
   var defaultOrder;
-  var state, valueFilter = {}, panelCol = null, resizing = false, dragCol = null;
+  var state, valueFilter = {}, panelCol = null, menuCol = null, resizing = false, dragCol = null;
 
   function readHeads() {
     heads = Array.prototype.slice.call(headRow.cells);
@@ -197,20 +245,23 @@ SCRIPT = r"""
   defaultOrder = heads.map(function (th) { return th.dataset.col; });
 
   function defaults() {
-    return { hidden: defaultHidden.slice(), sort: null, widths: {}, order: defaultOrder.slice(), size: 'L' };
+    return { hidden: defaultHidden.slice(), sort: [], widths: {}, order: defaultOrder.slice(), size: 'L',
+             closed: defaultClosed.slice() };
   }
   state = defaults();
 
+  function isKey(k) { return k && typeof k.col === 'string' && (k.dir === 'asc' || k.dir === 'desc'); }
   function load() {
     try {
       var s = JSON.parse(localStorage.getItem(KEY));
       if (s && Array.isArray(s.hidden)) {
         state = defaults();
         state.hidden = s.hidden;
-        state.sort = s.sort || null;
+        if (Array.isArray(s.sort)) { state.sort = s.sort.filter(isKey); } else if (isKey(s.sort)) { state.sort = [s.sort]; }
         if (s.widths && typeof s.widths === 'object') { state.widths = s.widths; }
         if (Array.isArray(s.order)) { state.order = s.order; }
         if (SIZES[s.size]) { state.size = s.size; }
+        if (Array.isArray(s.closed)) { state.closed = s.closed; }
       }
     } catch (e) { /* storage unavailable or corrupt: defaults */ }
   }
@@ -273,8 +324,16 @@ SCRIPT = r"""
     save();
   }
   function applyColumnFilter() {
+    // A text filter shows the matching entries of every group, folded or not; groups without a match are hidden.
     var q = colfilter.value.toLowerCase();
     labels.forEach(function (l, i) { l.hidden = !!q && toggles[i].value.toLowerCase().indexOf(q) < 0; });
+    groups.forEach(function (g) {
+      var any = g.members.some(function (b) { return !b.parentNode.hidden; });
+      g.box.hidden = !!q && !any;
+      g.box.classList.toggle('closed', !q && state.closed.indexOf(g.name) >= 0);
+      g.fold.textContent = g.box.classList.contains('closed') ? '▸' : '▾';
+      g.fold.title = g.box.classList.contains('closed') ? 'Expand' : 'Collapse';
+    });
   }
   function readToggles() {
     state.hidden = toggles.filter(function (b) { return !b.checked; }).map(function (b) { return b.value; });
@@ -284,6 +343,22 @@ SCRIPT = r"""
   function setVisibleToggles(on) {
     toggles.forEach(function (b, i) { if (!labels[i].hidden) { b.checked = on; } });
     readToggles();
+  }
+  function setToggles(wanted) {                                // wanted(col) -> true, false or undefined (leave)
+    toggles.forEach(function (b) { var on = wanted(b.value); if (on !== undefined) { b.checked = on; } });
+    readToggles();
+  }
+  function showOnlyCore() { setToggles(function (c) { return groupOf[c] === 'Core'; }); }
+  function showAll() { setToggles(function () { return true; }); }
+  function hideColumn(col) { setToggles(function (c) { return c === col ? false : undefined; }); }
+  function hideGroup(name) { setToggles(function (c) { return groupOf[c] === name ? false : undefined; }); }
+  function updateGroups() {
+    groups.forEach(function (g) {
+      var n = g.members.filter(function (b) { return b.checked; }).length;
+      g.parent.checked = n === g.members.length;
+      g.parent.indeterminate = n > 0 && n < g.members.length;
+      g.n.textContent = '(' + n + '/' + g.members.length + ')';
+    });
   }
   function applyColumns() {
     var hidden = {};
@@ -295,7 +370,14 @@ SCRIPT = r"""
       rows.forEach(function (r) { r.cells[i].hidden = !on; });
       toggleFor[th.dataset.col].checked = on;
     });
+    updateGroups();
     applyWidths();
+  }
+  function toggleGroupFold(g) {
+    var i = state.closed.indexOf(g.name);
+    if (i >= 0) { state.closed.splice(i, 1); } else { state.closed.push(g.name); }
+    save();
+    applyColumnFilter();
   }
 
   // --- rows: filter and sort ---
@@ -321,22 +403,40 @@ SCRIPT = r"""
     count.textContent = shown + ' of ' + rows.length + ' symbols';
   }
   function applySort() {
-    heads.forEach(function (th) { th.classList.remove('asc', 'desc'); });
+    // state.sort lists the keys by priority: [{col, dir}, ...]. Every sorting header shows "<rank> ▲|▼".
+    heads.forEach(function (th) { th.classList.remove('asc', 'desc'); th.removeAttribute('data-rank'); });
+    state.sort = state.sort.filter(function (k) { return colIndex(k.col) >= 0; });
+    var keys = state.sort.map(function (k, rank) {
+      var i = colIndex(k.col);
+      heads[i].classList.add(k.dir);
+      heads[i].dataset.rank = rank + 1;
+      return { i: i, dir: k.dir === 'desc' ? -1 : 1 };
+    });
     var order = rows.slice();
-    var i = state.sort ? colIndex(state.sort.col) : -1;
-    if (i >= 0) {
-      heads[i].classList.add(state.sort.dir);
-      var dir = state.sort.dir === 'desc' ? -1 : 1;
+    if (keys.length) {
       order.sort(function (a, b) {
-        var x = cellText(a.cells[i]), y = cellText(b.cells[i]);
-        if (x === '' && y !== '') { return 1; }   // empty cells last either way
-        if (y === '' && x !== '') { return -1; }
-        var c = x.localeCompare(y, undefined, { numeric: true, sensitivity: 'base' });
-        return c !== 0 ? c * dir : a.dataset.index - b.dataset.index;
+        for (var k = 0; k < keys.length; k++) {
+          var x = cellText(a.cells[keys[k].i]), y = cellText(b.cells[keys[k].i]);
+          if (x === '' && y !== '') { return 1; }   // empty cells last either way, per key
+          if (y === '' && x !== '') { return -1; }
+          var c = x.localeCompare(y, undefined, { numeric: true, sensitivity: 'base' });
+          if (c !== 0) { return c * keys[k].dir; }
+        }
+        return a.dataset.index - b.dataset.index;   // stable: original row order
       });
     }
     var body = table.tBodies[0];
     order.forEach(function (r) { body.appendChild(r); });
+  }
+  function cycleSort(col) {
+    // not a key -> appended ascending; ascending -> descending; descending -> removed
+    var i = -1;
+    state.sort.forEach(function (k, n) { if (k.col === col) { i = n; } });
+    if (i < 0) { state.sort.push({ col: col, dir: 'asc' }); }
+    else if (state.sort[i].dir === 'asc') { state.sort[i] = { col: col, dir: 'desc' }; }
+    else { state.sort.splice(i, 1); }
+    save();
+    applySort();
   }
 
   // --- value filter panel (Excel-style; a working filter, never saved) ---
@@ -420,14 +520,31 @@ SCRIPT = r"""
   headRow.addEventListener('click', function (e) {
     var el = elementOf(e), th = el.closest('th');
     if (!th || resizing || el.classList.contains('grip')) { return; }
-    var col = th.dataset.col;
-    if (state.sort && state.sort.col === col) {
-      state.sort = state.sort.dir === 'asc' ? { col: col, dir: 'desc' } : null;
-    } else {
-      state.sort = { col: col, dir: 'asc' };
-    }
-    save();
-    applySort();
+    cycleSort(th.dataset.col);
+  });
+  // --- header context menu: hide this column, hide its group, show only Core, show all ---
+  function closeMenu() { menu.hidden = true; menuCol = null; }
+  headRow.addEventListener('contextmenu', function (e) {
+    var th = elementOf(e).closest('th');
+    if (!th) { return; }
+    e.preventDefault();
+    closePanel();
+    menuCol = th.dataset.col;
+    menu.querySelector('[data-act=hide]').textContent = 'Hide this column (' + menuCol + ')';
+    menu.querySelector('[data-act=hidegroup]').textContent = 'Hide all ' + groupOf[menuCol] + ' columns';
+    menu.hidden = false;
+    var maxLeft = window.pageXOffset + document.documentElement.clientWidth - menu.offsetWidth - 8;
+    menu.style.left = Math.max(0, Math.min(e.pageX, maxLeft)) + 'px';
+    menu.style.top = e.pageY + 'px';
+  });
+  menu.addEventListener('click', function (e) {
+    var act = elementOf(e).closest('button') ? elementOf(e).closest('button').dataset.act : null;
+    var col = menuCol;
+    closeMenu();
+    if (act === 'hide') { hideColumn(col); }
+    else if (act === 'hidegroup') { hideGroup(groupOf[col]); }
+    else if (act === 'core') { showOnlyCore(); }
+    else if (act === 'all') { showAll(); }
   });
   headRow.addEventListener('mousedown', function (e) {
     var el = elementOf(e);
@@ -495,17 +612,38 @@ SCRIPT = r"""
   document.addEventListener('mousedown', function (e) {
     var el = elementOf(e);
     if (!panel.hidden && !panel.contains(el) && !el.classList.contains('funnel')) { closePanel(); }
+    if (!menu.hidden && !menu.contains(el)) { closeMenu(); }
   });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !panel.hidden) { closePanel(); }
+    if (e.key === 'Escape') { closePanel(); closeMenu(); }
   });
 
-  // --- page controls ---
-  toggles.forEach(function (box) { box.addEventListener('change', readToggles); });
+  // --- Columns control: entries (shift-click selects a range within the group), group parents, folds, bulk ---
+  groups.forEach(function (g) {
+    g.members.forEach(function (box, n) {
+      box.addEventListener('click', function (e) {
+        var on = box.checked;                                  // already toggled by the click
+        if (e.shiftKey && g.last >= 0 && g.last !== n) {
+          var lo = Math.min(g.last, n), hi = Math.max(g.last, n);
+          for (var k = lo; k <= hi; k++) { if (!g.members[k].parentNode.hidden) { g.members[k].checked = on; } }
+        }
+        g.last = n;
+        readToggles();
+      });
+    });
+    g.parent.addEventListener('click', function () {
+      var on = g.parent.checked;                               // an indeterminate parent becomes checked
+      g.members.forEach(function (b) { b.checked = on; });
+      readToggles();
+    });
+    g.fold.addEventListener('click', function () { toggleGroupFold(g); });
+  });
   search.addEventListener('input', applyFilter);
   colfilter.addEventListener('input', applyColumnFilter);
   document.getElementById('colall').addEventListener('click', function () { setVisibleToggles(true); });
   document.getElementById('colnone').addEventListener('click', function () { setVisibleToggles(false); });
+  document.getElementById('colcore').addEventListener('click', showOnlyCore);
+  document.getElementById('colshowall').addEventListener('click', showAll);
   if (sizeSelect) {
     sizeSelect.addEventListener('change', function () {
       if (SIZES[sizeSelect.value]) { state.size = sizeSelect.value; save(); applySize(); }
@@ -515,26 +653,25 @@ SCRIPT = r"""
     search.value = '';
     filters.forEach(function (f) { if (f) { f.value = ''; } });
     colfilter.value = '';
-    applyColumnFilter();
     valueFilter = {};
     closePanel();
+    closeMenu();
     state = defaults();
     try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ }
+    applyAll();
+  });
+
+  function applyAll() {
     applyOrder();
     applyColumns();
+    applyColumnFilter();
     applySize();
     applySort();
     markFunnels();
     applyFilter();
-  });
-
+  }
   load();
-  applyOrder();
-  applyColumns();
-  applySize();
-  applySort();
-  markFunnels();
-  applyFilter();
+  applyAll();
 })();
 """
 
@@ -590,6 +727,28 @@ def column_count(symbols: list[Symbol], column: str) -> int:
     return sum(1 for s in symbols if filled(s))
 
 
+def column_groups_html(columns: list[str], shown: set[str], counts: dict[str, int]) -> list[str]:
+    """One .colgroup block per non-empty group in GROUPS order: a fold button, a tri-state parent checkbox
+    (the script sets its state), the shown/total count and one checkbox per member column."""
+    blocks = []
+    for group in GROUPS:
+        members = [c for c in columns if column_group(c) == group]
+        if not members:
+            continue
+        closed = " closed" if group in DEFAULT_CLOSED_GROUPS else ""
+        fold = "&#9656;" if closed else "&#9662;"
+        n = sum(1 for c in members if c in shown)
+        labels = "".join(f'<label><input type="checkbox" value="{esc(c)}"{" checked" if c in shown else ""}> '
+                         f'{esc(c)} ({counts[c]})</label>' for c in members)
+        blocks.append(f'<div class="colgroup{closed}" data-group="{esc(group)}">'
+                      f'<div class="grouphead"><button type="button" class="fold" title="{"Expand" if closed else "Collapse"}" '
+                      f'aria-label="fold {esc(group)}">{fold}</button>'
+                      f'<label><input type="checkbox" class="grouptoggle" aria-label="show all {esc(group)} columns"> '
+                      f'{esc(group)} <span class="n">({n}/{len(members)})</span></label></div>'
+                      f'<div class="members">{labels}</div></div>')
+    return blocks
+
+
 def build_page(symbols: list[Symbol], title: str, libraries: list[Path], graphics: bool) -> tuple[str, list[str]]:
     """(html, column names)."""
     props = property_columns({n for s in symbols for n in s.fields})
@@ -603,15 +762,14 @@ def build_page(symbols: list[Symbol], title: str, libraries: list[Path], graphic
     # The rest of the fields start hidden when no symbol fills them; the Columns control shows them.
     shown = {c for c in columns if c in ALWAYS_SHOWN or counts[c] > 0}
 
-    header = "".join(f'<th class="sortable" draggable="true" data-col="{esc(c)}">{esc(c)}'
+    header = "".join(f'<th class="sortable" draggable="true" data-col="{esc(c)}" data-group="{esc(column_group(c))}">{esc(c)}'
                      f'<span class="grip" title="Drag to resize"></span></th>' for c in columns)
     filter_row = "".join("<th></th>" if c in unfilterable else
                          f'<th><div class="fwrap"><input type="search" placeholder="filter" aria-label="filter {esc(c)}">'
                          f'<button type="button" class="funnel" title="Filter by value" aria-label="filter {esc(c)} by value">'
                          f'&#9661;</button></div></th>'
                          for c in columns)
-    toggles = "".join(f'<label><input type="checkbox" value="{esc(c)}"{" checked" if c in shown else ""}> '
-                      f'{esc(c)} ({counts[c]})</label>' for c in columns)
+    toggles = "".join(column_groups_html(columns, shown, counts))
     size_control = ('<label>Graphics <select id="imgsize" aria-label="graphics size">'
                     + "".join(f'<option value="{s}"{" selected" if s == "L" else ""}>{s}</option>' for s in ("S", "M", "L", "XL"))
                     + "</select></label>") if graphics else ""
@@ -644,14 +802,16 @@ def build_page(symbols: list[Symbol], title: str, libraries: list[Path], graphic
 </head>
 <body>
 <h1>{esc(title)}</h1>
-<p class="meta">{len(symbols)} symbols from {sources}. Click a header to sort (again to reverse, a third time to clear);
-drag a header onto another to reorder, drag its right edge to resize. The funnel in a filter cell picks values.
+<p class="meta">{len(symbols)} symbols from {sources}. Click a header to add it to the sort as the last key (again to reverse
+it, a third time to remove it); sorting headers show their priority and direction. Drag a header onto another to reorder,
+drag its right edge to resize; right-click a header to hide it or its group. The funnel in a filter cell picks values.
 Pins read name (number) electrical type = Pin.&lt;base&gt; value. A middle dot marks a field that is present but empty.</p>
 <div class="controls">
 <input type="search" id="search" placeholder="search all columns" aria-label="search all columns">
 <details class="columns"><summary>Columns</summary><div id="columns">
+<p class="colbulk"><button type="button" id="colcore">Show only Core</button> <button type="button" id="colshowall">Show all</button></p>
 <p class="colctl"><input type="search" id="colfilter" placeholder="filter columns" aria-label="filter columns">
-<button type="button" id="colall">All</button> <button type="button" id="colnone">None</button></p>
+<button type="button" id="colall">All</button> <button type="button" id="colnone">None</button> <span class="n">(filtered entries)</span></p>
 {toggles}</div></details>
 {size_control}
 <button type="button" id="reset">Reset view</button>
@@ -670,6 +830,12 @@ Pins read name (number) electrical type = Pin.&lt;base&gt; value. A middle dot m
 <input type="search" id="valuesearch" placeholder="search values" aria-label="search values">
 <p><button type="button" id="valall">Select all</button> <button type="button" id="valclear">Clear</button></p>
 <div id="valuelist"></div>
+</div>
+<div id="colmenu" role="menu" hidden>
+<button type="button" data-act="hide">Hide this column</button>
+<button type="button" data-act="hidegroup">Hide all columns of its group</button>
+<button type="button" data-act="core">Show only Core</button>
+<button type="button" data-act="all">Show all</button>
 </div>
 <script>{SCRIPT}</script>
 </body>

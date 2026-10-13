@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import re
 import sys
 import tempfile
 import unittest
@@ -249,7 +250,7 @@ class OverviewTests(unittest.TestCase):
         self.assertTrue({"search", "columns", "reset", "symbols", "count"} <= self.table.ids)
         self.assertIn("sortable", self.table.classes)
         self.assertIn("filters", self.table.classes)
-        self.assertEqual(self.page.count('type="checkbox"'), len(self.table.headers))
+        self.assertEqual(self.page.count('<input type="checkbox" value="'), len(self.table.headers))
         self.assertTrue({"colfilter", "colall", "colnone"} <= self.table.ids)
         self.assertIn('value="Role" checked> Role (2)</label>', self.page)          # always shown
         self.assertIn('value="Footprint"> Footprint (0)</label>', self.page)        # empty on every symbol: starts hidden
@@ -269,8 +270,53 @@ class OverviewTests(unittest.TestCase):
         self.assertEqual(overview.column_count(overview.load_library(self.lib), "Pin.OCC"), 1)
 
     def test_storage_key_is_versioned(self):
-        self.assertIn("'kicad-library-overview:v2:' + document.title", self.page)
+        self.assertIn("'kicad-library-overview:v3:' + document.title", self.page)
         self.assertNotIn("'kicad-library-overview:' + document.title", self.page)
+        self.assertNotIn("'kicad-library-overview:v2:' + document.title", self.page)  # v3: sort is a list
+
+    def test_column_groups_with_counts(self):
+        # Group label = "<group> (shown/total)" for the fixture; empty groups (Contract) are not emitted.
+        for group, shown, total in (("Core", 7, 7), ("KiCad fields", 2, 4), ("Pin.*", 2, 2), ("Settings", 1, 1), ("Other", 1, 1)):
+            self.assertIn(f'<input type="checkbox" class="grouptoggle" aria-label="show all {group} columns"> '
+                          f'{group} <span class="n">({shown}/{total})</span></label>', self.page)
+        self.assertNotIn('data-group="Contract"', self.page)
+        self.assertEqual(self.page.count('class="grouptoggle"'), 5)
+        self.assertEqual([overview.column_group(c) for c in self.table.headers],
+                         ["Core"] * 7 + ["KiCad fields"] * 4 + ["Pin.*"] * 2 + ["Settings", "Other"])
+        self.assertEqual(overview.column_group("IndicationToken"), "Contract")
+        self.assertEqual(overview.column_group("ki_keywords"), "Settings")
+        self.assertEqual(overview.column_group("Kind"), "Other")
+        # Group order and default folds: Pin.* and Settings start closed, Core and the rest open.
+        blocks = re.findall(r'<div class="colgroup( closed)?" data-group="([^"]+)">', self.page)
+        self.assertEqual(blocks, [("", "Core"), ("", "KiCad fields"), (" closed", "Pin.*"), (" closed", "Settings"), ("", "Other")])
+        self.assertEqual(self.page.count('<button type="button" class="fold"'), 5)
+        # Every member entry sits in its group's block and headers carry the group for the context menu.
+        self.assertIn('data-group="Pin.*"><div class="grouphead">', self.page)
+        self.assertIn('<th class="sortable" draggable="true" data-col="Pin.EN" data-group="Pin.*">', self.page)
+        self.assertIn('<th class="sortable" draggable="true" data-col="hold_ms" data-group="Settings">', self.page)
+        self.assertIn('<div class="members"><label><input type="checkbox" value="Pin.EN" checked> Pin.EN (1)</label>'
+                      '<label><input type="checkbox" value="Pin.OCC" checked> Pin.OCC (1)</label></div>', self.page)
+
+    def test_bulk_actions_and_header_context_menu(self):
+        self.assertTrue({"colcore", "colshowall", "colmenu"} <= self.table.ids)
+        self.assertIn('<button type="button" id="colcore">Show only Core</button>', self.page)
+        self.assertIn('<button type="button" id="colshowall">Show all</button>', self.page)
+        self.assertIn('<div id="colmenu" role="menu" hidden>', self.page)
+        for act in ("hide", "hidegroup", "core", "all"):
+            self.assertIn(f'<button type="button" data-act="{act}">', self.page)
+        self.assertIn("addEventListener('contextmenu'", self.page)
+        self.assertIn("e.shiftKey", self.page)                      # range selection within a group
+        self.assertIn("g.parent.indeterminate", self.page)          # tri-state parent
+        self.assertIn("state.closed", self.page)                    # folded groups persist
+
+    def test_multi_column_sort_markup_hooks(self):
+        self.assertIn('thead th.asc::after{content:" " attr(data-rank) " \\25b2"', self.page)
+        self.assertIn('thead th.desc::after{content:" " attr(data-rank) " \\25bc"', self.page)
+        self.assertIn("heads[i].dataset.rank = rank + 1", self.page)
+        self.assertIn("sort: []", self.page)                        # the default: no keys
+        self.assertIn("state.sort.push({ col: col, dir: 'asc' })", self.page)
+        self.assertIn("state.sort.splice(i, 1)", self.page)         # descending -> removed
+        self.assertIn("return a.dataset.index - b.dataset.index;   // stable", self.page)
 
     def test_page_has_resize_reorder_and_value_filter_controls(self):
         n = len(self.table.headers)
@@ -314,7 +360,10 @@ class GraphicsPageTests(unittest.TestCase):
         self.assertIn('<option value="L" selected>L</option>', self.page)
         self.assertIn('<table id="symbols" data-size="L">', self.page)
         self.assertIn("table[data-size=L]{--imgw:720px;--imgh:500px}", self.page)
-        self.assertIn("td.graphics img{max-width:var(--imgw", self.page)
+        # The image box follows the size variables: width set (not only capped, since the SVGs are smaller than
+        # every box), height by aspect up to --imgh, contained. max-width alone never enlarged the intrinsic size.
+        self.assertIn("td.graphics img{width:var(--imgw,720px);height:auto;max-height:var(--imgh,500px);object-fit:contain", self.page)
+        self.assertNotIn("td.graphics img{max-width", self.page)
         n = len(self.table.headers)
         self.assertEqual(self.page.count('<button type="button" class="funnel"'), n - 1)  # Graphics has no value filter
         self.assertEqual(self.page.count('<span class="grip"'), n)
