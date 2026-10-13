@@ -8,9 +8,13 @@ Role, Appliance, Style, IC, Address, Invert, then Pin.* sorted, then the rest so
 (name, number, electrical type and the Pin.<base> value when the symbol has one), the unit
 structure, and one SVG per unit from `kicad-cli sym export svg`, written to <out>/svg-<library>/
 and referenced by relative path. The page is plain HTML with inline CSS and JavaScript (no server,
-no CDN): the table sorts on any column, filters by a search box and per-column boxes, and shows
-or hides columns (with a filter and All/None for the dozens of Pin.* fields); fields that no symbol
-fills start hidden; the column set and sort order are remembered in localStorage when available.
+no CDN): the table sorts on any column, filters by a search box, per-column text boxes and a
+per-column value picker (a funnel button listing the distinct values with counts), and shows or
+hides columns (each listed with the number of rows that fill it, with a filter and All/None for the
+dozens of Pin.* fields); fields that no symbol fills start hidden. Column widths can be dragged at
+the header's right edge and columns reordered by dragging a header onto another; the graphics have
+an S/M/L/XL size control. The column set, order, widths, image size and sort order are remembered
+in localStorage when available (under a versioned key); the value filters are not.
 
 The default <out> is <directory of the first library>/production/overview/ (the Railroad repo
 gitignores production/). `--no-render` skips kicad-cli and omits the graphics column.
@@ -114,75 +118,172 @@ h1{font-size:1.4em;margin:0 0 .3em}
 .meta{color:#666;margin-bottom:.8em}
 .controls{display:flex;flex-wrap:wrap;gap:.6em 1.2em;align-items:center;margin-bottom:.8em}
 .controls input[type=search]{font:inherit;padding:.3em .5em;width:22em;max-width:100%}
-.controls button{font:inherit;padding:.25em .7em}
+.controls button,.controls select{font:inherit;padding:.25em .7em}
 #count{color:#666}
 details.columns{position:relative}
 details.columns summary{cursor:pointer;user-select:none}
 details.columns div{position:absolute;z-index:3;background:#fff;border:1px solid #bbb;box-shadow:0 2px 8px #0003;
   padding:.5em .8em;columns:3;column-gap:1.4em;min-width:36em;max-height:60vh;overflow:auto}
 details.columns label{display:block;white-space:nowrap;break-inside:avoid}
-table{border-collapse:collapse;width:100%}
+table{border-collapse:collapse;table-layout:fixed}
 th,td{border:1px solid #ccc;padding:3px 5px;vertical-align:top;text-align:left;overflow-wrap:anywhere}
 thead th{position:sticky;top:0;background:#eef;z-index:2}
-thead th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
+thead th.sortable{cursor:pointer;user-select:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px}
 thead th.sortable::after{content:" \\2195";color:#99a}
 thead th.asc::after{content:" \\2191";color:#226}
 thead th.desc::after{content:" \\2193";color:#226}
+thead th.dragging{opacity:.5}
+thead th.dragover{outline:2px solid #58c;outline-offset:-2px}
+thead th .grip{position:absolute;top:0;right:0;width:7px;height:100%;cursor:col-resize;user-select:none}
+thead th .grip:hover{background:#9ab}
 thead tr.filters th{top:1.9em;background:#f6f6fb;padding:1px 2px;font-weight:normal}
-thead tr.filters input{font:inherit;width:100%;box-sizing:border-box;padding:2px 3px}
+thead tr.filters .fwrap{display:flex;gap:2px}
+thead tr.filters input{font:inherit;flex:1;min-width:0;box-sizing:border-box;padding:2px 3px}
+thead tr.filters .funnel{font:inherit;padding:0 4px;border:1px solid #bbb;background:#fff;color:#669;cursor:pointer}
+thead tr.filters .funnel.active{background:#cde;color:#126;border-color:#58c}
+#valuepanel{position:absolute;z-index:4;background:#fff;border:1px solid #bbb;box-shadow:0 2px 8px #0003;
+  padding:.5em .8em;min-width:16em;max-width:32em;max-height:60vh;overflow:auto}
+#valuepanel input[type=search]{font:inherit;width:100%;box-sizing:border-box;padding:2px 3px}
+#valuepanel p{margin:.4em 0}
+#valuepanel button{font:inherit;padding:.15em .6em}
+#valuepanel label{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#valuepanel .n{color:#666}
 tbody tr:nth-child(even){background:#fafafa}
 tbody tr:hover{background:#f0f4ff}
-td.wrap{min-width:12em;max-width:28em}
 td.empty::after{content:"\\00b7";color:#aaa}
-td.symbol{font-weight:600;white-space:nowrap}
-ul.pins,ul.units{margin:0;padding-left:1.1em;min-width:10em}
-ul.pins li,ul.units li{white-space:nowrap}
+td.symbol{font-weight:600}
+ul.pins,ul.units{margin:0;padding-left:1.1em}
 ul.pins .num{color:#666}
 ul.pins .etype{color:#36a}
 ul.pins .cap{color:#262}
-td.graphics{white-space:nowrap}
-td.graphics img{max-width:240px;max-height:170px;background:#fff;border:1px solid #ddd;margin:2px;vertical-align:top}
+table[data-size=S]{--imgw:240px;--imgh:170px}
+table[data-size=M]{--imgw:480px;--imgh:340px}
+table[data-size=L]{--imgw:720px;--imgh:500px}
+table[data-size=XL]{--imgw:1080px;--imgh:760px}
+td.graphics img{max-width:var(--imgw,720px);max-height:var(--imgh,500px);background:#fff;border:1px solid #ddd;margin:2px;vertical-align:top}
 """
 
 SCRIPT = r"""
 (function () {
   'use strict';
-  var KEY = 'kicad-library-overview:' + document.title;
+  var KEY = 'kicad-library-overview:v2:' + document.title;   // v2: counts in labels, widths, order, size
+  var SIZES = { S: 240, M: 480, L: 720, XL: 1080 };           // image box width per size setting
   var table = document.getElementById('symbols');
-  var heads = Array.prototype.slice.call(table.tHead.rows[0].cells);
-  var filterCells = Array.prototype.slice.call(table.tHead.rows[1].cells);
-  var filters = filterCells.map(function (c) { return c.querySelector('input'); });
+  var headRow = table.tHead.rows[0], filterRow = table.tHead.rows[1];
   var rows = Array.prototype.slice.call(table.tBodies[0].rows);
   rows.forEach(function (r, i) { r.dataset.index = i; });
+  var heads, filterCells, filters;                             // re-read from the DOM after a reorder
   var search = document.getElementById('search');
   var count = document.getElementById('count');
   var toggles = Array.prototype.slice.call(document.querySelectorAll('#columns input[type=checkbox]'));
   var labels = toggles.map(function (b) { return b.parentNode; });
+  var toggleFor = {};
+  toggles.forEach(function (b) { toggleFor[b.value] = b; });
   var colfilter = document.getElementById('colfilter');
+  var sizeSelect = document.getElementById('imgsize');
+  var panel = document.getElementById('valuepanel');
+  var valueSearch = document.getElementById('valuesearch');
+  var valueList = document.getElementById('valuelist');
   var defaultHidden = toggles.filter(function (b) { return !b.checked; }).map(function (b) { return b.value; });
-  var state = { hidden: defaultHidden.slice(), sort: null };
+  var defaultOrder;
+  var state, valueFilter = {}, panelCol = null, resizing = false, dragCol = null;
+
+  function readHeads() {
+    heads = Array.prototype.slice.call(headRow.cells);
+    filterCells = Array.prototype.slice.call(filterRow.cells);
+    filters = filterCells.map(function (c) { return c.querySelector('input'); });
+  }
+  readHeads();
+  defaultOrder = heads.map(function (th) { return th.dataset.col; });
+
+  function defaults() {
+    return { hidden: defaultHidden.slice(), sort: null, widths: {}, order: defaultOrder.slice(), size: 'L' };
+  }
+  state = defaults();
 
   function load() {
     try {
       var s = JSON.parse(localStorage.getItem(KEY));
-      if (s && Array.isArray(s.hidden)) { state = { hidden: s.hidden, sort: s.sort || null }; }
+      if (s && Array.isArray(s.hidden)) {
+        state = defaults();
+        state.hidden = s.hidden;
+        state.sort = s.sort || null;
+        if (s.widths && typeof s.widths === 'object') { state.widths = s.widths; }
+        if (Array.isArray(s.order)) { state.order = s.order; }
+        if (SIZES[s.size]) { state.size = s.size; }
+      }
     } catch (e) { /* storage unavailable or corrupt: defaults */ }
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+  }
+  function elementOf(e) {
+    var t = e.target;
+    return t && t.nodeType === 1 ? t : (t && t.parentElement) || document.documentElement;
+  }
+  function cellText(cell) {
+    return cell.dataset.sort !== undefined ? cell.dataset.sort : cell.textContent.trim();
+  }
+  function cellValue(cell) { return cell.textContent.replace(/\s+/g, ' ').trim(); }
+  function colIndex(col) {
+    for (var i = 0; i < heads.length; i++) { if (heads[i].dataset.col === col) { return i; } }
+    return -1;
+  }
+
+  // --- columns: visibility, order, widths, image size ---
+  function defaultWidth(col) {
+    if (col === 'Graphics') { return SIZES[state.size] + 16; }
+    if (col === 'Pins' || col === 'Units') { return 220; }
+    if (col === 'Description') { return 320; }
+    if (col === 'Symbol') { return 160; }
+    return 120;
+  }
+  function applyWidths() {
+    var total = 0;
+    heads.forEach(function (th) {
+      var w = +state.widths[th.dataset.col] > 0 ? +state.widths[th.dataset.col] : defaultWidth(th.dataset.col);
+      th.style.width = w + 'px';
+      if (!th.hidden) { total += w; }
+    });
+    table.style.width = total + 'px';
+  }
+  function applySize() {
+    table.dataset.size = state.size;
+    if (sizeSelect) { sizeSelect.value = state.size; }
+    applyWidths();
+  }
+  function applyOrder() {
+    var current = heads.map(function (th) { return th.dataset.col; });
+    var order = state.order.filter(function (c) { return current.indexOf(c) >= 0; });
+    current.forEach(function (c) { if (order.indexOf(c) < 0) { order.push(c); } });
+    state.order = order;
+    if (order.join('\n') === current.join('\n')) { return; }
+    [headRow, filterRow].concat(rows).forEach(function (r) {
+      var cells = Array.prototype.slice.call(r.cells);
+      order.forEach(function (c) { r.appendChild(cells[current.indexOf(c)]); });
+    });
+    readHeads();
+  }
+  function moveColumn(from, to) {
+    var order = heads.map(function (th) { return th.dataset.col; });
+    order.splice(order.indexOf(from), 1);
+    order.splice(order.indexOf(to), 0, from);
+    state.order = order;
+    applyOrder();
+    save();
   }
   function applyColumnFilter() {
     var q = colfilter.value.toLowerCase();
     labels.forEach(function (l, i) { l.hidden = !!q && toggles[i].value.toLowerCase().indexOf(q) < 0; });
   }
-  function setVisibleToggles(on) {
-    toggles.forEach(function (b, i) { if (!labels[i].hidden) { b.checked = on; } });
+  function readToggles() {
     state.hidden = toggles.filter(function (b) { return !b.checked; }).map(function (b) { return b.value; });
     save();
     applyColumns();
   }
-  function save() {
-    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
-  }
-  function cellText(cell) {
-    return cell.dataset.sort !== undefined ? cell.dataset.sort : cell.textContent.trim();
+  function setVisibleToggles(on) {
+    toggles.forEach(function (b, i) { if (!labels[i].hidden) { b.checked = on; } });
+    readToggles();
   }
   function applyColumns() {
     var hidden = {};
@@ -192,18 +293,27 @@ SCRIPT = r"""
       th.hidden = !on;
       filterCells[i].hidden = !on;
       rows.forEach(function (r) { r.cells[i].hidden = !on; });
-      toggles[i].checked = on;
+      toggleFor[th.dataset.col].checked = on;
     });
+    applyWidths();
   }
+
+  // --- rows: filter and sort ---
   function applyFilter() {
     var q = search.value.toLowerCase();
+    var active = [];
+    heads.forEach(function (th, i) {
+      var text = filters[i] && filters[i].value ? filters[i].value.toLowerCase() : '';
+      var values = valueFilter[th.dataset.col] || null;
+      if (text || values) { active.push({ i: i, text: text, values: values }); }
+    });
     var shown = 0;
     rows.forEach(function (r) {
       var ok = !q || r.textContent.toLowerCase().indexOf(q) >= 0;
-      for (var i = 0; ok && i < filters.length; i++) {
-        if (filters[i] && filters[i].value) {
-          ok = cellText(r.cells[i]).toLowerCase().indexOf(filters[i].value.toLowerCase()) >= 0;
-        }
+      for (var k = 0; ok && k < active.length; k++) {
+        var cell = r.cells[active[k].i];
+        if (active[k].text) { ok = cellText(cell).toLowerCase().indexOf(active[k].text) >= 0; }
+        if (ok && active[k].values) { ok = !!active[k].values[cellValue(cell)]; }
       }
       r.hidden = !ok;
       if (ok) { shown++; }
@@ -213,65 +323,217 @@ SCRIPT = r"""
   function applySort() {
     heads.forEach(function (th) { th.classList.remove('asc', 'desc'); });
     var order = rows.slice();
-    if (state.sort) {
-      var i = -1;
-      heads.forEach(function (th, k) { if (th.dataset.col === state.sort.col) { i = k; } });
-      if (i >= 0) {
-        heads[i].classList.add(state.sort.dir);
-        var dir = state.sort.dir === 'desc' ? -1 : 1;
-        order.sort(function (a, b) {
-          var x = cellText(a.cells[i]), y = cellText(b.cells[i]);
-          if (x === '' && y !== '') { return 1; }   // empty cells last either way
-          if (y === '' && x !== '') { return -1; }
-          var c = x.localeCompare(y, undefined, { numeric: true, sensitivity: 'base' });
-          return c !== 0 ? c * dir : a.dataset.index - b.dataset.index;
-        });
-      }
+    var i = state.sort ? colIndex(state.sort.col) : -1;
+    if (i >= 0) {
+      heads[i].classList.add(state.sort.dir);
+      var dir = state.sort.dir === 'desc' ? -1 : 1;
+      order.sort(function (a, b) {
+        var x = cellText(a.cells[i]), y = cellText(b.cells[i]);
+        if (x === '' && y !== '') { return 1; }   // empty cells last either way
+        if (y === '' && x !== '') { return -1; }
+        var c = x.localeCompare(y, undefined, { numeric: true, sensitivity: 'base' });
+        return c !== 0 ? c * dir : a.dataset.index - b.dataset.index;
+      });
     }
     var body = table.tBodies[0];
     order.forEach(function (r) { body.appendChild(r); });
   }
 
-  heads.forEach(function (th) {
-    if (!th.classList.contains('sortable')) { return; }
-    th.addEventListener('click', function () {
-      var col = th.dataset.col;
-      if (state.sort && state.sort.col === col) {
-        state.sort = state.sort.dir === 'asc' ? { col: col, dir: 'desc' } : null;
-      } else {
-        state.sort = { col: col, dir: 'asc' };
-      }
-      save();
-      applySort();
+  // --- value filter panel (Excel-style; a working filter, never saved) ---
+  function markFunnels() {
+    filterCells.forEach(function (c, i) {
+      var b = c.querySelector('.funnel');
+      if (!b) { return; }
+      var on = !!valueFilter[heads[i].dataset.col];
+      b.classList.toggle('active', on);
+      b.textContent = on ? '▼' : '▽';
+      b.title = on ? 'Value filter active (click to edit)' : 'Filter by value';
     });
-  });
-  toggles.forEach(function (box) {
-    box.addEventListener('change', function () {
-      state.hidden = toggles.filter(function (b) { return !b.checked; }).map(function (b) { return b.value; });
-      save();
-      applyColumns();
+  }
+  function openPanel(i) {
+    var col = heads[i].dataset.col;
+    var counts = {}, keys = [];
+    rows.forEach(function (r) {
+      var v = cellValue(r.cells[i]);
+      if (!Object.prototype.hasOwnProperty.call(counts, v)) { counts[v] = 0; keys.push(v); }
+      counts[v]++;
     });
+    keys.sort(function (a, b) {
+      if (a === '') { return -1; }
+      if (b === '') { return 1; }
+      return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+    });
+    var selected = valueFilter[col];
+    valueList.innerHTML = '';
+    keys.forEach(function (k) {
+      var label = document.createElement('label');
+      var box = document.createElement('input');
+      box.type = 'checkbox';
+      box.value = k;
+      box.checked = !selected || !!selected[k];
+      label.title = k === '' ? '(blank)' : k;
+      label.appendChild(box);
+      label.appendChild(document.createTextNode(' ' + label.title + ' '));
+      var n = document.createElement('span');
+      n.className = 'n';
+      n.textContent = '(' + counts[k] + ')';
+      label.appendChild(n);
+      valueList.appendChild(label);
+    });
+    valueSearch.value = '';
+    panelCol = col;
+    panel.hidden = false;
+    var rect = filterCells[i].querySelector('.funnel').getBoundingClientRect();
+    var left = rect.left + window.pageXOffset;
+    var maxLeft = window.pageXOffset + document.documentElement.clientWidth - panel.offsetWidth - 8;
+    panel.style.left = Math.max(0, Math.min(left, maxLeft)) + 'px';
+    panel.style.top = (rect.bottom + window.pageYOffset + 2) + 'px';
+    valueSearch.focus();
+  }
+  function closePanel() { panel.hidden = true; panelCol = null; }
+  function readPanel() {
+    var boxes = Array.prototype.slice.call(valueList.querySelectorAll('input'));
+    if (boxes.every(function (b) { return b.checked; })) {
+      delete valueFilter[panelCol];
+    } else {
+      var m = {};
+      boxes.forEach(function (b) { if (b.checked) { m[b.value] = true; } });
+      valueFilter[panelCol] = m;
+    }
+    markFunnels();
+    applyFilter();
+  }
+  function applyValueSearch() {
+    var q = valueSearch.value.toLowerCase();
+    Array.prototype.slice.call(valueList.children).forEach(function (l) {
+      l.hidden = !!q && l.title.toLowerCase().indexOf(q) < 0;
+    });
+  }
+  function setPanelBoxes(on) {
+    Array.prototype.slice.call(valueList.children).forEach(function (l) {
+      if (!l.hidden) { l.querySelector('input').checked = on; }
+    });
+    readPanel();
+  }
+
+  // --- header events: sort, resize, reorder ---
+  headRow.addEventListener('click', function (e) {
+    var el = elementOf(e), th = el.closest('th');
+    if (!th || resizing || el.classList.contains('grip')) { return; }
+    var col = th.dataset.col;
+    if (state.sort && state.sort.col === col) {
+      state.sort = state.sort.dir === 'asc' ? { col: col, dir: 'desc' } : null;
+    } else {
+      state.sort = { col: col, dir: 'asc' };
+    }
+    save();
+    applySort();
   });
+  headRow.addEventListener('mousedown', function (e) {
+    var el = elementOf(e);
+    if (!el.classList.contains('grip')) { return; }
+    e.preventDefault();
+    e.stopPropagation();
+    var th = el.parentNode, startX = e.clientX, startW = th.getBoundingClientRect().width;
+    resizing = true;
+    function move(ev) {
+      state.widths[th.dataset.col] = Math.max(40, Math.round(startW + ev.clientX - startX));
+      applyWidths();
+    }
+    function up() {
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('mouseup', up);
+      save();
+      setTimeout(function () { resizing = false; }, 0);   // swallow the click that follows the mouseup
+    }
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+  });
+  headRow.addEventListener('dragstart', function (e) {
+    var th = elementOf(e).closest('th');
+    if (!th || resizing) { e.preventDefault(); return; }
+    dragCol = th.dataset.col;
+    th.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragCol);
+  });
+  headRow.addEventListener('dragover', function (e) {
+    var th = elementOf(e).closest('th');
+    if (!th || !dragCol || th.dataset.col === dragCol) { return; }
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    th.classList.add('dragover');
+  });
+  headRow.addEventListener('dragleave', function (e) {
+    var th = elementOf(e).closest('th');
+    if (th) { th.classList.remove('dragover'); }
+  });
+  headRow.addEventListener('drop', function (e) {
+    var th = elementOf(e).closest('th');
+    if (!th || !dragCol) { return; }
+    e.preventDefault();
+    th.classList.remove('dragover');
+    if (th.dataset.col !== dragCol) { moveColumn(dragCol, th.dataset.col); }
+  });
+  headRow.addEventListener('dragend', function () {
+    heads.forEach(function (th) { th.classList.remove('dragging', 'dragover'); });
+    dragCol = null;
+  });
+
+  // --- filter row and panel events ---
+  filterRow.addEventListener('click', function (e) {
+    var el = elementOf(e);
+    if (!el.classList.contains('funnel')) { return; }
+    var i = filterCells.indexOf(el.closest('th'));
+    if (panelCol === heads[i].dataset.col) { closePanel(); } else { openPanel(i); }
+  });
+  filters.forEach(function (f) { if (f) { f.addEventListener('input', applyFilter); } });
+  valueList.addEventListener('change', readPanel);
+  valueSearch.addEventListener('input', applyValueSearch);
+  document.getElementById('valall').addEventListener('click', function () { setPanelBoxes(true); });
+  document.getElementById('valclear').addEventListener('click', function () { setPanelBoxes(false); });
+  document.addEventListener('mousedown', function (e) {
+    var el = elementOf(e);
+    if (!panel.hidden && !panel.contains(el) && !el.classList.contains('funnel')) { closePanel(); }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !panel.hidden) { closePanel(); }
+  });
+
+  // --- page controls ---
+  toggles.forEach(function (box) { box.addEventListener('change', readToggles); });
   search.addEventListener('input', applyFilter);
   colfilter.addEventListener('input', applyColumnFilter);
   document.getElementById('colall').addEventListener('click', function () { setVisibleToggles(true); });
   document.getElementById('colnone').addEventListener('click', function () { setVisibleToggles(false); });
-  filters.forEach(function (f) { if (f) { f.addEventListener('input', applyFilter); } });
+  if (sizeSelect) {
+    sizeSelect.addEventListener('change', function () {
+      if (SIZES[sizeSelect.value]) { state.size = sizeSelect.value; save(); applySize(); }
+    });
+  }
   document.getElementById('reset').addEventListener('click', function () {
     search.value = '';
     filters.forEach(function (f) { if (f) { f.value = ''; } });
     colfilter.value = '';
     applyColumnFilter();
-    state = { hidden: defaultHidden.slice(), sort: null };
+    valueFilter = {};
+    closePanel();
+    state = defaults();
     try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ }
+    applyOrder();
     applyColumns();
+    applySize();
     applySort();
+    markFunnels();
     applyFilter();
   });
 
   load();
+  applyOrder();
   applyColumns();
+  applySize();
   applySort();
+  markFunnels();
   applyFilter();
 })();
 """
@@ -319,6 +581,15 @@ def field_cell(sym: Symbol, name: str) -> str:
     return f'<td class="{cls}">{esc(value)}</td>' if cls else f"<td>{esc(value)}</td>"
 
 
+def column_count(symbols: list[Symbol], column: str) -> int:
+    """How many symbols fill the column: a non-empty field value, an image, a pin or a unit."""
+    if column in ("Library", "Symbol"):
+        return len(symbols)
+    filled = {"Extends": lambda s: s.extends, "Graphics": lambda s: s.graphics,
+              "Pins": lambda s: s.pins, "Units": lambda s: s.units}.get(column, lambda s: s.fields.get(column))
+    return sum(1 for s in symbols if filled(s))
+
+
 def build_page(symbols: list[Symbol], title: str, libraries: list[Path], graphics: bool) -> tuple[str, list[str]]:
     """(html, column names)."""
     props = property_columns({n for s in symbols for n in s.fields})
@@ -328,15 +599,22 @@ def build_page(symbols: list[Symbol], title: str, libraries: list[Path], graphic
     rest = [p for p in props if p not in lead and p != "Description"]
     columns = head + lead + (["Graphics"] if graphics else []) + desc + ["Pins", "Units"] + rest
     unfilterable = {"Graphics"}
-    # The rest of the fields start hidden when no symbol gives them a value; the Columns control shows them.
-    shown = {c for c in columns if c in ALWAYS_SHOWN or any(s.fields.get(c) for s in symbols)}
+    counts = {c: column_count(symbols, c) for c in columns}
+    # The rest of the fields start hidden when no symbol fills them; the Columns control shows them.
+    shown = {c for c in columns if c in ALWAYS_SHOWN or counts[c] > 0}
 
-    header = "".join(f'<th class="sortable" data-col="{esc(c)}">{esc(c)}</th>' for c in columns)
+    header = "".join(f'<th class="sortable" draggable="true" data-col="{esc(c)}">{esc(c)}'
+                     f'<span class="grip" title="Drag to resize"></span></th>' for c in columns)
     filter_row = "".join("<th></th>" if c in unfilterable else
-                         f'<th><input type="search" placeholder="filter" aria-label="filter {esc(c)}"></th>'
+                         f'<th><div class="fwrap"><input type="search" placeholder="filter" aria-label="filter {esc(c)}">'
+                         f'<button type="button" class="funnel" title="Filter by value" aria-label="filter {esc(c)} by value">'
+                         f'&#9661;</button></div></th>'
                          for c in columns)
-    toggles = "".join(f'<label><input type="checkbox" value="{esc(c)}"{" checked" if c in shown else ""}> {esc(c)}</label>'
-                      for c in columns)
+    toggles = "".join(f'<label><input type="checkbox" value="{esc(c)}"{" checked" if c in shown else ""}> '
+                      f'{esc(c)} ({counts[c]})</label>' for c in columns)
+    size_control = ('<label>Graphics <select id="imgsize" aria-label="graphics size">'
+                    + "".join(f'<option value="{s}"{" selected" if s == "L" else ""}>{s}</option>' for s in ("S", "M", "L", "XL"))
+                    + "</select></label>") if graphics else ""
 
     def cell(s: Symbol, c: str) -> str:
         if c == "Library":
@@ -366,7 +644,8 @@ def build_page(symbols: list[Symbol], title: str, libraries: list[Path], graphic
 </head>
 <body>
 <h1>{esc(title)}</h1>
-<p class="meta">{len(symbols)} symbols from {sources}. Click a header to sort (again to reverse, a third time to clear).
+<p class="meta">{len(symbols)} symbols from {sources}. Click a header to sort (again to reverse, a third time to clear);
+drag a header onto another to reorder, drag its right edge to resize. The funnel in a filter cell picks values.
 Pins read name (number) electrical type = Pin.&lt;base&gt; value. A middle dot marks a field that is present but empty.</p>
 <div class="controls">
 <input type="search" id="search" placeholder="search all columns" aria-label="search all columns">
@@ -374,10 +653,11 @@ Pins read name (number) electrical type = Pin.&lt;base&gt; value. A middle dot m
 <p class="colctl"><input type="search" id="colfilter" placeholder="filter columns" aria-label="filter columns">
 <button type="button" id="colall">All</button> <button type="button" id="colnone">None</button></p>
 {toggles}</div></details>
+{size_control}
 <button type="button" id="reset">Reset view</button>
 <span id="count"></span>
 </div>
-<table id="symbols">
+<table id="symbols" data-size="L">
 <thead>
 <tr class="headers">{header}</tr>
 <tr class="filters">{filter_row}</tr>
@@ -386,6 +666,11 @@ Pins read name (number) electrical type = Pin.&lt;base&gt; value. A middle dot m
 {chr(10).join(rows)}
 </tbody>
 </table>
+<div id="valuepanel" hidden>
+<input type="search" id="valuesearch" placeholder="search values" aria-label="search values">
+<p><button type="button" id="valall">Select all</button> <button type="button" id="valclear">Clear</button></p>
+<div id="valuelist"></div>
+</div>
 <script>{SCRIPT}</script>
 </body>
 </html>

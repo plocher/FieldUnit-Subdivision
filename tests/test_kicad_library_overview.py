@@ -251,12 +251,73 @@ class OverviewTests(unittest.TestCase):
         self.assertIn("filters", self.table.classes)
         self.assertEqual(self.page.count('type="checkbox"'), len(self.table.headers))
         self.assertTrue({"colfilter", "colall", "colnone"} <= self.table.ids)
-        self.assertIn('value="Role" checked> Role', self.page)          # always shown
-        self.assertIn('value="Footprint"> Footprint', self.page)        # empty on every symbol: starts hidden
-        self.assertIn('value="hold_ms" checked> hold_ms', self.page)    # filled on one symbol: shown
+        self.assertIn('value="Role" checked> Role (2)</label>', self.page)          # always shown
+        self.assertIn('value="Footprint"> Footprint (0)</label>', self.page)        # empty on every symbol: starts hidden
+        self.assertIn('value="hold_ms" checked> hold_ms (1)</label>', self.page)    # filled on one symbol: shown
         self.assertIn("localStorage", self.page)
         self.assertNotIn("<script src=", self.page)  # no external dependency
         self.assertNotIn("<link ", self.page)
+
+    def test_column_labels_carry_the_filled_row_count(self):
+        labels = {"Library": 2, "Symbol": 2, "Role": 2, "Appliance": 1, "Description": 2, "Pins": 2, "Units": 2,
+                  "Reference": 2, "Value": 1, "Footprint": 0, "Datasheet": 0, "Pin.EN": 1, "Pin.OCC": 1,
+                  "hold_ms": 1, "Kind": 1}
+        self.assertEqual(set(labels), set(self.table.headers))
+        for name, n in labels.items():
+            checked = " checked" if n or name in overview.ALWAYS_SHOWN else ""
+            self.assertIn(f'<label><input type="checkbox" value="{name}"{checked}> {name} ({n})</label>', self.page)
+        self.assertEqual(overview.column_count(overview.load_library(self.lib), "Pin.OCC"), 1)
+
+    def test_storage_key_is_versioned(self):
+        self.assertIn("'kicad-library-overview:v2:' + document.title", self.page)
+        self.assertNotIn("'kicad-library-overview:' + document.title", self.page)
+
+    def test_page_has_resize_reorder_and_value_filter_controls(self):
+        n = len(self.table.headers)
+        self.assertEqual(self.page.count('<th class="sortable" draggable="true" data-col='), n)
+        self.assertEqual(self.page.count('<span class="grip"'), n)
+        self.assertIn("table-layout:fixed", self.page)
+        self.assertEqual(self.page.count('<button type="button" class="funnel"'), n)  # no Graphics column here
+        self.assertTrue({"valuepanel", "valuesearch", "valall", "valclear", "valuelist"} <= self.table.ids)
+        self.assertIn("funnel", self.table.classes)
+        self.assertNotIn('id="imgsize"', self.page)  # no graphics, no size control
+
+
+class GraphicsPageTests(unittest.TestCase):
+    """build_page with the graphics column, without kicad-cli: the size control and the Graphics count."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.TemporaryDirectory()
+        lib = Path(cls.tmp.name) / "Fixture.kicad_sym"
+        lib.write_text(FIXTURE)
+        symbols = overview.load_library(lib)
+        symbols[0].graphics = ["svg-Fixture/Gadget_unit1.svg", "svg-Fixture/Gadget_unit2.svg"]
+        cls.page, cls.columns = overview.build_page(symbols, "Graphics fixture", [lib], graphics=True)
+        cls.table = TableReader()
+        cls.table.feed(cls.page)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp.cleanup()
+
+    def test_graphics_column_count_and_images(self):
+        self.assertEqual(self.table.headers[:6], ["Library", "Symbol", "Role", "Appliance", "Graphics", "Description"])
+        self.assertIn('value="Graphics" checked> Graphics (1)</label>', self.page)
+        self.assertEqual(self.table.images, ["svg-Fixture/Gadget_unit1.svg", "svg-Fixture/Gadget_unit2.svg"])
+        self.assertEqual(self.page.count('loading="lazy"'), 2)
+
+    def test_graphics_size_control_and_no_value_filter(self):
+        self.assertIn('<select id="imgsize"', self.page)
+        for size in ("S", "M", "XL"):
+            self.assertIn(f'<option value="{size}">{size}</option>', self.page)
+        self.assertIn('<option value="L" selected>L</option>', self.page)
+        self.assertIn('<table id="symbols" data-size="L">', self.page)
+        self.assertIn("table[data-size=L]{--imgw:720px;--imgh:500px}", self.page)
+        self.assertIn("td.graphics img{max-width:var(--imgw", self.page)
+        n = len(self.table.headers)
+        self.assertEqual(self.page.count('<button type="button" class="funnel"'), n - 1)  # Graphics has no value filter
+        self.assertEqual(self.page.count('<span class="grip"'), n)
 
     def test_property_column_order(self):
         names = {"zeta", "Alpha", "Pin.B", "Pin.A", "Invert", "Role", "Description", "Reference", "Style"}
