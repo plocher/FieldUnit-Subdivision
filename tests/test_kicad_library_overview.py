@@ -224,8 +224,7 @@ class OverviewTests(unittest.TestCase):
                     "Reference", "Value", "Footprint", "Datasheet", "Pin.EN", "Pin.OCC", "hold_ms", "Kind"]
         self.assertEqual(self.table.headers, expected)  # no Graphics column with --no-render
         self.assertEqual(self.table.images, [])
-        self.assertNotIn("--w:", self.page)                  # no images, no image sizes ...
-        self.assertNotIn("--p:", self.page)                  # ... and no pin counts
+        self.assertNotIn("--w:", self.page)                  # no images, no image sizes
 
     def test_fields_pins_and_units_are_rendered(self):
         gadget = self.row("Gadget")
@@ -374,7 +373,7 @@ class OverviewTests(unittest.TestCase):
         self.assertEqual(self.page.count('<button type="button" class="funnel"'), n)  # no Graphics column here
         self.assertTrue({"valuepanel", "valuesearch", "valall", "valclear", "valuelist"} <= self.table.ids)
         self.assertIn("funnel", self.table.classes)
-        for control in ("imgsize", "pinpx", "maxpx"):       # no graphics, no size control
+        for control in ("imgsize", "scalepx", "maxpx"):     # no graphics, no scale control
             self.assertNotIn(f'id="{control}"', self.page)
 
     def test_text_size_control(self):
@@ -419,84 +418,100 @@ class GraphicsPageTests(unittest.TestCase):
                                              "svg-Fixture/Marker_unit1.svg"])
         self.assertEqual(self.page.count('loading="lazy"'), 3)
 
-    def test_graphics_size_control(self):
-        # Four presets in px per pin of the unit shown, named on the control, L (55) the default, plus a hidden
-        # "custom" entry the select shows when the px/pin box holds another value (as the text control does with
-        # its pt box).
-        self.assertTrue({"imgsize", "pinpx", "maxpx"} <= self.table.ids)
-        self.assertIn('<select id="imgsize" aria-label="graphics size preset">', self.page)
+    def test_graphics_scale_control(self):
+        # Four presets in px per mm of drawing, named on the control, L (30) the default, plus a hidden "custom"
+        # entry the select shows when the px/mm box holds another value (as the text control does with its pt
+        # box). One scale for the whole page: every symbol SVG is at the same scale, so no rule may size a cell
+        # differently from the rest.
+        self.assertTrue({"imgsize", "scalepx", "maxpx"} <= self.table.ids)
+        self.assertIn('<select id="imgsize" aria-label="graphics scale preset">', self.page)
         options = re.findall(r'<option value="(\w*)"( selected| hidden)?>([^<]*)</option>',
                              re.search(r'<select id="imgsize"[^>]*>(.*?)</select>', self.page).group(1))
-        self.assertEqual(options, [("S", "", "S (25 px/pin)"), ("M", "", "M (40 px/pin)"), ("L", " selected", "L (55 px/pin)"),
-                                   ("XL", "", "XL (80 px/pin)"), ("", " hidden", "custom")])
-        # The two number boxes: px per pin (10 to 200, step 1, default 55) and the ceiling on an image's longer
-        # side (200 to 6000 px, step 50, default 2000).
-        self.assertIn('<input type="number" id="pinpx" min="10" max="200" step="1" value="55" '
-                      'aria-label="graphics size in px per pin"> px/pin</label>', self.page)
-        self.assertIn('<input type="number" id="maxpx" min="200" max="6000" step="50" value="2000" '
-                      'aria-label="ceiling on an image\'s longer side in px"> max px</label>', self.page)
-        self.assertNotIn("px/mm", self.page)
-        self.assertNotIn("scalepx", self.page)
-        self.assertEqual((overview.IMG_PX_PER_PIN, overview.IMG_PX_PER_PIN_DEFAULT, overview.IMG_PX_PER_PIN_RANGE),
-                         ({"S": 25, "M": 40, "L": 55, "XL": 80}, 55, (10, 200, 1)))
-        self.assertEqual((overview.IMG_CEILING_DEFAULT, overview.IMG_CEILING_RANGE, overview.IMG_FLOOR), (2000, (200, 6000, 50), 120))
-        self.assertEqual((overview.IMG_MIN_PINS, overview.IMG_PINLESS_PINS), (2, 3))
-        # The script carries the same numbers and keeps them in state.ppp and state.ceiling (restored on load,
-        # both back to the defaults on Reset view; an old `size` letter or `scale` in px/mm in storage is ignored).
-        self.assertIn("var PPP = { S: 25, M: 40, L: 55, XL: 80 };", self.page)
-        self.assertIn("var PPP_MIN = 10, PPP_MAX = 200, PPP_DEFAULT = 55;", self.page)
-        self.assertIn("var MIN_PINS = 2, PINLESS_PINS = 3;", self.page)
-        self.assertIn("var CEIL_MIN = 200, CEIL_MAX = 6000, CEIL_DEFAULT = 2000;", self.page)
-        self.assertIn("var FLOOR = 120;", self.page)
-        self.assertIn("ppp: PPP_DEFAULT, ceiling: CEIL_DEFAULT, font: FONTS.S", self.page)
-        self.assertIn("if (isPpp(s.ppp)) { state.ppp = s.ppp; }", self.page)
-        self.assertIn("if (isCeiling(s.ceiling)) { state.ceiling = s.ceiling; }", self.page)
-        for gone in ("state.size", "data-size", "state.scale", "s.scale", "isScale"):
+        self.assertEqual(options, [("S", "", "S (10 px/mm)"), ("M", "", "M (20 px/mm)"), ("L", " selected", "L (30 px/mm)"),
+                                   ("XL", "", "XL (45 px/mm)"), ("", " hidden", "custom")])
+        # The two number boxes: px per mm (2 to 100, step 1, default 30) and the optional ceiling on an image's
+        # longer side: empty ("none") by default, 200 to 20000 px in steps of 50 when typed.
+        self.assertIn('<input type="number" id="scalepx" min="2" max="100" step="1" value="30" '
+                      'aria-label="graphics scale in px per mm"> px/mm</label>', self.page)
+        self.assertIn('<input type="number" id="maxpx" min="200" max="20000" step="50" value="" placeholder="none" '
+                      'aria-label="ceiling on an image\'s longer side in px (empty for none)"> max px</label>', self.page)
+        for gone in ("px/pin", "pinpx", "--p:", "--ppp", "pinUnits", "MIN_PINS", "PINLESS"):
             self.assertNotIn(gone, self.page)
-        for handler in ("if (PPP[sizeSelect.value]) { state.ppp = PPP[sizeSelect.value]; save(); applyScale(); }",
-                        "if (isPpp(n)) { state.ppp = n; save(); applyScale(); }",
-                        "if (isCeiling(n)) { state.ceiling = n; save(); applyScale(); }"):
+        self.assertFalse(hasattr(overview, "unit_pins"))                                   # the pin-count rule is gone
+        self.assertFalse(hasattr(overview, "IMG_PX_PER_PIN"))
+        self.assertEqual((overview.IMG_SCALES, overview.IMG_SCALE_DEFAULT, overview.IMG_SCALE_RANGE),
+                         ({"S": 10, "M": 20, "L": 30, "XL": 45}, 30, (2, 100, 1)))
+        self.assertIsNone(overview.IMG_CEILING_DEFAULT)                                    # no ceiling by default ...
+        self.assertEqual(overview.IMG_FLOOR, 0)                                            # ... and no floor
+        self.assertEqual(overview.IMG_CEILING_RANGE, (200, 20000, 50))
+        self.assertEqual(overview.css_ceiling(), overview.IMG_UNLIMITED_PX)
+        self.assertEqual(overview.css_ceiling(600), 600)
+        self.assertEqual((overview.nominal_px(), overview.nominal_px(10), overview.nominal_px(30, 600)), (720, 240, 600))
+        # The script carries the same numbers and keeps them in state.scale and state.ceiling (null for none),
+        # restored on load and both back to the defaults on Reset view; an old `size` letter or `ppp` (px per
+        # pin) in storage is ignored, and so is the ceiling saved beside a `ppp` (that page capped by default).
+        self.assertIn("var SCALES = { S: 10, M: 20, L: 30, XL: 45 };", self.page)
+        self.assertIn("var SCALE_MIN = 2, SCALE_MAX = 100, SCALE_DEFAULT = 30;", self.page)
+        self.assertIn("var CEIL_MIN = 200, CEIL_MAX = 20000, CEIL_DEFAULT = null;", self.page)
+        self.assertIn("var UNLIMITED = 10000000;", self.page)
+        self.assertIn("var FLOOR = 0;", self.page)
+        self.assertIn("scale: SCALE_DEFAULT, ceiling: CEIL_DEFAULT, font: FONTS.S", self.page)
+        self.assertIn("if (isScale(s.scale)) { state.scale = s.scale; }", self.page)
+        self.assertIn("if (s.ppp === undefined && (s.ceiling === null || isCeiling(s.ceiling))) { state.ceiling = s.ceiling; }",
+                      self.page)
+        for gone in ("state.size", "data-size", "state.ppp", "s.ppp)", "isPpp"):
+            self.assertNotIn(gone, self.page)
+        for handler in ("if (SCALES[scaleSelect.value]) { state.scale = SCALES[scaleSelect.value]; save(); applyScale(); }",
+                        "if (isScale(n)) { state.scale = n; save(); applyScale(); }",
+                        "if (ceilInput.value === '' || n === 0) { state.ceiling = null; save(); applyScale(); }",
+                        "else if (isCeiling(n)) { state.ceiling = n; save(); applyScale(); }"):
             self.assertIn(handler, self.page)
+        self.assertIn("var shown = state.ceiling === null ? '' : String(state.ceiling);", self.page)   # the box shows "none"
 
-    def test_graphics_sizing_css_is_driven_by_pins_and_table_variables(self):
-        # The table carries --ppp, --floor and --ceil and each img its --p (and --w/--h in mm when known); the CSS
-        # defaults match the control defaults and the script sets the same table variables from state, so the
-        # images resize with no per-image JS beyond the capped marks.
-        self.assertIn("table#symbols{--ppp:55;--floor:120;--ceil:2000}", self.page)
-        for var in ("--ppp", "--floor", "--ceil"):
+    def test_graphics_sizing_css_is_driven_by_table_variables(self):
+        # The table carries --scale, --floor, --ceil and --nom and each img of known size its --w/--h in mm; the
+        # CSS defaults match the control defaults (floor 0, no ceiling: the far-off sentinel) and the script sets
+        # the same table variables from state, so the images resize with no per-image JS beyond the capped marks.
+        self.assertIn("table#symbols{--scale:30;--floor:0;--ceil:10000000;--nom:720px}", self.page)
+        for var in ("--scale", "--floor", "--ceil", "--nom"):
             self.assertIn(f"table.style.setProperty('{var}', ", self.page)
-        for gone in ("--nom", "--scale", "--img", "--ar", "nominal()", "NOMINAL_MM"):
+        self.assertIn("table.style.setProperty('--floor', FLOOR);", self.page)
+        self.assertIn("table.style.setProperty('--ceil', ceilingPx());", self.page)
+        self.assertIn("function ceilingPx() { return state.ceiling === null ? UNLIMITED : state.ceiling; }", self.page)
+        for gone in ("--img", "--ar", "--s:", "--n:", "var(--p"):
             self.assertNotIn(gone, self.page)
-        # Every image: --n is the pins it is sized by (max(2, pins); 3 for a pinless unit) and --s its longer side
-        # in px, pins x px/pin clamped between the floor and the ceiling; an image of unknown size is that square.
+        # An image of unknown size is drawn in the nominal square (24 mm at the scale, at least 240 px, never
+        # above a ceiling).
         rule = re.search(r"td\.graphics img\{[^}]*\}", self.page).group(0)
-        self.assertIn("td.graphics img{--n:max(2, var(--p,0), calc(3 - 3 * min(1, var(--p,0))));\n"
-                      "  --s:clamp(var(--floor,120), calc(var(--n) * var(--ppp,55)), var(--ceil,2000));\n"
-                      "  width:calc(var(--s) * 1px);height:calc(var(--s) * 1px);", rule)
+        self.assertIn("td.graphics img{width:var(--nom,720px);height:var(--nom,720px);", rule)
         self.assertIn("box-sizing:content-box", rule)
-        # The sized image: both sides are mm x one factor (the longer side over the larger mm side), so both
-        # scale together and the aspect ratio holds. The border sits outside the content box so the drawing itself
-        # is exactly that size. No object-fit, nothing depends on the intrinsic size.
-        self.assertIn("td.graphics img.mm{--f:calc(var(--s) / max(var(--w), var(--h)));"
-                      "width:calc(var(--w) * var(--f) * 1px);height:calc(var(--h) * var(--f) * 1px)}", self.page)
+        self.assertIn("function nominal() { return Math.min(Math.max(state.scale * NOMINAL_MM, COLUMN_MIN), ceilingPx()); }", self.page)
+        self.assertEqual(overview.IMG_NOMINAL_MM, 24)
+        # The sized image: both sides are mm x one factor, the scale itself unless the clamp bites: the floor is 0
+        # (never bites) and the ceiling the sentinel unless the user typed one. Both sides scale together so the
+        # aspect holds; the border sits outside the content box so the drawing itself is exactly that size. No
+        # object-fit, nothing depends on the intrinsic size.
+        self.assertIn("td.graphics img.mm{--f:clamp(calc(var(--floor,0) / max(var(--w), var(--h))), var(--scale,30), "
+                      "calc(var(--ceil,10000000) / max(var(--w), var(--h))));\n"
+                      "  width:calc(var(--w) * var(--f) * 1px);height:calc(var(--h) * var(--f) * 1px)}", self.page)
         for rule in re.findall(r"td\.graphics img(?:\.mm)?\{[^}]*\}", self.page):
             for absent in ("max-width", "max-height", "height:auto", "object-fit"):
                 self.assertNotIn(absent, rule)
-        # A capped image (pins x px/pin above the ceiling) is marked by the script: the class `capped` (a dashed
-        # border) and a title suffix naming the ceiling and the px/pin it got. pinUnits mirrors the CSS --n rule.
+        # A capped image (mm longer side x scale above a typed ceiling) is marked by the script: the class `capped`
+        # (a dashed border) and a title suffix naming the ceiling and the scale it got; with no ceiling, nothing.
         self.assertIn("td.graphics img.capped{border-style:dashed;border-color:#c60}", self.page)
-        self.assertIn("return p > 0 ? Math.max(MIN_PINS, p) : PINLESS_PINS;", self.page)
-        self.assertIn("var capped = pinUnits(img) * state.ppp > state.ceiling;", self.page)
+        self.assertIn("var capped = state.ceiling !== null && longer > 0 && longer * state.scale > state.ceiling;", self.page)
         self.assertIn("img.classList.toggle('capped', capped);", self.page)
         self.assertIn("img.dataset.title + ' (capped at ' + state.ceiling + ' px, '", self.page)
-        self.assertIn("(Math.round(state.ceiling / pinUnits(img) * 10) / 10) + ' px/pin)'", self.page)
+        self.assertIn("(Math.round(state.ceiling / longer * 10) / 10) + ' px/mm)'", self.page)
         # The Graphics column's default width is the widest row of units (the images' widths as the CSS draws them
-        # plus their borders and margins, plus the cell padding and border), between 240 and 2400 px, recomputed
-        # whenever px/pin or the ceiling changes; a dragged width wins. Multi-unit images stay inline.
+        # at the scale plus their borders and margins, plus the cell padding and border), between 240 and 2400 px,
+        # recomputed whenever the scale or the ceiling changes; a dragged width wins. Multi-unit images stay inline.
         self.assertIn("var COLUMN_MIN = 240, COLUMN_MAX = 2400;", self.page)
         self.assertIn("function imageSize(img) {", self.page)
-        self.assertIn("var side = Math.min(Math.max(FLOOR, pinUnits(img) * state.ppp), state.ceiling);", self.page)
-        self.assertIn("return [w * side / Math.max(w, h), h * side / Math.max(w, h)];", self.page)
+        self.assertIn("if (!(w > 0 && h > 0)) { return [nominal(), nominal()]; }", self.page)
+        self.assertIn("var f = Math.max(FLOOR / Math.max(w, h), Math.min(state.scale, ceilingPx() / Math.max(w, h)));", self.page)
+        self.assertIn("return [w * f, h * f];", self.page)
         self.assertIn("function measureGraphics() {", self.page)
         self.assertIn("total += imageSize(i)[0] + perImage;", self.page)
         self.assertIn("graphicsWidth = Math.min(Math.max(COLUMN_MIN, Math.ceil(widest + perCell + WIDTH_SLACK)), COLUMN_MAX);", self.page)
@@ -506,37 +521,25 @@ class GraphicsPageTests(unittest.TestCase):
         self.assertNotIn("graphicsWidth:", self.page)         # not part of state, so never saved
         self.assertNotIn("display:block", re.search(r"td\.graphics img\{[^}]*\}", self.page).group(0))
 
-    def test_pin_count_is_emitted_per_unit(self):
-        # Each img carries the number of pins in the unit it shows as --p: Gadget unit 1 has one (~{OCC}), unit 2
-        # one (EN), Marker unit 1 one (T); unit 0, a unit the symbol lacks and a file not named for a unit count 0.
-        gadget, marker = self.symbols
-        self.assertEqual([overview.unit_pins(gadget, p) for p in gadget.graphics], [1, 1])
-        self.assertEqual(overview.unit_pins(marker, "svg-Fixture/Marker_unit1.svg"), 1)
-        self.assertEqual(overview.unit_pins(gadget, "svg-Fixture/Gadget_unit0.svg"), 0)
-        self.assertEqual(overview.unit_pins(gadget, "svg-Fixture/Gadget_unit3.svg"), 0)
-        self.assertEqual(overview.unit_pins(gadget, "svg-Fixture/Gadget.svg"), 0)
-        imgs = re.findall(r"<img [^>]*>", self.page)
-        self.assertEqual([re.search(r"--p:(\d+)", i).group(1) for i in imgs], ["1", "1", "1"])
-        self.assertEqual(self.page.count("--p:"), 3)                    # once per img, nowhere else
-        self.assertIn("var(--p,0)", self.page)                          # the CSS sizes by it
-
     def test_graphics_has_no_value_filter(self):
         n = len(self.table.headers)
         self.assertEqual(self.page.count('<button type="button" class="funnel"'), n - 1)  # Graphics has no value filter
         self.assertEqual(self.page.count('<span class="grip"'), n)
 
     def test_image_size_is_emitted_as_custom_properties(self):
-        # The pin count on every img, then width and height in mm to 2 decimals on each img of known size, with
-        # the class the CSS aspect rule keys on; an image of unknown size has only --p (the CSS draws it square).
+        # Width and height in mm to 2 decimals on each img of known size, with the class the CSS scale rule keys
+        # on; an image of unknown size has neither (the CSS draws it in the nominal square). Nothing else about
+        # the symbol (pins, units) reaches the img: one scale for all.
         imgs = re.findall(r"<img [^>]*>", self.page)
         self.assertEqual(len(imgs), 3)
         self.assertIn('src="svg-Fixture/Gadget_unit1.svg"', imgs[0])
-        self.assertTrue(imgs[0].endswith(' loading="lazy" class="mm" style="--p:1;--w:24.26;--h:111.00">'), imgs[0])
+        self.assertTrue(imgs[0].endswith(' loading="lazy" class="mm" style="--w:24.26;--h:111.00">'), imgs[0])
         self.assertIn('src="svg-Fixture/Gadget_unit2.svg"', imgs[1])
-        self.assertTrue(imgs[1].endswith(' loading="lazy" style="--p:1">'), imgs[1])
+        self.assertTrue(imgs[1].endswith(' loading="lazy">'), imgs[1])
         self.assertNotIn("--w", imgs[1])
         self.assertNotIn("mm", imgs[1])
-        self.assertTrue(imgs[2].endswith(' loading="lazy" class="mm" style="--p:1;--w:2.64;--h:3.40">'), imgs[2])
+        self.assertTrue(imgs[2].endswith(' loading="lazy" class="mm" style="--w:2.64;--h:3.40">'), imgs[2])
+        self.assertEqual(self.page.count("--w:"), 2)                    # once per sized img, nowhere else
 
     def test_svg_size_mm_reads_the_root_tag(self):
         # kicad-cli writes width and height in mm on the root element; any CSS length unit converts to mm
