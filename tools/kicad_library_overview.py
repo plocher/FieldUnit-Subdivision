@@ -19,18 +19,24 @@ a right-click on a table header offers hide this column, hide its group, show on
 all. Fields that no symbol fills start hidden; hiding a column that is a sort key drops it from the
 sort. Column widths can be dragged at the header's right edge (the default width is the larger of a
 per-kind minimum and the measured header title at the current text size) and columns reordered by
-dragging a header onto another; the graphics have an S/M/L/XL size control that sets one common
-scale for every image (2.5, 4, 6 and 9 px per mm of the drawing, read from the width and height
-kicad-cli writes on the root element and emitted on each img as `--w` and `--h` in mm), so pins,
-text and bodies are the same size across symbols and a 16-pin chip is simply taller than a 4-pin
-unit, with each image's longer side clamped between 120 px and four times the level's nominal size
-(240, 480, 720 and 1080 px) so a tiny marker stays legible and a huge symbol stays in the table (an
-image of unknown size is drawn in a nominal square); the Graphics column defaults to the nominal
-width and the units of a multi-unit symbol wrap within it. The text has an S/M/L size control (10,
-11.5 and 13.5 points) with a "pt" box for any other size; every text rule inherits the one `--fs`
-variable on the body, so the whole page scales together. The column set, order, dragged widths,
-image size, text size, sort keys and folded groups are remembered in localStorage when available
-(under a versioned key); the value filters and the measured default widths are not.
+dragging a header onto another; the graphics have a scale control: S/M/L/XL presets (10, 20, 30
+and 45 px per mm of the drawing, L the default) plus a "px/mm" box for any scale from 2 to 100, and
+a "max px" box (default 1200, 200 to 6000) for the ceiling on an image's longer side. Every image is
+drawn at that one scale (its size in mm read from the width and height kicad-cli writes on the root
+element and emitted on each img as `--w` and `--h`), so pins, text and bodies are the same size
+across symbols and a 16-pin chip is simply taller than a 4-pin unit; an image's longer side is
+clamped between a 120 px floor and the ceiling, so a tiny marker stays legible and a huge symbol
+stays in the table, and a capped image gets the class `capped` (a dashed border) and a title suffix
+naming the ceiling and the scale it actually got (an image of unknown size is drawn in a nominal
+square). The CSS clamp() rule does the sizing from `--scale`, `--floor` and `--ceil` on the table;
+the script only sets those from the settings and marks the capped images. The Graphics column
+defaults to the larger of 24 mm at the scale (240, 480, 720 and 1080 px for the presets) and 240 px,
+and the units of a multi-unit symbol wrap within it; rows may be tall. The text has an S/M/L size
+control (10, 11.5 and 13.5 points) with a "pt" box for any other size; every text rule inherits the
+one `--fs` variable on the body, so the whole page scales together. The column set, order, dragged
+widths, image scale and ceiling, text size, sort keys and folded groups are remembered in
+localStorage when available (under a versioned key); the value filters and the measured default
+widths are not.
 
 The default <out> is <directory of the first library>/production/overview/ (the Railroad repo
 gitignores production/). `--no-render` skips kicad-cli and omits the graphics column.
@@ -69,10 +75,14 @@ _SVG_NAME = re.compile(r"^(.*)_unit(\d+)$")
 _SVG_ROOT = re.compile(r"<svg\b[^>]*>", re.S)
 _SVG_LENGTH = re.compile(r'\b(width|height)\s*=\s*"\s*([0-9.]+)\s*([a-z%]*)\s*"')
 _SVG_MM_PER_UNIT = {"": 25.4 / 96, "px": 25.4 / 96, "in": 25.4, "cm": 10.0, "mm": 1.0, "pt": 25.4 / 72, "pc": 25.4 / 6}
-IMG_SCALES = {"S": 2.5, "M": 4.0, "L": 6.0, "XL": 9.0}       # px per mm of drawing per size level
-IMG_NOMINAL = {"S": 240, "M": 480, "L": 720, "XL": 1080}    # px: the Graphics column width and the unknown-size square
-IMG_FLOOR = 120                                             # px: an image's longer side is at least this ...
-IMG_CEILING_FACTOR = 4                                      # ... and at most this times the level's nominal size
+IMG_SCALES = {"S": 10, "M": 20, "L": 30, "XL": 45}         # px per mm of drawing: the scale presets
+IMG_SCALE_DEFAULT = 30                                      # the L preset
+IMG_SCALE_RANGE = (2, 100, 1)                               # the "px/mm" box: min, max, step
+IMG_CEILING_DEFAULT = 1200                                  # px: an image's longer side is at most this ...
+IMG_CEILING_RANGE = (200, 6000, 50)                         # ... the "max px" box: min, max, step
+IMG_FLOOR = 120                                             # px: ... and at least this
+IMG_NOMINAL_MM = 24                                         # the Graphics column width is this many mm at the scale ...
+IMG_COLUMN_MIN = 240                                        # ... or at least this many px (plus slack)
 
 
 @dataclass
@@ -241,17 +251,21 @@ ul.pins .num{color:#666}
 ul.pins .etype{color:#36a}
 ul.pins .cap{color:#262}
 td.graphics img{width:var(--nom,720px);height:var(--nom,720px);background:#fff;border:1px solid #ddd;box-sizing:content-box;margin:2px;vertical-align:top}
-td.graphics img.mm{--f:clamp(calc(var(--floor,120) / max(var(--w), var(--h))), var(--scale,6), calc(var(--ceil,2880) / max(var(--w), var(--h))));
+td.graphics img.mm{--f:clamp(calc(var(--floor,120) / max(var(--w), var(--h))), var(--scale,30), calc(var(--ceil,1200) / max(var(--w), var(--h))));
   width:calc(var(--w) * var(--f) * 1px);height:calc(var(--h) * var(--f) * 1px)}
-""" + "".join(f"table[data-size={s}]{{--scale:{IMG_SCALES[s]:g};--nom:{IMG_NOMINAL[s]}px;--floor:{IMG_FLOOR};"
-              f"--ceil:{IMG_CEILING_FACTOR * IMG_NOMINAL[s]}}}\n" for s in IMG_SCALES)
+td.graphics img.capped{border-style:dashed;border-color:#c60}
+""" + (f"table#symbols{{--scale:{IMG_SCALE_DEFAULT};--floor:{IMG_FLOOR};--ceil:{IMG_CEILING_DEFAULT};"
+       f"--nom:{max(IMG_SCALE_DEFAULT * IMG_NOMINAL_MM, IMG_COLUMN_MIN)}px}}\n")
 
 SCRIPT = r"""
 (function () {
   'use strict';
   var KEY = 'kicad-library-overview:v3:' + document.title;   // v3: sort is a list of keys; closed column groups
-  var NOMINAL = NOMINAL_LEVELS;                               // px per size level: the Graphics column width (the images
-                                                               // themselves scale by the level's --scale in the CSS)
+  var SCALES = SCALE_PRESETS;                                 // px per mm of drawing per graphics preset
+  var SCALE_MIN = SCALE_RANGE[0], SCALE_MAX = SCALE_RANGE[1], SCALE_DEFAULT = SCALE_DEFAULT_PX;
+  var CEIL_MIN = CEIL_RANGE[0], CEIL_MAX = CEIL_RANGE[1], CEIL_DEFAULT = CEIL_DEFAULT_PX;
+  var FLOOR = FLOOR_PX;                                        // px: the least an image's longer side gets
+  var NOMINAL_MM = NOMINAL_MM_VALUE, COLUMN_MIN = COLUMN_MIN_PX;  // the Graphics column: 24 mm at the scale, at least 240 px
   var FONTS = { S: 10, M: 11.5, L: 13.5 };                     // text size in points per size setting
   var FONT_MIN = 4, FONT_MAX = 72;
   var SORT_MARK = ' 9 ▼';                                 // the widest "<rank> ▼" a header appends
@@ -274,7 +288,9 @@ SCRIPT = r"""
              members: toggles.filter(function (b) { return groupOf[b.value] === g.dataset.group; }), last: -1 };
   });
   var colfilter = document.getElementById('colfilter');
-  var sizeSelect = document.getElementById('imgsize');
+  var scaleSelect = document.getElementById('imgsize');
+  var scaleInput = document.getElementById('scalepx');
+  var ceilInput = document.getElementById('maxpx');
   var fontSelect = document.getElementById('fontsize');
   var fontInput = document.getElementById('fontpt');
   var panel = document.getElementById('valuepanel');
@@ -296,13 +312,15 @@ SCRIPT = r"""
   defaultOrder = heads.map(function (th) { return th.dataset.col; });
 
   function defaults() {
-    return { hidden: defaultHidden.slice(), sort: [], widths: {}, order: defaultOrder.slice(), size: 'L',
-             font: FONTS.S, closed: defaultClosed.slice() };
+    return { hidden: defaultHidden.slice(), sort: [], widths: {}, order: defaultOrder.slice(),
+             scale: SCALE_DEFAULT, ceiling: CEIL_DEFAULT, font: FONTS.S, closed: defaultClosed.slice() };
   }
   state = defaults();
 
   function isKey(k) { return k && typeof k.col === 'string' && (k.dir === 'asc' || k.dir === 'desc'); }
   function isFont(n) { return typeof n === 'number' && n >= FONT_MIN && n <= FONT_MAX; }
+  function isScale(n) { return typeof n === 'number' && n >= SCALE_MIN && n <= SCALE_MAX; }
+  function isCeiling(n) { return typeof n === 'number' && n >= CEIL_MIN && n <= CEIL_MAX; }
   function load() {
     try {
       var s = JSON.parse(localStorage.getItem(KEY));
@@ -312,7 +330,8 @@ SCRIPT = r"""
         if (Array.isArray(s.sort)) { state.sort = s.sort.filter(isKey); } else if (isKey(s.sort)) { state.sort = [s.sort]; }
         if (s.widths && typeof s.widths === 'object') { state.widths = s.widths; }
         if (Array.isArray(s.order)) { state.order = s.order; }
-        if (NOMINAL[s.size]) { state.size = s.size; }
+        if (isScale(s.scale)) { state.scale = s.scale; }         // an old `size` letter is ignored
+        if (isCeiling(s.ceiling)) { state.ceiling = s.ceiling; }
         if (isFont(s.font)) { state.font = s.font; }
         if (Array.isArray(s.closed)) { state.closed = s.closed; }
       }
@@ -345,7 +364,35 @@ SCRIPT = r"""
     applyWidths();
   }
 
-  // --- columns: visibility, order, widths, image size ---
+  // --- graphics: one scale and one ceiling on the table; the CSS clamp() sizes every image from them ---
+  function nominal() { return Math.max(state.scale * NOMINAL_MM, COLUMN_MIN); }
+  function markCapped() {
+    // The CSS cannot say whether its clamp() applied, so mark each image whose longer side would exceed the
+    // ceiling at the scale: a class (dashed border) and a title suffix naming the ceiling and the scale it got.
+    Array.prototype.forEach.call(table.querySelectorAll('td.graphics img.mm'), function (img) {
+      var longer = Math.max(parseFloat(img.style.getPropertyValue('--w')), parseFloat(img.style.getPropertyValue('--h')));
+      if (img.dataset.title === undefined) { img.dataset.title = img.title; }
+      var capped = longer > 0 && longer * state.scale > state.ceiling;
+      img.classList.toggle('capped', capped);
+      img.title = capped ? img.dataset.title + ' (capped at ' + state.ceiling + ' px, '
+                           + (Math.round(state.ceiling / longer * 10) / 10) + ' px/mm)' : img.dataset.title;
+    });
+  }
+  function applyScale() {
+    table.style.setProperty('--scale', state.scale);
+    table.style.setProperty('--floor', FLOOR);
+    table.style.setProperty('--ceil', state.ceiling);
+    table.style.setProperty('--nom', Math.min(nominal(), state.ceiling) + 'px');   // the unknown-size square
+    var preset = '';
+    Object.keys(SCALES).forEach(function (k) { if (SCALES[k] === state.scale) { preset = k; } });
+    if (scaleSelect) { scaleSelect.value = preset; }           // '' selects the hidden "custom" entry
+    if (scaleInput && parseFloat(scaleInput.value) !== state.scale) { scaleInput.value = state.scale; }
+    if (ceilInput && parseFloat(ceilInput.value) !== state.ceiling) { ceilInput.value = state.ceiling; }
+    markCapped();
+    applyWidths();
+  }
+
+  // --- columns: visibility, order, widths ---
   function measureHeaders() {
     // The width each header title needs at the current text size: the text in the header's own font, plus
     // its padding (the right padding covers the grip), the sort mark and some slack. Measured, never saved,
@@ -358,7 +405,7 @@ SCRIPT = r"""
     heads.forEach(function (th) { measured[th.dataset.col] = Math.ceil(ctx.measureText(th.dataset.col).width + extra); });
   }
   function kindWidth(col) {                                    // the per-kind minimum
-    if (col === 'Graphics') { return NOMINAL[state.size] + 16; }   // the nominal size plus slack; the units wrap
+    if (col === 'Graphics') { return nominal() + 16; }       // 24 mm at the scale (at least 240 px) plus slack; the units wrap
     if (col === 'Pins' || col === 'Units') { return 220; }
     if (col === 'Description') { return 320; }
     if (col === 'Symbol') { return 160; }
@@ -373,11 +420,6 @@ SCRIPT = r"""
       if (!th.hidden) { total += w; }
     });
     table.style.width = total + 'px';
-  }
-  function applySize() {
-    table.dataset.size = state.size;
-    if (sizeSelect) { sizeSelect.value = state.size; }
-    applyWidths();
   }
   function applyOrder() {
     var current = heads.map(function (th) { return th.dataset.col; });
@@ -732,9 +774,17 @@ SCRIPT = r"""
   document.getElementById('colnone').addEventListener('click', function () { setVisibleToggles(false); });
   document.getElementById('colcore').addEventListener('click', showOnlyCore);
   document.getElementById('colshowall').addEventListener('click', showAll);
-  if (sizeSelect) {
-    sizeSelect.addEventListener('change', function () {
-      if (NOMINAL[sizeSelect.value]) { state.size = sizeSelect.value; save(); applySize(); }
+  if (scaleSelect) {
+    scaleSelect.addEventListener('change', function () {
+      if (SCALES[scaleSelect.value]) { state.scale = SCALES[scaleSelect.value]; save(); applyScale(); }
+    });
+    scaleInput.addEventListener('input', function () {
+      var n = parseFloat(scaleInput.value);
+      if (isScale(n)) { state.scale = n; save(); applyScale(); }
+    });
+    ceilInput.addEventListener('input', function () {
+      var n = parseFloat(ceilInput.value);
+      if (isCeiling(n)) { state.ceiling = n; save(); applyScale(); }
     });
   }
   fontSelect.addEventListener('change', function () {
@@ -761,7 +811,7 @@ SCRIPT = r"""
     applyFont();                                               // first: it measures the header titles the widths need
     applyColumns();
     applyColumnFilter();
-    applySize();
+    applyScale();
     applySort();
     markFunnels();
     applyFilter();
@@ -769,7 +819,12 @@ SCRIPT = r"""
   load();
   applyAll();
 })();
-""".replace("NOMINAL_LEVELS", "{ " + ", ".join(f"{s}: {n}" for s, n in IMG_NOMINAL.items()) + " }")
+""".replace("SCALE_PRESETS", "{ " + ", ".join(f"{s}: {n}" for s, n in IMG_SCALES.items()) + " }") \
+   .replace("SCALE_RANGE[0]", str(IMG_SCALE_RANGE[0])).replace("SCALE_RANGE[1]", str(IMG_SCALE_RANGE[1])) \
+   .replace("SCALE_DEFAULT_PX", str(IMG_SCALE_DEFAULT)) \
+   .replace("CEIL_RANGE[0]", str(IMG_CEILING_RANGE[0])).replace("CEIL_RANGE[1]", str(IMG_CEILING_RANGE[1])) \
+   .replace("CEIL_DEFAULT_PX", str(IMG_CEILING_DEFAULT)).replace("FLOOR_PX", str(IMG_FLOOR)) \
+   .replace("NOMINAL_MM_VALUE", str(IMG_NOMINAL_MM)).replace("COLUMN_MIN_PX", str(IMG_COLUMN_MIN))
 
 
 def esc(s: str) -> str:
@@ -872,10 +927,15 @@ def build_page(symbols: list[Symbol], title: str, libraries: list[Path], graphic
                          f'&#9661;</button></div></th>'
                          for c in columns)
     toggles = "".join(column_groups_html(columns, shown, counts))
-    size_control = ('<label>Graphics <select id="imgsize" aria-label="graphics size (px per mm)">'
-                    + "".join(f'<option value="{s}"{" selected" if s == "L" else ""}>{s} ({IMG_SCALES[s]:g} px/mm)</option>'
-                              for s in IMG_SCALES)
-                    + "</select></label>") if graphics else ""
+    size_control = ('<label>Graphics <select id="imgsize" aria-label="graphics scale preset">'
+                    + "".join(f'<option value="{s}"{" selected" if IMG_SCALES[s] == IMG_SCALE_DEFAULT else ""}>'
+                              f'{s} ({IMG_SCALES[s]:g} px/mm)</option>' for s in IMG_SCALES)
+                    + '<option value="" hidden>custom</option></select></label> '
+                    f'<label><input type="number" id="scalepx" min="{IMG_SCALE_RANGE[0]}" max="{IMG_SCALE_RANGE[1]}" '
+                    f'step="{IMG_SCALE_RANGE[2]}" value="{IMG_SCALE_DEFAULT}" aria-label="graphics scale in px per mm"> px/mm</label> '
+                    f'<label><input type="number" id="maxpx" min="{IMG_CEILING_RANGE[0]}" max="{IMG_CEILING_RANGE[1]}" '
+                    f'step="{IMG_CEILING_RANGE[2]}" value="{IMG_CEILING_DEFAULT}" aria-label="ceiling on an image\'s longer side in px">'
+                    ' max px</label>') if graphics else ""
     font_control = ('<label>Text <select id="fontsize" aria-label="text size">'
                     + "".join(f'<option value="{s}"{" selected" if s == "S" else ""}>{s}</option>' for s in ("S", "M", "L"))
                     + '<option value="" hidden>custom</option></select></label> '
@@ -926,7 +986,7 @@ Pins read name (number) electrical type = Pin.&lt;base&gt; value. A middle dot m
 <button type="button" id="reset">Reset view</button>
 <span id="count"></span>
 </div>
-<table id="symbols" data-size="L">
+<table id="symbols">
 <thead>
 <tr class="headers">{header}</tr>
 <tr class="filters">{filter_row}</tr>

@@ -373,7 +373,8 @@ class OverviewTests(unittest.TestCase):
         self.assertEqual(self.page.count('<button type="button" class="funnel"'), n)  # no Graphics column here
         self.assertTrue({"valuepanel", "valuesearch", "valall", "valclear", "valuelist"} <= self.table.ids)
         self.assertIn("funnel", self.table.classes)
-        self.assertNotIn('id="imgsize"', self.page)  # no graphics, no size control
+        for control in ("imgsize", "scalepx", "maxpx"):      # no graphics, no scale control
+            self.assertNotIn(f'id="{control}"', self.page)
 
     def test_text_size_control(self):
         # S/M/L presets in points plus a "pt" box for any size; one body variable that every text rule inherits.
@@ -390,7 +391,7 @@ class OverviewTests(unittest.TestCase):
 
 
 class GraphicsPageTests(unittest.TestCase):
-    """build_page with the graphics column, without kicad-cli: the size control and the Graphics count."""
+    """build_page with the graphics column, without kicad-cli: the scale control and the Graphics count."""
 
     @classmethod
     def setUpClass(cls):
@@ -414,17 +415,48 @@ class GraphicsPageTests(unittest.TestCase):
         self.assertEqual(self.table.images, ["svg-Fixture/Gadget_unit1.svg", "svg-Fixture/Gadget_unit2.svg"])
         self.assertEqual(self.page.count('loading="lazy"'), 2)
 
-    def test_graphics_size_control_and_no_value_filter(self):
-        # The levels are scales in px per mm of drawing, named on the control; L is the default.
-        self.assertIn('<select id="imgsize" aria-label="graphics size (px per mm)">', self.page)
-        for size, scale in (("S", "2.5"), ("M", "4"), ("XL", "9")):
-            self.assertIn(f'<option value="{size}">{size} ({scale} px/mm)</option>', self.page)
-        self.assertIn('<option value="L" selected>L (6 px/mm)</option>', self.page)
-        self.assertIn('<table id="symbols" data-size="L">', self.page)
-        # Per level: the common scale, the nominal size (the Graphics column width and the square an image of
-        # unknown size gets), and the clamp on an image's longer side: at least 120 px, at most 4 x nominal.
-        for size, scale, px in (("S", "2.5", 240), ("M", "4", 480), ("L", "6", 720), ("XL", "9", 1080)):
-            self.assertIn(f"table[data-size={size}]{{--scale:{scale};--nom:{px}px;--floor:120;--ceil:{4 * px}}}", self.page)
+    def test_graphics_scale_control(self):
+        # Four presets in px per mm of drawing, named on the control, L (30) the default, plus a hidden "custom"
+        # entry the select shows when the px/mm box holds another value (as the text control does with its pt box).
+        self.assertTrue({"imgsize", "scalepx", "maxpx"} <= self.table.ids)
+        self.assertIn('<select id="imgsize" aria-label="graphics scale preset">', self.page)
+        options = re.findall(r'<option value="(\w*)"( selected| hidden)?>([^<]*)</option>',
+                             re.search(r'<select id="imgsize"[^>]*>(.*?)</select>', self.page).group(1))
+        self.assertEqual(options, [("S", "", "S (10 px/mm)"), ("M", "", "M (20 px/mm)"), ("L", " selected", "L (30 px/mm)"),
+                                   ("XL", "", "XL (45 px/mm)"), ("", " hidden", "custom")])
+        # The two number boxes: the scale (2 to 100 px/mm, step 1, default 30) and the ceiling on an image's
+        # longer side (200 to 6000 px, step 50, default 1200).
+        self.assertIn('<input type="number" id="scalepx" min="2" max="100" step="1" value="30" '
+                      'aria-label="graphics scale in px per mm"> px/mm</label>', self.page)
+        self.assertIn('<input type="number" id="maxpx" min="200" max="6000" step="50" value="1200" '
+                      'aria-label="ceiling on an image\'s longer side in px"> max px</label>', self.page)
+        self.assertEqual((overview.IMG_SCALES, overview.IMG_SCALE_DEFAULT, overview.IMG_SCALE_RANGE),
+                         ({"S": 10, "M": 20, "L": 30, "XL": 45}, 30, (2, 100, 1)))
+        self.assertEqual((overview.IMG_CEILING_DEFAULT, overview.IMG_CEILING_RANGE, overview.IMG_FLOOR), (1200, (200, 6000, 50), 120))
+        # The script carries the same numbers and keeps them in state.scale and state.ceiling (restored on load,
+        # both back to the defaults on Reset view; an old `size` letter in storage is ignored).
+        self.assertIn("var SCALES = { S: 10, M: 20, L: 30, XL: 45 };", self.page)
+        self.assertIn("var SCALE_MIN = 2, SCALE_MAX = 100, SCALE_DEFAULT = 30;", self.page)
+        self.assertIn("var CEIL_MIN = 200, CEIL_MAX = 6000, CEIL_DEFAULT = 1200;", self.page)
+        self.assertIn("var FLOOR = 120;", self.page)
+        self.assertIn("scale: SCALE_DEFAULT, ceiling: CEIL_DEFAULT, font: FONTS.S", self.page)
+        self.assertIn("if (isScale(s.scale)) { state.scale = s.scale; }", self.page)
+        self.assertIn("if (isCeiling(s.ceiling)) { state.ceiling = s.ceiling; }", self.page)
+        self.assertNotIn("state.size", self.page)
+        self.assertNotIn("data-size", self.page)
+        for handler in ("if (SCALES[scaleSelect.value]) { state.scale = SCALES[scaleSelect.value]; save(); applyScale(); }",
+                        "if (isScale(n)) { state.scale = n; save(); applyScale(); }",
+                        "if (isCeiling(n)) { state.ceiling = n; save(); applyScale(); }"):
+            self.assertIn(handler, self.page)
+
+    def test_graphics_sizing_css_is_driven_by_table_variables(self):
+        # The table carries --scale, --floor and --ceil (and --nom for an image of unknown size); the CSS defaults
+        # match the control defaults and the script sets the same variables from state, so the images resize
+        # with no per-image JS beyond the capped marks.
+        self.assertIn("table#symbols{--scale:30;--floor:120;--ceil:1200;--nom:720px}", self.page)
+        for var in ("--scale", "--floor", "--ceil"):
+            self.assertIn(f"table.style.setProperty('{var}', ", self.page)
+        self.assertIn("table.style.setProperty('--nom', Math.min(nominal(), state.ceiling) + 'px')", self.page)
         self.assertNotIn("--img", self.page)
         self.assertNotIn("--ar", self.page)
         # The sized image: both sides are mm x a factor that is the scale unless the longer side's clamp applies;
@@ -433,16 +465,26 @@ class GraphicsPageTests(unittest.TestCase):
         # the intrinsic size (max-width never enlarged it).
         self.assertIn("td.graphics img{width:var(--nom,720px);height:var(--nom,720px);", self.page)
         self.assertIn("box-sizing:content-box", re.search(r"td\.graphics img\{[^}]*\}", self.page).group(0))
-        self.assertIn("td.graphics img.mm{--f:clamp(calc(var(--floor,120) / max(var(--w), var(--h))), var(--scale,6), "
-                      "calc(var(--ceil,2880) / max(var(--w), var(--h))));\n"
+        self.assertIn("td.graphics img.mm{--f:clamp(calc(var(--floor,120) / max(var(--w), var(--h))), var(--scale,30), "
+                      "calc(var(--ceil,1200) / max(var(--w), var(--h))));\n"
                       "  width:calc(var(--w) * var(--f) * 1px);height:calc(var(--h) * var(--f) * 1px)}", self.page)
         for rule in re.findall(r"td\.graphics img(?:\.mm)?\{[^}]*\}", self.page):
             for absent in ("max-width", "max-height", "height:auto", "object-fit"):
                 self.assertNotIn(absent, rule)
-        self.assertIn("var NOMINAL = { S: 240, M: 480, L: 720, XL: 1080 };", self.page)
-        self.assertIn("if (col === 'Graphics') { return NOMINAL[state.size] + 16; }", self.page)  # column = nominal + slack
-        self.assertEqual(overview.IMG_SCALES, {"S": 2.5, "M": 4.0, "L": 6.0, "XL": 9.0})
-        self.assertEqual(overview.IMG_NOMINAL, {"S": 240, "M": 480, "L": 720, "XL": 1080})
+        # A capped image (mm longer side x scale above the ceiling) is marked by the script: the class `capped`
+        # (a dashed border) and a title suffix naming the ceiling and the scale it got.
+        self.assertIn("td.graphics img.capped{border-style:dashed;border-color:#c60}", self.page)
+        self.assertIn("var capped = longer > 0 && longer * state.scale > state.ceiling;", self.page)
+        self.assertIn("img.classList.toggle('capped', capped);", self.page)
+        self.assertIn("img.dataset.title + ' (capped at ' + state.ceiling + ' px, '", self.page)
+        self.assertIn("(Math.round(state.ceiling / longer * 10) / 10) + ' px/mm)'", self.page)
+        # The Graphics column: 24 mm at the scale, at least 240 px, plus slack; the units wrap and rows may be tall.
+        self.assertIn("var NOMINAL_MM = 24, COLUMN_MIN = 240;", self.page)
+        self.assertIn("function nominal() { return Math.max(state.scale * NOMINAL_MM, COLUMN_MIN); }", self.page)
+        self.assertIn("if (col === 'Graphics') { return nominal() + 16; }", self.page)
+        self.assertEqual((overview.IMG_NOMINAL_MM, overview.IMG_COLUMN_MIN), (24, 240))
+
+    def test_graphics_has_no_value_filter(self):
         n = len(self.table.headers)
         self.assertEqual(self.page.count('<button type="button" class="funnel"'), n - 1)  # Graphics has no value filter
         self.assertEqual(self.page.count('<span class="grip"'), n)
