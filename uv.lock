@@ -22,39 +22,23 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "jbom", editable = "../../KiCad/jBOM" },
+    { name = "jbom", specifier = ">=7.10.2" },
     { name = "sexpdata", specifier = ">=1.0" },
 ]
 
 [[package]]
 name = "jbom"
-version = "7.10.1"
-source = { editable = "../../KiCad/jBOM" }
+version = "7.10.2"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "sexpdata" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "behave", marker = "extra == 'dev'", specifier = ">=1.2.6" },
-    { name = "build", marker = "extra == 'dev'", specifier = ">=0.10.0" },
-    { name = "numbers-parser", marker = "extra == 'all'", specifier = ">=3.0" },
-    { name = "numbers-parser", marker = "extra == 'numbers'", specifier = ">=3.0" },
-    { name = "openpyxl", marker = "extra == 'all'", specifier = ">=3.0" },
-    { name = "openpyxl", marker = "extra == 'excel'", specifier = ">=3.0" },
-    { name = "pydantic", specifier = ">=2.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0" },
-    { name = "pyyaml", specifier = ">=5.4.0" },
-    { name = "requests", marker = "extra == 'all'", specifier = ">=2.28.0" },
-    { name = "requests", marker = "extra == 'search'", specifier = ">=2.28.0" },
-    { name = "sexpdata", specifier = ">=0.0.3" },
-    { name = "twine", marker = "extra == 'dev'", specifier = ">=4.0.0" },
-    { name = "wheel", marker = "extra == 'dev'", specifier = ">=0.37.0" },
+sdist = { url = "https://files.pythonhosted.org/packages/56/65/fa4c0416b854a71c9cd57cdf19013fb9361d3b28894795946ba0384d1b7c/jbom-7.10.2.tar.gz", hash = "sha256:c08a12266a2abce749f79d81efa2c4771664405021149e16ef2e34e69e51f883", size = 804634, upload-time = "2026-10-16T20:52:56.633Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e7/00/8937ea42e4aefb786c6f9c5d08b0b8c19922ac6ba02b5c0b388aa456ff69/jbom-7.10.2-py3-none-any.whl", hash = "sha256:5a8cfa74a5c4c0ba23fd88ff61aff3639bc6dd35c2bea436430b148f2a1be3c5", size = 431610, upload-time = "2026-10-16T20:52:55.113Z" },
 ]
-provides-extras = ["excel", "numbers", "search", "dev", "all"]
 
 [[package]]
 name = "pydantic"

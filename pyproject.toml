@@ -4,14 +4,15 @@ version = "0.1.0"
 description = "SPCoast South operating territory: KiCad-to-model tooling and the subdivision runtime"
 requires-python = ">=3.14"
 dependencies = [
-    "jbom",
+    "jbom>=7.10.2",
     "sexpdata>=1.0",
 ]
 
 [tool.uv]
 package = false
 
-[tool.uv.sources]
-# The jBOM checkout beside this repo in Dropbox, editable, so its KiCad services are imported
-# as an installed package (survey decision 2, 2026-10-16); no sys.path reach into it remains.
-jbom = { path = "../../KiCad/jBOM", editable = true }
+# jbom comes from PyPI, the released build, so a half-finished branch in the jBOM checkout never
+# becomes this repo's test environment. To dogfood the live checkout on purpose, uncomment the
+# source below and run `uv sync`; `git checkout -- pyproject.toml uv.lock` returns to the release.
+# [tool.uv.sources]
+# jbom = { path = "../../KiCad/jBOM", editable = true }

@@ -32,7 +32,7 @@ The symbol libraries are registered globally in
 ## Commands
 
 ```zsh
-uv sync                                        # once per checkout: .venv with Python 3.14, jBOM (editable, from ~/Dropbox/KiCad/jBOM) and sexpdata
+uv sync                                        # once per checkout: .venv with Python 3.14, jbom (the PyPI release) and sexpdata
 uv run python -m unittest discover -s tests -q # 147 tests
 uv run tools/run_plant_graph_smoke.sh          # Luchessa end-to-end; needs kicad-cli. Fails today: the old compiler reports 5 known diagnostics on the archived drawing (#15)
 ```
@@ -59,7 +59,7 @@ uv run tools/run_plant_graph_smoke.sh          # Luchessa end-to-end; needs kica
   SVG) go in `<project>/production/`, never beside the schematics. The old compilers are proofs of concept,
   kept to check the new project against the archive, not to compile it.
 - Set `PYTHONDONTWRITEBYTECODE=1` or clean up `__pycache__`. Stale caches reference removed modules.
-- `tools/kicad_services` imports `jbom` as an installed package; the old `sys.path` reach into the jBOM checkout is gone (KiCad services survey, decision 2).
+- `tools/kicad_services` imports `jbom` as an installed package, the PyPI release pinned in `pyproject.toml`; the old `sys.path` reach into the jBOM checkout is gone (KiCad services survey, decision 2). To test against the live checkout, uncomment the `[tool.uv.sources]` block in `pyproject.toml` and `uv sync`; do not commit that. jBOM's own command line is a `uv tool install jbom`, separate from this venv.
 
 ## Layout
 
