@@ -1,0 +1,18 @@
+[project]
+name = "fieldunit-subdivision"
+version = "0.1.0"
+description = "SPCoast South operating territory: KiCad-to-model tooling and the subdivision runtime"
+requires-python = ">=3.14"
+dependencies = [
+    "jbom>=7.10.2",
+    "sexpdata>=1.0",
+]
+
+[tool.uv]
+package = false
+
+# jbom comes from PyPI, the released build, so a half-finished branch in the jBOM checkout never
+# becomes this repo's test environment. To dogfood the live checkout on purpose, uncomment the
+# source below and run `uv sync`; `git checkout -- pyproject.toml uv.lock` returns to the release.
+# [tool.uv.sources]
+# jbom = { path = "../../KiCad/jBOM", editable = true }
