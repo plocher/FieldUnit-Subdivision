@@ -78,14 +78,33 @@ The checkpoint's next steps 7, 5, 8 and 9. Step 7 first, because it reads Sargen
    informational; contradiction is an error. `IndicationCeiling` is the field; read
    `Indications` as a fallback until every sheet carries the new name. The compiler must not
    depend on symbol names (learned 9) or references.
-2. **Step 5: the indexers.** Casts, their settings and factory defaults, and the driver types'
+
+   Note from human:  The shape and design of this schema is important to get right. 
+   It (and **not the KiCad shapes and design language**) is the foundation for this project's future.
+   Simplicity is one indication of a good design, as are hygiene things like normalization,
+   single copies of truth, good abstractions, a consistant design language, etc.
+   Use the SPCoast schematics as a source of data that can evolve if necessary, rather
+   than an immutable source of requirements: "A good start".
+
+   The larger tool chain will include
+   KiCad schematics like SPCoast's
+   A "Kicad Schematic to Data Model" compiler
+   A Layout Data Model Visualizer and doc package creator (possibly a kproj extension)
+   A Layout Data Model FieldUnit Code Generator
+   A Layout Data Model cTc Machine Code Generator
+   A Layout Data Model Emulator / test harness
+   A Layout Data Model Virtual Simulator
+   and at some point
+   A Layout Data Model Editor that replaces KiCad and its schematics (FieldUnit-Studio)
+
+1. **Step 5: the indexers.** Casts, their settings and factory defaults, and the driver types'
    signatures come from the FieldUnit source tree, published as one indexed document
    (`fieldunit-index/v1`, I21), read by the compiler beside the libraries; and a symbol
    requirements report from the libraries. Their form inside FieldUnit is the first question to
    put to the owner; it is an ADR, not a guess.
-3. **Step 8: glossary.** The foundation's amendments plus the new terms: capability, cast,
+2. **Step 8: glossary.** The foundation's amendments plus the new terms: capability, cast,
    binding, setting scope, chip setting, `Invert`; adapter is not a term. FieldUnit PR.
-4. **Step 9: the alternatives ADR for Part 2** (proposals #1, #2, #3 in the foundation), once
+3. **Step 9: the alternatives ADR for Part 2** (proposals #1, #2, #3 in the foundation), once
    Part 1 is stable, in `docs/adr/` here, opening with the decisions requested, one line each,
    with a default.
 
