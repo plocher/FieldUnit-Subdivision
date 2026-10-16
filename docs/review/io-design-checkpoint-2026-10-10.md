@@ -1,4 +1,4 @@
-# I/O design checkpoint (2026-10-10, rev 13)
+# I/O design checkpoint (2026-10-10, rev 14)
 
 - Status: a record of the design conversation of 2026-10-09 and 10, for the owner's confirmation. "Explicit" is what the owner said. "Implicit" is what followed from it in the drafts and the spike without being said; each one needs a yes or a no. Rev 2 applies the owner's review of rev 1; the changes are listed at the end.
 - Governs: `driver-architecture-foundation.md`. Companions: `environment-view-2026-10-09.md` (rev 6), `driver-types-view-2026-10-09.md` (rev 3), and the spike in `~/Dropbox/KiCad/Railroad/Scratch/` (not git; generators and the binding pass in its `tools/`, reports in `production/`). The digest and survey that preceded this record are in git history only.
@@ -264,10 +264,14 @@ Next steps, in order
 3. Done: the two views revised to match (environment view rev 5, driver types view rev 2), then revised again on the owner's review (rev 6, rev 3; E46 to E55).
 4. Done: the real libraries (Railroad PR #6, Subdivision PR #38): `Appliance` and `Style` fields in place of `Kind`, `IC` on the I/O symbols, `Pin.*` fields, `~{}` names where missing, `Invert` (E53), the `Setting` symbol, the two PCA9685 symbols, the two GPIO symbols (I22 reduced to two by YAGNI), `Device-Switch` plus `Device-Lock`, the searchlight's `RGB` pin (E47), the two semaphore Styles (E48), the lock plates (E54), `PanelMCall` pin `S`, the lint reading fields; then the multi-unit split and `Terminal` retired (E56, E57). 80 symbols, lint clean. Left by hand: the layout anchor, the processor symbol if I31 needs one, the visual pass over the nine split symbols.
 5. The indexers: casts and settings from FieldUnit source; the symbol requirements report from the libraries. Their form in FieldUnit is the first Part 2 question that Part 1 depends on.
-6. Sargent redrawn under the new rules as the first real sheet, compiled, diagnostics read. Done 2026-10-12 to 13: every sheet migrated by text (Railroad PR #8, #9), the owner's cleanup of Sargent on the new symbols with a second PCA9685 for the servo. Then the six-head set applied and Sargent remapped by text (Railroad PR for `feat/head-set`, E71 to E73); left to the owner: the semaphore arm and the servo channels to wire.
+6. Sargent redrawn under the new rules as the first real sheet, compiled, diagnostics read. Done 2026-10-12 to 13: every sheet migrated by text (Railroad PR #8, #9), the owner's cleanup of Sargent on the new symbols with a second PCA9685 for the servo. Then the six-head set applied and Sargent remapped by text (Railroad PR for `feat/head-set`, E71 to E73); the owner wired the semaphore arm to the servo chip on 2026-10-16 and ERC is clean across the project (Railroad PR for `feat/sargent-arm`). The drawing half of step 6 is closed; "compiled, diagnostics read" waits on step 7, the compiler's I/O section, which is the next segment's first deliverable.
 7. The compiler's I/O section and the model schema.
 8. Glossary amendments the foundation lists, plus the new terms: capability, cast, binding, setting scope, chip setting, `Invert`. Done ahead of this: the electric lock entry and `WLQK` (FieldUnit PR #33).
 9. The alternatives ADR for Part 2, with proposals #1, #2 and #3, once Part 1 is stable.
+
+## Changes in rev 14
+
+Step 6's drawing half closed: Sargent wired and ERC clean (2026-10-16). The libraries segment ends here; steps 5, 7, 8 and 9 remain for the compiler segment.
 
 ## Changes in rev 13
 
