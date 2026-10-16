@@ -32,9 +32,12 @@ The symbol libraries are registered globally in
 ## Commands
 
 ```zsh
-python3 -m unittest discover -s tests -q      # 123 tests, Python 3.14
-tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-cli
+uv sync                                        # once per checkout: .venv with Python 3.14, jBOM (editable, from ~/Dropbox/KiCad/jBOM) and sexpdata
+uv run python -m unittest discover -s tests -q # 147 tests
+uv run tools/run_plant_graph_smoke.sh          # Luchessa end-to-end; needs kicad-cli. Fails today: the old compiler reports 5 known diagnostics on the archived drawing (#15)
 ```
+
+- Python is managed per repo with `uv` (`pyproject.toml`, `.python-version`, `uv.lock`; `.venv` is gitignored). Never rely on the system `python3`: a Homebrew or macOS update replaced it with 3.15 without the dependencies (2026-10-16). Run every script as `uv run python <script>`, or `uv run --project ~/Dropbox/workspace/FieldUnit-Subdivision python <script>` from another repo (the Railroad `edits/` scripts import `tools/kicad_services` this way).
 
 - `kicad-cli` is not on PATH. Tools find it through `KICAD_CLI` or the app bundle
   (`/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli`). Without KiCad, pass `--netlist <file.net>`.
@@ -56,6 +59,7 @@ tools/run_plant_graph_smoke.sh               # Luchessa end-to-end; needs kicad-
   SVG) go in `<project>/production/`, never beside the schematics. The old compilers are proofs of concept,
   kept to check the new project against the archive, not to compile it.
 - Set `PYTHONDONTWRITEBYTECODE=1` or clean up `__pycache__`. Stale caches reference removed modules.
+- `tools/kicad_services` imports `jbom` as an installed package; the old `sys.path` reach into the jBOM checkout is gone (KiCad services survey, decision 2).
 
 ## Layout
 

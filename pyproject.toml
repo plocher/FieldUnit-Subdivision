@@ -1,0 +1,17 @@
+[project]
+name = "fieldunit-subdivision"
+version = "0.1.0"
+description = "SPCoast South operating territory: KiCad-to-model tooling and the subdivision runtime"
+requires-python = ">=3.14"
+dependencies = [
+    "jbom",
+    "sexpdata>=1.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+# The jBOM checkout beside this repo in Dropbox, editable, so its KiCad services are imported
+# as an installed package (survey decision 2, 2026-10-16); no sys.path reach into it remains.
+jbom = { path = "../../KiCad/jBOM", editable = true }
