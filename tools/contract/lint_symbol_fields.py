@@ -4,6 +4,8 @@
     python3 tools/contract/lint_symbol_fields.py [--libdir DIR] [--table]
 
 Per symbol, by Role:
+- CAST (2026-10-17): no Appliance or Style; one input pin of kind aspect or indication; every
+  other pin one output kind; `Pin.*` per pin; settings lower_snake_case.
 - APPLIANCE: Appliance present; no Kind.
 - DEVICE, PANEL: Appliance present; no Kind; one `Pin.<base>` per function pin (Column excepted) and
   no `Pin.*` without a pin; the capability is one primary word from the vocabulary (binary, level,
@@ -34,12 +36,13 @@ from kicad_services.sch_text import library_symbols  # noqa: E402
 
 LIBDIR = Path.home() / "Dropbox/KiCad/Railroad/symbols"
 LIBRARIES = ("Railroad-Trackplan", "Railroad-Office", "Railroad-Field", "Railroad-HardwareIO")
-VOCABULARY = {"binary", "level", "position", "color", "pixel", "message"}
+VOCABULARY = {"binary", "level", "position", "color", "aspect", "indication", "message"}
+SOURCE_KINDS = {"aspect", "indication"}  # a cast's one input is one of these
 FUNCTION_ETYPES = {"input", "output", "bidirectional"}
 STRUCTURAL = {"TRACK", "POLICY", "STRUCTURE", "COLUMN", "MACHINE", "CODELINE_TRANSPORT", "CODELINE_ENCODING"}
-FUNCTIONAL = {"APPLIANCE", "DEVICE", "PANEL", "IODRIVER", "SETTING"}
+FUNCTIONAL = {"APPLIANCE", "DEVICE", "PANEL", "IODRIVER", "SETTING", "CAST"}
 RETIRED_FIELDS = {"ControlToken", "Vital", "NormalIs", "Chain", "Index", "Kind"}
-NOT_SETTINGS = {"Role", "Appliance", "Style", "IC", "Address", "Invert", "IndicationToken", "Color", "CP", "TC",
+NOT_SETTINGS = {"Role", "Appliance", "Style", "IC", "Address", "UA", "Invert", "IndicationToken", "Color", "CP", "TC",
                 "IndicationCeiling", "Display", "Processor", "Milepost", "Reference", "Value", "Footprint",
                 "Datasheet", "Description", "ki_keywords", "ki_fp_filters", "ki_description"}
 MEMBERSHIP_PINS = {"Column"}
@@ -71,7 +74,16 @@ def lint_symbol(lib: str, name: str, sym: dict) -> list[tuple[str, str]]:
     pin_caps = {k[4:]: v for k, v in props.items() if k.startswith("Pin.")}
     function_pins = [(n, num, ty) for n, num, ty in pins if n not in MEMBERSHIP_PINS]
     bases = {base(n) for n, _, _ in function_pins}
-    if role in {"DEVICE", "PANEL", "IODRIVER"}:
+    if role == "CAST":
+        sources = [n for n, _, _ in function_pins if pin_caps.get(base(n)) in SOURCE_KINDS]
+        if len(sources) != 1:
+            err(f"a cast takes exactly one aspect or indication input; this has {len(sources)}")
+        outs = {pin_caps.get(base(n), "?") for n, _, _ in function_pins if n not in sources}
+        if len(outs) != 1:
+            err(f"a cast produces one kind; this produces {', '.join(sorted(outs)) or 'nothing'}")
+        if "Appliance" in props or "Style" in props:
+            err("a cast has no Appliance or Style; identity and style belong to the anchor device")
+    if role in {"DEVICE", "PANEL", "IODRIVER", "CAST"}:
         for n, num, ty in function_pins:
             cap = pin_caps.get(base(n))
             if cap is None:
