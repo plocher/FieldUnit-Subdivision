@@ -4,8 +4,10 @@
     python3 tools/contract/lint_symbol_fields.py [--libdir DIR] [--table]
 
 Per symbol, by Role:
-- CAST (2026-10-17): no Appliance or Style; one input pin of kind aspect or indication; every
-  other pin one output kind; `Pin.*` per pin; settings lower_snake_case.
+- CAST (2026-10-17): no Appliance (Style allowed: the aspect casts carry the head style); per unit,
+  one input pin of kind aspect or indication and every other pin one output kind; a multi-unit
+  cast is one head letter per unit and its units are not interchangeable; `Pin.*` per pin;
+  settings lower_snake_case.
 - APPLIANCE: Appliance present; no Kind.
 - DEVICE, PANEL: Appliance present; no Kind; one `Pin.<base>` per function pin (Column excepted) and
   no `Pin.*` without a pin; the capability is one primary word from the vocabulary (binary, level,
@@ -42,7 +44,7 @@ FUNCTION_ETYPES = {"input", "output", "bidirectional"}
 STRUCTURAL = {"TRACK", "POLICY", "STRUCTURE", "COLUMN", "MACHINE", "CODELINE_TRANSPORT", "CODELINE_ENCODING"}
 FUNCTIONAL = {"APPLIANCE", "DEVICE", "PANEL", "IODRIVER", "SETTING", "CAST"}
 RETIRED_FIELDS = {"ControlToken", "Vital", "NormalIs", "Chain", "Index", "Kind"}
-NOT_SETTINGS = {"Role", "Appliance", "Style", "IC", "Address", "UA", "Invert", "IndicationToken", "Color", "CP", "TC",
+NOT_SETTINGS = {"Role", "Appliance", "Style", "IC", "Address", "UA", "Bit", "Invert", "IndicationToken", "Color", "CP", "TC",
                 "IndicationCeiling", "Display", "Processor", "Milepost", "Reference", "Value", "Footprint",
                 "Datasheet", "Description", "ki_keywords", "ki_fp_filters", "ki_description"}
 MEMBERSHIP_PINS = {"Column"}
@@ -75,14 +77,23 @@ def lint_symbol(lib: str, name: str, sym: dict) -> list[tuple[str, str]]:
     function_pins = [(n, num, ty) for n, num, ty in pins if n not in MEMBERSHIP_PINS]
     bases = {base(n) for n, _, _ in function_pins}
     if role == "CAST":
-        sources = [n for n, _, _ in function_pins if pin_caps.get(base(n)) in SOURCE_KINDS]
-        if len(sources) != 1:
-            err(f"a cast takes exactly one aspect or indication input; this has {len(sources)}")
-        outs = {pin_caps.get(base(n), "?") for n, _, _ in function_pins if n not in sources}
-        if len(outs) != 1:
-            err(f"a cast produces one kind; this produces {', '.join(sorted(outs)) or 'nothing'}")
-        if "Appliance" in props or "Style" in props:
-            err("a cast has no Appliance or Style; identity and style belong to the anchor device")
+        # per unit: a multi-unit cast (Cast-Aspect-*) is one head letter per unit, each unit a whole cast
+        for u, names in sym["units"].items():
+            if not names:
+                continue
+            # the source is the pin highest in the chain: indication over aspect (an aspect cast
+            # takes an indication and produces an aspect; a lamp cast takes an aspect)
+            sources = [n for n in names if pin_caps.get(base(n)) == "indication"] or \
+                      [n for n in names if pin_caps.get(base(n)) == "aspect"]
+            if len(sources) != 1:
+                err(f"unit {u}: a cast takes exactly one aspect or indication input; this has {len(sources)}")
+            outs = {pin_caps.get(base(n), "?") for n in names if n not in sources}
+            if len(outs) != 1:
+                err(f"unit {u}: a cast produces one kind; this produces {', '.join(sorted(outs)) or 'nothing'}")
+        if "Appliance" in props:
+            err("a cast has no Appliance; identity belongs to the anchor device")
+        if len([u for u, p in sym["units"].items() if p]) > 1 and not sym["locked"]:
+            err("units are head letters; mark them not interchangeable")
     if role in {"DEVICE", "PANEL", "IODRIVER", "CAST"}:
         for n, num, ty in function_pins:
             cap = pin_caps.get(base(n))
