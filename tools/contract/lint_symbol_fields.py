@@ -18,12 +18,15 @@ Per symbol, by Role:
   meaning primary word plus electrical type, so a symbol whose pins mix them is multi-unit, with
   its units not interchangeable and its Value not autoplaced (the units mesh and show one name).
 - IODRIVER: IC present; no Kind; `Pin.*` per pin, primary word, electrical type input, output or
-  bidirectional; Address or a GPIO Value rule.
+  bidirectional; Address or a GPIO Value rule. Warning (2026-10-18) when a unit's body (its largest
+  rectangle) lacks the driver look: stroke 0.3048 solid 128/77/0 with background fill. The looks by
+  Role are a convention for readers, never a fact: device = named box with its proxy glyph, cast =
+  plain box with direction arrows, driver (chips included) = brown border, background fill.
 - PANEL is exactly a device in a CTC machine column: a PANEL symbol has a `Column` pin and a DEVICE
   symbol has none (E72).
 - SETTING: one passive pin, no Pin.*.
 - TRACK, POLICY, STRUCTURE, COLUMN, MACHINE, CODELINE_*: Kind allowed; nothing else checked.
-`--table` prints every symbol as a markdown row. Exit 1 on any error.
+`--table` prints every symbol as a markdown row. Exit 1 on any error; warnings only print.
 """
 
 from __future__ import annotations
@@ -34,7 +37,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from kicad_services.sch_text import library_symbols  # noqa: E402
+from kicad_services.sch_text import blocks, library_symbols  # noqa: E402
 
 LIBDIR = Path.home() / "Dropbox/KiCad/Railroad/symbols"
 LIBRARIES = ("Railroad-Trackplan", "Railroad-Office", "Railroad-Field", "Railroad-HardwareIO")
@@ -48,6 +51,25 @@ NOT_SETTINGS = {"Role", "Appliance", "Style", "IC", "Address", "UA", "Bit", "Hea
                 "IndicationCeiling", "Display", "Processor", "Milepost", "Reference", "Value", "Footprint",
                 "Datasheet", "Description", "ki_keywords", "ki_fp_filters", "ki_description"}
 MEMBERSHIP_PINS = {"Column"}
+DRIVER_LOOK = ("(width 0.3048)", "(type solid)", "(color 128 77 0 1)", "(type background)")
+RECT = re.compile(r"\(start ([-\d.]+) ([-\d.]+)\)\s*\(end ([-\d.]+) ([-\d.]+)\)")
+
+
+def library_bodies(text: str) -> dict[str, dict[str, str]]:
+    """{symbol: {unit: text of the unit's largest rectangle}} for every unit that has one."""
+    out: dict[str, dict[str, str]] = {}
+    for s, e in blocks(text, "symbol", 1):
+        b = text[s:e]
+        name = re.match(r'\(symbol "([^"]+)"', b).group(1)
+        for us, ue in blocks(b, "symbol", 2):
+            u = b[us:ue]
+            unit = re.match(r'\(symbol "(?:[^"\\]|\\.)*_(\d+)_\d+"', u).group(1)
+            rects = [(abs(float(x2) - float(x1)) * abs(float(y2) - float(y1)), u[rs:re_])
+                     for rs, re_ in blocks(u, "rectangle", 3)
+                     for x1, y1, x2, y2 in [RECT.search(u[rs:re_]).groups()]]
+            if rects:
+                out.setdefault(name, {})[unit] = max(rects)[1]
+    return out
 SNAKE = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 
 
@@ -56,12 +78,13 @@ def base(pin: str) -> str:
     return m.group(1) if m else pin
 
 
-def lint_symbol(lib: str, name: str, sym: dict) -> list[tuple[str, str]]:
-    """[(severity, message)] for one symbol."""
+def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = None) -> list[tuple[str, str]]:
+    """[(severity, message)] for one symbol; bodies = {unit: largest rectangle text}."""
     out: list[tuple[str, str]] = []
     props, pins = sym["properties"], sym["pins"]
     role = props.get("Role", "")
     err = lambda m: out.append(("error", f"{lib}:{name}: {m}"))
+    warn = lambda m: out.append(("warning", f"{lib}:{name}: {m}"))
     if role in STRUCTURAL:
         return out
     if role not in FUNCTIONAL:
@@ -112,6 +135,10 @@ def lint_symbol(lib: str, name: str, sym: dict) -> list[tuple[str, str]]:
                     err(f"Invert names {p}, not a pin of this symbol")
     if role == "IODRIVER" and "Address" not in props and props.get("IC") != "GPIO":
         err("Address missing on a bus device")
+    if role == "IODRIVER":
+        for unit, rect in sorted((bodies or {}).items()):
+            if not all(mark in rect for mark in DRIVER_LOOK):
+                warn(f"unit {unit} body lacks the driver look (brown 0.3048 border, background fill)")
     has_column = any(n in MEMBERSHIP_PINS for n, _, _ in pins)
     if role == "PANEL" and not has_column:
         err("Role PANEL without a Column pin; a plate outside the machine is a DEVICE")
@@ -162,10 +189,11 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     findings, rows, count = [], [], 0
     for lib in LIBRARIES:
-        syms = library_symbols((a.libdir / f"{lib}.kicad_sym").read_text())
+        text = (a.libdir / f"{lib}.kicad_sym").read_text()
+        syms, bodies = library_symbols(text), library_bodies(text)
         for name, sym in syms.items():
             count += 1
-            findings += lint_symbol(lib, name, sym)
+            findings += lint_symbol(lib, name, sym, bodies.get(name))
             rows.append(row(lib, name, sym))
     if a.table:
         print("| Library | Symbol | Role | Appliance | Style | IC | Pin.* | Invert | Settings |")
@@ -174,7 +202,8 @@ def main(argv=None) -> int:
     for sev, msg in findings:
         print(f"{sev}: {msg}")
     errors = sum(1 for s, _ in findings if s == "error")
-    print(f"{count} symbols, {errors} errors")
+    warnings = sum(1 for s, _ in findings if s == "warning")
+    print(f"{count} symbols, {errors} errors, {warnings} warnings")
     return 1 if errors else 0
 
 
