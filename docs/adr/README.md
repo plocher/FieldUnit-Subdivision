@@ -7,6 +7,7 @@ One list of what is decided and what waits for the owner. Each proposed ADR open
 
 | ADR | Subject | Asked of the owner |
 |---|---|---|
+| [0008](0008-layout-data-model-file.md) | The Layout Data Model File, the target of milestone D. One file holds the layout (decided by the owner); asked: JSON with a schema, facts nested by scope (layout, one dictionary per interlocking and per machine), scopes resolved to names by the compiler, qualified names as the only references, version and provenance and incompleteness rules, a canonical serialisation. Picture in `0008/`. | Proposed 2026-10-19. Asked: D2 to D7, each with a default. |
 | [0002](0002-symbol-contract.md) | What each KiCad symbol records | Frozen 2026-10-03: too complicated to approve as-is. Rewritten to rules after the cleanup pass (#30), then approved. |
 | [0003](0003-name-grammar.md) | One grammar for the names of appliances, signals and track circuits | Frozen 2026-10-03, same reason; the owner's in-progress edits are committed as they stood. Rewritten to rules after #30. |
 
