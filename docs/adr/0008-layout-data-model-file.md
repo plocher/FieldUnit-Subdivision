@@ -76,22 +76,6 @@ The top level is the layout and the file's own head. The layout scope holds the 
 | **Nested by scope** (chosen) | the declaring scope is a file fact; a one-interlocking file is one dictionary (R3); a diff names the interlocking | a reader that wants every device walks the scopes |
 | Flat sections (`processors{}`, `fieldUnits{}`, `devices[]`) | every device in one list | DRY issues: the declaring scope must be written on every row as a `scope` field; each interlocking is scattered over five sections |
 
-The shape is the cTc interface layers of FieldUnit ADR 0005, which is why it needs no other section:
-
-| FieldUnit ADR 0005 artifact | In the file |
-|---|---|
-| Transport catalog (DC pulses, MQTT, LocoNet, CMRInet, virtual/in-process) | `layout.transports{}`: this layout's instances, each of a kind in the reference data, declared once and bound by name |
-| Seam 1, Codeline: controls down, indications up | `layout.codelines{}`: an encoding on a transport. Office end: the machine's `attachments[]`. Field end: the interlocking's `codelines[]` entry, the station with its authored address |
-| Seam 2, Hardware I/O, panel side and field side: Local I/O (GPIO, I2C, SPI) | chips on the unit's host processor, `layout.processors{}.chips` |
-| Seam 2: Remote I/O node, with its adapter, one per transport | a processor with `transport` and `address` that hosts no unit (Caltrain); the adapter is the transport kind, reference data |
-| Office logic, the cTc code machine | `machines{}` with `officeUnit.host` |
-| Panel devices: levers, buttons, lamps | the machine's `devices[]` rows |
-| Field logic, one per location: codeline handler, safety logic | `interlockings{}` with `fieldUnit.host` |
-| Field devices: motors, LEDs, detectors | the interlocking's `devices[]` rows |
-| Codeline adapters, I/O managers | runtime parts of a unit, not facts a person states: no key |
-
-Which seam a transport serves is not written either: a transport a code line names serves Seam 1, one a node names serves Seam 2, and one transport may do both. The reader derives it (R1).
-
 ### 4.4 The compiler resolves scopes to names
 
 R2 draws the boundary. The sheets and netlist in a KiCad project are how the drawing says "which bus"; Studio's canvas will say it another way. The KiCad compiler internally resolves each relation by wire, sheet and layout (ADR 0005 S5) and writes the named relation: a chip's `processor`, a node's `transport`, a consumer's chain, a binding's chip and pin. An override field on a symbol yields the same relation plus an `info` diagnostic (ADR 0005 C8).
@@ -152,6 +136,31 @@ Sorting every list means that no list's order carries meaning. That is deliberat
 Tested via a writer (`tools/layout_model.dumps` and a script (`tests/test_layout_model_file.py`) to prove that a shuffled model writes the same bytes.
 
 ## 5. The Data Model shape
+
+The physical abstraction first: the cTc interface layers of FieldUnit ADR 0005, the definitive architecture this file is shaped on.
+
+![The cTc interface layers](0008/ctc-interface-layers.svg)
+
+This is a copy of FieldUnit `docs/adr/0005-ctc-interface-layers.svg` as of its commit `ddf9dbb` (2026-10-10), taken 2026-10-20. FieldUnit's file is the source; the copy exists because a reader of this repo cannot follow a path into that one, and it goes away when the repos merge, which the owner expects in the near future.
+
+How the file lands on those layers, artifact by artifact:
+
+| FieldUnit ADR 0005 artifact | In the file |
+|---|---|
+| Transport catalog (DC pulses, MQTT, LocoNet, CMRInet, virtual/in-process) | `layout.transports{}`: this layout's instances, each of a kind in the reference data, declared once and bound by name |
+| Seam 1, Codeline: controls down, indications up | `layout.codelines{}`: an encoding on a transport. Office end: the machine's `attachments[]`. Field end: the interlocking's `codelines[]` entry, the station with its authored address |
+| Seam 2, Hardware I/O, panel side and field side: Local I/O (GPIO, I2C, SPI) | chips on the unit's host processor, `layout.processors{}.chips` |
+| Seam 2: Remote I/O node, with its adapter, one per transport | a processor with `transport` and `address` that hosts no unit (Caltrain); the adapter is the transport kind, reference data |
+| Office logic, the cTc code machine | `machines{}` with `officeUnit.host` |
+| Panel devices: levers, buttons, lamps | the machine's `devices[]` rows |
+| Field logic, one per location: codeline handler, safety logic | `interlockings{}` with `fieldUnit.host` |
+| Field devices: motors, LEDs, detectors | the interlocking's `devices[]` rows |
+| Codeline adapters, I/O managers | runtime parts of a unit, not facts a person states: no key |
+
+Which seam a transport serves is not written either: a transport a code line names serves Seam 1, one a node names serves Seam 2, and one transport may do both. The reader derives it (R1).
+
+
+Then the file's shape, drawn on the same layers:
 
 ![The Data Model shape](0008/shape.svg)
 
