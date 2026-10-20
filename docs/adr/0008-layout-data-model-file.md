@@ -1,7 +1,7 @@
 # 0008. The Layout Data Model File
 
-- Status: proposed, rev 2, 2026-10-20.
-- Decision requested: **ratify**, the architecture of the on-disk representation. 
+- Status: proposed, rev 3, 2026-10-20. The schema and a validated example exist (§6) and are part of what is ratified.
+- Decision requested: **ratify**, the architecture of the on-disk representation: §4 and the schema `schemas/layout-model/v2.0.0.json` it describes.
 - Builds on: 
    - `docs/review/layout-model-view-2026-10-16.md` (the Data Model's content: sections, O1 to O16), 
    - ADR 0001 (encoding on transport, authored addresses), 
@@ -64,14 +64,14 @@ DoD3 asks for a schema; R3 demands a well defined, simple format and R2 forbids 
 R1 says the scope that declares a bus is a fact of the model (ADR 0005 S5: an attachment finds its declaration by wire, sheet, layout), and R3 says a one-interlocking file must be a natural thing to write.
 
 ```
-schema, layout{settings, transports{}, codelines{}}, interlockings{name}, machines{name}, provenance, diagnostics[]
+schema, layout{settings, transports{}, codelines{}, processors{}}, interlockings{name}, machines{name}, provenance
 ```
 
-The top level is the layout and the file's own head. Each interlocking or machine dictionary holds what its scope declares: `settings`; the appliances and track (interlocking) or the columns (machine); `codelines[]`, the encoding instances with their authored address (ADR 0001 D4); `processors{}` declared in that scope, a CMRInet node being a processor with `transport` and `address` (ADR 0005 S2); `fieldUnit` or `officeUnit` naming its host; `devices[]` with their bindings; `geometry`.
+The top level is the layout and the file's own head. The layout scope holds the entities whose names are layout-wide: the transports, the code lines and the processors, a CMRInet node being a processor with `transport` and `address` (ADR 0005 S2). Each interlocking or machine dictionary holds only railroad things: `settings`; the appliances and track (interlocking) or the columns (machine); `codelines[]`, the encoding instances with their authored address (ADR 0001 D4); `fieldUnit` or `officeUnit` naming the processor that runs it; `devices[]`, one row per device instance, with its bindings; `geometry`.
 
 | Option | For | Against |
 |---|---|---|
-| **Nested by scope** (chosen) | the declaring scope is a file fact; a one-interlocking file is one dictionary (R3); a diff names the interlocking | a reader that wants every device walks the scopes; a processor serving two interlockings is declared in one and named from the other |
+| **Nested by scope** (chosen) | the declaring scope is a file fact; a one-interlocking file is one dictionary (R3); a diff names the interlocking | a reader that wants every device walks the scopes |
 | Flat sections (`processors{}`, `fieldUnits{}`, `devices[]`) | every device in one list | DRY issues: the declaring scope must be written on every row as a `scope` field; each interlocking is scattered over five sections |
 
 ### 4.4 The compiler resolves scopes to names
@@ -90,17 +90,20 @@ The Data Model holds names only.
 R1 says identity is the qualified railroad name only (view O2): no UUIDs, no ordinals or index IDs, case preserved and compared case-folded. The Data Model encodes it so:
 
 - A dictionary key is the entity's own name within its scope. Its qualified name is the scope's name, a colon, and the key: `Sargent:835`, `SPCoast South:13`. Entities of the layout scope (interlockings, machines, transports, code lines) have no prefix: `Sargent`, `CMRInet`. A name may not contain a colon.
-- Processors are named layout-wide (processor-cases §1) and declared in the scope that drew them. A chip is `processor/address`, or `processor/address/use` where one address serves two uses (the PCA9685 as PWM and as servo, view I3).
+- A processor is a layout-scope entity: one namespace for the whole layout, because one processor can serve several interlockings (processor-cases §1). Its name is the Value of its `Processor` symbol; when an interlocking draws none, the compiler declares one named after the interlocking, and likewise one per machine. So Luchessa's cpNode Xiao is the processor `Luchessa`, Corporal's is `Corporal`, the drawn Caltrain node is `Caltrain`, and the desk's is `SPCoast South`. Each entity kind has its own dictionary, so the interlocking `Luchessa` and the processor `Luchessa` coexist; a reference is typed by the field it sits in (`fieldUnit.host` names a processor). Two `Processor` symbols with one Value anywhere in the layout is a duplicate declaration, an error (ADR 0005 C10).
+- A chip is `processor/address`: `Luchessa/0x20` and `Corporal/0x20` are two MCP23017s at the same I2C address on two processors, and no collision exists because the chip key carries the processor. Where one address serves two uses the key is `processor/address/use` (`Sargent/0x40/pwm` and `Sargent/0x40/servo`, the PCA9685 as both, view I3).
+- A **row** is one element of a `devices[]` list: one device instance (view §3.1). The word names the list element and nothing else.
 - **A reference is always the qualified name, in every scope**, including from inside the scope that declares the entity: a Sargent device serves `Sargent:835`, not `835`.
-- A device row has no identity (view §7 item 2). Nothing references a row. A diagnostic locates one by its scope, its index in that scope's list and its natural key (`serves` or `shows`, the type, `column` where present); the index locates within one file and is never an identity across files.
+- A row has no identity (view §7 item 2). Nothing references a row, so no `id` key exists and the schema rejects one. A reader that reports on a row names it by its scope and its natural key (`serves` or `shows`, the type, `column` where present).
 
 | Option | For | Against |
 |---|---|---|
 | **Always qualified** (chosen) | one form, so a reader needs no scope context and `grep` finds every reference; a diagnostic quotes a name without saying where it found it; a machine's devices, which have no interlocking scope, need no special rule | a few bytes per row; renaming an interlocking touches every reference to it, which is a tool's job anyway |
 | Bare within the declaring scope, qualified across scopes (withdrawn 2026-10-19) | terser; a rename touches less | every reader carries a resolver that depends on where a field sits; the canonical form needs a shortening rule; machine devices need a rule of their own |
-| Row ids for devices | a diagnostic can point at a row | an id that is not a name is an identity the model forbids (O2), and a device has no name |
+| Row ids for devices | a report can point at a row | an id that is not a name is an identity the model forbids (O2), and a device has no name |
+| Processors declared under the interlocking that drew them (rev 2) | the file shows which sheet holds the symbol | that is a KiCad fact (R2); the name is layout-wide, so the dictionary must be too |
 
-### 4.6 The file's head: schema, provenance, diagnostics
+### 4.6 The file's head: schema and provenance
 
 DoD3 asks the file to say which schema it follows; R1 asks it to say which versions of the libraries and reference data it was compiled against (view I21), since it names those by key and never copies them; R2 limits what it may say about where it came from.
 
@@ -111,90 +114,359 @@ DoD3 asks the file to say which schema it follows; R1 asks it to say which versi
    - the source (KiCad project, with its path, hash and `git describe`)
    - each symbol library and its version; 
    - each reference data set and its version.
-- `diagnostics[]`: the compiler's Data-Model findings, each with a level (`error`: inconsistent facts; `info`: absence), text and the qualified names it concerns (view §4.9). The compiler emits parse errors and warnings as part of its forensics, sheet and reference included, to its own log.  A source document with compiler errors never generates a Data Model File representation.
+- No `diagnostics[]`. A source document with compiler errors never generates a Data Model File, so no `error` can travel in one. What the view §4.9 called `info` is absence, which any reader sees in the file itself; writing it down is recording what a computer computes (R1). The compiler's observations about the drawing (an override field used, a sub-sheet that separated two nodes, a symbol it ignored) are forensics about the source, which R2 keeps out; the compiler prints them, sheet and reference included, to its own log. Nothing is left for the list to carry.
 
 ### 4.7 Incompleteness and reference data
 
 R1 says absence is information, not an error (view O13), incomplete models are allowed, their gaps are found by the readers and stubbed where useful by the emulator's mocks, and reference data is created in its simpleton form as the compiler first needs it.
 
-- A field that is absent is absent (view §4): a device without a binding, an interlocking without a field unit, a processor without a board are valid files with `info` diagnostics.
+- A field that is absent is absent (view §4): a device without a binding, an interlocking without a field unit, a processor without a board are valid files. The reader reports each absence as `info` when it evaluates (§4.6); the file does not.
 - Reference data (chip definitions by IC, aspect and indication tables by rulebook, driver type keys, encodings) is named by key in the file and by version in `provenance`; no row is copied. Each set lives in its own place with its own small document, not in this file.
 
 The alternative, copying the referenced rows into the file so it reads stand-alone, was rejected: it makes the file a second source of every table (the one-source rule of `AGENTS.md`), and a version in `provenance` gives a reader the same guarantee.
 
 ### 4.8 Canonical serialisation
 
-DoD1 asks for a byte-identical rewrite, and a git diff of the file should show railroad changes only. So the writer, in the compiler and in the reader library, must sort things in the same way: natural-sorted alpha-numerical case folded, whitespace deduplicated  This includes keys, dictionaries by name, lists, etc.
+DoD1 asks for a byte-identical rewrite, and a git diff of the file should show railroad changes only. So the writer, in the compiler and in the reader library, must sort things in the same way: natural-sorted alpha-numerical case folded, whitespace deduplicated. This includes keys, dictionaries by name, lists, etc. Two-space indent, UTF-8 unescaped, one trailing newline.
+
+Sorting every list means that no list's order carries meaning. That is deliberate: implicit ordering is not deterministic, which the pixel chains showed, so every ordering a person intends is explicit, an `address` or a key, never a position in a list. The writer is `tools/layout_model.dumps`; the gate is `tests/test_layout_model_file.py`, which proves that a shuffled model writes the same bytes.
 
 ## 5. The shape, drawn
 
 ![The file's shape](0008/shape.svg)
 
-## 6. Sargent and the Caltrain node, excerpted
+## 6. The example, validated
 
-Illustrative, not the schema. Names and values are the drawing's as of 2026-10-19; the device rows follow the view §3.1.
+`schemas/layout-model/examples/spcoast-excerpt.json`, reproduced in full. It is generated by the script beside it, validates against `schemas/layout-model/v2.0.0.json`, and is in canonical form; `tests/test_layout_model_file.py` proves all three on every run. Railroad names are the drawing's as of 2026-10-19; the Luchessa and Corporal processors and their chips are the intended design, since neither sheet has field I/O drawn yet; `provenance` values are placeholders of valid form.
 
 ```json
 {
-  "schema": "layout-model/1",
-  "layout": {
-    "name": "SPCoast", "railroad": "SPCoast", "division": "South",
-    "settings": { "era": "", "rulebook": "" },
-    "transports": {
-      "CMRInet": { "kind": "CMRI", "params": { "port": "/dev/cu.modemXXXX", "baud": "28800" }, "host": "" },
-      "MQTT":    { "kind": "MQTT", "params": { "broker": "192.168.1.21:1883", "topic": "ctc/SPCoast/codeline/" }, "host": "" }
-    },
-    "codelines": { "AAR Tokens@MQTT": { "encoding": "AAR", "transport": "MQTT" } }
-  },
   "interlockings": {
-    "Sargent": {
-      "controlPoints": { "Sargent": { "milepost": 83.5 } },
-      "appliances": {
-        "835":    { "appliance": "switch", "style": "lock", "controlPoint": "Sargent:Sargent", "osCircuit": "Sargent:835T1" },
-        "836NAB": { "appliance": "mast", "style": "double", "heads": { "A": { "style": "CPL" }, "B": { "style": "CPL" } } }
-      },
-      "codelines": [ { "codeline": "AAR Tokens@MQTT" } ],
-      "processors": { "Sargent": { "side": "field", "chips": { "0x20": { "ic": "MCP23017" }, "0x27": { "ic": "PCA9685", "use": "pwm" } } } },
-      "fieldUnit": { "host": "Sargent" },
-      "devices": [
-        { "type": { "appliance": "switch", "style": ["powered", "lock", "dual"] }, "serves": "Sargent:835",
-          "bindings": [ { "function": "M", "chip": "Sargent/0x20", "pin": "B1" }, { "function": "N", "chip": "Sargent/0x20", "pin": "B2" } ] },
-        { "type": { "appliance": "lamp" }, "serves": "Sargent:HBA", "address": "1",
-          "bindings": [ { "function": "LAMP", "chip": "Sargent/0x27", "pin": "B1" } ] }
-      ]
+    "Corporal": {
+      "codelines": [
+        {
+          "address": "Corporal",
+          "codeline": "AAR Tokens@MQTT"
+        }
+      ],
+      "fieldUnit": {
+        "host": "Corporal"
+      }
     },
     "Gilroy Caltrain": {
-      "processors": { "Caltrain": { "side": "field", "board": "cpNode", "transport": "CMRInet", "address": "30",
-                                    "chips": { "CMRI": { "ic": "CMRI" } } } },
+      "appliances": {
+        "773": {
+          "appliance": "switch",
+          "controlPoint": "Gilroy Caltrain:Gilroy Caltrain",
+          "style": "powered"
+        },
+        "774NAB": {
+          "appliance": "mast",
+          "heads": {
+            "A": {
+              "style": "CPL"
+            },
+            "B": {
+              "style": "CPL"
+            }
+          },
+          "style": "double"
+        }
+      },
+      "controlPoints": {
+        "Gilroy Caltrain": {}
+      },
       "devices": [
-        { "type": { "appliance": "lamp" }, "serves": "Gilroy Caltrain:…", "bindings": [ { "function": "LAMP", "chip": "Caltrain/CMRI", "pin": "OUT.7" } ] }
-      ]
+        {
+          "bindings": [
+            {
+              "chip": "Caltrain/CMRI",
+              "function": "LAMP",
+              "pin": "OUT.7"
+            }
+          ],
+          "serves": "Gilroy Caltrain:774NAB",
+          "type": {
+            "appliance": "head"
+          }
+        },
+        {
+          "bindings": [
+            {
+              "chip": "Caltrain/CMRI",
+              "function": "N",
+              "pin": "OUT.1"
+            },
+            {
+              "chip": "Caltrain/CMRI",
+              "function": "NWK",
+              "pin": "IN.1"
+            }
+          ],
+          "serves": "Gilroy Caltrain:773",
+          "type": {
+            "appliance": "switch",
+            "style": "powered"
+          }
+        }
+      ],
+      "fieldUnit": {
+        "host": "Caltrain"
+      }
+    },
+    "Luchessa": {
+      "codelines": [
+        {
+          "address": "Luchessa",
+          "codeline": "AAR Tokens@MQTT"
+        }
+      ],
+      "controlPoints": {
+        "CP Carnadero": {},
+        "CP Gilroy": {},
+        "CP Luchessa": {}
+      },
+      "fieldUnit": {
+        "host": "Luchessa"
+      }
+    },
+    "Sargent": {
+      "appliances": {
+        "835": {
+          "appliance": "switch",
+          "controlPoint": "Sargent:Sargent",
+          "osCircuit": "Sargent:835T1",
+          "style": "lock"
+        },
+        "836NAB": {
+          "appliance": "mast",
+          "heads": {
+            "A": {
+              "style": "CPL"
+            },
+            "B": {
+              "style": "CPL"
+            }
+          },
+          "style": "double"
+        }
+      },
+      "codelines": [
+        {
+          "address": "Sargent",
+          "codeline": "AAR Tokens@MQTT"
+        }
+      ],
+      "controlPoints": {
+        "Sargent": {
+          "milepost": 83.5
+        }
+      },
+      "devices": [
+        {
+          "address": "1",
+          "bindings": [
+            {
+              "chip": "Sargent/0x40/pwm",
+              "function": "LAMP",
+              "pin": "B1"
+            }
+          ],
+          "serves": "Sargent:836NAB",
+          "type": {
+            "appliance": "head"
+          }
+        },
+        {
+          "bindings": [
+            {
+              "chip": "Sargent/0x20",
+              "function": "M",
+              "pin": "B1"
+            },
+            {
+              "chip": "Sargent/0x20",
+              "function": "N",
+              "pin": "B2"
+            }
+          ],
+          "serves": "Sargent:835",
+          "type": {
+            "appliance": "switch",
+            "style": [
+              "dual",
+              "lock",
+              "powered"
+            ]
+          }
+        }
+      ],
+      "fieldUnit": {
+        "host": "Sargent"
+      }
+    }
+  },
+  "layout": {
+    "codelines": {
+      "AAR Tokens@MQTT": {
+        "encoding": "AAR",
+        "transport": "MQTT"
+      }
+    },
+    "division": "South",
+    "name": "SPCoast",
+    "processors": {
+      "Caltrain": {
+        "address": "30",
+        "board": "cpNode",
+        "chips": {
+          "CMRI": {
+            "ic": "CMRI"
+          }
+        },
+        "side": "field",
+        "transport": "CMRInet"
+      },
+      "Corporal": {
+        "board": "cpNode Xiao",
+        "chips": {
+          "0x20": {
+            "ic": "MCP23017"
+          }
+        },
+        "side": "field"
+      },
+      "Luchessa": {
+        "board": "cpNode Xiao",
+        "chips": {
+          "0x20": {
+            "ic": "MCP23017"
+          },
+          "0x21": {
+            "ic": "MCP23017"
+          }
+        },
+        "side": "field"
+      },
+      "Sargent": {
+        "board": "cpNode Xiao",
+        "chips": {
+          "0x20": {
+            "ic": "MCP23017"
+          },
+          "0x40/pwm": {
+            "ic": "PCA9685"
+          },
+          "0x40/servo": {
+            "ic": "PCA9685"
+          }
+        },
+        "side": "field"
+      },
+      "SPCoast South": {
+        "board": "ESP32",
+        "chips": {
+          "0x2C": {
+            "ic": "MAX7313"
+          }
+        },
+        "side": "office"
+      }
+    },
+    "railroad": "SPCoast",
+    "settings": {
+      "era": "1970s",
+      "rulebook": "SP 1969"
+    },
+    "transports": {
+      "CMRInet": {
+        "host": "SPCoast South",
+        "kind": "CMRI",
+        "params": {
+          "baud": "28800",
+          "port": "/dev/cu.usbserial-CMRI"
+        }
+      },
+      "MQTT": {
+        "kind": "MQTT",
+        "params": {
+          "broker": "192.168.1.21:1883",
+          "topic": "ctc/SPCoast/codeline/"
+        }
+      }
     }
   },
   "machines": {
     "SPCoast South": {
-      "panelStyle": "US&S 506 lever panel",
-      "columns": { "13": { "interlocking": "Sargent" } },
-      "attachments": [ { "interlocking": "Sargent", "columns": [13], "codeline": "AAR Tokens@MQTT" } ],
-      "processors": { "SPCoast South": { "side": "office", "chips": { "0x2C": { "ic": "MAX7313" } } } },
-      "officeUnit": { "host": "SPCoast South" },
+      "attachments": [
+        {
+          "codeline": "AAR Tokens@MQTT",
+          "columns": [
+            "13"
+          ],
+          "interlocking": "Sargent"
+        }
+      ],
+      "columns": {
+        "13": {
+          "interlocking": "Sargent"
+        }
+      },
       "devices": [
-        { "type": { "appliance": "lever", "style": "lock" }, "serves": "Sargent:835", "column": "SPCoast South:13",
-          "bindings": [ { "function": "WLS", "chip": "SPCoast South/0x2C", "pin": "A7" } ] }
-      ]
+        {
+          "bindings": [
+            {
+              "chip": "SPCoast South/0x2C",
+              "function": "WLS",
+              "pin": "A7"
+            }
+          ],
+          "column": "SPCoast South:13",
+          "serves": "Sargent:835",
+          "type": {
+            "appliance": "lever",
+            "style": "lock"
+          }
+        }
+      ],
+      "officeUnit": {
+        "host": "SPCoast South"
+      },
+      "panelStyle": "US&S 506 lever panel"
     }
   },
-  "provenance": { "compiler": "kicad2layout 0.1", "source": { "path": "SPCoast/SPCoast.kicad_pro", "sha256": "…", "describe": "…" },
-                  "libraries": { "Railroad-HardwareIO": "…" }, "referenceData": { "chips": "…" } },
-  "diagnostics": [ { "level": "info", "text": "Sargent: HBA carries Address 1 on a wire-capability pin", "about": ["Sargent:HBA"] } ]
+  "provenance": {
+    "compiler": {
+      "name": "kicad2layout",
+      "version": "0.0.0-example"
+    },
+    "libraries": {
+      "Railroad-Field": "example",
+      "Railroad-HardwareIO": "example",
+      "Railroad-Office": "example",
+      "Railroad-Trackplan": "example"
+    },
+    "referenceData": {
+      "boards": "example",
+      "chips": "example",
+      "encodings": "example"
+    },
+    "source": {
+      "describe": "example",
+      "path": "SPCoast/SPCoast.kicad_pro",
+      "sha256": "50d858e0985ecc7f60418aaf0cc5ab587f42c2570a884095a9e8ccacd0f6545c"
+    },
+    "sourceType": "KiCad"
+  },
+  "schema": "layout-model/v2.0.0"
 }
 ```
 
-Read off the excerpt: the Caltrain node is a processor that attaches to the layout's CMRInet transport by its address and declares the bits its drivers use; no driver row names the transport or the UA (ADR 0005 S1). Every reference is a qualified name, whether it stays in its scope (`Sargent:835` from a Sargent device) or crosses one (the lever in `SPCoast South:13` serves `Sargent:835`); the layout's own entities carry no prefix (§4.5). Nothing says sheet, net, reference or unit (R2).
+Read off the example: the Caltrain node is a processor that attaches to the layout's CMRInet transport by its address and declares the bits its devices use; no row names the transport or the UA (ADR 0005 S1). `Luchessa/0x20` and `Corporal/0x20` are different chips at one I2C address (§4.5). Every reference is a qualified name, whether it stays in its scope (`Sargent:835` from a Sargent row) or crosses one (the lever in `SPCoast South:13` serves `Sargent:835`); the layout's own entities carry no prefix. Nothing says sheet, net, reference or unit (R2). The canonical order puts `interlockings` before `layout` and `schema` last: the rule is one rule, with no exception for the head.
 
 ## 7. Decision
 
-Ratify §4 as the on-disk representation of the Layout Data Model: one JSON file defined by `schemas/layout-model/v2.0.0.json`, facts nested by scope, scopes resolved to qualified names by the compiler, a head of schema, layout-level provenance and diagnostics, absence as information, reference data by key, canonical serialisation. Milestone D writes it; milestone E reads it; §3 gates both.
+Ratify §4 and the schema `schemas/layout-model/v2.0.0.json` as the on-disk representation of the Layout Data Model, the public interface: one JSON file, facts nested by scope with processors at the layout, scopes resolved to qualified names by the compiler, rows without identity, a head of schema and layout-level provenance, no diagnostics, absence as information, reference data by key, canonical serialisation. Milestone D writes it; milestone E reads it; §3 gates both.
 
 ## 8. Record
 
@@ -206,17 +478,19 @@ How the choices were made, in order:
 - 2026-10-19. References bare within a scope, qualified across: the owner asked for the implications (ambiguity, whether qualified works everywhere, code complexity against terseness); always-qualified was recommended and agreed (§4.5). The CMRInet node as a processor with chip `CMRI` and pins `OUT.n`/`IN.n`: "worth trying; regroup if it adds complexity."
 - 2026-10-19. Rev 1 carried a `source` entry per interlocking. The owner struck it: it exposes a KiCad sheet name in a generalised model, the source is a layout property since all interlockings come from the one project, and nothing can use it (§4.6).
 - 2026-10-20. The author applied the same rule to the diagnostics' `sourceRef` and dropped it (§4.6).
-- 2026-10-20. The owner reframed the ADR: a problem that names the undefined thing, three rules, a definition of done that connects to the problem, and the intermediate choices run down by the author so that one decision remains. Rev 2.
+- 2026-10-20. The owner reframed the ADR: a problem that names the undefined thing, three rules, a definition of done that connects to the problem, and the intermediate choices run down by the author so that one decision remains. Rev 2. The owner's edits: R2 in compiler terms (tokens, grammar, parse tree), R3 as a stable public interface, DoD2 proven by a replica project, DoD3 by adversarial review, the schema semantically versioned as `v2.0.0`, provenance with a source type, an error produces no file.
+- 2026-10-20. The owner's clarifications on rev 2, folded in as rev 3: processors are layout-scope entities with a worked Luchessa and Corporal example, since "declared in the scope that drew them" was a KiCad fact and the namespace was unexplained (§4.3, §4.5); "row" is kept and defined as one element of `devices[]`, rather than a new generic word (§4.5); `diagnostics[]` is dropped, since an error produces no file and absence is readable from the file (§4.6); the example is the real file, generated and validated under test, because an example that does not show the schema is no use for evaluating it (§6). Sorted lists carry no order on purpose: intended order is always explicit, as the pixel chains taught (§4.8).
 
 ## 9. Consequences
 
 - C1. Milestone D's compiler writes this file and nothing else; its contract is the schema plus §4.8. Its gates are §3.
 - C2. The reader library reads the file, evaluates in memory (view O4) and reports; FieldUnit's generators and emulator consume the reader's result, not the file's text.
-- C3. The scope resolver of ADR 0005 C11 lives in the compiler (§4.4). The duplicate-address and two-candidates rules of ADR 0005 C10 are compiler diagnostics where they need the source and reader diagnostics where the file alone shows them.
-- C4. `schemas/layout-model/v1.json` is written on ratification, from §4 and the view §4, with `geometry` an open object until the picture generator fixes it (view §4.7).
+- C3. The scope resolver of ADR 0005 C11 lives in the compiler (§4.4). The duplicate-address and two-candidates rules of ADR 0005 C10 are compiler errors: no file is written. The reader reports absences as `info` from the file alone.
+- C4. `schemas/layout-model/v2.0.0.json`, `tools/layout_model` (validate, canonical write) and the gates exist now and are ratified with this ADR. `track` and `geometry` are open objects until the compiler fixes them (view §4.7); fixing them is a minor version.
 - C5. The view §7 items 1 (section names) and 2 (row identity) close here: the names are those of §4.3 and §6, read against the glossary §2.4; rows have no identity.
 - C6. The old compilers, `schemas/interlocking-plant/v1.json` and the generated Luchessa JSON stay as reference until §3 passes, then go in one commit (layout-model-plan §0).
-- C7. The compiler keeps its own log for forensics (sheet, reference, unit); the file never carries them.
+- C7. The compiler keeps its own log for errors and forensics (sheet, reference, unit); the file never carries them.
+- C8. The schema is the public interface (R3): a change to the Data Model that changes the file is a schema version, with a migration for files already written, never a quiet edit.
 
 ## 10. Out of scope
 

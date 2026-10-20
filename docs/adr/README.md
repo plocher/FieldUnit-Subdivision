@@ -7,7 +7,7 @@ One list of what is decided and what waits for the owner. Each proposed ADR open
 
 | ADR | Subject | Asked of the owner |
 |---|---|---|
-| [0008](0008-layout-data-model-file.md) | The Layout Data Model File, the on-disk representation milestone D writes and milestone E reads. Problem, three rules (fidelity, the KiCad boundary, authorable), a definition of done (lossless round trip, coverage, schema), and the architecture with its alternatives run down: one JSON file with a schema, facts by scope, names resolved by the compiler, always-qualified references, layout-level provenance, no source pointers, canonical form. Picture in `0008/`. | Rev 2, 2026-10-20. Asked: ratify §4. |
+| [0008](0008-layout-data-model-file.md) | The Layout Data Model File, the public interface milestone D writes and milestone E reads. Problem, three rules (fidelity, the KiCad boundary, reusable), a definition of done (lossless round trip, coverage, schema), the architecture with its alternatives run down, and the schema `schemas/layout-model/v2.0.0.json` with a generated, validated example under test. Processors are layout entities, every reference a qualified name, rows have no identity, no diagnostics in the file, canonical form. Picture in `0008/`. | Rev 3, 2026-10-20. Asked: ratify §4 and the schema. |
 | [0002](0002-symbol-contract.md) | What each KiCad symbol records | Frozen 2026-10-03: too complicated to approve as-is. Rewritten to rules after the cleanup pass (#30), then approved. |
 | [0003](0003-name-grammar.md) | One grammar for the names of appliances, signals and track circuits | Frozen 2026-10-03, same reason; the owner's in-progress edits are committed as they stood. Rewritten to rules after #30. |
 
