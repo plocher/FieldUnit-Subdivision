@@ -8,7 +8,8 @@
    - ADR 0004 (the project hierarchy), 
    - ADR 0005 (declarations, attachments, scopes), 
    - `docs/review/processor-cases-2026-10-16.md`, 
-   - the glossary §2.
+   - the glossary §2,
+   - FieldUnit `docs/adr/0005-appliance-driver-architecture.md` and its picture `0005-ctc-interface-layers.svg`: the two seams and the transport catalog, the definitive architecture this file is shaped on.
 - Overview: `0008/shape.svg`.
 
 ## 1. Problem
@@ -33,6 +34,7 @@ The Data Model itself is defined above, with names and relationships. What is un
 | Bus declarations, attachments, scopes, addresses; a node is a processor | ADR 0005 S1 to S7, C1 to C11 |
 | Identity by qualified railroad name; relations by name, not containment; errors as inconsistent facts, absence as information | view O2, O9, O13; glossary §2 |
 | Processors, field units and control points as independent entities | processor-cases §1, §5 |
+| The interface layers: Seam 1 Codeline between office and field logic; Seam 2 Hardware I/O on the panel side and the field side, local or remote; the transport catalog, any transport bindable to any seam | FieldUnit ADR 0005, `0005-ctc-interface-layers.svg` |
 
 ## 3. Definition of done
 
@@ -67,12 +69,28 @@ R1 says the scope that declares a bus is a fact of the model (ADR 0005 S5: an at
 schema, layout{settings, transports{}, codelines{}, processors{}}, interlockings{name}, machines{name}, provenance
 ```
 
-The top level is the layout and the file's own head. The layout scope holds the entities whose names are layout-wide: the transports, the code lines and the processors, a CMRInet node being a processor with `transport` and `address` (ADR 0005 S2). Each interlocking or machine dictionary holds only railroad things: `settings`; the appliances and track (interlocking) or the columns (machine); `codelines[]`, the encoding instances with their authored address (ADR 0001 D4); `fieldUnit` or `officeUnit` naming the processor that runs it; `devices[]`, one row per device instance, with its bindings; `geometry`.
+The top level is the layout and the file's own head. The layout scope holds the entities whose names are layout-wide: the transports, the code lines and the processors, a Remote I/O node (the Caltrain CMRInet node) being a processor with `transport` and `address` (ADR 0005 S2). Each interlocking or machine dictionary holds only railroad things: `settings`; the appliances and track (interlocking) or the columns (machine); `codelines[]`, the encoding instances with their authored address (ADR 0001 D4); `fieldUnit` or `officeUnit` naming the processor that runs it; `devices[]`, one row per device instance, with its bindings; `geometry`.
 
 | Option | For | Against |
 |---|---|---|
 | **Nested by scope** (chosen) | the declaring scope is a file fact; a one-interlocking file is one dictionary (R3); a diff names the interlocking | a reader that wants every device walks the scopes |
 | Flat sections (`processors{}`, `fieldUnits{}`, `devices[]`) | every device in one list | DRY issues: the declaring scope must be written on every row as a `scope` field; each interlocking is scattered over five sections |
+
+The shape is the cTc interface layers of FieldUnit ADR 0005, which is why it needs no other section:
+
+| FieldUnit ADR 0005 artifact | In the file |
+|---|---|
+| Transport catalog (DC pulses, MQTT, LocoNet, CMRInet, virtual/in-process) | `layout.transports{}`: this layout's instances, each of a kind in the reference data, declared once and bound by name |
+| Seam 1, Codeline: controls down, indications up | `layout.codelines{}`: an encoding on a transport. Office end: the machine's `attachments[]`. Field end: the interlocking's `codelines[]` entry, the station with its authored address |
+| Seam 2, Hardware I/O, panel side and field side: Local I/O (GPIO, I2C, SPI) | chips on the unit's host processor, `layout.processors{}.chips` |
+| Seam 2: Remote I/O node, with its adapter, one per transport | a processor with `transport` and `address` that hosts no unit (Caltrain); the adapter is the transport kind, reference data |
+| Office logic, the cTc code machine | `machines{}` with `officeUnit.host` |
+| Panel devices: levers, buttons, lamps | the machine's `devices[]` rows |
+| Field logic, one per location: codeline handler, safety logic | `interlockings{}` with `fieldUnit.host` |
+| Field devices: motors, LEDs, detectors | the interlocking's `devices[]` rows |
+| Codeline adapters, I/O managers | runtime parts of a unit, not facts a person states: no key |
+
+Which seam a transport serves is not written either: a transport a code line names serves Seam 1, one a node names serves Seam 2, and one transport may do both. The reader derives it (R1).
 
 ### 4.4 The compiler resolves scopes to names
 
@@ -137,14 +155,14 @@ Tested via a writer (`tools/layout_model.dumps` and a script (`tests/test_layout
 
 ![The Data Model shape](0008/shape.svg)
 
-One json file, a collection of facts organized by scope, relations linked by name. Boxes are the scopes, yellow for declarations, white for the artifacts that attach via a relationship.
+One json file, a collection of facts organized by scope, relations linked by name, drawn on the cTc interface layers of FieldUnit ADR 0005: the office band is a machine, the field band holds the interlockings, Seam 1 is the code lines between them, Seam 2 is each band's I/O row, and the transport catalog stands beside them. Yellow is a declaration; white is an artifact that attaches via a relationship. Box titles are file paths.
 
-- **Red dashed**: a reference by qualified name, a fact written in the file. The lever row's `serves Sargent:835`, a unit's `host`, a binding's chip and pin, the Caltrain node's `transport`.
-- **Blue**: code line membership, the two facts the control path from a lever to its appliance is derived from: the interlocking's `codelines[]` entry (a station on the line) and the machine's `attachments[]` entry (which columns control which interlocking over which line). The file never writes that path.
+- **Red dashed**: a reference by qualified name, a fact written in the file. A row's `serves`, a unit's `host`, a binding's chip, a code line's `transport` (the Seam 1 binding), a node's `transport` (the Seam 2 binding). The lever's `serves Sargent:835` runs from the office band to the field band in the same form it has anywhere.
+- **Blue**: code line membership, the two facts the control path from a lever to its appliance is derived from: the machine's `attachments[]` entry (office end) and the interlocking's `codelines[]` entry (field end). The file never writes that path.
 
-A processor has one name for the whole layout, so `Luchessa/0x20` and `Corporal/0x20` are two chips at one I2C address. A node (Caltrain) attaches by transport and address.
+A processor has one name for the whole layout, so `Luchessa/0x20` and `Corporal/0x20` are two chips at one I2C address. A Remote I/O node (Caltrain) attaches by transport and address and hosts no unit. Which seam a transport serves is derived from what binds to it.
 
-What is not in the file: sheets, nets, references, units (source-isms); diagnostics (an error means no file; absence is read from the file); routes, signals, tokens, casts, resolved settings and the control path from a lever to its appliance (the evaluator derives them in memory); the libraries and the reference data (named by key and version, never copied); any order in a list (every intended order is an explicit address or key).
+What is not in the file: sheets, nets, references, units (source-isms); diagnostics (an error means no file; absence is read from the file); routes, signals, tokens, casts, resolved settings, the seam a transport serves and the control path from a lever to its appliance (the evaluator derives them in memory); the libraries and the reference data (named by key and version, never copied); any order in a list (every intended order is an explicit address or key).
 
 ## 6. The example, validated
 
@@ -491,6 +509,7 @@ How the choices were made, in order:
 - 2026-10-20. The author applied the same rule to the diagnostics' `sourceRef` and dropped it (§4.6).
 - 2026-10-20. The owner reframed the ADR: a problem that names the undefined thing, three rules, a definition of done that connects to the problem, and the intermediate choices run down by the author so that one decision remains. Rev 2. The owner's edits: R2 in compiler terms (tokens, grammar, parse tree), R3 as a stable public interface, DoD2 proven by a replica project, DoD3 by adversarial review, the schema semantically versioned as `v2.0.0`, provenance with a source type, an error produces no file.
 - 2026-10-20. The owner's clarifications on rev 2, folded in as rev 3: processors are layout-scope entities with a worked Luchessa and Corporal example, since "declared in the scope that drew them" was a KiCad fact and the namespace was unexplained (§4.3, §4.5); "row" is kept and defined as one element of `devices[]`, rather than a new generic word (§4.5); `diagnostics[]` is dropped, since an error produces no file and absence is readable from the file (§4.6); the example is the real file, generated and validated under test, because an example that does not show the schema is no use for evaluating it (§6). Sorted lists carry no order on purpose: intended order is always explicit, as the pixel chains taught (§4.8).
+- 2026-10-20. The owner: the picture showed code lines and transports as siblings with no binding between them, and FieldUnit ADR 0005's interface layers (two seams, a transport catalog) are the definitive architecture. The picture is redrawn on those layers with both seam bindings drawn, the artifact-to-file mapping table is in §4.3, and the prose uses Local I/O and Remote I/O node. No key changed.
 
 ## 9. Consequences
 
