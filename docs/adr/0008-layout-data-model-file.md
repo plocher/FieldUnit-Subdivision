@@ -1,117 +1,119 @@
-# 0008. The Layout Data Model File: one file, facts by scope, relations by name
+# 0008. The Layout Data Model File
 
-- Status: proposed 2026-10-19. Milestone D (the KiCad project to Data Model File compiler) needs a target; the layout model view of 2026-10-16 deferred the serialised form (O5). The owner decided the first question the same day: one file holds the entire layout. This ADR records that and asks the rest.
-- Decisions requested, each with a default: D2 the format (JSON with a JSON Schema); D3 the shape (facts nested by scope: layout, then one dictionary per interlocking and per machine); D4 where scopes become names (in the compiler); D5 identity and references (every reference is a qualified railroad name, in every scope; device rows have no identity); D6 version, provenance, incompleteness and reference data; D7 a canonical serialisation. §4 gives each with its alternatives and what a "No" means.
-- Builds on: `docs/review/layout-model-view-2026-10-16.md` (the sections, O1 to O16), ADR 0005 (declarations, attachments, scopes), ADR 0001 (encoding on transport, authored addresses, code lines on the root sheet), `docs/review/processor-cases-2026-10-16.md`, the glossary §2, the owner's rulings of 2026-10-19 (§2).
-- Pictures: `0008/shape.svg`.
-- Scope: the file the compiler writes and the readers read. Not in scope: the evaluated model's form (still in memory, O4, O5), generator options, the schema text itself (written when this is accepted), the detail of `geometry` (view §4.7, against the picture generator).
+- Status: proposed, rev 2, 2026-10-20. Rev 1 (2026-10-19) listed seven decisions; the owner read it as a task list in ADR form and asked for an ADR: an architecture, a decision, and the record of how and why the choices were made. Rev 2 is that. The intermediate choices are run down in §4 with their alternatives; the one decision left is to ratify.
+- Decision requested: **ratify §4**, the architecture of the on-disk representation. A "No" names the subsection it rejects.
+- Builds on: `docs/review/layout-model-view-2026-10-16.md` (the Data Model's content: sections, O1 to O16), ADR 0001 (encoding on transport, authored addresses), ADR 0004 (the project hierarchy), ADR 0005 (declarations, attachments, scopes), `docs/review/processor-cases-2026-10-16.md`, the glossary §2, the owner's rulings of 2026-10-19 and 2026-10-20 (§8).
+- Picture: `0008/shape.svg`.
 
 ## 1. Problem
 
-Milestone D turns one KiCad project into one Data Model File, and milestone E reads that file into FieldUnit's generators and emulator. The model's content is decided: the view of 2026-10-16 names its sections and the owner answered sixteen questions on it; ADR 0005 settled how anything on a sheet finds its bus. What is not decided is the file: its format, its shape, what the compiler resolves before writing and what a reader resolves after, how one entry names another, how the file says what it is and where it came from, and what a reader does with a file that is incomplete. FieldUnit's serializer schema is obsolete (O16) and FieldUnit "has no idea about what we've done", so it cannot be asked for the schema. A future Studio is hoped to use this file as its native format, so the choices made for a derived artifact today are made for a hand-edited document tomorrow.
+The abstract actors and relationships captured in the KiCad schematic artifact represent a Layout Data Model. Milestone D compiles that model into a defined structure saved to the filesystem for interchange to various consumers: code generators, documentation producers, validators, simulators and emulators. This on-disk structure is currently undefined.
 
-## 2. Rules in play
+The Data Model itself is defined: the view of 2026-10-16 names its sections and the owner answered sixteen questions on it; ADRs 0001, 0004 and 0005 settle its relationships. What is undefined is the structure that carries it between the compiler and its consumers.
 
-Tagged as in ADR 0005: *model* rules survive a change of tool, *representation* rules say how a source encodes the model, *operating* rules say how we work.
+## 2. Rules
 
-- A1. *Model.* **The model records what a person states and nothing a computer can compute from it**; the evaluator derives the rest in memory and nothing evaluated is persisted. View §1, O4, O5.
-- A2. *Model.* **Source-independent, target-independent, hand-authorable.** Nothing in it says KiCad, sheet, net, reference or unit; nothing says MQTT only or ESP32 only; a small file written by hand is a valid input and the fixture form. View §1, O2, O3.
-- A3. *Model.* **Identity is the qualified railroad name only.** No UUIDs, no ordinals; names are case-preserved and compared case-folded; renaming is renaming. O2.
-- A4. *Model.* **A relation is a name in a field, never containment, unless the thing cannot exist alone** (a head on its mast, a column on its machine). A field that is absent is absent. View §4.
-- A5. *Model.* **A bus is declared once and an attachment carries only its own address; an attachment finds its declaration by scope.** ADR 0005 S1 to S6. Chips name their processor, field units name their host, processor and field unit and control point are independent (O9).
-- A6. *Model.* **The libraries and the reference data are not the model.** The model names a type, a chip or a rulebook table by key and never copies it; the versions compiled against are recorded. O7, I21.
-- A7. *Model.* **Errors are inconsistent facts; absence is information.** Two levels, error and info (O13); a missing join or an unbound pin is info.
-- A8. *Model.* **Encoding on transport, authored addresses, code lines on the root sheet and field stations as encoding instances on the interlocking sheets.** ADR 0001 D1, D4, D13, D15.
-- A9. *Representation.* **The compiler resolves source-isms and nothing railroad.** The test: would Studio ask the user for it? If yes the compiler writes it; if a computer derives it the evaluator does. View §6. The sheet hierarchy gives a symbol its interlocking (ADR 0004 D12) and, since ADR 0005, its bus.
-- A10. *Operating.* **FieldUnit is informational**: an example of what works, not a source of requirements or compatibility; we invent the schema and make it work iteratively, and do not change what works because we can. The owner, 2026-10-19.
-- A11. *Operating.* **One KiCad project is the source; Studio is hoped to replace it and to use this file natively.** One file holds the whole layout: no multi-writer exists with KiCad or Studio, the file's structure is its own manifest, and one file is simplest for the day-to-day user to back up, carry and open. The owner, 2026-10-19 (D1 below).
-- A12. *Operating.* **Reference data is created as the compiler first needs it, as a simpleton version; incomplete models are allowed** and their gaps are found by the readers, stubbed where useful by the emulator's optimistic mocks. The owner, 2026-10-19.
+- **R1. Fidelity.** The structure must robustly capture the existing Data Model, with all its nuances, decisions and constraints: everything the ADRs and the view say a person states, and nothing a computer computes from it (view §1, O4).
+- **R2. Boundary.** The KiCad compiler reads KiCad and creates a Data Model, which it then saves to the filesystem representation. The constructed Data Model may not expose KiCad implementation details. The test for any entry: would Studio ask its user for it? If yes it belongs to the model; if a computer derives it from the drawing it does not.
+- **R3. Authorable.** The structure must be usable as "the source file" for a future Studio layout design editor: a hand-edited document, not only a derived artifact.
 
-Requirements that follow:
+Where the Data Model's content is defined, so that R1 has a checklist:
 
-- R1. One file, readable without the source, the libraries or the reference data; those are named, not needed, to read it.
-- R2. Every scope of ADR 0005 that a person can see in the drawing has a place in the file; every relation is a qualified name that means the same thing wherever it appears.
-- R3. A file for one interlocking, written by hand, is a valid file.
-- R4. The compiler's diagnostics travel in the file; a reader adds its own and never edits the compiler's.
-- R5. A diff of two files says what changed in railroad terms, so the serialisation is canonical.
-- R6. A reader can tell which schema the file follows and which sources, libraries and reference data versions produced it.
+| Content | Defined in |
+|---|---|
+| Sections and entities: layout, interlockings, machines, control points, appliances, track, columns, processors, chips, devices, bindings, geometry | view 2026-10-16 §3, §4 |
+| Code lines, transports, encodings, authored addresses | ADR 0001 D1, D4, D13, D15 |
+| Interlocking membership and hierarchy, field units, mileposts, heads | ADR 0004 D12, D13, D7, D6 |
+| Bus declarations, attachments, scopes, addresses; a node is a processor | ADR 0005 S1 to S7, C1 to C11 |
+| Identity by qualified railroad name; relations by name, not containment; errors as inconsistent facts, absence as information | view O2, O9, O13; glossary §2 |
+| Processors, field units and control points as independent entities | processor-cases §1, §5 |
 
 ## 3. Definition of done
 
-- The SPCoast project compiles to one file that validates against the schema, with Sargent, Gilroy Caltrain, Gilroy Interchange, Watsonville and the desk present and every recipe of ADR 0005 §7 readable from it.
-- A hand-written file holding only Sargent validates and evaluates to the same rows as the compiled one.
-- Reading a file and writing it back is byte-identical.
-- FieldUnit's reader (milestone E) consumes the file with no knowledge of KiCad.
+- **DoD1. Lossless round trip.** KiCad schematic → [Data Model] → compiler output → on-disk representation → reader input → [Data Model] → generators. The two bracketed models are equal. Proven by: compile SPCoast, write, read, compare the models; then write again and compare the bytes. The first leg, schematic → model, drops source-isms on purpose (R2) and is not part of the round trip.
+- **DoD2. Coverage.** The Data Model in the file captures the relationships, actors and dependencies articulated in the ADRs of §2's table. Proven by: every recipe of ADR 0005 §7 and every section of the view §4 is readable from the compiled SPCoast file, with Sargent, Gilroy Caltrain, Gilroy Interchange, Watsonville and the desk present; a hand-written file holding only Sargent (R3) evaluates to the same rows as the compiled one.
+- **DoD3. Schema.** The on-disk representation has a schema that defines its intended structure, and every file the compiler writes and every file a reader accepts validates against it. Proven by: validation is a gate in the compiler and in the reader, and the hand-written Sargent file validates.
 
-## 4. Decisions
+## 4. Architecture
 
-### D1. One file holds the entire layout (decided by the owner, recorded)
+Each subsection names the rule that drives it, weighs the alternatives, and states the choice. Together they define the on-disk representation.
 
-The alternative was a directory of files, one per scope. Its benefits were multi-writer safety and per-file diffs; neither exists here, and the directory costs the user every day. What the directory would have given moves inside the file at no cost: a dictionary per scope, the structure as the manifest.
+### 4.1 One file holds the entire layout
 
-### D2. Format: JSON with a JSON Schema
+R3 asks for the file a Studio user opens, carries and backs up. A directory of files, one per scope, was weighed and withdrawn by the owner (2026-10-19): its benefits are multi-writer safety and per-file diffs, and neither exists here, since KiCad writes nothing of ours and Studio will be the one writer; its cost is a manifest and a filesystem layer the user meets every day. What a directory would have given moves inside the file: one dictionary per scope, the structure as its own manifest. A git diff of one JSON file names the scope that changed as well as a directory would.
+
+### 4.2 JSON, defined by a JSON Schema
+
+DoD3 asks for a schema; R3 asks for a format a person can write and every Studio toolkit can read; R2 forbids a KiCad-shaped format.
 
 | Option | For | Against |
 |---|---|---|
-| **JSON** (default) | the plant schema and both readers already exist in JSON; FieldUnit parses JSON on the microcontroller and on the Mac; every language and Studio toolkit reads it; a JSON Schema validates it and documents it in one file | no comments; verbose for a hand-written fixture |
-| YAML | comments and less punctuation for hand authoring | a second parser everywhere; no microcontroller parser; indentation errors are silent; a YAML face over the same schema can be added later without touching the model |
-| XML | schema by XSD | nothing JSON lacks, at twice the size and a parser nobody here has |
-| s-expressions | the KiCad habit | a source-ism in the model (A2) |
+| **JSON with JSON Schema** (chosen) | one schema document validates and documents the structure; every language, the microcontroller and the Mac already parse it; the existing plant schema and both readers are JSON | no comments; punctuation-heavy for a hand-written file |
+| YAML | comments and less punctuation for hand authoring | a second parser everywhere and none on the microcontroller; indentation errors are silent; it can be added later as a face over the same schema without touching the model |
+| XML with XSD | a mature schema language | nothing JSON lacks, at twice the size and with a parser nobody here uses |
+| s-expressions | the KiCad habit | the format itself is a KiCad implementation detail (R2) |
 
-Hand-written fixtures are JSON too; an optional `description` string on any entity carries a note. A "No" picks YAML and accepts the second parser and the later microcontroller gap.
+A hand-written file carries its notes in an optional `description` string on any entity.
 
-### D3. Shape: facts nested by scope
+### 4.3 Facts nested by scope
 
-The top level is the layout, one dictionary per interlocking and one per machine, plus the file's own sections:
+R1 says the scope that declares a bus is a fact of the model (ADR 0005 S5: an attachment finds its declaration by wire, sheet, layout), and R3 says a one-interlocking file must be a natural thing to write.
 
 ```
 schema, layout{settings, transports{}, codelines{}}, interlockings{name}, machines{name}, provenance, diagnostics[]
 ```
 
-and each interlocking or machine dictionary holds what its scope declares: `settings`, the appliances and track (interlocking) or the columns (machine), `codelines[]` (the encoding instances with their authored address, A8), `processors{}` declared in that scope (a CMRInet node is a processor with `transport` and `address`, ADR 0005 S2), `fieldUnit` or `officeUnit` naming its host, `devices[]` with their bindings, and `geometry`.
+The top level is the layout and the file's own head. Each interlocking or machine dictionary holds what its scope declares: `settings`; the appliances and track (interlocking) or the columns (machine); `codelines[]`, the encoding instances with their authored address (ADR 0001 D4); `processors{}` declared in that scope, a CMRInet node being a processor with `transport` and `address` (ADR 0005 S2); `fieldUnit` or `officeUnit` naming its host; `devices[]` with their bindings; `geometry`.
 
 | Option | For | Against |
 |---|---|---|
-| **Nested by scope** (default) | the scope ladder of ADR 0005 (layout, then the interlocking that the sheet stands for) is a file fact; "one dictionary per interlocking" is the owner's reading of the file; a hand-written fixture for one interlocking is one dictionary (R3); a diff names the interlocking (R5) | a reader that wants every device walks the scopes (one loop); a processor that serves two interlockings is declared in one of them and named from the other |
-| Flat sections (the view's text: `processors{}`, `fieldUnits{}`, `devices[]` at the top, qualified names inside) | every device in one list; matches the 2026-10-16 text | the scope that declared a thing is not a fact of the file; a one-interlocking fixture is scattered over five sections |
+| **Nested by scope** (chosen) | the declaring scope is a file fact; a one-interlocking file is one dictionary (R3); a diff names the interlocking | a reader that wants every device walks the scopes; a processor serving two interlockings is declared in one and named from the other |
+| Flat sections (`processors{}`, `fieldUnits{}`, `devices[]` at the top, as the view's text had them) | every device in one list | the declaring scope must be written on every row as a `scope` field, the same fact repeated; a one-interlocking file is scattered over five sections |
 
-A "No" keeps the flat sections and adds a `scope` field to every processor and device, which is the same fact written on every row.
+### 4.4 The compiler resolves scopes to names
 
-### D4. Scopes become names in the compiler
-
-A chip's `processor`, a node's `transport`, a consumer's chain, a device binding's chip pin: the compiler resolves each by wire, sheet and layout (ADR 0005 S5) and writes the named relation. The override field on a symbol produces the same relation plus a diagnostic `info` (ADR 0005 C8). The reader sees names only.
+R2 draws the boundary. A sheet, a net and a KiCad group are how the drawing says "which bus"; Studio's canvas will say it another way. So the compiler resolves each relation by wire, sheet and layout (ADR 0005 S5) and writes the named relation: a chip's `processor`, a node's `transport`, a consumer's chain, a binding's chip and pin. An override field on a symbol yields the same relation plus an `info` diagnostic (ADR 0005 C8). The file holds names only.
 
 | Option | For | Against |
 |---|---|---|
-| **Resolve in the compiler** (default) | the sheet is a representation fact (ADR 0005 A4) and Studio's canvas region will be another; both answer the question "which bus?" by what the user placed where, which is exactly what A9 says the compiler writes; the model stays A4-shaped: relations by name, not containment; a hand-written file names relations directly, as O9 already says | a sub-sheet drawn to separate two nodes leaves no trace; the compiler's resolver is the one place the ladder is coded |
-| Persist the containers | the reader resolves, so the model shows the designer's grouping | every reader must know every source's container semantics; a sub-sheet in the model is a source-ism (A2) |
+| **Resolve in the compiler** (chosen) | the model stays relations-by-name (view O9); a hand-written file names relations directly; the scope ladder is coded once | a sub-sheet drawn only to separate two nodes leaves no trace in the file |
+| Persist the containers and let readers resolve | the file shows the designer's grouping | a sub-sheet in the file is a KiCad implementation detail (R2); every reader of every source must carry every source's container semantics |
 
-A "No" puts nested containers under each interlocking and makes every reader carry the resolver.
+### 4.5 Names and references
 
-### D5. Identity and references
+R1 says identity is the qualified railroad name only (view O2): no UUIDs, no ordinals, case preserved and compared case-folded. The file encodes it so:
 
-- A dictionary key is the entity's own name within its scope. Its qualified name is the scope's name, a colon, and the key: `Sargent:835`, `SPCoast South:13`. Entities of the layout scope (interlockings, machines, transports, code lines, processors) have no prefix: `Sargent`, `CMRInet`. A name may not contain a colon.
-- **A reference is always the qualified name, in every scope**, including a reference from inside the scope that declares the entity: a device in Sargent serves `Sargent:835`, not `835`. One form, so a reader needs no scope context to read a reference, `grep` finds every reference to a thing, and a diagnostic can quote one without saying where it was found. The cost is a few bytes per row and a larger diff when an interlocking is renamed, which a tool does anyway.
-- Processors are named layout-wide (processor-cases §1) and declared in the scope that drew them. A chip is `processor/address` or, where one address holds two uses, `processor/address/use` (the PCA9685 as PWM and servo, I3).
-- A device row has no identity (view §7 item 2). Nothing may reference a row. A diagnostic locates a row by its scope, its index in that scope's list, and its natural key: `serves` or `shows`, the type key, and `column` where present. The index is a locator in one file, never an identity across files (A3).
+- A dictionary key is the entity's own name within its scope. Its qualified name is the scope's name, a colon, and the key: `Sargent:835`, `SPCoast South:13`. Entities of the layout scope (interlockings, machines, transports, code lines) have no prefix: `Sargent`, `CMRInet`. A name may not contain a colon.
+- Processors are named layout-wide (processor-cases §1) and declared in the scope that drew them. A chip is `processor/address`, or `processor/address/use` where one address serves two uses (the PCA9685 as PWM and as servo, view I3).
+- **A reference is always the qualified name, in every scope**, including from inside the scope that declares the entity: a Sargent device serves `Sargent:835`, not `835`.
+- A device row has no identity (view §7 item 2). Nothing references a row. A diagnostic locates one by its scope, its index in that scope's list and its natural key (`serves` or `shows`, the type, `column` where present); the index locates within one file and is never an identity across files.
 
-The alternative considered and withdrawn (2026-10-19): a bare name inside its own scope, qualified only across scopes. It is terser and a rename touches less, but every reader then carries a resolver that depends on where a field sits, the canonical form needs a rule for shortening, and a machine's devices have no interlocking scope to resolve in, so they would need a rule of their own. A "No" on row identity gives rows ids, which A3 forbids unless they are names, and a device has none.
+| Option | For | Against |
+|---|---|---|
+| **Always qualified** (chosen) | one form, so a reader needs no scope context and `grep` finds every reference; a diagnostic quotes a name without saying where it found it; a machine's devices, which have no interlocking scope, need no special rule | a few bytes per row; renaming an interlocking touches every reference to it, which is a tool's job anyway |
+| Bare within the declaring scope, qualified across scopes (withdrawn 2026-10-19) | terser; a rename touches less | every reader carries a resolver that depends on where a field sits; the canonical form needs a shortening rule; machine devices need a rule of their own |
+| Row ids for devices | a diagnostic can point at a row | an id that is not a name is an identity the model forbids (O2), and a device has no name |
 
-### D6. Version, provenance, incompleteness, reference data
+### 4.6 The file's head: schema, provenance, diagnostics
 
-- `schema`: the string `layout-model/1`. The schema file is `schemas/layout-model/v1.json` in this repo until the chain moves into FieldUnit as its own PR (O15); the old `schemas/interlocking-plant/v1.json` is retired in that move (O16).
-- `provenance`: a layout property and nothing below it. The compiler's name and version; the one source, the project, with its path, hash and `git describe`; each library and its version; each reference data set and its version (A6). No dictionary below the layout names where it came from: a sheet name is a source-ism (A2), every interlocking comes from the same source, and a reader could do nothing with it, since the file cannot write back to the source. (Rev 1 had a `source` per interlocking; withdrawn by the owner, 2026-10-19.)
-- `diagnostics[]`: the compiler's, with level, text and the entities concerned (view §4.9). A reader never edits them; it reports its own beside them (R4). The view also gave each diagnostic a `sourceRef` for forensics; under the rule above that is the one place a source-ism could remain, as an opaque string the compiler writes and nothing reads. Default: keep it, opaque and optional, in diagnostics only; a "No" drops it and the compiler prints its forensics to its own log instead.
-- Incompleteness: absent is absent (A4). A device without a binding, an interlocking without a field unit, a processor without a board are valid files with `info` diagnostics. The emulator's mocks stand in for what is absent (A12).
-- Reference data: chip definitions by IC, aspect and indication tables by rulebook, driver type keys, encodings. The file names them by key and the versions in `provenance`; it never copies a row. Each set is created in its simpleton form when the compiler first needs it (A12), in its own place with its own small document, not in this file.
+DoD3 asks the file to say which schema it follows; R1 asks it to say which versions of the libraries and reference data it was compiled against (view I21), since it names those by key and never copies them; R2 limits what it may say about where it came from.
 
-A "No" on any item is a "No" to the rule it cites.
+- `schema`: the string `layout-model/1`. The schema file is `schemas/layout-model/v1.json` in this repo until the chain moves into FieldUnit as its own PR (view O15), when the old `schemas/interlocking-plant/v1.json` is retired (O16).
+- `provenance`: a property of the layout and nothing below it. The compiler's name and version; the one source, the project, with its path, hash and `git describe`; each library and its version; each reference data set and its version. No dictionary below the layout says where it came from: every interlocking comes from the one source, a sheet name is a KiCad implementation detail (R2), and nothing can use it, since the file cannot write back.
+- `diagnostics[]`: the compiler's findings, each with a level (`error`: inconsistent facts; `info`: absence), text and the qualified names it concerns (view §4.9). A reader never edits them and reports its own beside them. **No `sourceRef`.** The view gave each diagnostic a pointer into the source for forensics; that pointer is a KiCad implementation detail (R2) and no consumer can act on it. The compiler prints its forensics, sheet and reference included, to its own log, and the diagnostic locates the entity by name and row locator (§4.5), which every consumer can act on.
 
-### D7. Canonical serialisation
+### 4.7 Incompleteness and reference data
 
-Keys in schema order, dictionaries keyed by name in case-folded name order, lists in the order the source gave them (devices by sheet position is a representation fact and is not promised), two-space indent, UTF-8, one trailing newline. The reader library writes exactly this form, so read-then-write is byte-identical (§3) and a git diff shows railroad changes only (R5).
+R1 says absence is information, not an error (view O13); the owner's operating rule (2026-10-19) says incomplete models are allowed, their gaps are found by the readers and stubbed where useful by the emulator's mocks, and reference data is created in its simpleton form as the compiler first needs it.
 
-A "No" leaves ordering to the writer and gives up R5.
+- A field that is absent is absent (view §4): a device without a binding, an interlocking without a field unit, a processor without a board are valid files with `info` diagnostics.
+- Reference data (chip definitions by IC, aspect and indication tables by rulebook, driver type keys, encodings) is named by key in the file and by version in `provenance`; no row is copied. Each set lives in its own place with its own small document, not in this file.
+
+The alternative, copying the referenced rows into the file so it reads stand-alone, was rejected: it makes the file a second source of every table (the one-source rule of `AGENTS.md`), and a version in `provenance` gives a reader the same guarantee.
+
+### 4.8 Canonical serialisation
+
+DoD1 asks for a byte-identical rewrite, and a git diff of the file should show railroad changes only. So the writer, in the compiler and in the reader library, emits: keys in schema order; dictionaries keyed by name, in case-folded name order; lists in the order the source gave them (device order by sheet position is a representation fact and is not promised); two-space indent; UTF-8; one trailing newline. The alternative, leaving order to each writer, gives up both.
 
 ## 5. The shape, drawn
 
@@ -177,20 +179,37 @@ Illustrative, not the schema. Names and values are the drawing's as of 2026-10-1
 }
 ```
 
-Read off the excerpt: the Caltrain node is a processor that attaches to the layout's CMRInet transport by its address and declares the bits its drivers use; no driver row names the transport or the UA (ADR 0005 S1). Every reference is a qualified name, whether it stays in its scope (`Sargent:835` from a Sargent device, `Sargent:835T1` as 835's OS circuit) or crosses one (the lever in `SPCoast South:13` serves `Sargent:835`); the layout's own entities (`CMRInet`, `Sargent`) carry no prefix (D5). Nothing says sheet, net or reference (A2).
+Read off the excerpt: the Caltrain node is a processor that attaches to the layout's CMRInet transport by its address and declares the bits its drivers use; no driver row names the transport or the UA (ADR 0005 S1). Every reference is a qualified name, whether it stays in its scope (`Sargent:835` from a Sargent device) or crosses one (the lever in `SPCoast South:13` serves `Sargent:835`); the layout's own entities carry no prefix (§4.5). Nothing says sheet, net, reference or unit (R2).
 
-## 7. Consequences
+## 7. Decision
 
-- C1. Milestone D's compiler writes this file and nothing else; its contract is the schema plus D7's canonical form. Its gates are §3.
-- C2. The reader library (milestone E's "reader") reads the file, evaluates in memory (A1) and reports; FieldUnit's generators and emulator consume the reader's result, not the file's text.
-- C3. The scope resolver of ADR 0005 C11 lives in the compiler (D4); the duplicate-address and two-candidates rules of ADR 0005 C10 are compiler diagnostics where they need the source, and reader diagnostics where the file alone shows them.
-- C4. `schemas/layout-model/v1.json` is written when this is accepted, from §4 and the view §4, with `geometry` left as an open object until the picture generator fixes it (view §4.7).
-- C5. The view §7 items 1 (section names) and 2 (row identity) close here: the names are those of §4.3 and §6, read against the glossary §2.4 (`fieldUnit`, `officeUnit`, `processors`, `machines`, `codelines`, `transports`); rows have no identity.
+Ratify §4 as the on-disk representation of the Layout Data Model: one JSON file defined by `schemas/layout-model/v1.json`, facts nested by scope, scopes resolved to qualified names by the compiler, a head of schema, layout-level provenance and diagnostics, absence as information, reference data by key, canonical serialisation. Milestone D writes it; milestone E reads it; §3 gates both.
+
+## 8. Record
+
+How the choices were made, in order:
+
+- 2026-10-16. The layout model view fixed the Data Model's content and deferred its serialised form (O5). The owner answered its sixteen questions.
+- 2026-10-19. The owner set milestones D and E and their operating rules: FieldUnit is informational, the schema is ours to invent iteratively, reference data in simpleton form as encountered, incomplete models allowed, Watsonville in scope.
+- 2026-10-19. One file versus a directory: argued both ways, the owner chose one file (§4.1).
+- 2026-10-19. References bare within a scope, qualified across: the owner asked for the implications (ambiguity, whether qualified works everywhere, code complexity against terseness); always-qualified was recommended and agreed (§4.5). The CMRInet node as a processor with chip `CMRI` and pins `OUT.n`/`IN.n`: "worth trying; regroup if it adds complexity."
+- 2026-10-19. Rev 1 carried a `source` entry per interlocking. The owner struck it: it exposes a KiCad sheet name in a generalised model, the source is a layout property since all interlockings come from the one project, and nothing can use it (§4.6).
+- 2026-10-20. The author applied the same rule to the diagnostics' `sourceRef` and dropped it (§4.6).
+- 2026-10-20. The owner reframed the ADR: a problem that names the undefined thing, three rules, a definition of done that connects to the problem, and the intermediate choices run down by the author so that one decision remains. Rev 2.
+
+## 9. Consequences
+
+- C1. Milestone D's compiler writes this file and nothing else; its contract is the schema plus §4.8. Its gates are §3.
+- C2. The reader library reads the file, evaluates in memory (view O4) and reports; FieldUnit's generators and emulator consume the reader's result, not the file's text.
+- C3. The scope resolver of ADR 0005 C11 lives in the compiler (§4.4). The duplicate-address and two-candidates rules of ADR 0005 C10 are compiler diagnostics where they need the source and reader diagnostics where the file alone shows them.
+- C4. `schemas/layout-model/v1.json` is written on ratification, from §4 and the view §4, with `geometry` an open object until the picture generator fixes it (view §4.7).
+- C5. The view §7 items 1 (section names) and 2 (row identity) close here: the names are those of §4.3 and §6, read against the glossary §2.4; rows have no identity.
 - C6. The old compilers, `schemas/interlocking-plant/v1.json` and the generated Luchessa JSON stay as reference until §3 passes, then go in one commit (layout-model-plan §0).
+- C7. The compiler keeps its own log for forensics (sheet, reference, unit); the file never carries them.
 
-## 8. Out of scope here
+## 10. Out of scope
 
-- The evaluated model's serialisation, still deferred (O5); it is an in-memory result keyed to the file's hash.
-- The reference data sets' own shape: each gets its simpleton version and document when the compiler first needs it (A12).
+- The evaluated model's serialisation, still deferred (view O5); it is an in-memory result keyed to the file's hash.
+- The reference data sets' own shape: each gets its simpleton version and document when the compiler first needs it.
 - `geometry` in detail (view §4.7).
 - Generator options, including which processor hosts what in the emulator (processor-cases case 6).
