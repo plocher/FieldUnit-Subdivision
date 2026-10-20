@@ -1,118 +1,108 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 660" font-family="Helvetica, Arial, sans-serif" font-size="13">
-  <rect width="1000" height="660" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 492" font-family="Helvetica, Arial, sans-serif" font-size="13">
+  <rect width="1000" height="492" fill="#ffffff"/>
   <title>The Layout Data Model File: one file, facts by scope, relations by name</title>
   <defs>
     <marker id="r" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b00000"/></marker>
     <marker id="b" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f5fbf"/></marker>
   </defs>
-  <text x="20" y="30" font-size="16" font-weight="bold" fill="#333">One file, facts by scope, relations by name</text>
-  <text x="20" y="50" fill="#555">Boxes: the scopes a person can see. Yellow: declarations. White: what attaches, with its own address. Red dashed: a reference by qualified name.</text>
-  <text x="20" y="66" fill="#555">Blue: code line membership, the two facts the control path from a lever to its appliance is derived from. The file never writes that path.</text>
 
   <!-- file -->
-  <rect x="20" y="78" width="960" height="562" rx="12" fill="#f4f4f4" stroke="#555" stroke-width="1.5"/>
-  <text x="36" y="100" font-weight="bold" fill="#333">SPCoast.layout.json</text>
-  <text x="200" y="100" fill="#555" font-size="12">schema: layout-model/v2.0.0    provenance: source type, compiler, the one source (the project), libraries, reference data versions</text>
+  <rect x="20" y="10" width="960" height="472" rx="12" fill="#f4f4f4" stroke="#555" stroke-width="1.5"/>
+  <text x="36" y="32" font-weight="bold" fill="#333">SPCoast.layout.json</text>
+  <text x="200" y="32" fill="#555" font-size="12">schema: layout-model/v2.0.0    provenance: source type, compiler, the one source (the project), libraries, reference data versions</text>
 
   <!-- layout scope -->
-  <rect x="40" y="112" width="920" height="162" rx="8" fill="#e9eef5" stroke="#555" stroke-width="1.5"/>
-  <text x="54" y="132" font-weight="bold" fill="#333">layout</text>
-  <text x="110" y="132" fill="#555" font-size="12">name, railroad, division, settings (era, rulebook). Entities named once for the whole layout:</text>
+  <rect x="40" y="44" width="920" height="162" rx="8" fill="#e9eef5" stroke="#555" stroke-width="1.5"/>
+  <text x="54" y="64" font-weight="bold" fill="#333">layout</text>
+  <text x="110" y="64" fill="#555" font-size="12">name, railroad, division, settings (era, rulebook). Entities named once for the whole layout:</text>
 
   <!-- row 1: transports, codelines -->
-  <rect x="54" y="142" width="190" height="48" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
-  <text x="64" y="160" fill="#333">transports.CMRInet</text>
-  <text x="64" y="174" fill="#555" font-size="11">kind, port, baud, host</text>
-  <text x="64" y="186" fill="#555" font-size="11">declares the line</text>
-  <rect x="254" y="142" width="150" height="48" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
-  <text x="264" y="160" fill="#333">transports.MQTT</text>
-  <text x="264" y="174" fill="#555" font-size="11">broker, topic, host</text>
-  <rect x="414" y="142" width="150" height="48" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
-  <text x="424" y="160" fill="#333">codelines</text>
-  <text x="424" y="174" fill="#555" font-size="11">AAR Tokens@MQTT</text>
-  <text x="424" y="186" fill="#555" font-size="11">encoding on transport</text>
-  <text x="584" y="156" fill="#555" font-size="11">A processor has one name for the whole layout, so</text>
-  <text x="584" y="170" fill="#555" font-size="11">Luchessa/0x20 and Corporal/0x20 are two chips at one</text>
-  <text x="584" y="184" fill="#555" font-size="11">I2C address. A node (Caltrain) attaches by transport and address.</text>
+  <rect x="54" y="74" width="190" height="48" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="64" y="92" fill="#333">transports.CMRInet</text>
+  <text x="64" y="106" fill="#555" font-size="11">kind, port, baud, host</text>
+  <text x="64" y="118" fill="#555" font-size="11">declares the line</text>
+  <rect x="254" y="74" width="150" height="48" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="264" y="92" fill="#333">transports.MQTT</text>
+  <text x="264" y="106" fill="#555" font-size="11">broker, topic, host</text>
+  <rect x="414" y="74" width="150" height="48" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="424" y="92" fill="#333">codelines</text>
+  <text x="424" y="106" fill="#555" font-size="11">AAR Tokens@MQTT</text>
+  <text x="424" y="118" fill="#555" font-size="11">encoding on transport</text>
 
   <!-- row 2: processors -->
-  <rect x="54" y="214" width="160" height="52" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
-  <text x="64" y="231" fill="#333">processors.Sargent</text>
-  <text x="64" y="245" fill="#555" font-size="11">field; cpNode Xiao; chips</text>
-  <text x="64" y="259" fill="#555" font-size="11">0x20, 0x40/pwm, 0x40/servo</text>
-  <rect x="224" y="214" width="160" height="52" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
-  <text x="234" y="231" fill="#333">processors.Luchessa</text>
-  <text x="234" y="245" fill="#555" font-size="11">field; cpNode Xiao</text>
-  <text x="234" y="259" fill="#555" font-size="11">chips 0x20, 0x21 MCP23017</text>
-  <rect x="394" y="214" width="160" height="52" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
-  <text x="404" y="231" fill="#333">processors.Corporal</text>
-  <text x="404" y="245" fill="#555" font-size="11">field; cpNode Xiao</text>
-  <text x="404" y="259" fill="#555" font-size="11">chips 0x20 MCP23017</text>
-  <rect x="564" y="214" width="190" height="52" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
-  <text x="574" y="231" fill="#333">processors.Caltrain</text>
-  <text x="574" y="245" fill="#555" font-size="11">field; cpNode; CMRInet address 30</text>
-  <text x="574" y="259" fill="#555" font-size="11">declares the node's bits (chip CMRI)</text>
-  <rect x="764" y="214" width="182" height="52" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
-  <text x="774" y="231" fill="#333" font-size="12">processors."SPCoast South"</text>
-  <text x="774" y="245" fill="#555" font-size="11">office; ESP32</text>
-  <text x="774" y="259" fill="#555" font-size="11">chips 0x2C MAX7313</text>
+  <rect x="54" y="146" width="160" height="52" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="64" y="163" fill="#333">processors.Sargent</text>
+  <text x="64" y="177" fill="#555" font-size="11">field; cpNode Xiao; chips</text>
+  <text x="64" y="191" fill="#555" font-size="11">0x20, 0x40/pwm, 0x40/servo</text>
+  <rect x="224" y="146" width="160" height="52" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="234" y="163" fill="#333">processors.Luchessa</text>
+  <text x="234" y="177" fill="#555" font-size="11">field; cpNode Xiao</text>
+  <text x="234" y="191" fill="#555" font-size="11">chips 0x20, 0x21 MCP23017</text>
+  <rect x="394" y="146" width="160" height="52" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="404" y="163" fill="#333">processors.Corporal</text>
+  <text x="404" y="177" fill="#555" font-size="11">field; cpNode Xiao</text>
+  <text x="404" y="191" fill="#555" font-size="11">chips 0x20 MCP23017</text>
+  <rect x="564" y="146" width="190" height="52" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="574" y="163" fill="#333">processors.Caltrain</text>
+  <text x="574" y="177" fill="#555" font-size="11">field; cpNode; CMRInet address 30</text>
+  <text x="574" y="191" fill="#555" font-size="11">declares the node's bits (chip CMRI)</text>
+  <rect x="764" y="146" width="182" height="52" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="774" y="163" fill="#333" font-size="12">processors."SPCoast South"</text>
+  <text x="774" y="177" fill="#555" font-size="11">office; ESP32</text>
+  <text x="774" y="191" fill="#555" font-size="11">chips 0x2C MAX7313</text>
   <!-- Caltrain attaches to CMRInet by name: along the lane between the rows -->
-  <path d="M 590 214 C 570 196, 240 196, 200 190" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
-  <text x="250" y="206" fill="#b00000" font-size="11">transport, by name</text>
+  <path d="M 590 146 C 570 128, 240 128, 200 122" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+  <text x="250" y="138" fill="#b00000" font-size="11">transport, by name</text>
 
   <!-- interlocking Sargent -->
-  <rect x="40" y="288" width="300" height="250" rx="8" fill="#dde6f0" stroke="#555" stroke-width="1.5"/>
-  <text x="54" y="308" font-weight="bold" fill="#333">interlockings.Sargent</text>
-  <text x="54" y="330" fill="#333" font-size="11">controlPoints, appliances (835, 836NAB…), track</text>
-  <text x="54" y="346" fill="#333" font-size="11">settings; codelines [AAR Tokens@MQTT]</text>
-  <rect x="54" y="358" width="270" height="34" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
-  <text x="64" y="379" fill="#333">fieldUnit.host: Sargent</text>
-  <path d="M 150 358 C 150 320, 134 300, 134 266" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
-  <rect x="54" y="404" width="270" height="86" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
-  <text x="64" y="422" fill="#333">devices[]  a row: serves Sargent:835</text>
-  <text x="64" y="438" fill="#555" font-size="11">type switch/lock; bindings:</text>
-  <text x="64" y="453" fill="#555" font-size="11">M → chip Sargent/0x20 pin B1, N → B2 …</text>
-  <text x="64" y="468" fill="#555" font-size="11">a chip pin is the attachment's address;</text>
-  <text x="64" y="483" fill="#555" font-size="11">a row has no identity</text>
-  <text x="54" y="514" fill="#333" font-size="12">geometry: placements, track polylines</text>
-  <path d="M 230 404 C 250 340, 220 300, 190 266" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+  <rect x="40" y="220" width="300" height="250" rx="8" fill="#dde6f0" stroke="#555" stroke-width="1.5"/>
+  <text x="54" y="240" font-weight="bold" fill="#333">interlockings.Sargent</text>
+  <text x="54" y="262" fill="#333" font-size="11">controlPoints, appliances (835, 836NAB…), track</text>
+  <text x="54" y="278" fill="#333" font-size="11">settings; codelines [AAR Tokens@MQTT]</text>
+  <rect x="54" y="290" width="270" height="34" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="64" y="311" fill="#333">fieldUnit.host: Sargent</text>
+  <path d="M 150 290 C 150 252, 134 232, 134 198" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+  <rect x="54" y="336" width="270" height="86" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="64" y="354" fill="#333">devices[]  a row: serves Sargent:835</text>
+  <text x="64" y="370" fill="#555" font-size="11">type switch/lock; bindings:</text>
+  <text x="64" y="385" fill="#555" font-size="11">M → chip Sargent/0x20 pin B1, N → B2 …</text>
+  <text x="64" y="400" fill="#555" font-size="11">a chip pin is the attachment's address;</text>
+  <text x="64" y="415" fill="#555" font-size="11">a row has no identity</text>
+  <text x="54" y="446" fill="#333" font-size="12">geometry: placements, track polylines</text>
+  <path d="M 230 336 C 250 272, 220 232, 190 198" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
   <!-- Sargent is a station on the code line: blue, via the gaps -->
-  <path d="M 272 342 L 348 342 L 348 281 L 389 281 L 389 202 L 430 190" fill="none" stroke="#1f5fbf" stroke-width="2" marker-end="url(#b)"/>
+  <path d="M 272 274 L 348 274 L 348 213 L 389 213 L 389 134 L 430 122" fill="none" stroke="#1f5fbf" stroke-width="2" marker-end="url(#b)"/>
 
   <!-- interlocking Caltrain -->
-  <rect x="356" y="288" width="300" height="250" rx="8" fill="#dde6f0" stroke="#555" stroke-width="1.5"/>
-  <text x="370" y="308" font-weight="bold" fill="#333">interlockings."Gilroy Caltrain"</text>
-  <text x="370" y="330" fill="#333" font-size="12">controlPoints, appliances (773, 774NAB), track, settings</text>
-  <rect x="370" y="358" width="270" height="34" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
-  <text x="380" y="379" fill="#333">fieldUnit.host: Caltrain</text>
-  <path d="M 600 358 C 600 320, 630 300, 640 266" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
-  <rect x="370" y="404" width="270" height="86" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
-  <text x="380" y="422" fill="#333">devices[]  serves Gilroy Caltrain:774NAB</text>
-  <text x="380" y="438" fill="#555" font-size="11">bindings: LAMP → chip Caltrain/CMRI pin OUT.7</text>
-  <text x="380" y="453" fill="#555" font-size="11">no row names the transport or the UA</text>
-  <path d="M 630 404 C 660 350, 690 300, 690 266" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+  <rect x="356" y="220" width="300" height="250" rx="8" fill="#dde6f0" stroke="#555" stroke-width="1.5"/>
+  <text x="370" y="240" font-weight="bold" fill="#333">interlockings."Gilroy Caltrain"</text>
+  <text x="370" y="262" fill="#333" font-size="12">controlPoints, appliances (773, 774NAB), track, settings</text>
+  <rect x="370" y="290" width="270" height="34" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="380" y="311" fill="#333">fieldUnit.host: Caltrain</text>
+  <path d="M 600 290 C 600 252, 630 232, 640 198" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+  <rect x="370" y="336" width="270" height="86" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="380" y="354" fill="#333">devices[]  serves Gilroy Caltrain:774NAB</text>
+  <text x="380" y="370" fill="#555" font-size="11">bindings: LAMP → chip Caltrain/CMRI pin OUT.7</text>
+  <text x="380" y="385" fill="#555" font-size="11">no row names the transport or the UA</text>
+  <path d="M 630 336 C 660 282, 690 232, 690 198" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
 
   <!-- machine -->
-  <rect x="672" y="288" width="288" height="250" rx="8" fill="#dde6f0" stroke="#555" stroke-width="1.5"/>
-  <text x="686" y="308" font-weight="bold" fill="#333">machines."SPCoast South"</text>
-  <text x="686" y="330" fill="#333" font-size="11">panelStyle, columns{13: Sargent}, attachments[]</text>
-  <rect x="686" y="358" width="260" height="34" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
-  <text x="696" y="379" fill="#333">officeUnit.host: SPCoast South</text>
-  <path d="M 900 358 C 900 320, 870 300, 860 266" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
-  <rect x="686" y="404" width="260" height="86" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
-  <text x="696" y="422" fill="#333">devices[]  column SPCoast South:13</text>
-  <text x="696" y="438" fill="#555" font-size="11">lever/lock serves Sargent:835</text>
-  <text x="696" y="453" fill="#555" font-size="11">bindings: WLS → SPCoast South/0x2C pin A7</text>
-  <text x="696" y="468" fill="#555" font-size="11">every reference is a qualified name</text>
-  <path d="M 760 490 L 760 524 L 340 524 L 340 448 L 326 448" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
-  <text x="430" y="519" fill="#b00000" font-size="11">serves Sargent:835: the same form in any scope</text>
+  <rect x="672" y="220" width="288" height="250" rx="8" fill="#dde6f0" stroke="#555" stroke-width="1.5"/>
+  <text x="686" y="240" font-weight="bold" fill="#333">machines."SPCoast South"</text>
+  <text x="686" y="262" fill="#333" font-size="11">panelStyle, columns{13: Sargent}, attachments[]</text>
+  <rect x="686" y="290" width="260" height="34" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="696" y="311" fill="#333">officeUnit.host: SPCoast South</text>
+  <path d="M 900 290 C 900 252, 870 232, 860 198" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+  <rect x="686" y="336" width="260" height="86" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="696" y="354" fill="#333">devices[]  column SPCoast South:13</text>
+  <text x="696" y="370" fill="#555" font-size="11">lever/lock serves Sargent:835</text>
+  <text x="696" y="385" fill="#555" font-size="11">bindings: WLS → SPCoast South/0x2C pin A7</text>
+  <text x="696" y="400" fill="#555" font-size="11">every reference is a qualified name</text>
+  <path d="M 760 422 L 760 456 L 340 456 L 340 380 L 326 380" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+  <text x="430" y="451" fill="#b00000" font-size="11">serves Sargent:835: the same form in any scope</text>
   <!-- the machine's columns 13 attach to Sargent over the code line: blue, via the gaps -->
-  <path d="M 950 343 L 955 343 L 955 281 L 759 281 L 759 204 L 574 204 L 564 184" fill="none" stroke="#1f5fbf" stroke-width="2" marker-end="url(#b)"/>
-  <text x="400" y="285" fill="#1f5fbf" font-size="11">codelines[]: a station on the line</text>
-  <text x="686" y="346" fill="#1f5fbf" font-size="11">attachments[]: 13 → Sargent over AAR Tokens@MQTT</text>
+  <path d="M 950 275 L 955 275 L 955 213 L 759 213 L 759 136 L 574 136 L 564 116" fill="none" stroke="#1f5fbf" stroke-width="2" marker-end="url(#b)"/>
+  <text x="400" y="217" fill="#1f5fbf" font-size="11">codelines[]: a station on the line</text>
+  <text x="686" y="278" fill="#1f5fbf" font-size="11">attachments[]: 13 → Sargent over AAR Tokens@MQTT</text>
 
-  <text x="40" y="566" fill="#333" font-size="12" font-weight="bold">What is not in the file</text>
-  <text x="40" y="584" fill="#555" font-size="12">sheets, nets, references, units (source-isms); diagnostics (an error means no file; absence is read from the file); routes, signals, tokens,</text>
-  <text x="40" y="600" fill="#555" font-size="12">casts, resolved settings, the control path from a lever to its appliance (the evaluator derives them in memory); the libraries and the</text>
-  <text x="40" y="616" fill="#555" font-size="12">reference data (named by key and version, never copied); any order in a list (every intended order is an explicit address or key).</text>
 </svg>

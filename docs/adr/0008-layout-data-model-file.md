@@ -114,26 +114,35 @@ DoD3 asks the file to say which schema it follows; R1 asks it to say which versi
    - the source (KiCad project, with its path, hash and `git describe`)
    - each symbol library and its version; 
    - each reference data set and its version.
-- No `diagnostics[]`. A source document with compiler errors never generates a Data Model File, so no `error` can travel in one. What the view §4.9 called `info` is absence, which any reader sees in the file itself; writing it down is recording what a computer computes (R1). The compiler's observations about the drawing (an override field used, a sub-sheet that separated two nodes, a symbol it ignored) are forensics about the source, which R2 keeps out; the compiler prints them, sheet and reference included, to its own log. Nothing is left for the list to carry.
+- No `diagnostics[]`. A source document with compiler errors never generates a Data Model File. The compiler's observations about the drawing (an override field used, a sub-sheet that separated two nodes, a symbol it ignored) are forensics about the source, which R2 keeps out; the compiler prints them, sheet and reference included, to its own log.
 
 ### 4.7 Incompleteness and reference data
 
 R1 says absence is information, not an error (view O13), incomplete models are allowed, their gaps are found by the readers and stubbed where useful by the emulator's mocks, and reference data is created in its simpleton form as the compiler first needs it.
 
-- A field that is absent is absent (view §4): a device without a binding, an interlocking without a field unit, a processor without a board are valid files. The reader reports each absence as `info` when it evaluates (§4.6); the file does not.
+- A field that is absent is absent (view §4): a device without a binding, an interlocking without a field unit, a processor without a board are valid - but incomplete - files. The reader reports each absence as `info` when it evaluates (§4.6); the file does not.
 - Reference data (chip definitions by IC, aspect and indication tables by rulebook, driver type keys, encodings) is named by key in the file and by version in `provenance`; no row is copied. Each set lives in its own place with its own small document, not in this file.
 
 The alternative, copying the referenced rows into the file so it reads stand-alone, was rejected: it makes the file a second source of every table (the one-source rule of `AGENTS.md`), and a version in `provenance` gives a reader the same guarantee.
 
 ### 4.8 Canonical serialisation
 
-DoD1 asks for a byte-identical rewrite, and a git diff of the file should show railroad changes only. So the writer, in the compiler and in the reader library, must sort things in the same way: natural-sorted alpha-numerical case folded, whitespace deduplicated. This includes keys, dictionaries by name, lists, etc. Two-space indent, UTF-8 unescaped, one trailing newline.
+DoD1 asks for a byte-identical rewrite, and a git diff of the file should show railroad changes only. The writer used by the compiler and the reader library, must sort things in the same way: natural-sorted alpha-numerical case folded, whitespace deduplicated. This includes keys, dictionaries by name, lists, etc. In addition, the json file rendering needs to be the same: Two-space indent, UTF-8 unescaped, one trailing newline.
 
-Sorting every list means that no list's order carries meaning. That is deliberate: implicit ordering is not deterministic, which the pixel chains showed, so every ordering a person intends is explicit, an `address` or a key, never a position in a list. The writer is `tools/layout_model.dumps`; the gate is `tests/test_layout_model_file.py`, which proves that a shuffled model writes the same bytes.
+Sorting every list means that no list's order carries meaning. That is deliberate: implicit ordering is not deterministic, which the pixel chains showed, so every ordering is explicit, an `address` or a key, never a position in a list. The writer is `tools/layout_model.dumps`; the gate is `tests/test_layout_model_file.py`, which proves that a shuffled model writes the same bytes.
 
 ## 5. The shape, drawn
 
 ![The file's shape](0008/shape.svg)
+
+One file, facts by scope, relations by name. Boxes are the scopes a person can see. Yellow is a declaration; white is what attaches, with its own address.
+
+- **Red dashed**: a reference by qualified name, a fact written in the file. The lever row's `serves Sargent:835`, a unit's `host`, a binding's chip and pin, the Caltrain node's `transport`.
+- **Blue**: code line membership, the two facts the control path from a lever to its appliance is derived from: the interlocking's `codelines[]` entry (a station on the line) and the machine's `attachments[]` entry (which columns control which interlocking over which line). The file never writes that path.
+
+A processor has one name for the whole layout, so `Luchessa/0x20` and `Corporal/0x20` are two chips at one I2C address. A node (Caltrain) attaches by transport and address.
+
+What is not in the file: sheets, nets, references, units (source-isms); diagnostics (an error means no file; absence is read from the file); routes, signals, tokens, casts, resolved settings and the control path from a lever to its appliance (the evaluator derives them in memory); the libraries and the reference data (named by key and version, never copied); any order in a list (every intended order is an explicit address or key).
 
 ## 6. The example, validated
 
