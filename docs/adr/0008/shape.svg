@@ -32,7 +32,7 @@
   <text x="78" y="227" fill="#333" font-size="12">officeUnit.host: SPCoast South</text>
   <path d="M 340 214 L 340 192" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
   <rect x="380" y="214" width="312" height="18" rx="4" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
-  <text x="390" y="227" fill="#333" font-size="10">attachments[] (office end): columns 13 → Sargent over AAR Tokens@MQTT</text>
+  <text x="390" y="227" fill="#333" font-size="10">attachments[] (office end): 13 → Sargent over AAR Tokens@MQTT</text>
 
   <!-- ===== SEAM 1 band: layout.codelines ===== -->
   <polygon points="68,252 680,252 692,276 680,300 68,300 56,276" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
@@ -83,7 +83,7 @@
   <text x="496" y="389" fill="#333" font-size="12">fieldUnit.host: Caltrain</text>
   <rect x="486" y="420" width="210" height="48" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
   <text x="496" y="435" fill="#333" font-size="11">Remote I/O node: layout.processors</text>
-  <text x="496" y="449" fill="#555" font-size="11">.Caltrain: field; cpNode; CMRInet address 30</text>
+  <text x="496" y="449" fill="#555" font-size="11">.Caltrain: cpNode; CMRInet address 30</text>
   <text x="496" y="462" fill="#555" font-size="11">declares the node's bits (chip CMRI)</text>
   <path d="M 590 394 L 590 420" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
   <path d="M 696 440 L 740 440" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
