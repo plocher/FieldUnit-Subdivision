@@ -47,7 +47,7 @@ Requirements that follow:
 
 ### D1. One file holds the entire layout (decided by the owner, recorded)
 
-The alternative was a directory of files, one per scope. Its benefits were multi-writer safety and per-file diffs; neither exists here, and the directory costs the user every day. What the directory would have given moves inside the file at no cost: a dictionary per scope, a source hash per dictionary, the structure as the manifest.
+The alternative was a directory of files, one per scope. Its benefits were multi-writer safety and per-file diffs; neither exists here, and the directory costs the user every day. What the directory would have given moves inside the file at no cost: a dictionary per scope, the structure as the manifest.
 
 ### D2. Format: JSON with a JSON Schema
 
@@ -68,12 +68,12 @@ The top level is the layout, one dictionary per interlocking and one per machine
 schema, layout{settings, transports{}, codelines{}}, interlockings{name}, machines{name}, provenance, diagnostics[]
 ```
 
-and each interlocking or machine dictionary holds what its scope declares: `source`, `settings`, the appliances and track (interlocking) or the columns (machine), `codelines[]` (the encoding instances with their authored address, A8), `processors{}` declared in that scope (a CMRInet node is a processor with `transport` and `address`, ADR 0005 S2), `fieldUnit` or `officeUnit` naming its host, `devices[]` with their bindings, and `geometry`.
+and each interlocking or machine dictionary holds what its scope declares: `settings`, the appliances and track (interlocking) or the columns (machine), `codelines[]` (the encoding instances with their authored address, A8), `processors{}` declared in that scope (a CMRInet node is a processor with `transport` and `address`, ADR 0005 S2), `fieldUnit` or `officeUnit` naming its host, `devices[]` with their bindings, and `geometry`.
 
 | Option | For | Against |
 |---|---|---|
-| **Nested by scope** (default) | the scope ladder of ADR 0005 (layout, then the interlocking that the sheet stands for) is a file fact; "one dictionary per interlocking" is the owner's reading of the file; a per-interlocking source hash has a home; a hand-written fixture for one interlocking is one dictionary (R3); a diff names the interlocking (R5) | a reader that wants every device walks the scopes (one loop); a processor that serves two interlockings is declared in one of them and named from the other |
-| Flat sections (the view's text: `processors{}`, `fieldUnits{}`, `devices[]` at the top, qualified names inside) | every device in one list; matches the 2026-10-16 text | the scope that declared a thing is not a fact of the file; the source hash has no home below the layout; a one-interlocking fixture is scattered over five sections |
+| **Nested by scope** (default) | the scope ladder of ADR 0005 (layout, then the interlocking that the sheet stands for) is a file fact; "one dictionary per interlocking" is the owner's reading of the file; a hand-written fixture for one interlocking is one dictionary (R3); a diff names the interlocking (R5) | a reader that wants every device walks the scopes (one loop); a processor that serves two interlockings is declared in one of them and named from the other |
+| Flat sections (the view's text: `processors{}`, `fieldUnits{}`, `devices[]` at the top, qualified names inside) | every device in one list; matches the 2026-10-16 text | the scope that declared a thing is not a fact of the file; a one-interlocking fixture is scattered over five sections |
 
 A "No" keeps the flat sections and adds a `scope` field to every processor and device, which is the same fact written on every row.
 
@@ -100,8 +100,8 @@ The alternative considered and withdrawn (2026-10-19): a bare name inside its ow
 ### D6. Version, provenance, incompleteness, reference data
 
 - `schema`: the string `layout-model/1`. The schema file is `schemas/layout-model/v1.json` in this repo until the chain moves into FieldUnit as its own PR (O15); the old `schemas/interlocking-plant/v1.json` is retired in that move (O16).
-- `provenance`: the compiler's name and version; each source with path, hash and `git describe`; each library and its version; each reference data set and its version (A6). Each interlocking and machine dictionary carries `source` with the path and hash of the sheet it came from, so a diff can say which sheet changed.
-- `diagnostics[]`: the compiler's, with level, text, the entities concerned and a `sourceRef` for forensics (view §4.9). A reader never edits them; it reports its own beside them (R4).
+- `provenance`: a layout property and nothing below it. The compiler's name and version; the one source, the project, with its path, hash and `git describe`; each library and its version; each reference data set and its version (A6). No dictionary below the layout names where it came from: a sheet name is a source-ism (A2), every interlocking comes from the same source, and a reader could do nothing with it, since the file cannot write back to the source. (Rev 1 had a `source` per interlocking; withdrawn by the owner, 2026-10-19.)
+- `diagnostics[]`: the compiler's, with level, text and the entities concerned (view §4.9). A reader never edits them; it reports its own beside them (R4). The view also gave each diagnostic a `sourceRef` for forensics; under the rule above that is the one place a source-ism could remain, as an opaque string the compiler writes and nothing reads. Default: keep it, opaque and optional, in diagnostics only; a "No" drops it and the compiler prints its forensics to its own log instead.
 - Incompleteness: absent is absent (A4). A device without a binding, an interlocking without a field unit, a processor without a board are valid files with `info` diagnostics. The emulator's mocks stand in for what is absent (A12).
 - Reference data: chip definitions by IC, aspect and indication tables by rulebook, driver type keys, encodings. The file names them by key and the versions in `provenance`; it never copies a row. Each set is created in its simpleton form when the compiler first needs it (A12), in its own place with its own small document, not in this file.
 
@@ -135,7 +135,6 @@ Illustrative, not the schema. Names and values are the drawing's as of 2026-10-1
   },
   "interlockings": {
     "Sargent": {
-      "source": { "path": "SPCoast/Sargent.kicad_sch", "sha256": "…" },
       "controlPoints": { "Sargent": { "milepost": 83.5 } },
       "appliances": {
         "835":    { "appliance": "switch", "style": "lock", "controlPoint": "Sargent:Sargent", "osCircuit": "Sargent:835T1" },
@@ -152,7 +151,6 @@ Illustrative, not the schema. Names and values are the drawing's as of 2026-10-1
       ]
     },
     "Gilroy Caltrain": {
-      "source": { "path": "SPCoast/GilroyCalTrain.kicad_sch", "sha256": "…" },
       "processors": { "Caltrain": { "side": "field", "board": "cpNode", "transport": "CMRInet", "address": "30",
                                     "chips": { "CMRI": { "ic": "CMRI" } } } },
       "devices": [
@@ -162,7 +160,6 @@ Illustrative, not the schema. Names and values are the drawing's as of 2026-10-1
   },
   "machines": {
     "SPCoast South": {
-      "source": { "path": "SPCoast/South-cTc.kicad_sch", "sha256": "…" },
       "panelStyle": "US&S 506 lever panel",
       "columns": { "13": { "interlocking": "Sargent" } },
       "attachments": [ { "interlocking": "Sargent", "columns": [13], "codeline": "AAR Tokens@MQTT" } ],
@@ -174,7 +171,8 @@ Illustrative, not the schema. Names and values are the drawing's as of 2026-10-1
       ]
     }
   },
-  "provenance": { "compiler": "kicad2layout 0.1", "libraries": { "Railroad-HardwareIO": "…" }, "referenceData": { "chips": "…" } },
+  "provenance": { "compiler": "kicad2layout 0.1", "source": { "path": "SPCoast/SPCoast.kicad_pro", "sha256": "…", "describe": "…" },
+                  "libraries": { "Railroad-HardwareIO": "…" }, "referenceData": { "chips": "…" } },
   "diagnostics": [ { "level": "info", "text": "Sargent: HBA carries Address 1 on a wire-capability pin", "about": ["Sargent:HBA"] } ]
 }
 ```
