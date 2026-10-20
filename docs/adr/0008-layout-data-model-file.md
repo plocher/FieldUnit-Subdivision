@@ -1,7 +1,7 @@
 # 0008. The Layout Data Model File: one file, facts by scope, relations by name
 
 - Status: proposed 2026-10-19. Milestone D (the KiCad project to Data Model File compiler) needs a target; the layout model view of 2026-10-16 deferred the serialised form (O5). The owner decided the first question the same day: one file holds the entire layout. This ADR records that and asks the rest.
-- Decisions requested, each with a default: D2 the format (JSON with a JSON Schema); D3 the shape (facts nested by scope: layout, then one dictionary per interlocking and per machine); D4 where scopes become names (in the compiler); D5 identity and references (qualified railroad names; device rows have no identity); D6 version, provenance, incompleteness and reference data; D7 a canonical serialisation. §4 gives each with its alternatives and what a "No" means.
+- Decisions requested, each with a default: D2 the format (JSON with a JSON Schema); D3 the shape (facts nested by scope: layout, then one dictionary per interlocking and per machine); D4 where scopes become names (in the compiler); D5 identity and references (every reference is a qualified railroad name, in every scope; device rows have no identity); D6 version, provenance, incompleteness and reference data; D7 a canonical serialisation. §4 gives each with its alternatives and what a "No" means.
 - Builds on: `docs/review/layout-model-view-2026-10-16.md` (the sections, O1 to O16), ADR 0005 (declarations, attachments, scopes), ADR 0001 (encoding on transport, authored addresses, code lines on the root sheet), `docs/review/processor-cases-2026-10-16.md`, the glossary §2, the owner's rulings of 2026-10-19 (§2).
 - Pictures: `0008/shape.svg`.
 - Scope: the file the compiler writes and the readers read. Not in scope: the evaluated model's form (still in memory, O4, O5), generator options, the schema text itself (written when this is accepted), the detail of `geometry` (view §4.7, against the picture generator).
@@ -30,7 +30,7 @@ Tagged as in ADR 0005: *model* rules survive a change of tool, *representation* 
 Requirements that follow:
 
 - R1. One file, readable without the source, the libraries or the reference data; those are named, not needed, to read it.
-- R2. Every scope of ADR 0005 that a person can see in the drawing has a place in the file; every relation across scopes is a qualified name.
+- R2. Every scope of ADR 0005 that a person can see in the drawing has a place in the file; every relation is a qualified name that means the same thing wherever it appears.
 - R3. A file for one interlocking, written by hand, is a valid file.
 - R4. The compiler's diagnostics travel in the file; a reader adds its own and never edits the compiler's.
 - R5. A diff of two files says what changed in railroad terms, so the serialisation is canonical.
@@ -90,11 +90,12 @@ A "No" puts nested containers under each interlocking and makes every reader car
 
 ### D5. Identity and references
 
-- An entity is keyed by its name within its scope; from another scope it is referenced as `Interlocking:name` or `Machine:name` (view §4; "Corporal:2NAT" from Sargent).
-- Processors are named layout-wide (processor-cases §1), declared in the scope that drew them, and referenced by bare name from anywhere. A chip is `processor/address` or, where one address holds two uses, `processor/address/use` (the PCA9685 as PWM and servo, I3).
+- A dictionary key is the entity's own name within its scope. Its qualified name is the scope's name, a colon, and the key: `Sargent:835`, `SPCoast South:13`. Entities of the layout scope (interlockings, machines, transports, code lines, processors) have no prefix: `Sargent`, `CMRInet`. A name may not contain a colon.
+- **A reference is always the qualified name, in every scope**, including a reference from inside the scope that declares the entity: a device in Sargent serves `Sargent:835`, not `835`. One form, so a reader needs no scope context to read a reference, `grep` finds every reference to a thing, and a diagnostic can quote one without saying where it was found. The cost is a few bytes per row and a larger diff when an interlocking is renamed, which a tool does anyway.
+- Processors are named layout-wide (processor-cases §1) and declared in the scope that drew them. A chip is `processor/address` or, where one address holds two uses, `processor/address/use` (the PCA9685 as PWM and servo, I3).
 - A device row has no identity (view §7 item 2). Nothing may reference a row. A diagnostic locates a row by its scope, its index in that scope's list, and its natural key: `serves` or `shows`, the type key, and `column` where present. The index is a locator in one file, never an identity across files (A3).
 
-A "No" gives rows ids, which A3 forbids unless they are names, and a device has none.
+The alternative considered and withdrawn (2026-10-19): a bare name inside its own scope, qualified only across scopes. It is terser and a rename touches less, but every reader then carries a resolver that depends on where a field sits, the canonical form needs a rule for shortening, and a machine's devices have no interlocking scope to resolve in, so they would need a rule of their own. A "No" on row identity gives rows ids, which A3 forbids unless they are names, and a device has none.
 
 ### D6. Version, provenance, incompleteness, reference data
 
@@ -137,16 +138,16 @@ Illustrative, not the schema. Names and values are the drawing's as of 2026-10-1
       "source": { "path": "SPCoast/Sargent.kicad_sch", "sha256": "…" },
       "controlPoints": { "Sargent": { "milepost": 83.5 } },
       "appliances": {
-        "835":    { "appliance": "switch", "style": "lock", "controlPoint": "Sargent", "osCircuit": "835T1" },
+        "835":    { "appliance": "switch", "style": "lock", "controlPoint": "Sargent:Sargent", "osCircuit": "Sargent:835T1" },
         "836NAB": { "appliance": "mast", "style": "double", "heads": { "A": { "style": "CPL" }, "B": { "style": "CPL" } } }
       },
       "codelines": [ { "codeline": "AAR Tokens@MQTT" } ],
       "processors": { "Sargent": { "side": "field", "chips": { "0x20": { "ic": "MCP23017" }, "0x27": { "ic": "PCA9685", "use": "pwm" } } } },
       "fieldUnit": { "host": "Sargent" },
       "devices": [
-        { "type": { "appliance": "switch", "style": ["powered", "lock", "dual"] }, "serves": "835",
+        { "type": { "appliance": "switch", "style": ["powered", "lock", "dual"] }, "serves": "Sargent:835",
           "bindings": [ { "function": "M", "chip": "Sargent/0x20", "pin": "B1" }, { "function": "N", "chip": "Sargent/0x20", "pin": "B2" } ] },
-        { "type": { "appliance": "lamp" }, "serves": "HBA", "address": "1",
+        { "type": { "appliance": "lamp" }, "serves": "Sargent:HBA", "address": "1",
           "bindings": [ { "function": "LAMP", "chip": "Sargent/0x27", "pin": "B1" } ] }
       ]
     },
@@ -155,7 +156,7 @@ Illustrative, not the schema. Names and values are the drawing's as of 2026-10-1
       "processors": { "Caltrain": { "side": "field", "board": "cpNode", "transport": "CMRInet", "address": "30",
                                     "chips": { "CMRI": { "ic": "CMRI" } } } },
       "devices": [
-        { "type": { "appliance": "lamp" }, "serves": "…", "bindings": [ { "function": "LAMP", "chip": "Caltrain/CMRI", "pin": "OUT.7" } ] }
+        { "type": { "appliance": "lamp" }, "serves": "Gilroy Caltrain:…", "bindings": [ { "function": "LAMP", "chip": "Caltrain/CMRI", "pin": "OUT.7" } ] }
       ]
     }
   },
@@ -168,7 +169,7 @@ Illustrative, not the schema. Names and values are the drawing's as of 2026-10-1
       "processors": { "SPCoast South": { "side": "office", "chips": { "0x2C": { "ic": "MAX7313" } } } },
       "officeUnit": { "host": "SPCoast South" },
       "devices": [
-        { "type": { "appliance": "lever", "style": "lock" }, "serves": "Sargent:835", "column": "13",
+        { "type": { "appliance": "lever", "style": "lock" }, "serves": "Sargent:835", "column": "SPCoast South:13",
           "bindings": [ { "function": "WLS", "chip": "SPCoast South/0x2C", "pin": "A7" } ] }
       ]
     }
@@ -178,7 +179,7 @@ Illustrative, not the schema. Names and values are the drawing's as of 2026-10-1
 }
 ```
 
-Read off the excerpt: the Caltrain node is a processor that attaches to the layout's CMRInet transport by its address and declares the bits its drivers use; no driver row names the transport or the UA (ADR 0005 S1). The lever in column 13 serves `Sargent:835` across scopes by qualified name (D5). Nothing says sheet, net or reference (A2).
+Read off the excerpt: the Caltrain node is a processor that attaches to the layout's CMRInet transport by its address and declares the bits its drivers use; no driver row names the transport or the UA (ADR 0005 S1). Every reference is a qualified name, whether it stays in its scope (`Sargent:835` from a Sargent device, `Sargent:835T1` as 835's OS circuit) or crosses one (the lever in `SPCoast South:13` serves `Sargent:835`); the layout's own entities (`CMRInet`, `Sargent`) carry no prefix (D5). Nothing says sheet, net or reference (A2).
 
 ## 7. Consequences
 
