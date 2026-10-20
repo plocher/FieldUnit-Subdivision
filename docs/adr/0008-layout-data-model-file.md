@@ -141,7 +141,7 @@ The physical abstraction first: the cTc interface layers of FieldUnit ADR 0005, 
 
 ![The cTc interface layers](0008/ctc-interface-layers.svg)
 
-This is a copy of FieldUnit `docs/adr/0005-ctc-interface-layers.svg` as of its commit `ddf9dbb` (2026-10-10), taken 2026-10-20. FieldUnit's file is the source; the copy exists because a reader of this repo cannot follow a path into that one, and it goes away when the repos merge, which the owner expects in the near future.
+This is a copy of FieldUnit `docs/adr/0005-ctc-interface-layers.svg` as of its commit `ddf9dbb` (2026-10-10), taken 2026-10-20. FieldUnit's file is the source; the copy exists because a reader of this repo cannot follow a path into that one, and it goes away when the repos merge, which the owner expects in the near future. The copy is recoloured to the light palette of the picture below so the two print together; the drawing is unchanged.
 
 How the file lands on those layers, artifact by artifact:
 
