@@ -129,13 +129,15 @@ The alternative, copying the referenced rows into the file so it reads stand-alo
 
 DoD1 asks for a byte-identical rewrite, and a git diff of the file should show railroad changes only. The writer used by the compiler and the reader library, must sort things in the same way: natural-sorted alpha-numerical case folded, whitespace deduplicated. This includes keys, dictionaries by name, lists, etc. In addition, the json file rendering needs to be the same: Two-space indent, UTF-8 unescaped, one trailing newline.
 
-Sorting every list means that no list's order carries meaning. That is deliberate: implicit ordering is not deterministic, which the pixel chains showed, so every ordering is explicit, an `address` or a key, never a position in a list. The writer is `tools/layout_model.dumps`; the gate is `tests/test_layout_model_file.py`, which proves that a shuffled model writes the same bytes.
+Sorting every list means that no list's order carries meaning. That is deliberate: implicit ordering is not deterministic, so every ordering needs to be explicit; we use an `address`. `name` or a token as a key. 
 
-## 5. The shape, drawn
+Tested via a writer (`tools/layout_model.dumps` and a script (`tests/test_layout_model_file.py`) to prove that a shuffled model writes the same bytes.
 
-![The file's shape](0008/shape.svg)
+## 5. The Data Model shape
 
-One file, facts by scope, relations by name. Boxes are the scopes a person can see. Yellow is a declaration; white is what attaches, with its own address.
+![The Data Model shape](0008/shape.svg)
+
+One json file, a collection of facts organized by scope, relations linked by name. Boxes are the scopes, yellow for declarations, white for the artifacts that attach via a relationship.
 
 - **Red dashed**: a reference by qualified name, a fact written in the file. The lever row's `serves Sargent:835`, a unit's `host`, a binding's chip and pin, the Caltrain node's `transport`.
 - **Blue**: code line membership, the two facts the control path from a lever to its appliance is derived from: the interlocking's `codelines[]` entry (a station on the line) and the machine's `attachments[]` entry (which columns control which interlocking over which line). The file never writes that path.
