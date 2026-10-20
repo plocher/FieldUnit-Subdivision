@@ -92,6 +92,7 @@ Each from a thing that went wrong or nearly did:
 - L6. **The lock KiCad 10 writes is `~<file>.lck`**; jBOM's check looks for `<base>.lck` and never fires. Whether the Symbol Editor writes one for an open library is unverified.
 - L7. **The libraries carry no per-instance defaults** (since `421cff0`), so a future reset leaves blanks rather than wrong values; a lint for blank required fields is the companion.
 - L8. **Helpers copied forward script to script** become six lock checks of which one is missing. Each fact one source applies to tooling too.
+- L11. **KiCad's forced resave is a usable formatting reference, with one surprise** (the controlled experiment of ADR 0007 §2.4, run 2026-10-19 on copies for the Processor-node edit). Three observations: the owner's saved files come back byte-identical from `kicad-cli sch upgrade --force` and `sym upgrade --force`, so the instrument is sound; our edited libraries and the field-only sheet edit (South-cTc) also come back byte-identical, which required writing a shown property without a `(hide …)` line, hidden sheet properties in the order `(at) (hide) (show_name) (do_not_autoplace)`, no `(fields_autoplaced no)` line, library symbols and embedded definitions in name order; a sheet with a newly inserted placed symbol does not, because KiCad files the new symbol among the existing ones in its own order (after the last unit-1 symbol there), not by position. The remedy that worked: resave the written sheet with KiCad on a copy, check that only the new block's position differs, adopt the copy; a second resave is then a no-op.
 - L10. **A gate that prints is not a gate.** The head-cast gate script reports each comparison with `print` and exits zero whatever it finds; it is evidence a person reads, not an enforced guarantee (review finding 6, verified in `E/2026-10-18-head-cast-gate.py:40-88`).
 - L9. Smaller: `uuid4` makes a re-run unreproducible (the retired unifier used `uuid5`); `.kicad_pro` is JSON; span locators key on exact tab depth and no script checks `(version …)`; `kicad-cli` prints Fontconfig noise on stderr; the three locators disagree on the environment variable (`KICAD_CLI` here and in `kicad.mk`, `KPROJ_KICAD_CLI` in kproj).
 
@@ -106,7 +107,7 @@ Each from a thing that went wrong or nearly did:
 7. `Archive/SPCoast/kicad.mk` has no ERC rule and stale defaults (survey decision 10); the unified project has no Makefile. Out of scope; noted so it is not forgotten.
 
 8. The gate script prints and never fails (L10); the staged write is sequential, not atomic (library, sheets, project in turn, `E/2026-10-18-head-cast.py`).
-9. No formatting round trip has been run. `kicad-cli sch export netlist` is not a save; `kicad-cli sch upgrade --force` resaves a schematic regardless of version and `sym upgrade` a library, and they are the candidate instruments, untested. The experiment is defined in ADR 0007 §2.4.
+9. The formatting round trip has been run once (L11): the writer matches KiCad's own output for libraries and field edits; a script that inserts a placed symbol must end with KiCad's resave. `kicad-cli sch export netlist` is not a save.
 
 ## 5. Donor-side defects found on the way
 

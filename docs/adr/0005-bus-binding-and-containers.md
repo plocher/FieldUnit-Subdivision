@@ -140,6 +140,8 @@ Three small rulings came up in the same discussion and do not follow from §4. T
 
 ## 9. What changes when this is confirmed
 
+Done 2026-10-19 by Railroad `SPCoast/edits/2026-10-19-processor-node.py` (gate beside it): the symbol changes, the Caltrain and root-sheet edits, the lint's address rule (`Bit` for CMRI). Still open: the scope resolver in the reader library and the C10 model rules, and the docs.
+
 - Symbols: `Processor` (Role STRUCTURE, no pins; fields `Board`, `Transport`, `Address`, empty defaults) added to `Railroad-HardwareIO`; `Codeline-Transport-*` gain `Host` (empty default); `Codeline-Transport-MQTT` loses `Station`; `Driver-CMRI-IB/OB` lose `Address` and `UA`, and their Value rendering follows. Done today by the owner: `Address` on `Driver-GPIO-Digital` and `Driver-GPIO-Pixel`, Value `${Address}`.
 - Sheets, by script with a gate (ADR 0006): Caltrain gains one `Processor` and loses 68 field values; the pixel drivers on Gilroy Interchange and Luchessa take `Address` from their Value (Sargent's two are done).
 - Readers: the scope resolver in the reader library; the lint rules of C10.

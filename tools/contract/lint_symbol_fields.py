@@ -18,7 +18,7 @@ Per symbol, by Role:
   meaning primary word plus electrical type, so a symbol whose pins mix them is multi-unit, with
   its units not interchangeable and its Value not autoplaced (the units mesh and show one name).
 - IODRIVER: IC present; no Kind; `Pin.*` per pin, primary word, electrical type input, output or
-  bidirectional; Address or a GPIO Value rule. Warning (2026-10-18) when a unit's body (its largest
+  bidirectional; the attachment's address field by bus kind (ADR 0005 S4): `Bit` for CMRI, none for MQTT, `Address` otherwise. Warning (2026-10-18) when a unit's body (its largest
   rectangle) lacks the driver look: stroke 0.3048 solid 128/77/0 with background fill. The looks by
   Role are a convention for readers, never a fact: device = named box with its proxy glyph, cast =
   plain box with direction arrows, driver (chips included) = brown border, background fill.
@@ -47,6 +47,7 @@ FUNCTION_ETYPES = {"input", "output", "bidirectional"}
 STRUCTURAL = {"TRACK", "POLICY", "STRUCTURE", "COLUMN", "MACHINE", "CODELINE_TRANSPORT", "CODELINE_ENCODING"}
 FUNCTIONAL = {"APPLIANCE", "DEVICE", "PANEL", "IODRIVER", "SETTING", "CAST"}
 RETIRED_FIELDS = {"ControlToken", "Vital", "NormalIs", "Chain", "Index", "Kind"}
+ATTACHMENT_ADDRESS = {"CMRI": "Bit", "MQTT": None}  # by IC; every other bus device attaches by Address (ADR 0005 S4)
 NOT_SETTINGS = {"Role", "Appliance", "Style", "IC", "Address", "UA", "Bit", "Head", "Invert", "IndicationToken", "Color", "CP", "TC",
                 "IndicationCeiling", "Display", "Processor", "Milepost", "Reference", "Value", "Footprint",
                 "Datasheet", "Description", "ki_keywords", "ki_fp_filters", "ki_description"}
@@ -133,8 +134,11 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
             for p in [x.strip() for x in props["Invert"].split(",") if x.strip()]:
                 if p not in bases:
                     err(f"Invert names {p}, not a pin of this symbol")
-    if role == "IODRIVER" and "Address" not in props and props.get("IC") != "GPIO":
-        err("Address missing on a bus device")
+    if role == "IODRIVER":
+        # ADR 0005 S4: an attachment carries only its own address on its bus; the field depends on the bus kind
+        want = ATTACHMENT_ADDRESS.get(props.get("IC"), "Address")
+        if want and want not in props:
+            err(f"{want} missing on a bus device")
     if role == "IODRIVER":
         for unit, rect in sorted((bodies or {}).items()):
             if not all(mark in rect for mark in DRIVER_LOOK):
