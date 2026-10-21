@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 640" font-family="Helvetica, Arial, sans-serif" font-size="13">
-  <rect width="1000" height="640" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 660" font-family="Helvetica, Arial, sans-serif" font-size="13">
+  <rect width="1000" height="660" fill="#ffffff"/>
   <title>The Layout Data Model File on the cTc interface layers: office, Seam 1 codeline, field; Seam 2 hardware I/O on each side; the transport catalog</title>
   <defs>
     <marker id="r" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b00000"/></marker>
@@ -7,7 +7,7 @@
   </defs>
 
   <!-- file -->
-  <rect x="20" y="10" width="960" height="620" rx="12" fill="#f4f4f4" stroke="#555" stroke-width="1.5"/>
+  <rect x="20" y="10" width="960" height="640" rx="12" fill="#f4f4f4" stroke="#555" stroke-width="1.5"/>
   <text x="36" y="32" font-weight="bold" fill="#333">SPCoast.layout.json</text>
   <text x="200" y="32" fill="#555" font-size="12">schema: layout-model/v2.0.0    provenance: source type, compiler, the one source (the project), libraries, reference data versions</text>
 
@@ -45,7 +45,7 @@
   <path d="M 672 282 L 740 282" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
 
   <!-- ===== FIELD band: interlockings ===== -->
-  <rect x="56" y="314" width="648" height="304" rx="8" fill="#dde6f0" stroke="#555" stroke-width="1.5"/>
+  <rect x="56" y="314" width="648" height="324" rx="8" fill="#dde6f0" stroke="#555" stroke-width="1.5"/>
   <text x="68" y="334" font-weight="bold" fill="#333">FIELD</text>
   <text x="120" y="334" fill="#333" font-size="12">interlockings{}: one per location. controlPoints, appliances, track, settings, geometry</text>
 
@@ -80,19 +80,19 @@
   <!-- Caltrain column -->
   <text x="490" y="354" fill="#333" font-size="12" font-weight="bold">interlockings."Gilroy Caltrain"</text>
   <rect x="486" y="376" width="210" height="18" rx="4" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
-  <text x="496" y="389" fill="#333" font-size="12">fieldUnit.host: Caltrain</text>
+  <text x="496" y="389" fill="#333" font-size="12">fieldUnit.host: CMRI Host</text>
   <rect x="486" y="420" width="210" height="48" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
-  <text x="496" y="435" fill="#333" font-size="11">Remote I/O node: layout.processors</text>
-  <text x="496" y="449" fill="#555" font-size="11">.Caltrain: cpNode; CMRInet address 30</text>
-  <text x="496" y="462" fill="#555" font-size="11">declares the node's bits (chip CMRI)</text>
+  <text x="496" y="435" fill="#333" font-size="11">Host: layout.processors."CMRI Host"</text>
+  <text x="496" y="449" fill="#555" font-size="11">macOS app, no chips: runs the unit's logic,</text>
+  <text x="496" y="462" fill="#555" font-size="11">polls the line: transports.CMRInet.host</text>
   <path d="M 590 394 L 590 420" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
-  <path d="M 696 440 L 740 440" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+  <path d="M 696 440 L 752 440" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
   <rect x="486" y="494" width="210" height="60" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
   <text x="496" y="509" fill="#333" font-size="11">devices[]  a row: head, serves</text>
   <text x="496" y="523" fill="#333" font-size="11">Gilroy Caltrain:774NAB</text>
   <text x="496" y="537" fill="#555" font-size="11">LAMP → chip Caltrain/CMRI pin OUT.7</text>
   <text x="496" y="550" fill="#555" font-size="11">no row names the transport or the UA</text>
-  <path d="M 590 494 L 590 468" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+  <path d="M 696 530 L 752 530" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
 
   <!-- serves Sargent:835 from the office row, down the gutter -->
   <path d="M 68 114 L 44 114 L 44 520 L 68 520" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
@@ -100,7 +100,7 @@
   <text x="68" y="604" fill="#555" font-size="11">geometry: placements, track polylines</text>
 
   <!-- ===== TRANSPORT CATALOG: layout.transports ===== -->
-  <rect x="740" y="48" width="224" height="570" rx="8" fill="#e9eef5" stroke="#555" stroke-width="1.5"/>
+  <rect x="740" y="48" width="224" height="590" rx="8" fill="#e9eef5" stroke="#555" stroke-width="1.5"/>
   <text x="752" y="68" font-weight="bold" fill="#333">TRANSPORT CATALOG</text>
   <text x="752" y="86" fill="#555" font-size="11">layout.transports{}: this layout's instances</text>
   <text x="752" y="100" fill="#555" font-size="11">of the kinds in the reference data</text>
@@ -111,12 +111,15 @@
   <rect x="752" y="420" width="200" height="40" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
   <text x="762" y="436" fill="#333" font-size="12">transports.CMRInet</text>
   <text x="762" y="451" fill="#555" font-size="11">kind CMRI; port, baud, host</text>
-  <text x="752" y="476" fill="#b00000" font-size="10">← Seam 2 binding: the node on the line</text>
-  <text x="752" y="506" fill="#555" font-size="11">Kinds (reference data): DC pulses,</text>
-  <text x="752" y="520" fill="#555" font-size="11">MQTT, LocoNet, CMRInet, other IoT,</text>
-  <text x="752" y="534" fill="#555" font-size="11">virtual/in-process.</text>
-  <text x="752" y="554" fill="#555" font-size="11">Any transport can be bound to any</text>
-  <text x="752" y="568" fill="#555" font-size="11">seam: a code line binds one to Seam 1,</text>
-  <text x="752" y="582" fill="#555" font-size="11">a remote I/O node binds one to Seam 2.</text>
-  <text x="752" y="596" fill="#555" font-size="11">The seam is derived, never written.</text>
+  <text x="752" y="476" fill="#b00000" font-size="10">← the line's host, by name</text>
+  <rect x="752" y="486" width="200" height="62" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="762" y="501" fill="#333" font-size="11">Remote I/O node: layout.processors</text>
+  <text x="762" y="515" fill="#555" font-size="11">.Caltrain: cpNode; UA 30 on CMRInet</text>
+  <text x="762" y="529" fill="#555" font-size="11">declares its bits (chip CMRI);</text>
+  <text x="762" y="543" fill="#555" font-size="11">hosts no unit. Seam 2 binding ▲</text>
+  <path d="M 935 486 L 935 460" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+  <text x="752" y="570" fill="#555" font-size="11">Kinds (reference data): DC pulses, MQTT,</text>
+  <text x="752" y="584" fill="#555" font-size="11">LocoNet, CMRInet, other IoT, virtual.</text>
+  <text x="752" y="604" fill="#555" font-size="11">Any transport binds to any seam; the</text>
+  <text x="752" y="618" fill="#555" font-size="11">seam is derived, never written.</text>
 </svg>

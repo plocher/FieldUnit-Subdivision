@@ -135,13 +135,21 @@ Sorting every list means that no list's order carries meaning. That is deliberat
 
 Tested via a writer (`tools/layout_model.dumps` and a script (`tests/test_layout_model_file.py`) to prove that a shuffled model writes the same bytes.
 
+### 4.9 Hosts: where logic runs
+
+R2 forbids hidden connections, and the model had one: wherever a unit's logic runs on something not drawn, the compiler's default "one processor per interlocking, named after it" stood in for it. Three patterns already in the file close the gap, and they compose:
+
+- **A host is a processor.** `layout.processors{}` admits a processor with a `side`, a `board` and no chips, and a unit names its host. A Mac app is a processor like a Xiao: drawn once as a `Processor` symbol with a board of its own and named from every unit that runs on it, through the `Host` field on the Interlocking symbol (processor-cases §1). Several units naming one host is already allowed, since processor names are layout-wide.
+- **No invented processor.** The compiler derives a processor for an interlocking only when that interlocking draws Local I/O chips of its own. An interlocking whose devices bind only to Remote I/O nodes, or that draws no devices yet, gets none invented; its field unit has no host until the drawing names one, and that absence is reported by the reader.
+- **The line's host runs the all-remote unit.** By the remote I/O rule (processor-cases §1) a node hosts no unit, so the logic of a field unit whose I/O is all CMRInet runs where the line is polled: the transport's `host`, a processor drawn like any other (`CMRI Host`, a FieldUnit plus CMRInet host, over RS485 or IP). An all-JMRI unit runs on the MQTT client that talks to JMRI (`JMRI Host`), with JMRI itself the Remote I/O node on the MQTT transport. The virtual code line is the catalog's in-process kind, a `Codeline-Transport-Virtual` symbol whose host owns the buffer, with code lines and stations on it exactly as on MQTT.
+
+The drawing holds the deployment of the day and evolves (the owner, 2026-10-20). Day 0: every field unit runs on `Plant Host`, each attached to a code line like any other, its devices absent and mocked by the emulator. Day 1: one interlocking gets a field processor, the drawing changes, the code is regenerated. Day N: every interlocking with a field processor is real, and what remains on hosts is the Seam 2 remote I/O that is not emulated: the CMRI app and the JMRI app, each a FieldUnit plus a transport client. No second deployment lives in the drawing and no generator rehosts anything: the file says where every unit runs, and §6 shows all three days at once.
+
 ## 5. The Data Model shape
 
 The physical abstraction first: the cTc interface layers of FieldUnit ADR 0005, the definitive architecture this file is shaped on.
 
 ![The cTc interface layers](0008/ctc-interface-layers.svg)
-
-This is a copy of FieldUnit `docs/adr/0005-ctc-interface-layers.svg` as of its commit `ddf9dbb` (2026-10-10), taken 2026-10-20. FieldUnit's file is the source; the copy exists because a reader of this repo cannot follow a path into that one, and it goes away when the repos merge, which the owner expects in the near future. The copy is recoloured to the light palette of the picture below so the two print together; the drawing is unchanged.
 
 How the file lands on those layers, artifact by artifact:
 
@@ -150,7 +158,7 @@ How the file lands on those layers, artifact by artifact:
 | Transport catalog (DC pulses, MQTT, LocoNet, CMRInet, virtual/in-process) | `layout.transports{}`: this layout's instances, each of a kind in the reference data, declared once and bound by name |
 | Seam 1, Codeline: controls down, indications up | `layout.codelines{}`: an encoding on a transport. Office end: the machine's `attachments[]`. Field end: the interlocking's `codelines[]` entry, the station with its authored address |
 | Seam 2, Hardware I/O, panel side and field side: Local I/O (GPIO, I2C, SPI) | chips on the unit's host processor, `layout.processors{}.chips` |
-| Seam 2: Remote I/O node, with its adapter, one per transport | a processor with `transport` and `address` that hosts no unit (Caltrain); the adapter is the transport kind, reference data |
+| Seam 2: Remote I/O node, with its adapter, one per transport | a processor with `transport` and `address` that hosts no unit (Caltrain, JMRI); the adapter is the transport kind, reference data; the unit's logic runs on the transport's `host`, a processor drawn like any other (§4.9) |
 | Office logic, the cTc code machine | `machines{}` with `officeUnit.host` |
 | Panel devices: levers, buttons, lamps | the machine's `devices[]` rows |
 | Field logic, one per location: codeline handler, safety logic | `interlockings{}` with `fieldUnit.host` |
@@ -169,13 +177,13 @@ One json file, a collection of facts organized by scope, relations linked by nam
 - **Red dashed**: a reference by qualified name, a fact written in the file. A row's `serves`, a unit's `host`, a binding's chip, a code line's `transport` (the Seam 1 binding), a node's `transport` (the Seam 2 binding). The lever's `serves Sargent:835` runs from the office band to the field band in the same form it has anywhere.
 - **Blue**: code line membership, the two facts the control path from a lever to its appliance is derived from: the machine's `attachments[]` entry (office end) and the interlocking's `codelines[]` entry (field end). The file never writes that path.
 
-A processor has one name for the whole layout, so `Luchessa/0x20` and `Corporal/0x20` are two chips at one I2C address. A Remote I/O node (Caltrain) attaches by transport and address and hosts no unit. Which seam a transport serves is derived from what binds to it.
+A processor has one name for the whole layout, so `Luchessa/0x20` and `Corporal/0x20` are two chips at one I2C address. A Remote I/O node (Caltrain) attaches by transport and address and hosts no unit; its field unit runs on the line's host, the CMRI app, drawn as a processor (§4.9). Which seam a transport serves is derived from what binds to it.
 
 What is not in the file: sheets, nets, references, units (source-isms); diagnostics (an error means no file; absence is read from the file); routes, signals, tokens, casts, resolved settings, the seam a transport serves and the control path from a lever to its appliance (the evaluator derives them in memory); the libraries and the reference data (named by key and version, never copied); any order in a list (every intended order is an explicit address or key).
 
 ## 6. The example, validated
 
-`schemas/layout-model/examples/spcoast-excerpt.json`, reproduced in full. It is generated by the script beside it, validates against `schemas/layout-model/v2.0.0.json`, and is in canonical form; `tests/test_layout_model_file.py` proves all three on every run. Railroad names are the drawing's as of 2026-10-19; the Luchessa and Corporal processors and their chips are the intended design, since neither sheet has field I/O drawn yet; `provenance` values are placeholders of valid form.
+`schemas/layout-model/examples/spcoast-excerpt.json`, reproduced in full. It is generated by the script beside it, validates against `schemas/layout-model/v2.0.0.json`, and is in canonical form; `tests/test_layout_model_file.py` proves all three on every run. Railroad names are the drawing's as of 2026-10-19; the Luchessa and Corporal processors and their chips are the intended design, since neither sheet has field I/O drawn yet; the hosts of §4.9 are drawn as intended: `Plant Host` for Watsonville (Day 0), `CMRI Host` for Gilroy Caltrain, `JMRI Host` and the `JMRI` node for Gilroy Interchange; the JMRI pin names are the simpleton of a parked ruling (ADR 0005 §8); `provenance` values are placeholders of valid form.
 
 ```json
 {
@@ -211,6 +219,12 @@ What is not in the file: sheets, nets, references, units (source-isms); diagnost
           "style": "double"
         }
       },
+      "codelines": [
+        {
+          "address": "Gilroy Caltrain",
+          "codeline": "AAR Tokens@MQTT"
+        }
+      ],
       "controlPoints": {
         "Gilroy Caltrain": {}
       },
@@ -249,7 +263,70 @@ What is not in the file: sheets, nets, references, units (source-isms); diagnost
         }
       ],
       "fieldUnit": {
-        "host": "Caltrain"
+        "host": "CMRI Host"
+      }
+    },
+    "Gilroy Interchange": {
+      "appliances": {
+        "777": {
+          "appliance": "switch",
+          "controlPoint": "Gilroy Interchange:Gilroy North",
+          "osCircuit": "Gilroy Interchange:777T1",
+          "style": "lock"
+        },
+        "781": {
+          "appliance": "switch",
+          "controlPoint": "Gilroy Interchange:Gilroy South",
+          "osCircuit": "Gilroy Interchange:781T1",
+          "style": "lock"
+        }
+      },
+      "codelines": [
+        {
+          "address": "Gilroy Interchange",
+          "codeline": "AAR Tokens@MQTT"
+        }
+      ],
+      "controlPoints": {
+        "Gilroy North": {
+          "milepost": 77.7
+        },
+        "Gilroy South": {
+          "milepost": 78.1
+        }
+      },
+      "devices": [
+        {
+          "bindings": [
+            {
+              "chip": "JMRI/MQTT",
+              "function": "M",
+              "pin": "Turnout"
+            },
+            {
+              "chip": "JMRI/MQTT",
+              "function": "N",
+              "pin": "Turnout-Feedback.N"
+            },
+            {
+              "chip": "JMRI/MQTT",
+              "function": "R",
+              "pin": "Turnout-Feedback.R"
+            }
+          ],
+          "serves": "Gilroy Interchange:777",
+          "type": {
+            "appliance": "switch",
+            "style": [
+              "dual",
+              "lock",
+              "powered"
+            ]
+          }
+        }
+      ],
+      "fieldUnit": {
+        "host": "JMRI Host"
       }
     },
     "Luchessa": {
@@ -342,6 +419,18 @@ What is not in the file: sheets, nets, references, units (source-isms); diagnost
       "fieldUnit": {
         "host": "Sargent"
       }
+    },
+    "Watsonville": {
+      "codelines": [
+        {
+          "address": "Watsonville",
+          "codeline": "AAR Tokens@MQTT"
+        }
+      ],
+      "description": "Day 0: no field processor yet; its devices are absent and the emulator mocks them",
+      "fieldUnit": {
+        "host": "Plant Host"
+      }
     }
   },
   "layout": {
@@ -365,6 +454,11 @@ What is not in the file: sheets, nets, references, units (source-isms); diagnost
         "side": "field",
         "transport": "CMRInet"
       },
+      "CMRI Host": {
+        "board": "macOS app",
+        "description": "FieldUnit + CMRInet host: runs the logic of the all-CMRI field units and polls the line",
+        "side": "field"
+      },
       "Corporal": {
         "board": "cpNode Xiao",
         "chips": {
@@ -372,6 +466,22 @@ What is not in the file: sheets, nets, references, units (source-isms); diagnost
             "ic": "MCP23017"
           }
         },
+        "side": "field"
+      },
+      "JMRI": {
+        "board": "JMRI",
+        "chips": {
+          "MQTT": {
+            "ic": "JMRI"
+          }
+        },
+        "description": "Remote I/O node: JMRI drives the devices over MQTT; a pin is the JMRI object a driver stands for (simpleton)",
+        "side": "field",
+        "transport": "MQTT"
+      },
+      "JMRI Host": {
+        "board": "macOS app",
+        "description": "FieldUnit + MQTT client: runs the logic of the all-JMRI field units",
         "side": "field"
       },
       "Luchessa": {
@@ -384,6 +494,11 @@ What is not in the file: sheets, nets, references, units (source-isms); diagnost
             "ic": "MCP23017"
           }
         },
+        "side": "field"
+      },
+      "Plant Host": {
+        "board": "macOS app",
+        "description": "Day 0: hosts the field units that have no field processor yet; their devices are absent and the emulator mocks them",
         "side": "field"
       },
       "Sargent": {
@@ -418,7 +533,7 @@ What is not in the file: sheets, nets, references, units (source-isms); diagnost
     },
     "transports": {
       "CMRInet": {
-        "host": "SPCoast South",
+        "host": "CMRI Host",
         "kind": "CMRI",
         "params": {
           "baud": "28800",
@@ -500,7 +615,7 @@ What is not in the file: sheets, nets, references, units (source-isms); diagnost
 }
 ```
 
-Read off the example: the Caltrain node is a processor that attaches to the layout's CMRInet transport by its address and declares the bits its devices use; no row names the transport or the UA (ADR 0005 S1). `Luchessa/0x20` and `Corporal/0x20` are different chips at one I2C address (§4.5). Every reference is a qualified name, whether it stays in its scope (`Sargent:835` from a Sargent row) or crosses one (the lever in `SPCoast South:13` serves `Sargent:835`); the layout's own entities carry no prefix. Nothing says sheet, net, reference or unit (R2). The canonical order puts `interlockings` before `layout` and `schema` last: the rule is one rule, with no exception for the head.
+Read off the example: the Caltrain node is a processor that attaches to the layout's CMRInet transport by its address and declares the bits its devices use; no row names the transport or the UA (ADR 0005 S1); its field unit's host is `CMRI Host`, the processor that polls the line, and Watsonville's is `Plant Host` with no devices at all (§4.9). `Luchessa/0x20` and `Corporal/0x20` are different chips at one I2C address (§4.5). Every reference is a qualified name, whether it stays in its scope (`Sargent:835` from a Sargent row) or crosses one (the lever in `SPCoast South:13` serves `Sargent:835`); the layout's own entities carry no prefix. Nothing says sheet, net, reference or unit (R2). The canonical order puts `interlockings` before `layout` and `schema` last: the rule is one rule, with no exception for the head.
 
 ## 7. Decision
 
@@ -519,6 +634,7 @@ How the choices were made, in order:
 - 2026-10-20. The owner reframed the ADR: a problem that names the undefined thing, three rules, a definition of done that connects to the problem, and the intermediate choices run down by the author so that one decision remains. Rev 2. The owner's edits: R2 in compiler terms (tokens, grammar, parse tree), R3 as a stable public interface, DoD2 proven by a replica project, DoD3 by adversarial review, the schema semantically versioned as `v2.0.0`, provenance with a source type, an error produces no file.
 - 2026-10-20. The owner's clarifications on rev 2, folded in as rev 3: processors are layout-scope entities with a worked Luchessa and Corporal example, since "declared in the scope that drew them" was a KiCad fact and the namespace was unexplained (§4.3, §4.5); "row" is kept and defined as one element of `devices[]`, rather than a new generic word (§4.5); `diagnostics[]` is dropped, since an error produces no file and absence is readable from the file (§4.6); the example is the real file, generated and validated under test, because an example that does not show the schema is no use for evaluating it (§6). Sorted lists carry no order on purpose: intended order is always explicit, as the pixel chains taught (§4.8).
 - 2026-10-20. The owner: the picture showed code lines and transports as siblings with no binding between them, and FieldUnit ADR 0005's interface layers (two seams, a transport catalog) are the definitive architecture. The picture is redrawn on those layers with both seam bindings drawn, the artifact-to-file mapping table is in §4.3, and the prose uses Local I/O and Remote I/O node. No key changed.
+- 2026-10-20. The owner: virtual field units ran "on a host" never drawn, over a virtual code line never defined, and an all-CMRI or all-JMRI field unit has no field processor either; a hidden connection in a document that forbids them. §4.9 closes it with three existing patterns (a host is a processor; no invented processor; the line's host runs the all-remote unit) and the owner's Day 0 to Day N evolution of the drawing. The example gains `Plant Host`, `CMRI Host`, `JMRI Host` and the `JMRI` node, and Gilroy Caltrain's host is corrected. No key changed.
 
 ## 9. Consequences
 
@@ -530,6 +646,7 @@ How the choices were made, in order:
 - C6. The old compilers, `schemas/interlocking-plant/v1.json` and the generated Luchessa JSON stay as reference until §3 passes, then go in one commit (layout-model-plan §0).
 - C7. The compiler keeps its own log for errors and forensics (sheet, reference, unit); the file never carries them.
 - C8. The schema is the public interface (R3): a change to the Data Model that changes the file is a schema version, with a migration for files already written, never a quiet edit.
+- C9. The compiler invents no processor for an interlocking without Local I/O chips of its own; the reader reports a unit without a host (§4.9).
 
 ## 10. Out of scope
 
