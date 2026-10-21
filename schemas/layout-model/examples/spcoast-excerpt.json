@@ -31,6 +31,12 @@
           "style": "double"
         }
       },
+      "codelines": [
+        {
+          "address": "Gilroy Caltrain",
+          "codeline": "AAR Tokens@MQTT"
+        }
+      ],
       "controlPoints": {
         "Gilroy Caltrain": {}
       },
@@ -69,7 +75,70 @@
         }
       ],
       "fieldUnit": {
-        "host": "Caltrain"
+        "host": "CMRI Host"
+      }
+    },
+    "Gilroy Interchange": {
+      "appliances": {
+        "777": {
+          "appliance": "switch",
+          "controlPoint": "Gilroy Interchange:Gilroy North",
+          "osCircuit": "Gilroy Interchange:777T1",
+          "style": "lock"
+        },
+        "781": {
+          "appliance": "switch",
+          "controlPoint": "Gilroy Interchange:Gilroy South",
+          "osCircuit": "Gilroy Interchange:781T1",
+          "style": "lock"
+        }
+      },
+      "codelines": [
+        {
+          "address": "Gilroy Interchange",
+          "codeline": "AAR Tokens@MQTT"
+        }
+      ],
+      "controlPoints": {
+        "Gilroy North": {
+          "milepost": 77.7
+        },
+        "Gilroy South": {
+          "milepost": 78.1
+        }
+      },
+      "devices": [
+        {
+          "bindings": [
+            {
+              "chip": "JMRI/MQTT",
+              "function": "M",
+              "pin": "Turnout"
+            },
+            {
+              "chip": "JMRI/MQTT",
+              "function": "N",
+              "pin": "Turnout-Feedback.N"
+            },
+            {
+              "chip": "JMRI/MQTT",
+              "function": "R",
+              "pin": "Turnout-Feedback.R"
+            }
+          ],
+          "serves": "Gilroy Interchange:777",
+          "type": {
+            "appliance": "switch",
+            "style": [
+              "dual",
+              "lock",
+              "powered"
+            ]
+          }
+        }
+      ],
+      "fieldUnit": {
+        "host": "JMRI Host"
       }
     },
     "Luchessa": {
@@ -162,6 +231,18 @@
       "fieldUnit": {
         "host": "Sargent"
       }
+    },
+    "Watsonville": {
+      "codelines": [
+        {
+          "address": "Watsonville",
+          "codeline": "AAR Tokens@MQTT"
+        }
+      ],
+      "description": "Day 0: no field processor yet; its devices are absent and the emulator mocks them",
+      "fieldUnit": {
+        "host": "Plant Host"
+      }
     }
   },
   "layout": {
@@ -185,6 +266,11 @@
         "side": "field",
         "transport": "CMRInet"
       },
+      "CMRI Host": {
+        "board": "macOS app",
+        "description": "FieldUnit + CMRInet host: runs the logic of the all-CMRI field units and polls the line",
+        "side": "field"
+      },
       "Corporal": {
         "board": "cpNode Xiao",
         "chips": {
@@ -192,6 +278,22 @@
             "ic": "MCP23017"
           }
         },
+        "side": "field"
+      },
+      "JMRI": {
+        "board": "JMRI",
+        "chips": {
+          "MQTT": {
+            "ic": "JMRI"
+          }
+        },
+        "description": "Remote I/O node: JMRI drives the devices over MQTT; a pin is the JMRI object a driver stands for (simpleton)",
+        "side": "field",
+        "transport": "MQTT"
+      },
+      "JMRI Host": {
+        "board": "macOS app",
+        "description": "FieldUnit + MQTT client: runs the logic of the all-JMRI field units",
         "side": "field"
       },
       "Luchessa": {
@@ -204,6 +306,11 @@
             "ic": "MCP23017"
           }
         },
+        "side": "field"
+      },
+      "Plant Host": {
+        "board": "macOS app",
+        "description": "Day 0: hosts the field units that have no field processor yet; their devices are absent and the emulator mocks them",
         "side": "field"
       },
       "Sargent": {
@@ -238,7 +345,7 @@
     },
     "transports": {
       "CMRInet": {
-        "host": "SPCoast South",
+        "host": "CMRI Host",
         "kind": "CMRI",
         "params": {
           "baud": "28800",
