@@ -4,10 +4,10 @@
     python3 tools/contract/lint_symbol_fields.py [--libdir DIR] [--table]
 
 Per symbol, by Role:
-- CAST (2026-10-18): a head cast: no Appliance; a `Head` field (the head letter, written per
-  instance); Style allowed (the head style, fixed by the symbol or written per instance); exactly
-  one input pin of kind indication and every other pin one output kind; `Pin.*` per pin; settings
-  lower_snake_case. The aspect is derived from style and indication, never a pin.
+- DEVICE with Appliance head (a head device; Role CAST until 2026-10-23, ADR 0009 §3.6): a `Head`
+  field (the head letter, written per instance); Style fixed by the symbol; exactly one input pin of
+  kind indication and every other pin one output kind; `Pin.*` per pin; settings lower_snake_case.
+  The aspect is derived from style and indication, never a pin.
 - APPLIANCE: Appliance present; no Kind.
 - DEVICE, PANEL: Appliance present; no Kind; one `Pin.<base>` per function pin (Column excepted) and
   no `Pin.*` without a pin; the capability is one primary word from the vocabulary (binary, level,
@@ -25,7 +25,7 @@ Per symbol, by Role:
 - PANEL is exactly a device in a CTC machine column: a PANEL symbol has a `Column` pin and a DEVICE
   symbol has none (E72).
 - SETTING: one passive pin, no Pin.*.
-- TRACK, POLICY, STRUCTURE, COLUMN, MACHINE, CODELINE_*: Kind allowed; nothing else checked.
+- TRACK, POLICY, STRUCTURE, COLUMN, OFFICE_UNIT, TRANSPORT, CODELINE_ENCODING, IO_ENCODING: Kind allowed; nothing else checked.
 `--table` prints every symbol as a markdown row. Exit 1 on any error; warnings only print.
 """
 
@@ -44,14 +44,15 @@ LIBRARIES = ("Railroad-Trackplan", "Railroad-Office", "Railroad-Field", "Railroa
 VOCABULARY = {"binary", "level", "position", "color", "indication", "message"}
 SOURCE_KINDS = {"indication"}  # a cast's one input
 FUNCTION_ETYPES = {"input", "output", "bidirectional"}
-STRUCTURAL = {"TRACK", "POLICY", "STRUCTURE", "COLUMN", "MACHINE", "CODELINE_TRANSPORT", "CODELINE_ENCODING"}
-FUNCTIONAL = {"APPLIANCE", "DEVICE", "PANEL", "IODRIVER", "SETTING", "CAST"}
+STRUCTURAL = {"TRACK", "POLICY", "STRUCTURE", "COLUMN", "OFFICE_UNIT", "TRANSPORT", "CODELINE_ENCODING", "IO_ENCODING"}
+FUNCTIONAL = {"APPLIANCE", "DEVICE", "PANEL", "IODRIVER", "SETTING"}
 RETIRED_FIELDS = {"ControlToken", "Vital", "NormalIs", "Chain", "Index", "Kind"}
 ATTACHMENT_ADDRESS = {"CMRI": "Bit", "MQTT": None}  # by IC; every other bus device attaches by Address (ADR 0005 S4)
-NOT_SETTINGS = {"Role", "Appliance", "Style", "IC", "Address", "UA", "Bit", "Head", "Invert", "IndicationToken", "Color", "CP", "TC",
+NOT_SETTINGS = {"Role", "Appliance", "Style", "IC", "Address", "UA", "Bit", "Node", "Head", "Invert", "IndicationToken", "Color", "CP", "TC",
+                "Transport", "NodeType", "InputBytes", "OutputBytes",
                 "IndicationCeiling", "Display", "Processor", "Milepost", "Reference", "Value", "Footprint",
                 "Datasheet", "Description", "ki_keywords", "ki_fp_filters", "ki_description"}
-MEMBERSHIP_PINS = {"Column"}
+MEMBERSHIP_PINS = {"Column", "IOBus", "Processor", "Transport", "Codeline", "MC"}   # seam pins (ADR 0009 §3.1): nets, not device functions
 DRIVER_LOOK = ("(width 0.3048)", "(type solid)", "(color 128 77 0 1)", "(type background)")
 RECT = re.compile(r"\(start ([-\d.]+) ([-\d.]+)\)\s*\(end ([-\d.]+) ([-\d.]+)\)")
 
@@ -100,20 +101,18 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
     pin_caps = {k[4:]: v for k, v in props.items() if k.startswith("Pin.")}
     function_pins = [(n, num, ty) for n, num, ty in pins if n not in MEMBERSHIP_PINS]
     bases = {base(n) for n, _, _ in function_pins}
-    if role == "CAST":
+    if role == "DEVICE" and props.get("Appliance") == "head":        # a head device (ADR 0009 §3.6; Role CAST until 2026-10-23)
         sources = [n for n, _, _ in function_pins if pin_caps.get(base(n)) in SOURCE_KINDS]
         if len(sources) != 1:
-            err(f"a cast takes exactly one indication input; this has {len(sources)}")
+            err(f"a head device takes exactly one indication input; this has {len(sources)}")
         outs = {pin_caps.get(base(n), "?") for n, _, _ in function_pins if n not in sources}
         if len(outs) != 1:
-            err(f"a cast produces one kind; this produces {', '.join(sorted(outs)) or 'nothing'}")
-        if "Appliance" in props:
-            err("a cast has no Appliance; identity belongs to the anchor device")
+            err(f"a head device produces one kind; this produces {', '.join(sorted(outs)) or 'nothing'}")
         if "Head" not in props:
-            err("a cast renders one head; Head field missing (the letter is written per instance)")
+            err("a head device renders one head; Head field missing (the letter is written per instance)")
         if len([u for u, p in sym["units"].items() if p]) > 1:
-            err("a cast is one head; units would hide the head letter")
-    if role in {"DEVICE", "PANEL", "IODRIVER", "CAST"}:
+            err("a head device is one head; units would hide the head letter")
+    if role in {"DEVICE", "PANEL", "IODRIVER"}:
         for n, num, ty in function_pins:
             cap = pin_caps.get(base(n))
             if cap is None:
@@ -137,18 +136,21 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
     if role == "IODRIVER":
         # ADR 0005 S4: an attachment carries only its own address on its bus; the field depends on the bus kind
         want = ATTACHMENT_ADDRESS.get(props.get("IC"), "Address")
+        if props.get("IC") == "CMRI" and "NodeType" in props:
+            want = "Address"                      # the node itself attaches by its UA (ADR 0009 §3.5)
         if want and want not in props:
             err(f"{want} missing on a bus device")
     if role == "IODRIVER":
         for unit, rect in sorted((bodies or {}).items()):
             if not all(mark in rect for mark in DRIVER_LOOK):
                 warn(f"unit {unit} body lacks the driver look (brown 0.3048 border, background fill)")
-    has_column = any(n in MEMBERSHIP_PINS for n, _, _ in pins)
+    has_column = any(n == "Column" for n, _, _ in pins)
     if role == "PANEL" and not has_column:
         err("Role PANEL without a Column pin; a plate outside the machine is a DEVICE")
     if role == "DEVICE" and has_column:
         err("Role DEVICE with a Column pin; a plate in the machine is PANEL")
-    if role in {"DEVICE", "PANEL"}:
+    head_device = role == "DEVICE" and props.get("Appliance") == "head"     # one unit, one indication input plus one kind: checked above
+    if role in {"DEVICE", "PANEL"} and not head_device:
         etype = {n: ty for n, _, ty in pins}
         caps = {f"{pin_caps.get(base(n), '?')} {ty}" for n, _, ty in function_pins}
         pin_units = {u: p for u, p in sym["units"].items() if p}

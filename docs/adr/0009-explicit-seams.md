@@ -1,6 +1,6 @@
 # ADR 0009. Explicit seams: the nets, symbols and pins the compiler reads
 
-Proposed, 2026-10-23. Asked of the owner: ratify §3 and the relation table in §3.11.
+Accepted by the owner 2026-10-23 (rev 2, after the owner's review). Rev 1 asked: ratify §3 and the relation table.
 
 This records the design settled between 2026-10-21 and 2026-10-23 while the SPCoast project was redrawn so
 that every relation the compiler needs is a wire, and names the implicit fallback for each. It amends
@@ -54,10 +54,10 @@ Every wire in the seam drawing is one of four kinds, and a pin's name says which
 | `Processor` | `Processor`: units, machines, transports | `IOBus` | Role `STRUCTURE`<br>Kind `PROCESSOR`;<br>Board |
 | `Interlocking` | `Processor`; `Codeline` | nothing | `Name` (§3.9) |
 | `House` | `Codeline`, with its unit;<br>`MC`, the maintainer call | nothing | `CP Name` (§3.9) |
-| `OfficeUnit` | `Processor` | nothing | Role `MACHINE`;<br>Style `US&S`;<br>Columns, Railroad |
+| `OfficeUnit` | `Processor` | nothing | Role `OFFICE_UNIT`;<br>Style `US&S`;<br>Columns, Railroad |
 | `Driver-*` (I2C, GPIO, JMRI, CMRInet bits) | `IOBus` | the device pins | Role `IODRIVER`;<br>`IC` names the chip or the encoding kind |
 | `Driver-CMRInet-Node` | `Transport` | `IOBus` | Role `IODRIVER`,<br>IC `CMRI`;<br>NodeType, Address (the UA),<br>InputBytes, OutputBytes |
-| `Device-Head-*` | its device pins from a driver; `IND` from its mast | nothing | Role `CAST`; Style fixed per symbol (§3.6) |
+| `Device-Head-*` | its device pins from a driver; `IND` from its mast | nothing | Role `DEVICE`, Appliance `head`;<br>Style fixed per symbol (§3.7) |
 | `PanelColumn`, panel devices, `Driver-I2C-MAX7313` | `IOBus` on the panel bus | | |
 
 Every unit sheet potentially exposes four ports to the Office Sheet at the top level: 
@@ -138,7 +138,12 @@ Symbol attribute names that are used by the compiler:
   - `Name` on an Interlocking, 
   - `IC` and `Address` on a chip or node,
   - `Column` on a PanelColumn.
-  - `Role`: the symbol's class, what the compiler does with it. In the libraries today: `APPLIANCE`, `TRACK`, `POLICY` and `STRUCTURE` on the trackplan; `MACHINE`, `COLUMN`, `PANEL`, `TRANSPORT`, `CODELINE_ENCODING` and `IO_ENCODING` on the office side; `DEVICE` and `CAST` in the field; `IODRIVER` and `SETTING` in hardware I/O. A symbol with no Role is drawing only. (`CAST` on the head devices is implementation vocabulary; `DEVICE` with Appliance `head` would follow the rename of the symbols. **Owner's call.**)
+  - `Role`: the symbol's class, what the compiler does with it. In the libraries today: 
+      - `APPLIANCE`, `TRACK`, `POLICY` and `STRUCTURE` on the trackplan;
+      - `OFFICE_UNIT`, `COLUMN`, `PANEL`, `TRANSPORT`, `CODELINE_ENCODING` and `IO_ENCODING` on the office side; 
+      - `DEVICE` in the field, with Appliance `head` on the head devices; 
+      - `IODRIVER` and `SETTING` in hardware I/O. 
+    - A symbol with no Role is drawing only. `CAST` and `MACHINE` were implementation words and are gone from the libraries and sheets (Railroad `edits/2026-10-23-roles.py`); the symbol-field lint follows (`tools/contract/lint_symbol_fields.py`).
   - `Kind`: the sub-class where a Role alone does not say what the symbol is: `STRUCTURE` is `INTERLOCKING`, `CONTROL_POINT` or `PROCESSOR`; `TRACK` is `IRJ`, `IRJ_SIGNAL`, `END_CTC`, `MILEPOST`, `NEXT_CP` or `BUMPER`; `POLICY` is the rule number; a `TRANSPORT` is `MQTT`, `CMRI`, `TIMECODE` or `LOCONET`; an encoding is `AAR`, `USS506`, `BITS`, `JMRI` or `CMRI`. An encoding's Kind must pair with its transport's Kind (reference data). Roles that classify by `Appliance` and `Style` instead (`APPLIANCE`, `DEVICE`, `PANEL`) carry no Kind.
   - `Style`: the variant within an appliance, and the one key two symbols must agree on: a head's style (`CL`, `CPL`, `UQ`, `LQ`) on the trackplan head and fixed in the head device; a mast's (`single`, `double`, `dwarf`); a switch's (`powered`, `manual`, `manual_sensed`, `lock`, `dual`, `derail`); a track circuit's (`virtual`); a lamp's or lever's on the panel; the OfficeUnit's (`US&S`).
   - `Topic` on MQTT Encodings
