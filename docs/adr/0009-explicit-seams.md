@@ -110,7 +110,7 @@ The OfficeUnit controls only whether a Signal is at `STOP` or is allowed to indi
  - `Indication to aspect` mapping is defined by the trackplan's choice of Mast: number of heads, head type (`CL`, `CPL`,`Semaphore-UQ`, `Semaphore-LQ`), choice of Railroad (`Southern Pacific`, `B&O`), and Era/Rulebook. 
  - `Aspect to I/O` belongs to the head device, and a device symbol embodies
 one aspect vocabulary on one hardware: `Device-Head-CL-Pixel`, `Device-Head-CL-RGB`, `Device-Head-CPL`, `Device-Head-CPL-Encoded`,
-`Device-Head-CPL-Pixel`, `Device-Head-Semaphore-UQ`, `Device-Head-Semaphore-LQ`, each with its Style fixed and hidden. Symbol names represent the railroad's head types. A lamp vocabulary serves any head with a lamp: a UQ semaphore is a `-Semaphore-UQ` arm plus an optional lamp: `Device-Lamp` for a monochrome lamp, or `Device-Head-CL-RGB` for a simulated multi-color spectacle lamp. The trackpplan head and the
+`Device-Head-CPL-Pixel`, `Device-Head-Semaphore-UQ`, `Device-Head-Semaphore-LQ`, each with its Style fixed and hidden. Symbol names represent the railroad's head types. A lamp vocabulary serves any head with a lamp: a UQ semaphore is a `-Semaphore-UQ` arm plus an optional lamp: `Device-Lamp` for a monochrome lamp, or `Device-Head-CL-RGB` for a simulated multi-color spectacle lamp. The trackplan head's vocabulary and the
 device's must match, or:
 
     ERROR: the trackplan draws 778SAB as a CPL head, but its device is Device-Head-CL-Pixel.
@@ -138,9 +138,9 @@ Symbol attribute names that are used by the compiler:
   - `Name` on an Interlocking, 
   - `IC` and `Address` on a chip or node,
   - `Column` on a PanelColumn.
-  - `Role` TBD
-  - `Kind` TBD
-  - `Style` TBD
+  - `Role`: the symbol's class, what the compiler does with it. In the libraries today: `APPLIANCE`, `TRACK`, `POLICY` and `STRUCTURE` on the trackplan; `MACHINE`, `COLUMN`, `PANEL`, `TRANSPORT`, `CODELINE_ENCODING` and `IO_ENCODING` on the office side; `DEVICE` and `CAST` in the field; `IODRIVER` and `SETTING` in hardware I/O. A symbol with no Role is drawing only. (`CAST` on the head devices is implementation vocabulary; `DEVICE` with Appliance `head` would follow the rename of the symbols. **Owner's call.**)
+  - `Kind`: the sub-class where a Role alone does not say what the symbol is: `STRUCTURE` is `INTERLOCKING`, `CONTROL_POINT` or `PROCESSOR`; `TRACK` is `IRJ`, `IRJ_SIGNAL`, `END_CTC`, `MILEPOST`, `NEXT_CP` or `BUMPER`; `POLICY` is the rule number; a `TRANSPORT` is `MQTT`, `CMRI`, `TIMECODE` or `LOCONET`; an encoding is `AAR`, `USS506`, `BITS`, `JMRI` or `CMRI`. An encoding's Kind must pair with its transport's Kind (reference data). Roles that classify by `Appliance` and `Style` instead (`APPLIANCE`, `DEVICE`, `PANEL`) carry no Kind.
+  - `Style`: the variant within an appliance, and the one key two symbols must agree on: a head's style (`CL`, `CPL`, `UQ`, `LQ`) on the trackplan head and fixed in the head device; a mast's (`single`, `double`, `dwarf`); a switch's (`powered`, `manual`, `manual_sensed`, `lock`, `dual`, `derail`); a track circuit's (`virtual`); a lamp's or lever's on the panel; the OfficeUnit's (`US&S`).
   - `Topic` on MQTT Encodings
   - `Reference` and `Value` are never used.  How a key is derived in KiCad is KiCad's business (e.g., the Address attribute may have `${Value}` as its content, that is OK.). Library defaults for names, hosts and transports are empty: we've chosen to NOT use placeholders because inadvertant "update all symbols from Library" with the wrong checkboxes is a disaster. The compiler's "missing" report is the tutorial prompt. Fixed facts (Role, Kind, Style, a topic template) keep their defaults.
 
@@ -178,7 +178,7 @@ Captions drawn in symbol bodies follow pin renames.
 | Transport anchored on | Transport `Processor` to a Processor | the `Processor` field; the machine's processor for a code line transport (0005 S3) | an anchor per connecting processor |
 | Encoding rides | `Transport` to a transport net | the `Transport` field; by layout when one transport of its kind exists | kind pairs with the transport's kind (reference data) |
 | CMRInet Node on its line | `Driver-CMRInet-Node` connects a processor's `Transport` to an `IOBus` | the `Transport` field | UA unique per line |
-| Bit on its CMRInet Node | a `Driver-CMRI-IB/OB` connects to an `IOBus` that originates at an `Driver-CMRInet-Node` | the one CMRInet Node on the sheet; `Driver-CMRI-IB/OB.Node` field when two **TBD** No such attribute in Driver-CMRI-IB/OB | bytes declared cover bits used |
+| Bit on its CMRInet Node | a `Driver-CMRInet-IB/OB` connects to an `IOBus` that originates at a `Driver-CMRInet-Node` | the one CMRInet Node on the sheet; the bit's `Node` field (the UA) when a sheet holds two, added to the library 2026-10-23 (Railroad `edits/2026-10-23-descriptions.py`), empty by default | bytes declared cover bits used |
 | Head device to its head | mast Value and `Head` letter, by name | same | vocabularies match (§3.6) |
 | Panel column to its house | `CP Name` on the column, by name | same | names resolve |
 

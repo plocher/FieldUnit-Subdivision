@@ -20,3 +20,4 @@ These are the definitions ADR 0009 gives them; the owner edits the glossary.
 | head device | The hardware that renders a head's aspects: aspect to I/O, with the style fixed per symbol. The trackplan head owns indication to aspect. Prose says head device, not cast. |
 | house | Instrument house: the structure at a control point that holds its field equipment; `House` symbol. Bungalow is the prototype's word for a walk-in house; case for a cabinet. |
 | field station | Unchanged, now derived: one per interlocking on an AAR line, one per house on a 506 line. |
+| OfficeUnit, FieldUnit | The owner's rulings of 2026-10-23: say OfficeUnit, not machine; FieldUnit, not unit; CMRInet Node and CMRInet Host, not node and host; Driver, not chip; an OfficeUnit's columns, not its lines; KiCad symbol units, never units. |
