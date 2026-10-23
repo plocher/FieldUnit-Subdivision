@@ -2,6 +2,7 @@
 
 - Status: accepted 2026-10-07. D1–D14 record the owner's rulings; nothing is open.
 - Date: 2026-10-07
+- Amended 2026-10-23 by [ADR 0009](0009-explicit-seams.md): D13's field units follow 0009 §3.3; `MAIN HOUSE` is `House`.
 - Amends: FieldUnit `docs/adr/0003-field-io-symbols.md` (frozen), closing its O1 and O3.
 - Order of authority: the relay model and AAR practice (FieldUnit `docs/GLOSSARY.md` §10.6), then FieldUnit `src/`.
 
@@ -60,7 +61,7 @@ None open. Answered 2026-10-07: R1 (stick rule) and R4 (desk display) became D11
 ### The unified project (owner, 2026-10-07)
 
 - D12. Hierarchy. Layout 1:M machines 1:M plants; no plant is under two machines. A symbol belongs to the `INTERLOCKING` on its own sheet or, failing that, the nearest ancestor sheet that has one; likewise for `MACHINE`. At most one of each per sheet, and a plant's `INTERLOCKING` sits on its machine's sheet or below it. Nothing else in the hierarchy carries meaning: Trackplan, Panel and Field I/O sheets, and how many there are, are drafting conventions; a plant may be one sheet holding all of them. Symbols are classified by Role, and a net that mixes kinds is an error (track nets join only `TRACK`/`APPLIANCE`/`POLICY` pins; `DEVICE` and `PANEL` pins join only `IODRIVER` pins, plus `PANEL` Column pins to `COLUMN`). Wiring between plants is deferred; `NextCP` names stay.
-- D13. Field units. With no `FIELD_UNIT` symbol, a plant has one field unit, named after the interlocking, hosting every house and driver (the common case). One field unit per MAIN HOUSE is the other form: a `FIELD_UNIT` symbol on the trackplan, its pin wired to that house, and each driver names its field unit in a `FieldUnit` attribute. The forms are not mixed in one plant; every house belongs to exactly one field unit. A device must be on the field unit that hosts its appliance; a field unit may still consume another unit's indications from the code line (remote track circuits, e.g. Watsonville `1SAT`), which needs no device.
+- D13. Field units. **Superseded by ADR 0009 §3.3 (2026-10-23): a unit's processor is the Interlocking symbol's `Processor` wire, one processor per unit; `MAIN HOUSE` is `House`.** Original: With no `FIELD_UNIT` symbol, a plant has one field unit, named after the interlocking, hosting every house and driver (the common case). One field unit per MAIN HOUSE is the other form: a `FIELD_UNIT` symbol on the trackplan, its pin wired to that house, and each driver names its field unit in a `FieldUnit` attribute. The forms are not mixed in one plant; every house belongs to exactly one field unit. A device must be on the field unit that hosts its appliance; a field unit may still consume another unit's indications from the code line (remote track circuits, e.g. Watsonville `1SAT`), which needs no device.
 
 ## Consequences
 
