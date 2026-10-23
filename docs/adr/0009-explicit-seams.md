@@ -10,158 +10,175 @@ project at commit `ab119e3` on `feat/deployment-cases`, reached by the dated scr
 
 ## 1. Problem
 
-The compiler's inputs were a mix of wires, fields, sheet scope and name joins, chosen one at a time. Nobody
-could say, for a given relation, whether the explicit form and the implicit form resolved to the same thing,
-because for several relations only one form existed and for one, the host of a unit, neither did: it was
-invented by the compiler. ADR 0008 §4.9 and its example described hosts and nodes the drawing did not
-contain.
+The compiler's inputs were a mix of wires, fields, sheet scope and name joins, chosen one at a time. Nobody could say, for a given relation, whether the explicit form and the implicit form resolved to the same thing,
+because for several relations only one form existed and for one, the host of a unit, neither did: it was invented by the compiler. ADR 0008 §4.9 and its example described hosts and nodes the drawing did not contain.
 
-The owner's program (2026-10-21): prove there is an explicit way to draw every relation, check it against
-the two-seam architecture and its vocabulary, then make three copies of the project, all explicit, all
-implicit, and both, that must compile to the same file.
+Prove there is an explicit way to draw every relation, check it against
+the two-seam architecture and its vocabulary, then make three copies of the project, all explicit, all implicit, and both, that must compile to the same Data Model.
 
 ## 2. Rules in play
 
-- R1 and R2 of ADR 0008: the file carries every fact the drawing states, losslessly, and nothing of KiCad.
-- FieldUnit ADR 0005, the cTc interface layers: Seam 1 is the code line between office and field logic;
-  Seam 2 is hardware I/O, local or remote; a transport catalog is bindable to either seam. The definitive
-  architecture for this effort (owner, 2026-10-20).
-- One source per fact (AGENTS.md design rules); facts, not symbols (ADR 0001 D15); symbols are keyed by
-  fields, never by name (AGENTS.md); a net's name is never a fact.
+- R1 and R2 of ADR 0008: the Data Model carries every fact the drawing states, losslessly, and nothing of KiCad.
+- FieldUnit ADR 0005, defines the cTc interface layers, and is the definitive architecture for this effort.
+  - Seam 1 is the code line between office and field logic;
+  - Seam 2 is hardware I/O, local or remote; 
+  - a transport catalog is bindable to either seam. 
+- One source per fact
+  - facts, not symbols (ADR 0001 D15); 
+  - symbols are keyed by fields, never by name (AGENTS.md); 
+  - a net's name is never a fact.
 - The order of authority for vocabulary: FieldUnit `docs/GLOSSARY.md`, then FieldUnit ADR 0005, then the
   ADRs here. The audit in `docs/review/naming-audit-2026-10-22.md` was run against it.
 - The owner's rulings of this period, quoted where they decide a point.
 
 ## 3. Architecture
 
-### 3.1 Three kinds of net
+### 3.1 Four kinds of net
 
-Every wire in the seam drawing is one of three kinds, and a pin's name says which net it lands on:
+Every wire in the seam drawing is one of four kinds, and a pin's name says which net it lands on:
 
 | Net | Provided by | What lands on it |
 |---|---|---|
 | **Transport** | a `Transport-*` symbol: the mechanism (a broker; a serial port and baud; DC pulses) | an encoding's `Transport` pin; a CMRInet node's `Transport` pin |
 | **Codeline** | a code line encoding (`Encoding-AAR`, `Encoding-US&S-506`, `Encoding-Bits`) through its `Codeline` pin | an Interlocking's `Codeline` pin, and its houses' |
 | **IOBus** | a `Processor` through its `IOBus` pin, or a CMRInet node through its `IOBus` pin | every driver's `IOBus` pin |
-
-A fourth name, **Processor**, is the net of a processor: an Interlocking's, an OfficeUnit's or a transport's
-`Processor` pin lands on a `Processor` symbol's `Processor` pin and nowhere else. "A `Processor` wire always
-ends on a processor" (owner, 2026-10-22).
+| **Processor** | Home of the "logic" that implements the office or field unit | one or more interlockings and the transport's that become part of that logic. |
 
 ### 3.2 Symbols: what each ingests and provides
 
 | Symbol | Ingests | Provides | Fixed facts |
 |---|---|---|---|
-| `Transport-MQTT`, `-TimeCode`, `-CMRInet`, `-LocoNet` | `Processor`: the processor that runs the mechanism (the master of a line; a client of a broker) | `Transport` | Role `TRANSPORT`, Kind; Broker, or Port and Baud |
-| `Encoding-AAR`, `-US&S-506`, `-Bits` | `Transport` | `Codeline` | Role `CODELINE_ENCODING`, Kind; AAR carries the topic root and Railroad |
-| `Encoding-JMRI`, `-CMRInet` | `Transport` | nothing: a fact about the transport instance it rides | Role `IO_ENCODING`, Kind; JMRI carries its topic root |
-| `Processor` | `Processor`: units, machines, transports | `IOBus` | Role `STRUCTURE`, Kind `PROCESSOR`; Board |
+| `Transport-`<BR>[`MQTT, TimeCode, CMRInet, LocoNet`] | `Processor`: the processor that runs the code to interact with the bus | `Transport` | Role `TRANSPORT`<br>Kind;<br>`Broker`, or `Port and Baud` |
+| `Encoding-AAR`, `-US&S-506`, `-Bits` | `Transport` | `Codeline` | Role `CODELINE_ENCODING`<br>Kind;<br>AAR carries the topic root and Railroad |
+| `Encoding-JMRI`, `-CMRInet` | `Transport` | nothing: a fact about the transport instance it rides | Role `IO_ENCODING`<br>Kind;<br>JMRI carries its topic root |
+| `Processor` | `Processor`: units, machines, transports | `IOBus` | Role `STRUCTURE`<br>Kind `PROCESSOR`;<br>Board |
 | `Interlocking` | `Processor`; `Codeline` | nothing | `Name` (§3.9) |
-| `House` | `Codeline`, with its unit; `MC`, the maintainer call | nothing | `CP Name` (§3.9) |
-| `OfficeUnit` | `Processor` | nothing | Role `MACHINE`; Style `US&S`; Columns, Railroad |
-| `Driver-*` (I2C, GPIO, JMRI, CMRInet bits) | `IOBus` | the device pins | Role `IODRIVER`; `IC` names the chip or the encoding kind |
-| `Driver-CMRInet-Node` | `Transport` | `IOBus` | Role `IODRIVER`, IC `CMRI`; NodeType, Address (the UA), InputBytes, OutputBytes |
+| `House` | `Codeline`, with its unit;<br>`MC`, the maintainer call | nothing | `CP Name` (§3.9) |
+| `OfficeUnit` | `Processor` | nothing | Role `MACHINE`;<br>Style `US&S`;<br>Columns, Railroad |
+| `Driver-*` (I2C, GPIO, JMRI, CMRInet bits) | `IOBus` | the device pins | Role `IODRIVER`;<br>`IC` names the chip or the encoding kind |
+| `Driver-CMRInet-Node` | `Transport` | `IOBus` | Role `IODRIVER`,<br>IC `CMRI`;<br>NodeType, Address (the UA),<br>InputBytes, OutputBytes |
 | `Device-Head-*` | its device pins from a driver; `IND` from its mast | nothing | Role `CAST`; Style fixed per symbol (§3.6) |
 | `PanelColumn`, panel devices, `Driver-I2C-MAX7313` | `IOBus` on the panel bus | | |
 
-Every unit sheet exposes four ports to South-cTc: `Codeline` (its line), `Processor` (where its logic runs),
-`IOBus` (its field bus, only when that bus leaves the sheet), `PanelIOBus` (its panel column's bus). The
-root wires each to a transport net, a processor or the desk processor's bus, and no-connects what stays
-local. "The pattern is the point" (owner, 2026-10-21).
+Every unit sheet potentially exposes four ports to the Office Sheet at the top level: 
+ 1. `Codeline` (its line), 
+ 2. `Processor` (where its logic runs),
+ 3. `IOBus` (its field bus, only when that bus leaves the sheet), and 
+ 4. `PanelIOBus` (its panel column's bus). 
+The office unit needs to connect to:
+ - each interlocking through a codeline
+ - a processor (local or virtual) that runs its logic,
+ - the per-interlocking office panel devices and drivers.
+ In addition, a "Virtual" processor or Application can be defined that hosts the logic for interlockings that are themselves either virtual (emulated) or only use distributed I/O devices (via, for example, CMRInet, LocoNet, LCC, MQTT-JMRI,...)
 
 ### 3.3 The processor
 
-A processor runs logic and anchors connections. Its `Processor` net carries the units and machines it runs
-and the transport instances it connects to; its `IOBus` carries the chips it owns. A virtual host
-(`SPCoastApp`, Board `MacOS`) is a `Processor` like any other. A unit's logic runs on exactly one
-processor: "the logic for an interlocking is being split between two processors, which we agreed wouldn't
-happen" (owner, 2026-10-22). A driver on a processor's bus whose IC is not native to the processor's
-board needs an encoding of that kind on a transport instance the processor anchors (§3.4); which kinds a
-board provides natively (cpNode-Xiao: I2C, GPIO, Pixel) is reference data.
+A processor runs the Office- or Field-Unit's logic and anchors its communication connections.  Processors can be distributed compute units (ESP32/RasPi with IO pins and I2C) or virtual (a desktop application using MQTT or CMRInet).
+ - A unit's logic runs on exactly one processor. 
+ - The `Processor` net logically connects the Units and transport instances it connects to; 
+ - A Processor's `IOBus` net connects to the Drivers it manages.  Drivers are connected to Devices that represent the various railroad appliances managed by an Interlocking.
+   - Appliances can connect directly to a processor's GPIO pins, or to pins on I2C expanders and PWM drivers.  Addressable NeoPixel Lamps can be driven from a processor's GPIO pins.
+   - Appliances can also reference remote I/O on CMRInet Nodes and JMRI-MQTT IoT devices using a matching encoding on a transport instance on the same processor (§3.4).
 
 ### 3.4 Transports are mechanisms; encodings ride them
 
-A transport symbol holds the mechanism's facts only. What rides it is an encoding, and what an encoding
-provides decides its seam: a code line encoding provides a `Codeline` net for units; an I/O encoding provides
-nothing but the fact that this processor's bus reaches that kind of remote I/O.
+A transport symbol represents the mechanism - a network connection, a serial port, a twisted pair of wires. An encoding defines the content on that transport and how it is represented (a serializer/deserializer, or encoder/decoder, if you will).  Encodings either define a `Codeline` net  or a `remote I/O` protocol.
 
-A transport instance is anchored on a processor through its `Processor` pin, and a transport may be placed
-once per processor that connects to it (§3.8): MQTT is placed on South-cTc beside JohnCTC and SPCoastApp and
-on the Gilroy Interchange sheet beside `Gilroy`. The AAR encoding rides the office instance; the JMRI
-encoding rides `Gilroy`'s. "A code line encoding's field ends are derived through the Interlocking symbols'
-Processor wires" (owner, 2026-10-22); an I/O encoding's processor is the anchor of the instance it rides.
-The MQTT topic root is a fact of the encoding, not of the broker.
+A transport instance is connected to a processor through its `Processor` pin, and a given transport may be placed once per processor that connects to it (§3.8).
+An I/O encoding's processor defines an instance, and if multiple instances are on a processor, each instance must have different controlling attributes (address, MQTT topic root, ...).
 
-### 3.5 The CMRInet node
+Example:  On the SPCoast example that uses an AAR encoded MQTT codeline, the MQTT Transport is used in two places:  On the OfficeUnit with an AAR Token encoder and on the Gilroy Interchange sheet with a `MQTT-JMRI` encoder to support the remote IoT appliances used by that interlocking.  All the interlockings are connected through codelines that lead back to the OfficeUnit, so all support MQTT and the Codeline encoding; the Gilroy Interchange ALSO supports JMRI-MQTT encoding to talk to JMRI IoT appliances through the same MQTT broker, but on different topics.
 
-A node is on the line, addressed by its UA, and provides a bus for its bits: `Driver-CMRInet-Node` ingests
-`Transport` and provides `IOBus`; `Driver-CMRInet-IB` and `-OB` are drivers on that bus like any other. The
-node declares NodeType (the spec's letter: C, M, N), its UA and its IB and OB byte counts; the compiler
-derives the bits in use and checks the declaration, never invents it, and reports an undersized one. Spare
-bytes may be used by another interlocking. A node's identity is transport plus UA; its Value is display.
-JMRI needs no node: its objects have no hardware between them and the broker, so JMRI drivers sit on the
-processor's own bus with the JMRI encoding as the fact. "A symbol earns its place only by carrying a fact
-nothing else carries" (owner, 2026-10-22).
+### 3.5 CMRInet
 
-### 3.6 Head devices
+A CMRInet Node is accessed through its CMRInet Host, addressed by its UA, and provides a bus for its bits:
+ - The Processor that will be the CMRInet Host defines a `CMRInet Transport` with the serial port and baud rate for the RS485 serial bus, and a `CMRInet v1.1 Encoding` for the protocol used on that bus.
+ - The Field Hardware `IOBus` is anchored by a `Driver-CMRInet-Node` that connects to the `CMRInet Transport` and defines `Node Type 'C' UA:30` with its `IB[]` and `OB[]` arrays
+ - `Driver-CMRInet-IB` and `-OB` represent individual bits in those `IB` and `OB` arrays. 
+ - The compiler derives the bits in use and checks the byte sizes in the Node declaration, never invents it, and reports an undersized one. Spare
+bytes may be used by another interlocking. A node's identity is transport plus UA.
 
-Two tables, two owners. Indication to aspect belongs to the trackplan head (`Signal Head - CL`, `- CPL`,
-`- Semaphore-UQ`, `- Semaphore-LQ`). Aspect to I/O belongs to the head device, and a device symbol embodies
-one aspect vocabulary on one hardware: `Device-Head-CL-Pixel`, `-CL-RGB`, `-CPL`, `-CPL-Encoded`,
-`-CPL-Pixel`, `-Semaphore-UQ`, `-Semaphore-LQ`, each with its Style fixed and hidden. Symbol names are the
-railroad's head types, not the implementation (owner, 2026-10-23). A lamp vocabulary serves any head with a
-lamp: a UQ semaphore is a `-Semaphore-UQ` arm plus a `-CL-RGB` spectacle lamp. The head's vocabulary and the
+#### 3.6 JMRI-MQTT
+
+JMRI needs no node: its objects are an MQTT topic subscription / publish on the processor itself, and have no hardware between them and the broker, so JMRI drivers sit on the processor's own bus with the JMRI encoding as the fact.
+"A symbol earns its place only by carrying a fact nothing else carries".
+
+### 3.7 Head devices
+
+Signals, Masts, Heads, Indications and Apects.
+The OfficeUnit controls only whether a Signal is at `STOP` or is allowed to indicate safe travel to the `LEFT` or to the `RIGHT`.  The FieldUnit is responsible for determining the allowed Indications for every `Route` governed by that signal, based on track switch positions, track occupancy and other vital safety concerns. Indications are translated to the Aspects that can be shown on a Mast's Head Devices.  FieldUnit logic maps the Indications to these Head Devices using lookup tables.
+ - `Indication to aspect` mapping is defined by the trackplan's choice of Mast: number of heads, head type (`CL`, `CPL`,`Semaphore-UQ`, `Semaphore-LQ`), choice of Railroad (`Southern Pacific`, `B&O`), and Era/Rulebook. 
+ - `Aspect to I/O` belongs to the head device, and a device symbol embodies
+one aspect vocabulary on one hardware: `Device-Head-CL-Pixel`, `Device-Head-CL-RGB`, `Device-Head-CPL`, `Device-Head-CPL-Encoded`,
+`Device-Head-CPL-Pixel`, `Device-Head-Semaphore-UQ`, `Device-Head-Semaphore-LQ`, each with its Style fixed and hidden. Symbol names represent the railroad's head types. A lamp vocabulary serves any head with a lamp: a UQ semaphore is a `-Semaphore-UQ` arm plus an optional lamp: `Device-Lamp` for a monochrome lamp, or `Device-Head-CL-RGB` for a simulated multi-color spectacle lamp. The trackpplan head and the
 device's must match, or:
 
     ERROR: the trackplan draws 778SAB as a CPL head, but its device is Device-Head-CL-Pixel.
     Fix: change the trackplan head, or bind a CPL device.
 
-### 3.7 Stations, lines and the machine
+### 3.8 Stations, columns and the machine
 
-A unit attaches to one line through its `Codeline` pin; its houses sit on the same net. Stations are derived:
-one per interlocking on an AAR line, addressed by name; one per house on a US&S 506 line, addressed by the
-house's desk column number (the `PanelColumn` Value, which names its house in `CP Name`). Nothing is typed
-per station. The machine's lines are derived from its columns; the OfficeUnit has a `Processor` pin and
-nothing else. The drawing is the deployment: no generator re-targets a line or re-hosts a unit.
+A FieldUnit attaches to one codeline through its `Codeline` pin; its houses sit on the same net, and represent the bungalow(s) and instrument cases found in the field.  Historically (e.g., with US&S type 506 Traffic Controllers) a single station could only control a limited number of appliances, so complex interlockings required multiple stations, each one with its own unique station address.  Modern era "digital codelines" (like the MQTT AAR Encoding) don't have those limits, and so have a one-to-one relationship between Interlocking and Stations.
 
-### 3.8 One entity, several sheets
+Stations are derived:
+ - one per interlocking on an AAR line, addressed by name;
+ - one per house on a US&S 506 line, addressed by the house's desk column number (the `PanelColumn` Value, which names its house in `CP Name`) 
+Nothing is typed per station, as the stations are mapped to the OfficeUnit's columns as station addresses; the OfficeUnit symbol has a `Processor` pin that connects to its processor, and that processor has an IOBus pin that connects to the panel appliances.
 
+### 3.9 One entity, several sheets
+
+Since we are using KiCad as a layout editor, we can use its hierarchical sheet rules to abstract and isolate each interlocking. Sheets at the top of the hierarchy can define things that are used on their child sheets, while child sheets must explicitly espose/export labels for use elsewhere.
 A layout-scope entity (a processor, a transport, a node) may be placed on more than one sheet; instances with
-one identity are one entity. At least one instance declares; every instance that declares must agree; an
-empty field says nothing. This is also the rule for a wire and a field that both speak. ADR 0005 C10's
-duplicate-declaration error narrows to conflicting declarations.
+one identity (same name and attributes (always excluding KiCad's REFDES)) are one entity. At least one instance declares; every instance that declares values for attributes must agree ; an empty attribute says nothing. This is also the rule for a wire and a field that both speak. ADR 0005 C10's duplicate-declaration error narrows to conflicting declarations.
 
-### 3.9 Keys the compiler reads
+### 3.10 Keys the compiler reads
 
-`CP Name` on a house, `Name` on an Interlocking, `Address` on a chip or node, `Value` on a PanelColumn.
-A Value that is a display macro (`${CP Name}`, `${TITLE}`, `UA${Address}`) is never read; how a key is
-derived in KiCad is KiCad's business (owner, 2026-10-22). Library defaults for names, hosts and transports
-are empty: a placeholder that looks like a name becomes a name, and the compiler's "missing" report is the
-tutorial prompt. Fixed facts (Role, Kind, Style, a topic template) keep their defaults.
+Symbol attribute names that are used by the compiler:
+  - `CP Name` on a house, 
+  - `Name` on an Interlocking, 
+  - `IC` and `Address` on a chip or node,
+  - `Column` on a PanelColumn.
+  - `Role` TBD
+  - `Kind` TBD
+  - `Style` TBD
+  - `Topic` on MQTT Encodings
+  - `Reference` and `Value` are never used.  How a key is derived in KiCad is KiCad's business (e.g., the Address attribute may have `${Value}` as its content, that is OK.). Library defaults for names, hosts and transports are empty: we've chosen to NOT use placeholders because inadvertant "update all symbols from Library" with the wrong checkboxes is a disaster. The compiler's "missing" report is the tutorial prompt. Fixed facts (Role, Kind, Style, a topic template) keep their defaults.
 
-### 3.10 Vocabulary
+### 3.11 Vocabulary
 
-From the audit and the owner's rulings: `Processor` not `Host` (a retired glossary word) except that
-`Host` survives nowhere; `IOBus` and `PanelIOBus`; `House` (instrument house; `Case` reserved); `Style` not
-`Type` on the machine; `TimeCode`, `LocoNet`, `CMRInet`; `NodeType`; Kind `MQTT-JMRI` on JMRI drivers'
-IC; no `cTc`; head devices, not casts, in prose. Pins carry the relation's name; a provided pin is named for
-what it provides. Captions drawn in symbol bodies follow pin renames (`edits/2026-10-22-pin-captions.py`).
+`Processor` not `Host` (a retired glossary word) except that
+`Host` survives in some Descriptions that need to be updated; 
+`IOBus` and `PanelIOBus`; 
+`House` (instrument house; `Case` reserved); 
+`Style` not `Type` on the OfficeUnit; `
+`OfficeUnit` not `machine`
+`FieldUnit` not `unit`
+`KiCad Symbol Units` not `units`
+`CMRInet Node` not `node`
+`CMRInet Host` not `host`
+`columns` not `lines`
+`Driver` not `chip`
+`TimeCode`, `LocoNet`, `CMRInet`; `NodeType`;
+Kind `MQTT-JMRI` on JMRI drivers IC; 
+`head devices`, not `casts`, in prose.
+Pins carry the relation's name; a provided pin is named for what it provides. 
+Captions drawn in symbol bodies follow pin renames.
 
-### 3.11 The relation table
+### 3.12 The relation table
 
 | Relation | Explicit | Implicit fallback | Check |
 |---|---|---|---|
 | Unit on its line | Interlocking `Codeline` on an encoding's Codeline net | an encoding instance in the unit's folder; by layout when one line exists | both name one line |
 | House is a station | house on the unit's Codeline net | house in the folder | same |
-| 506 station address | none | the house's column number via `CP Name` | columns unique per machine |
-| Unit runs on | Interlocking `Processor` to a Processor | the one Processor in the folder; none means reported | one processor per unit |
-| Machine runs on | OfficeUnit `Processor` to a Processor | the one Processor on its sheet | |
-| Machine's lines | none | its columns' interlockings' lines | |
-| Chip on a bus | `IOBus` to a Processor or node | the one Processor on the sheet; `Processor` field when two | IC native or encoded (§3.3) |
+| 506 station address | none | the house's column number via `CP Name` | columns unique per OfficeUnit |
+| FieldUnit runs on | Interlocking `Processor` to a Processor | the one Processor on the sheet; none means reported | one processor per FieldUnit |
+| OfficeUnit runs on | OfficeUnit `Processor` to a Processor | the one Processor on its sheet | |
+| OfficeUnit's columns | none | its interlockings' columns | |
+| Driver on a bus | `IOBus` to a Processor or CMRInet Node | the one Processor on the sheet; `Processor` field when two | IC native or encoded (§3.3) |
 | Transport anchored on | Transport `Processor` to a Processor | the `Processor` field; the machine's processor for a code line transport (0005 S3) | an anchor per connecting processor |
 | Encoding rides | `Transport` to a transport net | the `Transport` field; by layout when one transport of its kind exists | kind pairs with the transport's kind (reference data) |
-| Node on its line | node `Transport` to a transport net | the `Transport` field | UA unique per line |
-| Bit on its node | bit `IOBus` on the node's bus | the one node on the sheet; `Node` field when two | bytes declared cover bits used |
+| CMRInet Node on its line | `Driver-CMRInet-Node` connects a processor's `Transport` to an `IOBus` | the `Transport` field | UA unique per line |
+| Bit on its CMRInet Node | a `Driver-CMRI-IB/OB` connects to an `IOBus` that originates at an `Driver-CMRInet-Node` | the one CMRInet Node on the sheet; `Driver-CMRI-IB/OB.Node` field when two **TBD** No such attribute in Driver-CMRI-IB/OB | bytes declared cover bits used |
 | Head device to its head | mast Value and `Head` letter, by name | same | vocabularies match (§3.6) |
 | Panel column to its house | `CP Name` on the column, by name | same | names resolve |
 
