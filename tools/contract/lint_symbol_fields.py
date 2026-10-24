@@ -22,8 +22,9 @@ Per symbol, by Role:
   rectangle) lacks the driver look: stroke 0.3048 solid 128/77/0 with background fill. The looks by
   Role are a convention for readers, never a fact: device = named box with its proxy glyph, cast =
   plain box with direction arrows, driver (chips included) = brown border, background fill.
-- PANEL is exactly a device in a CTC machine column: a PANEL symbol has a `Column` pin and a DEVICE
-  symbol has none (E72).
+- PANEL is a device of the CTC machine: in a column, with a `Column` pin, or on the model board, Style
+  `board`, with none (owner's ruling 2026-10-23: a model board lamp is a singleton; the board's shape
+  lives in the driver). A DEVICE symbol has no `Column` pin (E72).
 - SETTING: one passive pin, no Pin.*.
 - TRACK, POLICY, STRUCTURE, COLUMN, OFFICE_UNIT, TRANSPORT, CODELINE_ENCODING, IO_ENCODING: Kind allowed; nothing else checked.
 `--table` prints every symbol as a markdown row. Exit 1 on any error; warnings only print.
@@ -145,8 +146,11 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
             if not all(mark in rect for mark in DRIVER_LOOK):
                 warn(f"unit {unit} body lacks the driver look (brown 0.3048 border, background fill)")
     has_column = any(n == "Column" for n, _, _ in pins)
-    if role == "PANEL" and not has_column:
-        err("Role PANEL without a Column pin; a plate outside the machine is a DEVICE")
+    board = props.get("Style") == "board"                # a model board device: no column (2026-10-23)
+    if role == "PANEL" and not has_column and not board:
+        err("Role PANEL without a Column pin; a column device has one, a model board device has Style board")
+    if role == "PANEL" and has_column and board:
+        err("Role PANEL with Style board and a Column pin; a model board device sits in no column")
     if role == "DEVICE" and has_column:
         err("Role DEVICE with a Column pin; a plate in the machine is PANEL")
     head_device = role == "DEVICE" and props.get("Appliance") == "head"     # one unit, one indication input plus one kind: checked above
