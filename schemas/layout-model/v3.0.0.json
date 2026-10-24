@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spcoast.com/schemas/layout-model/v3.0.0.json",
+  "title": "Layout Data Model File",
+  "description": "ADR 0008 rev 4 on ADR 0009. One file holds one layout: what a person states, nested by scope, every relation a name. Transports, code lines, I/O encodings, processors and CMRInet Nodes are entities; a binding is a route on a bus owner. Stations are derived and absent. Absent is absent. Nothing here names a sheet, a net, a reference or a KiCad symbol unit.",
+  "type": "object",
+  "required": ["schema", "layout"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "layout-model/v3.0.0" },
+    "layout": { "$ref": "#/$defs/layout" },
+    "interlockings": { "$ref": "#/$defs/namedMap", "additionalProperties": { "$ref": "#/$defs/interlocking" } },
+    "officeUnits": { "$ref": "#/$defs/namedMap", "additionalProperties": { "$ref": "#/$defs/officeUnit" } },
+    "provenance": { "$ref": "#/$defs/provenance" }
+  },
+  "$defs": {
+    "name": {
+      "description": "An entity's own name within its scope: case preserved, compared case-folded, never a colon or a slash, no leading or trailing space.",
+      "type": "string",
+      "pattern": "^[^:/\\s](?:[^:/]*[^:/\\s])?$"
+    },
+    "qualifiedName": {
+      "description": "A reference to an entity of an interlocking scope: the interlocking's name, a colon, the entity's name. Always this form, in every scope (ADR 0008 §4.5).",
+      "type": "string",
+      "pattern": "^[^:/\\s](?:[^:/]*[^:/\\s])?:[^:/\\s](?:[^:/]*[^:/\\s])?$"
+    },
+    "layoutName": {
+      "description": "A reference to an entity of the layout scope (an interlocking, office unit, transport, code line, I/O encoding or processor): its bare name.",
+      "$ref": "#/$defs/name"
+    },
+    "route": {
+      "description": "A device pin's binding: bus owner, address on that bus, driver pin. The owner is a processor (Sargent/0x20/B1) or a CMRInet Node as transport/UA (CMRInet/30/OB.7/D) (ADR 0009 §3.3, §3.5).",
+      "type": "string",
+      "pattern": "^[^:/\\s]+(?:/[^:/\\s]+){2,3}$"
+    },
+    "namedMap": { "description": "A dictionary keyed by entity name.", "type": "object", "propertyNames": { "$ref": "#/$defs/name" } },
+    "settings": {
+      "description": "Settings a person states on the entity; names and values are strings. Which ones apply is reference data (ADR 0008 §4.7).",
+      "type": "object",
+      "additionalProperties": { "type": ["string", "number", "boolean"] }
+    },
+    "layout": {
+      "description": "The layout and its layout-scope entities. name, railroad, region, era and rulebook are the Railroad symbol's facts (owner's ruling 2026-10-23).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "railroad": { "type": "string", "description": "The prototype railroad." },
+        "region": { "type": "string", "description": "The prototype region the layout models; not division or subdivision, which are terms of art." },
+        "era": { "type": "string" },
+        "rulebook": { "type": "string" },
+        "description": { "type": "string" },
+        "settings": { "$ref": "#/$defs/settings" },
+        "transports": { "$ref": "#/$defs/namedMap", "additionalProperties": { "$ref": "#/$defs/transport" } },
+        "codelines": { "$ref": "#/$defs/namedMap", "additionalProperties": { "$ref": "#/$defs/encodingInstance" } },
+        "ioEncodings": { "$ref": "#/$defs/namedMap", "additionalProperties": { "$ref": "#/$defs/encodingInstance" } },
+        "processors": { "$ref": "#/$defs/namedMap", "additionalProperties": { "$ref": "#/$defs/processor" } }
+      }
+    },
+    "transport": {
+      "description": "A mechanism (ADR 0009 §3.4): a broker, a serial port and baud, DC pulses. Declared once; placed once per processor that connects to it, and those processors are its anchors.",
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "type": "string", "description": "A transport kind key in the reference data: MQTT, CMRI, TIMECODE, LOCONET." },
+        "params": { "$ref": "#/$defs/settings" },
+        "anchors": { "type": "array", "items": { "$ref": "#/$defs/layoutName" }, "description": "The processors that run the code to interact with this transport." },
+        "nodes": {
+          "type": "object",
+          "description": "CMRInet Nodes on this line, keyed by UA; a node's identity is transport plus UA (ADR 0009 §3.5).",
+          "propertyNames": { "type": "string", "pattern": "^[^:/\\s]+$" },
+          "additionalProperties": { "$ref": "#/$defs/node" }
+        },
+        "description": { "type": "string" }
+      }
+    },
+    "node": {
+      "description": "A CMRInet Node: a driver on the line that provides a bus for its bits. The compiler checks the declared bytes cover the bits used; it never invents them.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "nodeType": { "type": "string" },
+        "inputBytes": { "type": "integer", "minimum": 0 },
+        "outputBytes": { "type": "integer", "minimum": 0 },
+        "bits": {
+          "type": "object",
+          "description": "The bits in use, keyed IB.n or OB.n; each is a driver with one pin D.",
+          "propertyNames": { "type": "string", "pattern": "^(IB|OB)\\.\\d+$" },
+          "additionalProperties": { "type": "object", "additionalProperties": false, "properties": { "settings": { "$ref": "#/$defs/settings" } } }
+        },
+        "description": { "type": "string" }
+      }
+    },
+    "encodingInstance": {
+      "description": "An encoding riding a transport instance (ADR 0009 §3.4): a code line (codelines{}) or remote I/O (ioEncodings{}). processor is the anchor of the transport instance it rides.",
+      "type": "object",
+      "required": ["encoding"],
+      "additionalProperties": false,
+      "properties": {
+        "encoding": { "type": "string", "description": "An encoding kind key in the reference data: AAR, USS506, BITS, JMRI, CMRI." },
+        "transport": { "$ref": "#/$defs/layoutName" },
+        "processor": { "$ref": "#/$defs/layoutName" },
+        "settings": { "$ref": "#/$defs/settings", "description": "topic, chart, version, ... with macros expanded." },
+        "description": { "type": "string" }
+      }
+    },
+    "processor": {
+      "description": "What runs a unit's logic and anchors its connections (ADR 0009 §3.3). Its drivers are keyed by their address on its bus.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "board": { "type": "string", "description": "A board key in the reference data; it also says whether the generator makes firmware or an application." },
+        "drivers": {
+          "type": "object",
+          "propertyNames": { "type": "string", "pattern": "^[^:/\\s]+$" },
+          "additionalProperties": { "$ref": "#/$defs/driver" }
+        },
+        "settings": { "$ref": "#/$defs/settings" },
+        "description": { "type": "string" }
+      }
+    },
+    "driver": {
+      "type": "object",
+      "required": ["ic"],
+      "additionalProperties": false,
+      "properties": {
+        "ic": { "type": "string", "description": "A driver key in the reference data: MCP23017, PCA9685, MAX7313, GPIO, MQTT-JMRI, ..." },
+        "settings": { "$ref": "#/$defs/settings" },
+        "description": { "type": "string" }
+      }
+    },
+    "interlocking": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string" },
+        "settings": { "$ref": "#/$defs/settings" },
+        "codeline": { "$ref": "#/$defs/layoutName", "description": "The one code line this FieldUnit attaches to (ADR 0009 §3.8)." },
+        "fieldUnit": { "$ref": "#/$defs/unit" },
+        "houses": { "$ref": "#/$defs/namedMap", "additionalProperties": { "$ref": "#/$defs/house" } },
+        "appliances": { "type": "object", "description": "The trackplan; open in v3.0.0 until the compiler reads it." },
+        "track": { "type": "object", "description": "Track circuits, joints and policies; open in v3.0.0." },
+        "devices": { "type": "array", "items": { "$ref": "#/$defs/device" } },
+        "geometry": { "type": "object" }
+      }
+    },
+    "unit": {
+      "description": "The FieldUnit of an interlocking: the processor that runs its logic (ADR 0009 §3.3). Absent when the drawing does not say.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "processor": { "$ref": "#/$defs/layoutName" },
+        "settings": { "$ref": "#/$defs/settings" },
+        "description": { "type": "string" }
+      }
+    },
+    "house": {
+      "description": "An instrument house at a control point; on a US&S 506 line it is a station, addressed by its column (derived, not written).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "milepost": { "type": "number" },
+        "maintainerCall": { "$ref": "#/$defs/qualifiedName" },
+        "settings": { "$ref": "#/$defs/settings" },
+        "description": { "type": "string" }
+      }
+    },
+    "device": {
+      "description": "One row of devices[]: one device instance, without identity (ADR 0008 §4.5).",
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "object",
+          "required": ["appliance"],
+          "additionalProperties": false,
+          "properties": {
+            "appliance": { "type": "string" },
+            "style": { "oneOf": [ { "type": "string" }, { "type": "array", "items": { "type": "string" } } ] }
+          }
+        },
+        "serves": { "$ref": "#/$defs/qualifiedName", "description": "The appliance this device serves; for a head device, its mast." },
+        "head": { "type": "string", "pattern": "^[A-Z]$", "description": "The head letter a head device renders." },
+        "shows": { "type": "array", "items": { "$ref": "#/$defs/qualifiedName" }, "description": "The indications a lamp shows, OR'd." },
+        "column": { "$ref": "#/$defs/name", "description": "The office unit column a panel device sits in; a model board device has none." },
+        "address": { "type": "string", "description": "The device's own address on a chain (a pixel index)." },
+        "settings": { "$ref": "#/$defs/settings" },
+        "bindings": { "type": "array", "items": { "$ref": "#/$defs/binding" } },
+        "description": { "type": "string" }
+      }
+    },
+    "binding": {
+      "type": "object",
+      "required": ["function", "route"],
+      "additionalProperties": false,
+      "properties": {
+        "function": { "type": "string", "description": "The device pin, polarity marks removed." },
+        "route": { "$ref": "#/$defs/route" }
+      }
+    },
+    "officeUnit": {
+      "description": "An OfficeUnit (never machine): its style, the processor that runs it, its columns and its panel devices. Its stations are derived from its interlockings and columns.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string" },
+        "style": { "type": "string" },
+        "region": { "type": "string" },
+        "processor": { "$ref": "#/$defs/layoutName" },
+        "settings": { "$ref": "#/$defs/settings" },
+        "columns": { "$ref": "#/$defs/namedMap", "additionalProperties": { "$ref": "#/$defs/column" } },
+        "devices": { "type": "array", "items": { "$ref": "#/$defs/device" } },
+        "geometry": { "type": "object" }
+      }
+    },
+    "column": {
+      "description": "A logical column tied to a control point (owner's ruling 2026-10-23). house when CP Name is stated; interlocking alone when it is not (read from the folder).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "house": { "$ref": "#/$defs/qualifiedName" },
+        "interlocking": { "$ref": "#/$defs/layoutName" },
+        "settings": { "$ref": "#/$defs/settings" },
+        "description": { "type": "string" }
+      }
+    },
+    "provenance": {
+      "description": "A property of the layout and nothing below it: what produced this file and what it was compiled from.",
+      "type": "object",
+      "required": ["sourceType", "compiler"],
+      "additionalProperties": false,
+      "properties": {
+        "sourceType": { "type": "string" },
+        "compiler": {
+          "type": "object", "required": ["name", "version"], "additionalProperties": false,
+          "properties": { "name": { "type": "string" }, "version": { "type": "string" } }
+        },
+        "source": {
+          "type": "object", "additionalProperties": false,
+          "properties": { "path": { "type": "string" }, "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }, "describe": { "type": "string" } }
+        },
+        "libraries": { "type": "object", "additionalProperties": { "type": "string" } },
+        "referenceData": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
+    }
+  }
+}

@@ -13,24 +13,34 @@ from typing import Any
 
 import jsonschema
 
-SCHEMA_ID = "layout-model/v2.0.0"
-SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schemas" / "layout-model" / "v2.0.0.json"
+SCHEMA_ID = "layout-model/v2.0.0"            # rev 3 (ADR 0008); kept until rev 4 is ratified
+SCHEMA_V3 = "layout-model/v3.0.0"            # rev 4 on ADR 0009: the compiler writes this
+SCHEMA_DIR = Path(__file__).resolve().parents[2] / "schemas" / "layout-model"
+SCHEMA_PATH = SCHEMA_DIR / "v2.0.0.json"
 
 _DIGITS = re.compile(r"(\d+)")
 _SPACES = re.compile(r"\s+")
 
 
-def load_schema() -> dict[str, Any]:
-    return json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+def schema_path(model: Any = None) -> Path:
+    """The schema a model names in its ``schema`` string (``layout-model/<version>``); v2.0.0 when it names none."""
+    sid = model.get("schema") if isinstance(model, dict) else None
+    version = sid.split("/", 1)[1] if isinstance(sid, str) and sid.startswith("layout-model/") and "/" in sid else "v2.0.0"
+    path = SCHEMA_DIR / f"{version}.json"
+    return path if path.is_file() else SCHEMA_PATH
+
+
+def load_schema(model: Any = None) -> dict[str, Any]:
+    return json.loads(schema_path(model).read_text(encoding="utf-8"))
 
 
 def validate(model: Any) -> None:
     """Raise ``jsonschema.ValidationError`` when ``model`` is not a Layout Data Model File."""
-    jsonschema.Draft202012Validator(load_schema()).validate(model)
+    jsonschema.Draft202012Validator(load_schema(model)).validate(model)
 
 
 def errors(model: Any) -> list[str]:
-    v = jsonschema.Draft202012Validator(load_schema())
+    v = jsonschema.Draft202012Validator(load_schema(model))
     return sorted(f"{'/'.join(str(p) for p in e.absolute_path) or '<root>'}: {e.message}" for e in v.iter_errors(model))
 
 
