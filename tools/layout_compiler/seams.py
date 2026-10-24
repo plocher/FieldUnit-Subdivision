@@ -20,16 +20,18 @@ from .source import Net, Source, Symbol, in_scope
 
 MACRO = re.compile(r"<([A-Z_]+):([A-Z_]*):([\w .]+)>")
 ERROR, WARNING, INFO, MISSING = "error", "warning", "info", "missing"
-# An encoding's Kind pairs with its transport's Kind (ADR 0009 §3.10): reference data, general, not layout data.
+# Reference data, general, not layout data (ADR 0008 §4.7). Versioned so provenance can name it.
+REFERENCE_DATA = {"encodingTransportPairing": "2026-10-23", "driverEncodings": "2026-10-23"}
+# An encoding's Kind pairs with its transport's Kind (ADR 0009 §3.10).
 TRANSPORT_OF_ENCODING = {"AAR": "MQTT", "USS506": "TIMECODE", "BITS": "TIMECODE", "JMRI": "MQTT", "CMRI": "CMRI"}
-PARAM_FIELDS = {"TRANSPORT": ("Broker", "Port", "Baud"),
-                "CODELINE_ENCODING": ("Topic", "Chart", "ControlBytes", "IndicationBytes"),
-                "IO_ENCODING": ("Topic", "Version")}
+# A driver whose IC is an encoding needs that I/O encoding on its processor (ADR 0009 §3.3, §3.6, §3.12 "IC native or encoded").
+ENCODING_OF_IC = {"MQTT-JMRI": "JMRI"}
+# The keys the compiler reads (ADR 0009 §3.10) and KiCad's own; every other drawn field with content is a setting, written as drawn.
 NOT_SETTINGS = {"Role", "Kind", "Style", "Appliance", "Name", "IC", "Address", "Bit", "Node", "Head", "Invert", "IndicationToken",
-                "Color", "CP", "TC", "Transport", "Processor", "NodeType", "InputBytes", "OutputBytes", "IndicationCeiling",
+                "CP", "TC", "Transport", "Processor", "NodeType", "InputBytes", "OutputBytes", "IndicationCeiling",
                 "Display", "Milepost", "CP Name", "Column", "Columns", "Reference", "Value", "Footprint", "Datasheet", "Description",
                 "Sheetname", "Sheetfile", "ki_keywords", "ki_fp_filters", "ki_description", "ki_locked", "Era", "Railroad",
-                "Region", "Rulebook", "Topic", "Chart", "Version", "Broker", "Port", "Baud", "ControlBytes", "IndicationBytes"}
+                "Region", "Rulebook"}
 
 
 @dataclass(frozen=True)
@@ -86,7 +88,7 @@ class Processor:
 class Transport:
     name: str
     kind: str
-    params: dict[str, str] = field(default_factory=dict)
+    settings: dict[str, str] = field(default_factory=dict)
     anchors: set[str] = field(default_factory=set)                    # processor names, one per placed instance
     instances: dict[str, Symbol] = field(default_factory=dict)        # ref -> placed symbol
     nodes: dict[str, "Node"] = field(default_factory=dict)            # by UA
@@ -108,6 +110,7 @@ class Encoding:
 class Node:
     ua: str
     sym: Symbol
+    ic: str = ""
     transport: Optional[str] = None
     node_type: str = ""
     input_bytes: Optional[int] = None
@@ -168,6 +171,7 @@ class OfficeUnit:
 class Binding:
     function: str
     route: str
+    invert: bool = False                                              # the instance polarity override (Invert names the pin)
 
 
 @dataclass
@@ -208,10 +212,6 @@ def name_of(s: Symbol, report: Report) -> str:
 
 def settings_of(s: Symbol) -> dict[str, str]:
     return {k: v for k, v in s.fields.items() if k not in NOT_SETTINGS and not k.startswith("Pin.") and v.strip()}
-
-
-def params_of(s: Symbol) -> dict[str, str]:
-    return {k.lower(): s.get(k) for k in PARAM_FIELDS.get(s.role, ()) if s.get(k)}
 
 
 def styles_of(s: Symbol) -> list[str]:
@@ -286,16 +286,17 @@ def resolve(source: Source) -> Seams:
     seams = Seams(source, report)
     _railroad(seams)
     _processors(seams)
+    _office_units(seams)
     _transports(seams)
     _encodings(seams)
     _interlockings(seams)
     _houses(seams)
-    _office_units(seams)
     _nodes(seams)
     _drivers(seams)
     _columns(seams)
     _devices(seams)
     _heads(seams)
+    _reach(seams)
     return seams
 
 
@@ -338,14 +339,10 @@ def _anchor_of(sm: Seams, s: Symbol) -> Optional[str]:
 
 
 def _one_in_scope(syms: list[Symbol], sheet: str) -> Optional[Symbol]:
-    """The implicit scope rule: the one symbol on the sheet; failing that, the one in scope (the sheet or an ancestor)."""
+    """The implicit scope rule of ADR 0009 §3.12: the one symbol on the sheet. (Widening it to ancestor sheets was
+    withdrawn after the 2026-10-23 review: a processor alone on the root would silently own every unwired unit.)"""
     on_sheet = [s for s in syms if s.sheet == sheet]
-    if len(on_sheet) == 1:
-        return on_sheet[0]
-    if on_sheet:
-        return None
-    visible = [s for s in syms if in_scope(s.sheet, sheet)]
-    return visible[0] if len(visible) == 1 else None
+    return on_sheet[0] if len(on_sheet) == 1 else None
 
 
 def _one_processor_on_sheet(sm: Seams, sheet: str) -> Optional[str]:
@@ -359,18 +356,26 @@ def _transports(sm: Seams) -> None:
         t = sm.transports.setdefault(name, Transport(name, s.kind))
         if t.kind != s.kind:
             sm.report.error("entity.conflict", f"transport {name}: Kind {t.kind} and {s.kind}", loc(s))
-        for k, v in params_of(s).items():
-            if t.params.get(k, v) != v:
-                sm.report.error("entity.conflict", f"transport {name}: {k} {t.params[k]!r} and {v!r}", loc(s))
-            t.params[k] = v
+        for k, v in settings_of(s).items():
+            if t.settings.get(k, v) != v:
+                sm.report.error("entity.conflict", f"transport {name}: {k} {t.settings[k]!r} and {v!r}", loc(s))
+            t.settings[k] = v
         t.instances[s.ref] = s
         explicit = _anchor_of(sm, s)
-        implicit = s.get("Processor") or _one_processor_on_sheet(sm, s.sheet)
+        # ADR 0009 §3.12: the Processor field; the OfficeUnit's processor for a code line transport (0005 S3)
+        implicit = s.get("Processor") or None
+        if implicit is None and _carries_codeline(sm, s) and len(sm.office_units) == 1:
+            implicit = next(iter(sm.office_units.values())).processor
         anchor = compare(explicit, implicit, f"transport {name} anchored on", loc(s), sm.report, "transport.anchor")
         if anchor:
             if anchor not in sm.processors:
                 sm.report.error("transport.anchor", f"transport {name}: anchor {anchor!r} is not a processor", loc(s))
             t.anchors.add(anchor)
+
+
+def _carries_codeline(sm: Seams, transport_sym: Symbol) -> bool:
+    net = sm.source.net_of(transport_sym.ref, "Transport")
+    return bool(net) and any(sm.source.symbols[p.ref].role == "CODELINE_ENCODING" for p in net.others(transport_sym.ref))
 
 
 def _transport_on_net(sm: Seams, s: Symbol) -> Optional[tuple[str, Symbol]]:
@@ -388,7 +393,7 @@ def _encodings(sm: Seams) -> None:
         if name in sm.encodings:
             sm.report.error("entity.duplicate", f"two encodings named {name!r}", loc(s))
             continue
-        e = Encoding(name, s.kind, s.role, s, params_of(s))
+        e = Encoding(name, s.kind, s.role, s, settings_of(s))
         hit = _transport_on_net(sm, s)
         explicit = hit[0] if hit else None
         want_kind = TRANSPORT_OF_ENCODING.get(s.kind)
@@ -530,7 +535,7 @@ def _nodes(sm: Seams) -> None:
         if not ua:
             sm.report.missing("node.address", "a CMRInet Node has no Address (its UA)", loc(s))
             continue
-        n = Node(ua, s, node_type=s.get("NodeType"))
+        n = Node(ua, s, ic=s.get("IC"), node_type=s.get("NodeType"))
         for attr, fld in (("input_bytes", "InputBytes"), ("output_bytes", "OutputBytes")):
             if s.get(fld):
                 try:
@@ -543,8 +548,15 @@ def _nodes(sm: Seams) -> None:
         n.transport = compare(hit[0] if hit else None, s.get("Transport") or None, f"CMRInet Node {ua} on its line", loc(s), sm.report, "node.transport")
         if n.transport:
             t = sm.transports[n.transport]
-            if ua in t.nodes:
-                sm.report.error("node.duplicate", f"two CMRInet Nodes with UA {ua} on {t.name}", loc(s))
+            if ua in t.nodes:                                          # one entity on several sheets (ADR 0009 §3.9)
+                have = t.nodes[ua]
+                for attr in ("node_type", "input_bytes", "output_bytes", "ic"):
+                    a, b = getattr(have, attr), getattr(n, attr)
+                    if a and b and a != b:
+                        sm.report.error("entity.conflict", f"CMRInet Node {ua} on {t.name}: {attr} {a!r} on one instance, {b!r} on another", loc(s))
+                    elif b and not a:
+                        setattr(have, attr, b)
+                continue
             t.nodes[ua] = n
 
 
@@ -612,6 +624,22 @@ def _drivers(sm: Seams) -> None:
                     sm.report.error("node.bytes", f"CMRInet Node {n.ua}: {prefix} bit {max(used)} used but {declared} byte(s) declared", loc(n.sym))
 
 
+def _reach(sm: Seams) -> None:
+    """Two checks across entities. A driver whose IC is an encoding needs that I/O encoding on its processor (ADR 0009
+    §3.6, §3.12 'IC native or encoded'). A FieldUnit reaches its code line's transport through the code line; when its
+    processor anchors no instance of that transport, the drawing relies on that derivation, reported at info (review
+    2026-10-23 finding 5; the owner decides whether the §3.12 check 'an anchor per connecting processor' stands)."""
+    for p in sm.processors.values():
+        for d in p.drivers.values():
+            kind = ENCODING_OF_IC.get(d.ic)
+            if kind and not any(e.role == "IO_ENCODING" and e.kind == kind and e.processor == p.name for e in sm.encodings.values()):
+                sm.report.error("driver.encoding", f"driver {d.ic} {d.address} on {p.name}: no {kind} I/O encoding rides a transport anchored on {p.name}", loc(d.sym))
+    for ix in sm.interlockings.values():
+        e = sm.encodings.get(ix.codeline) if ix.codeline else None
+        if e and e.transport and ix.processor and ix.processor not in sm.transports[e.transport].anchors:
+            sm.report.info("transport.reach", f"FieldUnit {ix.name} reaches {e.transport} through its code line {e.name}; its processor {ix.processor} anchors no {e.transport} instance", loc(ix.sym))
+
+
 def _house_by_cp(sm: Seams, cp: str) -> Optional[tuple[str, str]]:
     hits = [(ix.name, h.cp_name) for ix in sm.interlockings.values() for h in ix.houses.values() if h.cp_name.casefold() == cp.casefold()]
     return hits[0] if len(hits) == 1 else None
@@ -619,9 +647,12 @@ def _house_by_cp(sm: Seams, cp: str) -> Optional[tuple[str, str]]:
 
 def _columns(sm: Seams) -> None:
     for s in sm.source.where("COLUMN"):
-        number = s.get("Column") or s.value
-        c = Column(number, s)
+        number = s.get("Column")
         where = loc(s)
+        if not number:
+            sm.report.missing("column.number", "a PanelColumn has no Column number", where)
+            continue
+        c = Column(number, s)
         folder = _unit_of_sheet(sm, s.sheet)
         if s.get("CP Name"):
             c.house = _house_by_cp(sm, s.get("CP Name"))
@@ -688,7 +719,7 @@ def _devices(sm: Seams) -> None:
             col = one(cols, "columns on one Column net", where, sm.report, "device.column") if cols else None
             ou = next(iter(sm.office_units.values()), None) if len(sm.office_units) == 1 else None
             if col is not None and ou is not None:
-                column = ou.columns.get(col.get("Column") or col.value)
+                column = ou.columns.get(col.get("Column"))
                 dev.column = column.number if column else None
                 scope = column.interlocking if column else None
             elif s.get("Style") != "board" and col_net is None:
@@ -730,13 +761,16 @@ def _devices(sm: Seams) -> None:
             ix.devices.append(dev)
         if dev.appliance == "lever" and "code" in dev.styles:
             dev.serves = None                                          # the code lever serves the station, not an appliance; its Value is a label
+        inverted = {x.strip() for x in s.get("Invert").split(",") if x.strip()}
         for pin, net in sorted(sm.source.pins_of(s.ref).items()):
             if pin in ("Column", "IND"):
                 continue
             for p in net.others(s.ref):
                 hit = _driver_route(sm, p)
                 if hit:
-                    dev.bindings.append(Binding(base(pin), hit[1]))
+                    dev.bindings.append(Binding(base(pin), hit[1], base(pin) in inverted))
+        for name in sorted(inverted - {base(pin) for pin in sm.source.pins_of(s.ref)}):
+            sm.report.error("device.invert", f"Invert names {name}, not a wired pin of this device", where)
         dev.bindings.sort(key=lambda b: (b.function, b.route))
 
 

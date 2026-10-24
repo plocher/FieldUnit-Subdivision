@@ -74,7 +74,7 @@ class RuleTests(unittest.TestCase):
         src = plant()
         src.symbols["E1"] = sym("E1", "Encoding-AAR", "/", "AAR", Role="CODELINE_ENCODING", Kind="AAR", Topic="ctc/<STRUCTURE:RAILROAD:Name>/codeline/")
         sm = seams.resolve(src)
-        self.assertEqual(sm.encodings["AAR"].settings["topic"], "ctc/SPCoast/codeline/")
+        self.assertEqual(sm.encodings["AAR"].settings["Topic"], "ctc/SPCoast/codeline/")
 
     def test_macro_with_two_in_scope_is_an_error(self):
         src = plant()
@@ -165,7 +165,7 @@ class SPCoastRelationTable(unittest.TestCase):
         self.assertEqual((e["JMRI"].transport, e["JMRI"].processor), ("MQTT", "Gilroy"))
         self.assertEqual((e["US&S 506"].transport, e["US&S 506"].processor), ("TimeCode", "JohnCTC"))
         self.assertEqual((e["CMRInet"].transport, e["CMRInet"].processor), ("CMRInet", "SPCoastApp"))
-        self.assertEqual(e["AAR Tokens"].settings["topic"], "ctc/SPCoast/codeline/")
+        self.assertEqual(e["AAR Tokens"].settings["Topic"], "ctc/SPCoast/codeline/")
 
     def test_cmrinet_node_and_its_bits(self):
         node = self.sm.transports["CMRInet"].nodes["30"]

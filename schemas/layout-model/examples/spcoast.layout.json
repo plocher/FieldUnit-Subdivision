@@ -78,7 +78,9 @@
           "serves": "Christopher:815",
           "type": {
             "appliance": "switch",
-            "style": "powered"
+            "style": [
+              "powered"
+            ]
           }
         },
         {
@@ -132,7 +134,9 @@
           "serves": "Christopher:815A",
           "type": {
             "appliance": "switch",
-            "style": "powered"
+            "style": [
+              "powered"
+            ]
           }
         },
         {
@@ -157,7 +161,9 @@
           "serves": "Christopher:813",
           "type": {
             "appliance": "lever",
-            "style": "switch"
+            "style": [
+              "switch"
+            ]
           }
         },
         {
@@ -182,7 +188,9 @@
           "serves": "Christopher:817",
           "type": {
             "appliance": "lever",
-            "style": "switch"
+            "style": [
+              "switch"
+            ]
           }
         },
         {
@@ -275,7 +283,9 @@
           "serves": "Christopher:816NAB",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -293,7 +303,9 @@
           "serves": "Christopher:816NAB",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -311,7 +323,9 @@
           "serves": "Christopher:816NC",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -329,7 +343,9 @@
           "serves": "Christopher:816SAB",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -347,7 +363,9 @@
           "serves": "Christopher:816SAB",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -365,13 +383,16 @@
           "serves": "Christopher:816SC",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
           "bindings": [
             {
               "function": "WLK",
+              "invert": true,
               "route": "Christopher/0x20/B5"
             },
             {
@@ -386,13 +407,16 @@
           "serves": "Christopher:813",
           "type": {
             "appliance": "lever",
-            "style": "lock"
+            "style": [
+              "lock"
+            ]
           }
         },
         {
           "bindings": [
             {
               "function": "WLK",
+              "invert": true,
               "route": "Christopher/0x21/B5"
             },
             {
@@ -407,7 +431,9 @@
           "serves": "Christopher:817",
           "type": {
             "appliance": "lever",
-            "style": "lock"
+            "style": [
+              "lock"
+            ]
           }
         }
       ],
@@ -491,7 +517,9 @@
           "serves": "Corporal:831",
           "type": {
             "appliance": "switch",
-            "style": "powered"
+            "style": [
+              "powered"
+            ]
           }
         },
         {
@@ -541,7 +569,9 @@
           "serves": "Corporal:829",
           "type": {
             "appliance": "lever",
-            "style": "switch"
+            "style": [
+              "switch"
+            ]
           }
         },
         {
@@ -634,7 +664,9 @@
           "serves": "Corporal:830NAB",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -652,7 +684,9 @@
           "serves": "Corporal:830NAB",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -670,7 +704,9 @@
           "serves": "Corporal:830SAB",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -688,7 +724,9 @@
           "serves": "Corporal:830SAB",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -706,7 +744,9 @@
           "serves": "Corporal:832NA",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -724,13 +764,16 @@
           "serves": "Corporal:832SA",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
           "bindings": [
             {
               "function": "WLK",
+              "invert": true,
               "route": "Corporal/0x20/B5"
             },
             {
@@ -745,7 +788,9 @@
           "serves": "Corporal:829",
           "type": {
             "appliance": "lever",
-            "style": "lock"
+            "style": [
+              "lock"
+            ]
           }
         }
       ],
@@ -781,7 +826,9 @@
           "serves": "Gilroy Caltrain:774NC",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -803,7 +850,9 @@
           "serves": "Gilroy Caltrain:774ND",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -825,7 +874,9 @@
           "serves": "Gilroy Caltrain:774NE",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -1005,7 +1056,9 @@
           "serves": "Gilroy Caltrain:774SAB",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -1023,7 +1076,9 @@
           "serves": "Gilroy Caltrain:774SAB",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -1041,7 +1096,9 @@
           "serves": "Gilroy Caltrain:774NAB",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -1059,7 +1116,9 @@
           "serves": "Gilroy Caltrain:774NAB",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         }
       ],
@@ -1087,7 +1146,9 @@
           "serves": "Gilroy Interchange:778SAB",
           "type": {
             "appliance": "head",
-            "style": "CL"
+            "style": [
+              "CL"
+            ]
           }
         },
         {
@@ -1102,7 +1163,9 @@
           "serves": "Gilroy Interchange:778SAB",
           "type": {
             "appliance": "head",
-            "style": "CL"
+            "style": [
+              "CL"
+            ]
           }
         },
         {
@@ -1117,7 +1180,9 @@
           "serves": "Gilroy Interchange:778SC",
           "type": {
             "appliance": "head",
-            "style": "CL"
+            "style": [
+              "CL"
+            ]
           }
         },
         {
@@ -1132,7 +1197,9 @@
           "serves": "Gilroy Interchange:778NAB",
           "type": {
             "appliance": "head",
-            "style": "CL"
+            "style": [
+              "CL"
+            ]
           }
         },
         {
@@ -1147,7 +1214,9 @@
           "serves": "Gilroy Interchange:778NAB",
           "type": {
             "appliance": "head",
-            "style": "CL"
+            "style": [
+              "CL"
+            ]
           }
         },
         {
@@ -1162,7 +1231,9 @@
           "serves": "Gilroy Interchange:778NC",
           "type": {
             "appliance": "head",
-            "style": "CL"
+            "style": [
+              "CL"
+            ]
           }
         },
         {
@@ -1276,7 +1347,9 @@
           "serves": "Luchessa:783",
           "type": {
             "appliance": "switch",
-            "style": "powered"
+            "style": [
+              "powered"
+            ]
           }
         },
         {
@@ -1330,7 +1403,9 @@
           "serves": "Luchessa:799",
           "type": {
             "appliance": "switch",
-            "style": "powered"
+            "style": [
+              "powered"
+            ]
           }
         },
         {
@@ -1355,7 +1430,9 @@
           "serves": "Luchessa:795",
           "type": {
             "appliance": "lever",
-            "style": "switch"
+            "style": [
+              "switch"
+            ]
           }
         },
         {
@@ -1463,7 +1540,9 @@
           "serves": "Luchessa:784EAB",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -1481,7 +1560,9 @@
           "serves": "Luchessa:784EAB",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -1499,7 +1580,9 @@
           "serves": "Luchessa:784EC",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -1517,7 +1600,9 @@
           "serves": "Luchessa:784WA",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -1535,7 +1620,9 @@
           "serves": "Luchessa:784WBC",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -1553,7 +1640,9 @@
           "serves": "Luchessa:784WBC",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -1571,13 +1660,16 @@
           "serves": "Luchessa:784WD",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
           "bindings": [
             {
               "function": "WLK",
+              "invert": true,
               "route": "Luchessa/0x21/A5"
             },
             {
@@ -1592,7 +1684,9 @@
           "serves": "Luchessa:795",
           "type": {
             "appliance": "lever",
-            "style": "lock"
+            "style": [
+              "lock"
+            ]
           }
         }
       ],
@@ -1652,7 +1746,9 @@
           "serves": "Sargent:836SB",
           "type": {
             "appliance": "head",
-            "style": "UQ"
+            "style": [
+              "UQ"
+            ]
           }
         },
         {
@@ -1674,7 +1770,9 @@
           "serves": "Sargent:836SB",
           "type": {
             "appliance": "head",
-            "style": "CL"
+            "style": [
+              "CL"
+            ]
           }
         },
         {
@@ -1696,7 +1794,9 @@
           "serves": "Sargent:836SA",
           "type": {
             "appliance": "head",
-            "style": "CL"
+            "style": [
+              "CL"
+            ]
           }
         },
         {
@@ -1775,7 +1875,9 @@
           "serves": "Sargent:835",
           "type": {
             "appliance": "lever",
-            "style": "switch"
+            "style": [
+              "switch"
+            ]
           }
         },
         {
@@ -1838,7 +1940,9 @@
           "serves": "Sargent:836NAB",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -1856,13 +1960,16 @@
           "serves": "Sargent:836NAB",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
           "bindings": [
             {
               "function": "WLK",
+              "invert": true,
               "route": "Sargent/0x20/A1"
             },
             {
@@ -1877,7 +1984,9 @@
           "serves": "Sargent:835",
           "type": {
             "appliance": "lever",
-            "style": "lock"
+            "style": [
+              "lock"
+            ]
           }
         }
       ],
@@ -1916,7 +2025,9 @@
           "serves": "Watsonville:3",
           "type": {
             "appliance": "switch",
-            "style": "powered"
+            "style": [
+              "powered"
+            ]
           }
         },
         {
@@ -1941,7 +2052,9 @@
           "serves": "Watsonville:5",
           "type": {
             "appliance": "switch",
-            "style": "powered"
+            "style": [
+              "powered"
+            ]
           }
         },
         {
@@ -1966,7 +2079,9 @@
           "serves": "Watsonville:7",
           "type": {
             "appliance": "switch",
-            "style": "powered"
+            "style": [
+              "powered"
+            ]
           }
         },
         {
@@ -1991,7 +2106,9 @@
           "serves": "Watsonville:9",
           "type": {
             "appliance": "switch",
-            "style": "powered"
+            "style": [
+              "powered"
+            ]
           }
         },
         {
@@ -2016,7 +2133,9 @@
           "serves": "Watsonville:11",
           "type": {
             "appliance": "switch",
-            "style": "powered"
+            "style": [
+              "powered"
+            ]
           }
         },
         {
@@ -2041,7 +2160,9 @@
           "serves": "Watsonville:13",
           "type": {
             "appliance": "switch",
-            "style": "powered"
+            "style": [
+              "powered"
+            ]
           }
         },
         {
@@ -2066,7 +2187,9 @@
           "serves": "Watsonville:15",
           "type": {
             "appliance": "switch",
-            "style": "powered"
+            "style": [
+              "powered"
+            ]
           }
         },
         {
@@ -2091,7 +2214,9 @@
           "serves": "Watsonville:17",
           "type": {
             "appliance": "switch",
-            "style": "powered"
+            "style": [
+              "powered"
+            ]
           }
         },
         {
@@ -2116,7 +2241,9 @@
           "serves": "Watsonville:19",
           "type": {
             "appliance": "switch",
-            "style": "powered"
+            "style": [
+              "powered"
+            ]
           }
         },
         {
@@ -2141,7 +2268,9 @@
           "serves": "Watsonville:21",
           "type": {
             "appliance": "switch",
-            "style": "powered"
+            "style": [
+              "powered"
+            ]
           }
         },
         {
@@ -2166,7 +2295,9 @@
           "serves": "Watsonville:23",
           "type": {
             "appliance": "switch",
-            "style": "powered"
+            "style": [
+              "powered"
+            ]
           }
         },
         {
@@ -2191,7 +2322,9 @@
           "serves": "Watsonville:25",
           "type": {
             "appliance": "switch",
-            "style": "powered"
+            "style": [
+              "powered"
+            ]
           }
         },
         {
@@ -2216,7 +2349,9 @@
           "serves": "Watsonville:837",
           "type": {
             "appliance": "switch",
-            "style": "powered"
+            "style": [
+              "powered"
+            ]
           }
         },
         {
@@ -2714,7 +2849,9 @@
           "serves": "Watsonville:838NAB",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -2732,7 +2869,9 @@
           "serves": "Watsonville:838NAB",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -2750,7 +2889,9 @@
           "serves": "Watsonville:840NA",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -2768,7 +2909,9 @@
           "serves": "Watsonville:840NB",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -2786,7 +2929,9 @@
           "serves": "Watsonville:840NC",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -2804,7 +2949,9 @@
           "serves": "Watsonville:840ND",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -2822,7 +2969,9 @@
           "serves": "Watsonville:840NE",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -2840,7 +2989,9 @@
           "serves": "Watsonville:840NF",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -2858,7 +3009,9 @@
           "serves": "Watsonville:840NG",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         },
         {
@@ -2876,7 +3029,9 @@
           "serves": "Watsonville:842SA",
           "type": {
             "appliance": "head",
-            "style": "CPL"
+            "style": [
+              "CPL"
+            ]
           }
         }
       ],
@@ -2896,7 +3051,7 @@
         "encoding": "AAR",
         "processor": "JohnCTC",
         "settings": {
-          "topic": "ctc/SPCoast/codeline/"
+          "Topic": "ctc/SPCoast/codeline/"
         },
         "transport": "MQTT"
       },
@@ -2912,7 +3067,7 @@
         "encoding": "CMRI",
         "processor": "SPCoastApp",
         "settings": {
-          "version": "v1.1"
+          "Version": "v1.1"
         },
         "transport": "CMRInet"
       },
@@ -2920,7 +3075,7 @@
         "encoding": "JMRI",
         "processor": "Gilroy",
         "settings": {
-          "topic": "jmri_channel/"
+          "Topic": "jmri_channel/"
         },
         "transport": "MQTT"
       }
@@ -3092,49 +3247,118 @@
         "nodes": {
           "30": {
             "bits": {
-              "IB.1": {},
-              "IB.2": {},
-              "IB.3": {},
-              "IB.4": {},
-              "IB.5": {},
-              "IB.6": {},
-              "IB.7": {},
-              "IB.8": {},
-              "IB.9": {},
-              "IB.10": {},
-              "IB.11": {},
-              "IB.12": {},
-              "IB.13": {},
-              "IB.14": {},
-              "OB.1": {},
-              "OB.2": {},
-              "OB.3": {},
-              "OB.4": {},
-              "OB.5": {},
-              "OB.6": {},
-              "OB.7": {},
-              "OB.8": {},
-              "OB.9": {},
-              "OB.10": {},
-              "OB.11": {},
-              "OB.12": {},
-              "OB.13": {},
-              "OB.14": {},
-              "OB.15": {},
-              "OB.16": {},
-              "OB.17": {},
-              "OB.18": {},
-              "OB.19": {},
-              "OB.20": {}
+              "IB.1": {
+                "ic": "CMRI"
+              },
+              "IB.2": {
+                "ic": "CMRI"
+              },
+              "IB.3": {
+                "ic": "CMRI"
+              },
+              "IB.4": {
+                "ic": "CMRI"
+              },
+              "IB.5": {
+                "ic": "CMRI"
+              },
+              "IB.6": {
+                "ic": "CMRI"
+              },
+              "IB.7": {
+                "ic": "CMRI"
+              },
+              "IB.8": {
+                "ic": "CMRI"
+              },
+              "IB.9": {
+                "ic": "CMRI"
+              },
+              "IB.10": {
+                "ic": "CMRI"
+              },
+              "IB.11": {
+                "ic": "CMRI"
+              },
+              "IB.12": {
+                "ic": "CMRI"
+              },
+              "IB.13": {
+                "ic": "CMRI"
+              },
+              "IB.14": {
+                "ic": "CMRI"
+              },
+              "OB.1": {
+                "ic": "CMRI"
+              },
+              "OB.2": {
+                "ic": "CMRI"
+              },
+              "OB.3": {
+                "ic": "CMRI"
+              },
+              "OB.4": {
+                "ic": "CMRI"
+              },
+              "OB.5": {
+                "ic": "CMRI"
+              },
+              "OB.6": {
+                "ic": "CMRI"
+              },
+              "OB.7": {
+                "ic": "CMRI"
+              },
+              "OB.8": {
+                "ic": "CMRI"
+              },
+              "OB.9": {
+                "ic": "CMRI"
+              },
+              "OB.10": {
+                "ic": "CMRI"
+              },
+              "OB.11": {
+                "ic": "CMRI"
+              },
+              "OB.12": {
+                "ic": "CMRI"
+              },
+              "OB.13": {
+                "ic": "CMRI"
+              },
+              "OB.14": {
+                "ic": "CMRI"
+              },
+              "OB.15": {
+                "ic": "CMRI"
+              },
+              "OB.16": {
+                "ic": "CMRI"
+              },
+              "OB.17": {
+                "ic": "CMRI"
+              },
+              "OB.18": {
+                "ic": "CMRI"
+              },
+              "OB.19": {
+                "ic": "CMRI"
+              },
+              "OB.20": {
+                "ic": "CMRI"
+              }
             },
+            "ic": "CMRInet",
             "inputBytes": 2,
             "nodeType": "C",
             "outputBytes": 3
           }
         },
-        "params": {
-          "baud": "28800",
-          "port": "/dev/cu.modemXXXX"
+        "settings": {
+          "Baud": "28800",
+          "Port": "/dev/cu.modemXXXX"
         }
       },
       "MQTT": {
@@ -3143,8 +3367,8 @@
           "JohnCTC"
         ],
         "kind": "MQTT",
-        "params": {
-          "broker": "192.168.1.21:1883"
+        "settings": {
+          "Broker": "192.168.1.21:1883"
         }
       },
       "TimeCode": {
@@ -3212,7 +3436,9 @@
           "column": "12",
           "type": {
             "appliance": "lever",
-            "style": "code"
+            "style": [
+              "code"
+            ]
           }
         },
         {
@@ -3225,7 +3451,9 @@
           "column": "13",
           "type": {
             "appliance": "lever",
-            "style": "code"
+            "style": [
+              "code"
+            ]
           }
         },
         {
@@ -3238,7 +3466,9 @@
           "column": "14",
           "type": {
             "appliance": "lever",
-            "style": "code"
+            "style": [
+              "code"
+            ]
           }
         },
         {
@@ -3251,7 +3481,9 @@
           "column": "2",
           "type": {
             "appliance": "lever",
-            "style": "code"
+            "style": [
+              "code"
+            ]
           }
         },
         {
@@ -3264,7 +3496,9 @@
           "column": "4",
           "type": {
             "appliance": "lever",
-            "style": "code"
+            "style": [
+              "code"
+            ]
           }
         },
         {
@@ -3277,7 +3511,9 @@
           "column": "7",
           "type": {
             "appliance": "lever",
-            "style": "code"
+            "style": [
+              "code"
+            ]
           }
         },
         {
@@ -3290,7 +3526,9 @@
           "column": "10",
           "type": {
             "appliance": "lever",
-            "style": "code"
+            "style": [
+              "code"
+            ]
           }
         },
         {
@@ -3324,7 +3562,9 @@
           "serves": "Corporal:830",
           "type": {
             "appliance": "lever",
-            "style": "signal"
+            "style": [
+              "signal"
+            ]
           }
         },
         {
@@ -3358,7 +3598,9 @@
           "serves": "Watsonville:838",
           "type": {
             "appliance": "lever",
-            "style": "signal"
+            "style": [
+              "signal"
+            ]
           }
         },
         {
@@ -3392,7 +3634,9 @@
           "serves": "Luchessa:784",
           "type": {
             "appliance": "lever",
-            "style": "signal"
+            "style": [
+              "signal"
+            ]
           }
         },
         {
@@ -3426,7 +3670,9 @@
           "serves": "Christopher:816",
           "type": {
             "appliance": "lever",
-            "style": "signal"
+            "style": [
+              "signal"
+            ]
           }
         },
         {
@@ -3436,12 +3682,17 @@
               "route": "JohnCTC/0x2A/A4"
             }
           ],
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Corporal:829T1"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3451,12 +3702,17 @@
               "route": "JohnCTC/0x2A/A5"
             }
           ],
+          "settings": {
+            "Color": "red"
+          },
           "shows": [
             "Corporal:831T1"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3466,12 +3722,17 @@
               "route": "JohnCTC/0x2A/A6"
             }
           ],
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Corporal:1SAT"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3482,12 +3743,17 @@
             }
           ],
           "column": "11",
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Corporal:MC1K"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "indication"
+            "style": [
+              "indication"
+            ]
           }
         },
         {
@@ -3497,12 +3763,17 @@
               "route": "JohnCTC/0x2B/A4"
             }
           ],
+          "settings": {
+            "Color": "blue"
+          },
           "shows": [
             "Watsonville:NFLK"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3512,12 +3783,17 @@
               "route": "JohnCTC/0x2B/A5"
             }
           ],
+          "settings": {
+            "Color": "blue"
+          },
           "shows": [
             "Watsonville:SFLK"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3527,12 +3803,17 @@
               "route": "JohnCTC/0x2B/A6"
             }
           ],
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Watsonville:02T"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3542,12 +3823,17 @@
               "route": "JohnCTC/0x2C/A4"
             }
           ],
+          "settings": {
+            "Color": "red"
+          },
           "shows": [
             "Sargent:HBAK"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3557,12 +3843,17 @@
               "route": "JohnCTC/0x2C/A5"
             }
           ],
+          "settings": {
+            "Color": "red"
+          },
           "shows": [
             "Sargent:835T1"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3572,12 +3863,17 @@
               "route": "JohnCTC/0x2C/A6"
             }
           ],
+          "settings": {
+            "Color": "red"
+          },
           "shows": [
             "Watsonville:837T1"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3588,12 +3884,17 @@
             }
           ],
           "column": "13",
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Sargent:MC1K"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "indication"
+            "style": [
+              "indication"
+            ]
           }
         },
         {
@@ -3603,12 +3904,17 @@
               "route": "JohnCTC/0x2D/A4"
             }
           ],
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Watsonville:0101T"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3618,12 +3924,17 @@
               "route": "JohnCTC/0x2D/A5"
             }
           ],
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Watsonville:0100T"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3633,12 +3944,17 @@
               "route": "JohnCTC/0x2D/A6"
             }
           ],
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Watsonville:01T"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3648,13 +3964,18 @@
               "route": "JohnCTC/0x20/A4"
             }
           ],
+          "settings": {
+            "Color": "red"
+          },
           "shows": [
             "Gilroy Caltrain:773T1",
             "Gilroy Caltrain:775T1"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3664,12 +3985,17 @@
               "route": "JohnCTC/0x20/A5"
             }
           ],
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Gilroy Caltrain:1SAT"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3680,12 +4006,17 @@
             }
           ],
           "column": "1",
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Gilroy Caltrain:MC1K"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "indication"
+            "style": [
+              "indication"
+            ]
           }
         },
         {
@@ -3695,12 +4026,17 @@
               "route": "JohnCTC/0x21/A4"
             }
           ],
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Gilroy Caltrain:01T"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3710,12 +4046,17 @@
               "route": "JohnCTC/0x21/A5"
             }
           ],
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Gilroy Caltrain:02T"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3725,12 +4066,17 @@
               "route": "JohnCTC/0x21/A6"
             }
           ],
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Gilroy Caltrain:03T"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3740,12 +4086,17 @@
               "route": "JohnCTC/0x22/A4"
             }
           ],
+          "settings": {
+            "Color": "blue"
+          },
           "shows": [
             "Luchessa:NFLK"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3755,12 +4106,17 @@
               "route": "JohnCTC/0x22/A5"
             }
           ],
+          "settings": {
+            "Color": "blue"
+          },
           "shows": [
             "Luchessa:SFLK"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3770,12 +4126,17 @@
               "route": "JohnCTC/0x22/A6"
             }
           ],
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Gilroy Interchange:1SAT"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3786,12 +4147,17 @@
             }
           ],
           "column": "3",
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Gilroy Interchange:MC1K"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "indication"
+            "style": [
+              "indication"
+            ]
           }
         },
         {
@@ -3801,12 +4167,17 @@
               "route": "JohnCTC/0x23/A4"
             }
           ],
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Gilroy Interchange:781T1"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3816,12 +4187,17 @@
               "route": "JohnCTC/0x23/A5"
             }
           ],
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Gilroy Interchange:777T1"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3831,12 +4207,17 @@
               "route": "JohnCTC/0x23/A6"
             }
           ],
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Gilroy Interchange:02T"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3847,12 +4228,17 @@
             }
           ],
           "column": "4",
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Gilroy Interchange:MC2K"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "indication"
+            "style": [
+              "indication"
+            ]
           }
         },
         {
@@ -3862,12 +4248,17 @@
               "route": "JohnCTC/0x24/A4"
             }
           ],
+          "settings": {
+            "Color": "red"
+          },
           "shows": [
             "Luchessa:783T1"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3877,12 +4268,17 @@
               "route": "JohnCTC/0x25/A4"
             }
           ],
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Luchessa:1NAT"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3892,6 +4288,9 @@
               "route": "JohnCTC/0x25/A5"
             }
           ],
+          "settings": {
+            "Color": "red"
+          },
           "shows": [
             "Luchessa:01T",
             "Luchessa:795T1",
@@ -3899,7 +4298,9 @@
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3910,12 +4311,17 @@
             }
           ],
           "column": "6",
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Luchessa:MC1K"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "indication"
+            "style": [
+              "indication"
+            ]
           }
         },
         {
@@ -3925,12 +4331,17 @@
               "route": "JohnCTC/0x27/A4"
             }
           ],
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Christopher:1SAT"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3940,12 +4351,17 @@
               "route": "JohnCTC/0x27/A5"
             }
           ],
+          "settings": {
+            "Color": "red"
+          },
           "shows": [
             "Christopher:813T1"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3955,12 +4371,17 @@
               "route": "JohnCTC/0x27/A6"
             }
           ],
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Christopher:2SAT"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -3971,12 +4392,17 @@
             }
           ],
           "column": "8",
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Christopher:MC1K"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "indication"
+            "style": [
+              "indication"
+            ]
           }
         },
         {
@@ -3986,12 +4412,17 @@
               "route": "JohnCTC/0x28/A4"
             }
           ],
+          "settings": {
+            "Color": "red"
+          },
           "shows": [
             "Christopher:815T1"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -4001,12 +4432,17 @@
               "route": "JohnCTC/0x28/A5"
             }
           ],
+          "settings": {
+            "Color": "red"
+          },
           "shows": [
             "Christopher:815AT1"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -4016,12 +4452,17 @@
               "route": "JohnCTC/0x29/A4"
             }
           ],
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Christopher:1NAT"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -4031,12 +4472,17 @@
               "route": "JohnCTC/0x29/A5"
             }
           ],
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Christopher:2NAT"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -4046,12 +4492,17 @@
               "route": "JohnCTC/0x29/A6"
             }
           ],
+          "settings": {
+            "Color": "red"
+          },
           "shows": [
             "Christopher:817T1"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "board"
+            "style": [
+              "board"
+            ]
           }
         },
         {
@@ -4062,12 +4513,17 @@
             }
           ],
           "column": "10",
+          "settings": {
+            "Color": "yellow"
+          },
           "shows": [
             "Christopher:MC2K"
           ],
           "type": {
             "appliance": "lamp",
-            "style": "indication"
+            "style": [
+              "indication"
+            ]
           }
         },
         {
@@ -4093,7 +4549,9 @@
           "serves": "Corporal:831",
           "type": {
             "appliance": "lever",
-            "style": "switch"
+            "style": [
+              "switch"
+            ]
           }
         },
         {
@@ -4119,7 +4577,9 @@
           "serves": "Watsonville:837",
           "type": {
             "appliance": "lever",
-            "style": "switch"
+            "style": [
+              "switch"
+            ]
           }
         },
         {
@@ -4145,7 +4605,9 @@
           "serves": "Gilroy Caltrain:773",
           "type": {
             "appliance": "lever",
-            "style": "switch"
+            "style": [
+              "switch"
+            ]
           }
         },
         {
@@ -4171,7 +4633,9 @@
           "serves": "Gilroy Caltrain:775",
           "type": {
             "appliance": "lever",
-            "style": "switch"
+            "style": [
+              "switch"
+            ]
           }
         },
         {
@@ -4197,7 +4661,9 @@
           "serves": "Luchessa:783",
           "type": {
             "appliance": "lever",
-            "style": "switch"
+            "style": [
+              "switch"
+            ]
           }
         },
         {
@@ -4223,7 +4689,9 @@
           "serves": "Luchessa:799",
           "type": {
             "appliance": "lever",
-            "style": "switch"
+            "style": [
+              "switch"
+            ]
           }
         },
         {
@@ -4249,7 +4717,9 @@
           "serves": "Christopher:815",
           "type": {
             "appliance": "lever",
-            "style": "switch"
+            "style": [
+              "switch"
+            ]
           }
         },
         {
@@ -4263,7 +4733,9 @@
           "serves": "Corporal:MC1",
           "type": {
             "appliance": "lever",
-            "style": "maintainer_call"
+            "style": [
+              "maintainer_call"
+            ]
           }
         },
         {
@@ -4277,7 +4749,9 @@
           "serves": "Sargent:MC1",
           "type": {
             "appliance": "lever",
-            "style": "maintainer_call"
+            "style": [
+              "maintainer_call"
+            ]
           }
         },
         {
@@ -4291,7 +4765,9 @@
           "serves": "Gilroy Caltrain:MC1",
           "type": {
             "appliance": "lever",
-            "style": "maintainer_call"
+            "style": [
+              "maintainer_call"
+            ]
           }
         },
         {
@@ -4305,7 +4781,9 @@
           "serves": "Gilroy Interchange:MC1",
           "type": {
             "appliance": "lever",
-            "style": "maintainer_call"
+            "style": [
+              "maintainer_call"
+            ]
           }
         },
         {
@@ -4319,7 +4797,9 @@
           "serves": "Gilroy Interchange:MC2",
           "type": {
             "appliance": "lever",
-            "style": "maintainer_call"
+            "style": [
+              "maintainer_call"
+            ]
           }
         },
         {
@@ -4333,7 +4813,9 @@
           "serves": "Luchessa:MC1",
           "type": {
             "appliance": "lever",
-            "style": "maintainer_call"
+            "style": [
+              "maintainer_call"
+            ]
           }
         },
         {
@@ -4347,7 +4829,9 @@
           "serves": "Christopher:MC1",
           "type": {
             "appliance": "lever",
-            "style": "maintainer_call"
+            "style": [
+              "maintainer_call"
+            ]
           }
         },
         {
@@ -4361,7 +4845,9 @@
           "serves": "Christopher:MC2",
           "type": {
             "appliance": "lever",
-            "style": "maintainer_call"
+            "style": [
+              "maintainer_call"
+            ]
           }
         },
         {
@@ -4372,6 +4858,7 @@
             },
             {
               "function": "WLK",
+              "invert": true,
               "route": "JohnCTC/0x2A/A1"
             },
             {
@@ -4387,7 +4874,9 @@
           "serves": "Corporal:829",
           "type": {
             "appliance": "lever",
-            "style": "lock"
+            "style": [
+              "lock"
+            ]
           }
         },
         {
@@ -4398,6 +4887,7 @@
             },
             {
               "function": "WLK",
+              "invert": true,
               "route": "JohnCTC/0x2C/A1"
             },
             {
@@ -4413,7 +4903,9 @@
           "serves": "Sargent:835",
           "type": {
             "appliance": "lever",
-            "style": "lock"
+            "style": [
+              "lock"
+            ]
           }
         },
         {
@@ -4424,6 +4916,7 @@
             },
             {
               "function": "WLK",
+              "invert": true,
               "route": "JohnCTC/0x22/A1"
             },
             {
@@ -4439,7 +4932,9 @@
           "serves": "Gilroy Interchange:777",
           "type": {
             "appliance": "lever",
-            "style": "lock"
+            "style": [
+              "lock"
+            ]
           }
         },
         {
@@ -4450,6 +4945,7 @@
             },
             {
               "function": "WLK",
+              "invert": true,
               "route": "JohnCTC/0x23/A1"
             },
             {
@@ -4465,7 +4961,9 @@
           "serves": "Gilroy Interchange:781",
           "type": {
             "appliance": "lever",
-            "style": "lock"
+            "style": [
+              "lock"
+            ]
           }
         },
         {
@@ -4476,6 +4974,7 @@
             },
             {
               "function": "WLK",
+              "invert": true,
               "route": "JohnCTC/0x25/A1"
             },
             {
@@ -4491,7 +4990,9 @@
           "serves": "Luchessa:795",
           "type": {
             "appliance": "lever",
-            "style": "lock"
+            "style": [
+              "lock"
+            ]
           }
         },
         {
@@ -4502,6 +5003,7 @@
             },
             {
               "function": "WLK",
+              "invert": true,
               "route": "JohnCTC/0x27/A1"
             },
             {
@@ -4517,7 +5019,9 @@
           "serves": "Christopher:813",
           "type": {
             "appliance": "lever",
-            "style": "lock"
+            "style": [
+              "lock"
+            ]
           }
         },
         {
@@ -4528,6 +5032,7 @@
             },
             {
               "function": "WLK",
+              "invert": true,
               "route": "JohnCTC/0x29/A1"
             },
             {
@@ -4543,7 +5048,9 @@
           "serves": "Christopher:817",
           "type": {
             "appliance": "lever",
-            "style": "lock"
+            "style": [
+              "lock"
+            ]
           }
         }
       ],
@@ -4556,10 +5063,13 @@
       "name": "layout_compiler",
       "version": "0.1.0"
     },
+    "referenceData": {
+      "driverEncodings": "2026-10-23",
+      "encodingTransportPairing": "2026-10-23"
+    },
     "source": {
       "describe": "split-projects-final-88-g1dd4190",
-      "path": "SPCoast.net",
-      "sha256": "c70208779aebce3bf60eeb5bba3825eb688c4ba02c37363c6c1ba67f62b4b33d"
+      "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad"
   },
