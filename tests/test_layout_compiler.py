@@ -39,6 +39,25 @@ def plant(wire_processor=True, two_processors=False, field_processor=None):
     return from_symbols(syms, nets)
 
 
+def jmri_plant():
+    """plant() plus MQTT anchored on Alpha, the JMRI encoding on it, a switch 777 with a JMRI Turnout (command and feedback
+    symbols) and a Mast 784EAB with a JMRI SignalMast; the drivers find Alpha as the one processor on the sheet."""
+    src = plant()
+    for s in [
+        sym("T1", "Transport-MQTT", "/X/", "MQTT", Role="TRANSPORT", Kind="MQTT", Name="MQTT", Processor="Alpha"),
+        sym("E1", "Encoding-JMRI", "/X/", "JMRI", Role="IO_ENCODING", Kind="JMRI", Name="JMRI", Transport="MQTT"),
+        sym("D1", "Device-Switch", "/X/", "777", Role="DEVICE", Appliance="switch", Name="777"),
+        sym("M1", "Mast", "/X/", "784EAB", Role="DEVICE", Appliance="mast", Name="784EAB"),
+        sym("J1", "Driver-JMRI-Turnout", "/X/", "", Role="IODRIVER", IC="MQTT-JMRI", Kind="TURNOUT", Address=""),
+        sym("J2", "Driver-JMRI-Turnout-Feedback", "/X/", "", Role="IODRIVER", IC="MQTT-JMRI", Kind="TURNOUT", Address=""),
+        sym("J3", "Driver-JMRI-SignalMast", "/X/", "", Role="IODRIVER", IC="MQTT-JMRI", Kind="SIGNALMAST", Address=""),
+    ]:
+        src.symbols[s.ref] = s
+    nets = [net("m", ("D1", "M"), ("J1", "M")), net("n", ("D1", "~{N}"), ("J2", "~{N}")), net("r", ("D1", "~{R}"), ("J2", "~{R}")),
+            net("i", ("M1", "IND"), ("J3", "IND"))]
+    return from_symbols(list(src.symbols.values()), list(src.nets) + nets)
+
+
 class RuleTests(unittest.TestCase):
     def test_explicit_and_implicit_agree(self):
         sm = seams.resolve(plant())
@@ -96,6 +115,43 @@ class RuleTests(unittest.TestCase):
         sm = seams.resolve(src)
         self.assertIn("Desk", sm.office_units)
         self.assertTrue(sm.report.by_code("identity.value"))
+
+    def test_jmri_driver_is_keyed_by_kind_and_served_device(self):
+        """ADR 0005 S4, R11 and the owner (2026-10-24): an encoded driver carries no address; its key is Kind.name of the
+        device it serves; a Turnout's command and feedback symbols are one driver; a Mast is a row with its IND binding."""
+        sm = seams.resolve(jmri_plant())
+        self.assertEqual(sm.report.errors, [])
+        drivers = sm.processors["Alpha"].drivers
+        self.assertEqual(set(drivers), {"TURNOUT.777", "SIGNALMAST.784EAB"})
+        self.assertEqual((drivers["TURNOUT.777"].kind, len(drivers["TURNOUT.777"].syms)), ("TURNOUT", 2))
+        rows = {d.serves: d for d in sm.interlockings["X"].devices}
+        self.assertEqual([(b.function, b.route) for b in rows["X:777"].bindings],
+                         [("M", "Alpha/TURNOUT.777/M"), ("N", "Alpha/TURNOUT.777/N"), ("R", "Alpha/TURNOUT.777/R")])
+        self.assertEqual((rows["X:784EAB"].appliance, [(b.function, b.route) for b in rows["X:784EAB"].bindings]),
+                         ("mast", [("IND", "Alpha/SIGNALMAST.784EAB/IND")]))
+        self.assertFalse(sm.report.by_code("driver.address"))
+        self.assertFalse(sm.report.by_code("identity.value"))
+        model = emit.emit(sm)
+        self.assertEqual(model["layout"]["processors"]["Alpha"]["drivers"]["TURNOUT.777"], {"ic": "MQTT-JMRI", "kind": "TURNOUT"})
+        self.assertEqual(layout_model.errors(model), [])
+
+    def test_a_drawn_address_overrides_the_derived_jmri_key(self):
+        src = jmri_plant()
+        s = src.symbols["J1"]
+        src.symbols["J1"] = Symbol(s.ref, s.lib_id, s.value, {**s.fields, "Address": "MT777"}, s.sheet)
+        sm = seams.resolve(src)
+        self.assertEqual(set(sm.processors["Alpha"].drivers), {"MT777", "TURNOUT.777", "SIGNALMAST.784EAB"})   # the feedback symbol still derives its key
+        self.assertTrue(sm.report.by_code("driver.address.override"))
+        self.assertEqual(sm.report.errors, [])
+
+    def test_an_encoded_driver_without_kind_has_no_key(self):
+        src = jmri_plant()
+        s = src.symbols["J1"]
+        src.symbols["J1"] = Symbol(s.ref, s.lib_id, s.value, {k: v for k, v in s.fields.items() if k != "Kind"}, s.sheet)
+        sm = seams.resolve(src)
+        self.assertTrue(sm.report.by_code("driver.kind"))
+        self.assertEqual([x.ref for d in sm.processors["Alpha"].drivers.values() for x in d.syms], ["J2", "J3"])
+
 
     def test_head_vocabulary(self):
         src = plant()
@@ -180,6 +236,22 @@ class SPCoastRelationTable(unittest.TestCase):
         self.assertEqual({c.number: c.house for c in ou.columns.values() if c.house},
                          {"5": ("Luchessa", "Luchessa"), "6": ("Luchessa", "Gilroy"), "7": ("Luchessa", "Carnadero")})
         self.assertEqual(len(self.sm.report.by_code("column.cp_name")), 11)
+
+    def test_every_key_is_a_name_never_a_value(self):
+        """The owner (2026-10-24): every symbol the compiler names carries Name = ${Value}; Value is never read."""
+        self.assertEqual(self.sm.report.by_code("identity.value"), [])
+
+    def test_jmri_drivers_keyed_by_object_and_device_and_masts_are_rows(self):
+        gilroy = self.sm.processors["Gilroy"].drivers
+        self.assertEqual({k for k in gilroy if "." in k},
+                         {"TURNOUT.777", "TURNOUT.781", "SENSOR.777", "SENSOR.781", "SENSOR.01T", "SENSOR.02T", "SENSOR.1SAT", "SENSOR.1NAT",
+                          "SIGNALMAST.778NC", "SIGNALMAST.778SC", "SIGNALMAST.778NAB", "SIGNALMAST.778SAB", "LIGHT.MC1", "LIGHT.MC2"})
+        self.assertEqual(len(gilroy["TURNOUT.777"].syms), 2)
+        self.assertEqual(self.sm.report.by_code("driver.address"), [])
+        masts = [d for ix in self.sm.interlockings.values() for d in ix.devices if d.appliance == "mast"]
+        self.assertEqual(len(masts), 38)
+        self.assertEqual([b.route for d in self.sm.interlockings["Gilroy Interchange"].devices if d.serves == "Gilroy Interchange:778NC" and d.appliance == "mast" for b in d.bindings],
+                         ["Gilroy/SIGNALMAST.778NC/IND"])
 
     def test_layout_facts_from_the_railroad_symbol(self):
         self.assertEqual(self.sm.railroad, {"name": "SPCoast", "railroad": "Southern Pacific", "region": "Coast Line", "era": "1960+", "rulebook": "GCOR"})

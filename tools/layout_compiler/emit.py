@@ -57,7 +57,7 @@ def emit(sm: Seams, source_path: Optional[Path] = None) -> dict[str, Any]:  # so
         for e in sm.encodings.values() if e.role == "IO_ENCODING"}
     layout["processors"] = {
         p.name: _clean({"board": p.board,
-                        "drivers": {a: _clean({"ic": d.ic, "settings": d.settings}) for a, d in p.drivers.items()}})
+                        "drivers": {a: _clean({"ic": d.ic, "kind": d.kind, "settings": d.settings}) for a, d in p.drivers.items()}})
         for p in sm.processors.values()}
 
     def device(d) -> dict:

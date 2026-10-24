@@ -435,6 +435,30 @@
               "lock"
             ]
           }
+        },
+        {
+          "serves": "Christopher:816NAB",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Christopher:816NC",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Christopher:816SAB",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Christopher:816SC",
+          "type": {
+            "appliance": "mast"
+          }
         }
       ],
       "fieldUnit": {
@@ -792,6 +816,30 @@
               "lock"
             ]
           }
+        },
+        {
+          "serves": "Corporal:830NAB",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Corporal:830SAB",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Corporal:832NA",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Corporal:832SA",
+          "type": {
+            "appliance": "mast"
+          }
         }
       ],
       "fieldUnit": {
@@ -1120,6 +1168,36 @@
               "CPL"
             ]
           }
+        },
+        {
+          "serves": "Gilroy Caltrain:774NAB",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Gilroy Caltrain:774NC",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Gilroy Caltrain:774ND",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Gilroy Caltrain:774NE",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Gilroy Caltrain:774SAB",
+          "type": {
+            "appliance": "mast"
+          }
         }
       ],
       "fieldUnit": {
@@ -1237,30 +1315,96 @@
           }
         },
         {
-          "serves": "Gilroy Interchange:1NAT",
+          "bindings": [
+            {
+              "function": "IND",
+              "route": "Gilroy/SIGNALMAST.778NAB/IND"
+            }
+          ],
+          "serves": "Gilroy Interchange:778NAB",
           "type": {
-            "appliance": "track_circuit"
+            "appliance": "mast"
           }
         },
         {
-          "serves": "Gilroy Interchange:1SAT",
+          "bindings": [
+            {
+              "function": "IND",
+              "route": "Gilroy/SIGNALMAST.778NC/IND"
+            }
+          ],
+          "serves": "Gilroy Interchange:778NC",
           "type": {
-            "appliance": "track_circuit"
+            "appliance": "mast"
           }
         },
         {
-          "serves": "Gilroy Interchange:01T",
+          "bindings": [
+            {
+              "function": "IND",
+              "route": "Gilroy/SIGNALMAST.778SAB/IND"
+            }
+          ],
+          "serves": "Gilroy Interchange:778SAB",
           "type": {
-            "appliance": "track_circuit"
+            "appliance": "mast"
           }
         },
         {
-          "serves": "Gilroy Interchange:02T",
+          "bindings": [
+            {
+              "function": "IND",
+              "route": "Gilroy/SIGNALMAST.778SC/IND"
+            }
+          ],
+          "serves": "Gilroy Interchange:778SC",
           "type": {
-            "appliance": "track_circuit"
+            "appliance": "mast"
           }
         },
         {
+          "bindings": [
+            {
+              "function": "LAMP",
+              "route": "Gilroy/LIGHT.MC1/ON"
+            }
+          ],
+          "serves": "Gilroy Interchange:MC1",
+          "type": {
+            "appliance": "lamp"
+          }
+        },
+        {
+          "bindings": [
+            {
+              "function": "LAMP",
+              "route": "Gilroy/LIGHT.MC2/ON"
+            }
+          ],
+          "serves": "Gilroy Interchange:MC2",
+          "type": {
+            "appliance": "lamp"
+          }
+        },
+        {
+          "bindings": [
+            {
+              "function": "M",
+              "route": "Gilroy/TURNOUT.777/M"
+            },
+            {
+              "function": "N",
+              "route": "Gilroy/TURNOUT.777/N"
+            },
+            {
+              "function": "OCC",
+              "route": "Gilroy/SENSOR.777/S"
+            },
+            {
+              "function": "R",
+              "route": "Gilroy/TURNOUT.777/R"
+            }
+          ],
           "serves": "Gilroy Interchange:777",
           "type": {
             "appliance": "switch",
@@ -1272,6 +1416,24 @@
           }
         },
         {
+          "bindings": [
+            {
+              "function": "M",
+              "route": "Gilroy/TURNOUT.781/M"
+            },
+            {
+              "function": "N",
+              "route": "Gilroy/TURNOUT.781/N"
+            },
+            {
+              "function": "OCC",
+              "route": "Gilroy/SENSOR.781/S"
+            },
+            {
+              "function": "R",
+              "route": "Gilroy/TURNOUT.781/R"
+            }
+          ],
           "serves": "Gilroy Interchange:781",
           "type": {
             "appliance": "switch",
@@ -1283,15 +1445,75 @@
           }
         },
         {
-          "serves": "Gilroy Interchange:MC1",
+          "bindings": [
+            {
+              "function": "OCC",
+              "route": "Gilroy/SENSOR.1NAT/S"
+            }
+          ],
+          "serves": "Gilroy Interchange:1NAT",
           "type": {
-            "appliance": "lamp"
+            "appliance": "track_circuit"
           }
         },
         {
-          "serves": "Gilroy Interchange:MC2",
+          "bindings": [
+            {
+              "function": "OCC",
+              "route": "Gilroy/SENSOR.1SAT/S"
+            }
+          ],
+          "serves": "Gilroy Interchange:1SAT",
           "type": {
-            "appliance": "lamp"
+            "appliance": "track_circuit"
+          }
+        },
+        {
+          "bindings": [
+            {
+              "function": "OCC",
+              "route": "Gilroy/SENSOR.01T/S"
+            }
+          ],
+          "serves": "Gilroy Interchange:01T",
+          "type": {
+            "appliance": "track_circuit"
+          }
+        },
+        {
+          "bindings": [
+            {
+              "function": "OCC",
+              "route": "Gilroy/SENSOR.02T/S"
+            }
+          ],
+          "serves": "Gilroy Interchange:02T",
+          "type": {
+            "appliance": "track_circuit"
+          }
+        },
+        {
+          "serves": "Gilroy Interchange:778NAB",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Gilroy Interchange:778NC",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Gilroy Interchange:778SAB",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Gilroy Interchange:778SC",
+          "type": {
+            "appliance": "mast"
           }
         }
       ],
@@ -1688,6 +1910,36 @@
               "lock"
             ]
           }
+        },
+        {
+          "serves": "Luchessa:784EAB",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Luchessa:784EC",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Luchessa:784WA",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Luchessa:784WBC",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Luchessa:784WD",
+          "type": {
+            "appliance": "mast"
+          }
         }
       ],
       "fieldUnit": {
@@ -1987,6 +2239,24 @@
             "style": [
               "lock"
             ]
+          }
+        },
+        {
+          "serves": "Sargent:836NAB",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Sargent:836SA",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Sargent:836SB",
+          "type": {
+            "appliance": "mast"
           }
         }
       ],
@@ -3033,6 +3303,60 @@
               "CPL"
             ]
           }
+        },
+        {
+          "serves": "Watsonville:838NAB",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Watsonville:840NA",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Watsonville:840NB",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Watsonville:840NC",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Watsonville:840ND",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Watsonville:840NE",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Watsonville:840NF",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Watsonville:840NG",
+          "type": {
+            "appliance": "mast"
+          }
+        },
+        {
+          "serves": "Watsonville:842SA",
+          "type": {
+            "appliance": "mast"
+          }
         }
       ],
       "fieldUnit": {
@@ -3118,6 +3442,62 @@
         "drivers": {
           "D2": {
             "ic": "GPIO"
+          },
+          "LIGHT.MC1": {
+            "ic": "MQTT-JMRI",
+            "kind": "LIGHT"
+          },
+          "LIGHT.MC2": {
+            "ic": "MQTT-JMRI",
+            "kind": "LIGHT"
+          },
+          "SENSOR.1NAT": {
+            "ic": "MQTT-JMRI",
+            "kind": "SENSOR"
+          },
+          "SENSOR.1SAT": {
+            "ic": "MQTT-JMRI",
+            "kind": "SENSOR"
+          },
+          "SENSOR.01T": {
+            "ic": "MQTT-JMRI",
+            "kind": "SENSOR"
+          },
+          "SENSOR.02T": {
+            "ic": "MQTT-JMRI",
+            "kind": "SENSOR"
+          },
+          "SENSOR.777": {
+            "ic": "MQTT-JMRI",
+            "kind": "SENSOR"
+          },
+          "SENSOR.781": {
+            "ic": "MQTT-JMRI",
+            "kind": "SENSOR"
+          },
+          "SIGNALMAST.778NAB": {
+            "ic": "MQTT-JMRI",
+            "kind": "SIGNALMAST"
+          },
+          "SIGNALMAST.778NC": {
+            "ic": "MQTT-JMRI",
+            "kind": "SIGNALMAST"
+          },
+          "SIGNALMAST.778SAB": {
+            "ic": "MQTT-JMRI",
+            "kind": "SIGNALMAST"
+          },
+          "SIGNALMAST.778SC": {
+            "ic": "MQTT-JMRI",
+            "kind": "SIGNALMAST"
+          },
+          "TURNOUT.777": {
+            "ic": "MQTT-JMRI",
+            "kind": "TURNOUT"
+          },
+          "TURNOUT.781": {
+            "ic": "MQTT-JMRI",
+            "kind": "TURNOUT"
           }
         }
       },
@@ -5068,7 +5448,7 @@
       "encodingTransportPairing": "2026-10-23"
     },
     "source": {
-      "describe": "split-projects-final-88-g1dd4190",
+      "describe": "split-projects-final-90-gd51f78e",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad"

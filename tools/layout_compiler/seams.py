@@ -29,7 +29,7 @@ ENCODING_OF_IC = {"MQTT-JMRI": "JMRI"}
 # The keys the compiler reads (ADR 0009 §3.10) and KiCad's own; every other drawn field with content is a setting, written as drawn.
 NOT_SETTINGS = {"Role", "Kind", "Style", "Appliance", "Name", "IC", "Address", "Bit", "Node", "Head", "Invert", "IndicationToken",
                 "CP", "TC", "Transport", "Processor", "NodeType", "InputBytes", "OutputBytes", "IndicationCeiling",
-                "Display", "Milepost", "CP Name", "Column", "Columns", "Reference", "Value", "Footprint", "Datasheet", "Description",
+                "Display", "Milepost", "CP Name", "Column", "Reference", "Value", "Footprint", "Datasheet", "Description",
                 "Sheetname", "Sheetfile", "ki_keywords", "ki_fp_filters", "ki_description", "ki_locked", "Era", "Railroad",
                 "Region", "Rulebook"}
 
@@ -125,6 +125,8 @@ class Driver:
     address: str                                                     # on its bus: 0x20, D2, IB.3
     owner: Optional[str] = None                                       # route owner: a processor name or transport/UA
     settings: dict[str, str] = field(default_factory=dict)
+    kind: str = ""                                                    # an encoded driver's object class: TURNOUT, SENSOR, SIGNALMAST, LIGHT
+    syms: list[Symbol] = field(default_factory=list)                  # every symbol that draws it (a JMRI Turnout: command and feedback)
 
 
 @dataclass
@@ -161,7 +163,6 @@ class OfficeUnit:
     name: str
     sym: Symbol
     style: str = ""
-    columns_declared: Optional[int] = None
     processor: Optional[str] = None
     columns: dict[str, Column] = field(default_factory=dict)
     devices: list["Device"] = field(default_factory=list)
@@ -204,10 +205,16 @@ class Seams:
 
 def name_of(s: Symbol, report: Report) -> str:
     """The identity key: ``Name``; the Value stands in, reported, where the library has no Name yet (ADR 0009 §3.10)."""
-    if s.get("Name"):
+    if "Name" in s.fields:                                            # stated, even empty: KiCad resolves ${Value} of "~" to nothing
         return s.get("Name")
     report.info("identity.value", f"{s.lib_id} has no Name field; its Value {s.value!r} is its name until the library gains one", loc(s))
     return s.value
+
+
+def device_name(s: Symbol, report: Report) -> Optional[str]:
+    """A device's own name, its appliance's (Name = ${Value} since 2026-10-24); empty or KiCad's "~" is no name."""
+    n = name_of(s, report)
+    return n if n and n != "~" else None
 
 
 def settings_of(s: Symbol) -> dict[str, str]:
@@ -484,7 +491,7 @@ def _houses(sm: Seams) -> None:
             calls = [sm.source.symbols[p.ref] for p in mc.others(s.ref) if sm.source.symbols[p.ref].role == "APPLIANCE"]
             c = one(calls, "maintainer calls on one MC net", loc(s), sm.report, "house.mc")
             if c is not None:
-                h.maintainer_call = qualify(c.value, ix.name)
+                h.maintainer_call = qualify(name_of(c, sm.report), ix.name)
         if cp in ix.houses:
             sm.report.error("entity.duplicate", f"two houses named {cp!r} in {ix.name}", loc(s))
         ix.houses[cp] = h
@@ -497,11 +504,6 @@ def _office_units(sm: Seams) -> None:
             sm.report.error("entity.duplicate", f"two office units named {name!r}", loc(s))
             continue
         ou = OfficeUnit(name, s, s.get("Style"))
-        if s.get("Columns"):
-            try:
-                ou.columns_declared = int(s.get("Columns"))
-            except ValueError:
-                sm.report.error("office.columns", f"OfficeUnit {name}: Columns {s.get('Columns')!r} is not a number", loc(s))
         ou.processor = compare(_anchor_of(sm, s), _one_processor_on_sheet(sm, s.sheet), f"OfficeUnit {name} runs on", loc(s), sm.report, "office.processor")
         if ou.processor and ou.processor not in sm.processors:
             sm.report.error("office.processor", f"OfficeUnit {name}: {ou.processor!r} is not a processor", loc(s))
@@ -587,7 +589,9 @@ def _drivers(sm: Seams) -> None:
         else:
             address = s.get("Address")
             implicit = s.get("Processor") or _one_processor_on_sheet(sm, s.sheet)
-        d = Driver(s, ic, address, settings=settings_of(s))
+            if ic in ENCODING_OF_IC:
+                address = _encoded_address(sm, s, address)
+        d = Driver(s, ic, address, settings=settings_of(s), kind=s.kind, syms=[s])
         where = loc(s)
         d.owner = compare(_bus_owner(sm, s), implicit, f"driver {ic} {address or s.value!r} on a bus", where, sm.report, "driver.bus")
         if not ic:
@@ -609,11 +613,16 @@ def _drivers(sm: Seams) -> None:
                 continue
             p = sm.processors[d.owner]
             if not address:
-                # a driver without an address has no route; absent is absent (ADR 0008 §4.7). For JMRI the address
-                # is the JMRI object, a parked ruling (ADR 0005 §8): the missing report is the prompt.
-                sm.report.missing("driver.address", f"driver {ic} ({s.lib_id.split(':')[1]}) on {p.name} has no Address; its bindings are absent", where)
+                if ic not in ENCODING_OF_IC:                           # an encoded driver without one was reported by _encoded_address
+                    sm.report.missing("driver.address", f"driver {ic} ({s.lib_id.split(':')[1]}) on {p.name} has no Address; its bindings are absent", where)
                 continue
             if address in p.drivers:
+                first = p.drivers[address]
+                if ic in ENCODING_OF_IC and first.ic == ic and first.kind == d.kind:
+                    first.syms.append(s)                               # one JMRI object drawn twice: a Turnout's command and its feedback
+                    if first.settings != d.settings:
+                        sm.report.error("entity.conflict", f"driver {address} on {p.name}: its symbols state different settings", where)
+                    continue
                 sm.report.error("driver.duplicate", f"processor {p.name}: two drivers at {address}", where)
             p.drivers[address] = d
     for t in sm.transports.values():
@@ -622,6 +631,41 @@ def _drivers(sm: Seams) -> None:
                 used = [int(a.split(".")[1]) for a in n.bits if a.startswith(prefix)]
                 if used and declared is not None and max(used) > declared * 8:
                     sm.report.error("node.bytes", f"CMRInet Node {n.ua}: {prefix} bit {max(used)} used but {declared} byte(s) declared", loc(n.sym))
+
+
+def _served_device(sm: Seams, s: Symbol) -> Optional[str]:
+    """The one device wired to a driver's function pins; two is an error."""
+    names: set[str] = set()
+    for pin, net in sm.source.pins_of(s.ref).items():
+        if pin == "IOBus":
+            continue
+        for p in net.others(s.ref):
+            o = sm.source.symbols[p.ref]
+            if o.role in ("DEVICE", "PANEL"):
+                n = device_name(o, sm.report)
+                if n:
+                    names.add(n)
+    if len(names) > 1:
+        sm.report.error("driver.serves", f"driver {s.get('IC')} {s.kind} serves two devices: {', '.join(sorted(names))}", loc(s))
+        return None
+    return next(iter(names), None)
+
+
+def _encoded_address(sm: Seams, s: Symbol, drawn: str) -> str:
+    """An encoded driver (a JMRI object) carries no address of its own: it is keyed by its object class, the symbol's
+    Kind, and the name of the device it serves, ``TURNOUT.777`` (ADR 0005 S4 and R11; the owner, 2026-10-24). A drawn
+    Address overrides that, reported at info."""
+    served = _served_device(sm, s)
+    if drawn:
+        sm.report.info("driver.address.override", f"driver {s.get('IC')} {s.kind}: Address {drawn!r} overrides the served device's name {served!r}", loc(s))
+        return drawn
+    if not s.kind:
+        sm.report.missing("driver.kind", f"driver {s.get('IC')} serving {served!r}: no Kind, its object class; it has no key", loc(s))
+        return ""
+    if served is None:
+        sm.report.missing("driver.serves", f"driver {s.get('IC')} {s.kind}: wired to no device; it has no key", loc(s))
+        return ""
+    return f"{s.kind}.{served}"
 
 
 def _reach(sm: Seams) -> None:
@@ -673,8 +717,6 @@ def _columns(sm: Seams) -> None:
             sm.report.error("column.duplicate", f"OfficeUnit {ou.name}: two columns numbered {number}", where)
         ou.columns[number] = c
     for ou in sm.office_units.values():
-        if ou.columns_declared is not None and len(ou.columns) > ou.columns_declared:
-            sm.report.error("office.columns", f"OfficeUnit {ou.name}: {len(ou.columns)} columns drawn, {ou.columns_declared} declared", loc(ou.sym))
         # a 506 station is a house addressed by its column; a house with two columns on a 506 line is two addresses
         by_house = defaultdict(list)
         for c in ou.columns.values():
@@ -694,12 +736,12 @@ def _driver_route(sm: Seams, p) -> Optional[tuple[Driver, str]]:
         return None
     for proc in sm.processors.values():
         for d in proc.drivers.values():
-            if d.sym.ref == o.ref:
+            if any(x.ref == o.ref for x in d.syms):
                 return d, f"{proc.name}/{d.address}/{base(p.pin)}"
     for t in sm.transports.values():
         for n in t.nodes.values():
             for d in n.bits.values():
-                if d.sym.ref == o.ref:
+                if any(x.ref == o.ref for x in d.syms):
                     return d, f"{t.name}/{n.ua}/{d.address}/{base(p.pin)}"
     return None
 
@@ -707,8 +749,7 @@ def _driver_route(sm: Seams, p) -> Optional[tuple[Driver, str]]:
 def _devices(sm: Seams) -> None:
     for s in sm.source.where("DEVICE") + sm.source.where("PANEL"):
         appliance = s.get("Appliance")
-        if appliance == "mast":
-            continue                                                   # a Mast device anchors its heads (handled in _heads)
+        name = device_name(s, sm.report)
         dev = Device(s, appliance, styles_of(s), settings=settings_of(s), address=s.get("Address") or None)
         where = loc(s)
         scope: Optional[str] = None
@@ -735,7 +776,7 @@ def _devices(sm: Seams) -> None:
                 if not dev.shows:
                     sm.report.missing("lamp.token", f"panel lamp {s.value!r}: no IndicationToken", where)
             else:
-                dev.serves = qualify(s.value, scope or "") if s.value and s.value != "~" else None
+                dev.serves = qualify(name, scope or "") if name else None
             ou.devices.append(dev)
         else:
             ix = _unit_of_sheet(sm, s.sheet)
@@ -751,11 +792,11 @@ def _devices(sm: Seams) -> None:
                 if m is None:
                     sm.report.missing("head.mast", f"head device {s.lib_id.split(':')[1]} letter {dev.head!r}: wired to no Mast", where)
                 else:
-                    dev.serves = qualify(m.value, ix.name)
+                    dev.serves = qualify(device_name(m, sm.report) or "", ix.name)
                 if not dev.head:
                     sm.report.missing("head.letter", "a head device has no Head letter", where)
-            elif s.value and s.value != "~":
-                dev.serves = qualify(s.value, ix.name)
+            elif name:
+                dev.serves = qualify(name, ix.name)                    # an appliance's device, or a Mast: one row per device (the owner, 2026-10-24)
             else:
                 sm.report.missing("device.serves", f"device {appliance}: no appliance name", where)
             ix.devices.append(dev)
@@ -763,7 +804,7 @@ def _devices(sm: Seams) -> None:
             dev.serves = None                                          # the code lever serves the station, not an appliance; its Value is a label
         inverted = {x.strip() for x in s.get("Invert").split(",") if x.strip()}
         for pin, net in sorted(sm.source.pins_of(s.ref).items()):
-            if pin in ("Column", "IND"):
+            if pin == "Column" or (pin == "IND" and appliance != "mast"):   # a head's IND wire reaches its Mast; the Mast's IND is its own binding
                 continue
             for p in net.others(s.ref):
                 hit = _driver_route(sm, p)
@@ -777,7 +818,7 @@ def _devices(sm: Seams) -> None:
 def _heads(sm: Seams) -> None:
     """Head device to trackplan head by mast name and letter; the vocabularies must match (ADR 0009 §3.7)."""
     for ix in sm.interlockings.values():
-        # trackplan heads: Value is the letter, M pin to a Mast_* whose Value is the mast name
+        # trackplan heads: Name is the letter, M pin to a Mast_* whose Name is the mast name (Name = ${Value}, 2026-10-24)
         plan: dict[tuple[str, str], str] = {}
         for h in sm.source.under(ix.sym.sheet, "APPLIANCE"):
             if h.get("Appliance") != "head":
@@ -786,7 +827,7 @@ def _heads(sm: Seams) -> None:
             masts = [sm.source.symbols[p.ref] for p in net.others(h.ref)] if net else []
             masts = [m for m in masts if m.role == "APPLIANCE" and m.get("Appliance") == "mast"]
             if len(masts) == 1:
-                plan[(masts[0].value, h.value)] = h.get("Style")
+                plan[(name_of(masts[0], sm.report), name_of(h, sm.report))] = h.get("Style")   # the trackplan head's Name is its letter
         by_head: dict[tuple[str, str], list[Device]] = defaultdict(list)
         for d in ix.devices:
             if d.appliance == "head" and d.serves and d.head:

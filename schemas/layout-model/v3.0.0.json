@@ -132,6 +132,7 @@
       "additionalProperties": false,
       "properties": {
         "ic": { "type": "string", "description": "A driver key in the reference data: MCP23017, PCA9685, MAX7313, GPIO, MQTT-JMRI, ..." },
+        "kind": { "type": "string", "description": "An encoded driver's object class, stated by its symbol: a JMRI TURNOUT, SENSOR, SIGNALMAST or LIGHT. Such a driver carries no address of its own; its key is kind.name of the device it serves (ADR 0005 S4, R11) unless an Address is drawn to override it." },
         "settings": { "$ref": "#/$defs/settings" },
         "description": { "type": "string" }
       }

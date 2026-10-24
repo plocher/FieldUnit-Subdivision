@@ -17,7 +17,7 @@ Per symbol, by Role:
   lower_snake_case; `Invert` names only this symbol's pins; one capability per unit, capability
   meaning primary word plus electrical type, so a symbol whose pins mix them is multi-unit, with
   its units not interchangeable and its Value not autoplaced (the units mesh and show one name).
-- IODRIVER: IC present; no Kind; `Pin.*` per pin, primary word, electrical type input, output or
+- IODRIVER: IC present; Kind only to name a JMRI driver's object class (TURNOUT, SENSOR, SIGNALMAST, LIGHT); `Pin.*` per pin, primary word, electrical type input, output or
   bidirectional; the attachment's address field by bus kind (ADR 0005 S4): `Bit` for CMRI, none for MQTT, `Address` otherwise. Warning (2026-10-18) when a unit's body (its largest
   rectangle) lacks the driver look: stroke 0.3048 solid 128/77/0 with background fill. The looks by
   Role are a convention for readers, never a fact: device = named box with its proxy glyph, cast =
@@ -49,7 +49,7 @@ STRUCTURAL = {"TRACK", "POLICY", "STRUCTURE", "COLUMN", "OFFICE_UNIT", "TRANSPOR
 FUNCTIONAL = {"APPLIANCE", "DEVICE", "PANEL", "IODRIVER", "SETTING"}
 RETIRED_FIELDS = {"ControlToken", "Vital", "NormalIs", "Chain", "Index", "Kind"}
 ATTACHMENT_ADDRESS = {"CMRI": "Bit", "MQTT": None}  # by IC; every other bus device attaches by Address (ADR 0005 S4)
-NOT_SETTINGS = {"Role", "Appliance", "Style", "IC", "Address", "UA", "Bit", "Node", "Head", "Invert", "IndicationToken", "Color", "CP", "TC",
+NOT_SETTINGS = {"Role", "Name", "Kind", "Appliance", "Style", "IC", "Address", "UA", "Bit", "Node", "Head", "Invert", "IndicationToken", "Color", "CP", "TC",
                 "Transport", "NodeType", "InputBytes", "OutputBytes",
                 "IndicationCeiling", "Display", "Processor", "Milepost", "Reference", "Value", "Footprint",
                 "Datasheet", "Description", "ki_keywords", "ki_fp_filters", "ki_description"}
@@ -93,7 +93,7 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
     if role not in FUNCTIONAL:
         err(f"Role {role!r} is not known")
         return out
-    if "Kind" in props:
+    if "Kind" in props and role != "IODRIVER":                        # a JMRI driver's Kind is its object class (owner, 2026-10-24)
         err("Kind is retired")
     if role in {"APPLIANCE", "DEVICE", "PANEL"} and not props.get("Appliance"):
         err("Appliance missing")
@@ -175,7 +175,7 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
         if pin_caps:
             err("carries Pin.* but serves no function")
     for f in props:
-        if f in RETIRED_FIELDS:
+        if f in RETIRED_FIELDS and not (f == "Kind" and role == "IODRIVER"):
             err(f"field {f} is retired")
         elif f not in NOT_SETTINGS and not f.startswith("Pin.") and not SNAKE.match(f):
             err(f"setting {f} is not lower_snake_case")
