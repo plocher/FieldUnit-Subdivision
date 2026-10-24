@@ -203,11 +203,11 @@ def chain(wires, breaks: set) -> list[list[tuple[float, float]]]:
     return polylines
 
 
-def build(railroad: Path):
+def build(railroad: Path, netlist: Path | None = None):
     sheet = railroad / "SPCoast" / f"{INTERLOCKING}.kicad_sch"
     symbols, wires, junctions = read_sheet(sheet)
     pins_by_lib = read_library_pins(railroad / "symbols" / "Railroad-Trackplan.kicad_sym")
-    src = from_netlist(railroad / "SPCoast" / "production" / "SPCoast.net")
+    src = from_netlist(netlist or railroad / "SPCoast" / "production" / "SPCoast.net")
     netsyms = {r: s for r, s in src.symbols.items() if s.sheet.rstrip("/").endswith(INTERLOCKING)}
 
     trackplan = {r: s for r, s in symbols.items() if s["fields"].get("Role") in TRACKPLAN_ROLES}
@@ -545,16 +545,19 @@ def draw_views(g) -> str:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--railroad", type=Path, default=Path.home() / "Dropbox/KiCad/Railroad")
+    ap.add_argument("--netlist", type=Path, default=None, help="a netlist export other than production/SPCoast.net")
+    ap.add_argument("--out", type=Path, default=HERE, help="write the four files here instead of beside the script")
     a = ap.parse_args(argv)
-    geometry, origin = build(a.railroad)
-    (HERE / "geometry.schema.json").write_text(json.dumps(GEOMETRY_SCHEMA, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    geometry, origin = build(a.railroad, a.netlist)
+    out = a.out
+    (out / "geometry.schema.json").write_text(json.dumps(GEOMETRY_SCHEMA, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     text = layout_model.dumps(geometry)
-    (HERE / "sargent.geometry.json").write_text(text, encoding="utf-8")
+    (out / "sargent.geometry.json").write_text(text, encoding="utf-8")
     assert layout_model.dumps(layout_model.loads(text)) == text, "not canonical"
     jsonschema.validate(layout_model.loads(text), GEOMETRY_SCHEMA)
-    (HERE / "sargent-geometry.svg").write_text(draw_facts(geometry, origin), encoding="utf-8")
-    (HERE / "four-views.svg").write_text(draw_views(geometry), encoding="utf-8")
-    print(f"wrote 4 files to {HERE}; origin was KiCad {origin}; {len(geometry['track'])} track rows, {len(geometry['markers'])} markers, {len(geometry['appliances'])} appliances")
+    (out / "sargent-geometry.svg").write_text(draw_facts(geometry, origin), encoding="utf-8")
+    (out / "four-views.svg").write_text(draw_views(geometry), encoding="utf-8")
+    print(f"wrote 4 files to {out}; origin was KiCad {origin}; {len(geometry['track'])} track rows, {len(geometry['markers'])} markers, {len(geometry['appliances'])} appliances")
     return 0
 
 
