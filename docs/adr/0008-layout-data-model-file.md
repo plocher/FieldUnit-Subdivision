@@ -1,12 +1,14 @@
 # 0008. The Layout Data Model File
 
-- Status: proposed, rev 3, 2026-10-20. The schema and a validated example exist (§6) and are part of what is ratified.
-- Decision requested: **ratify**, the architecture of the on-disk representation: §4 and the schema `schemas/layout-model/v2.0.0.json` it describes.
+- Status: proposed, rev 4, 2026-10-23. Rewritten on ADR 0009 (explicit seams) and the owner's rulings of 2026-10-23. The schema is a new major, `schemas/layout-model/v3.0.0.json`, and the example (§6) is the compiler's output on the SPCoast project, never typed; both are part of what is ratified.
+- Decision requested: **ratify**, the architecture of the on-disk representation: §4 and the schema `schemas/layout-model/v3.0.0.json` it describes.
 - Builds on: 
    - `docs/review/layout-model-view-2026-10-16.md` (the Data Model's content: sections, O1 to O16), 
    - ADR 0001 (encoding on transport, authored addresses), 
    - ADR 0004 (the project hierarchy), 
-   - ADR 0005 (declarations, attachments, scopes), 
+   - ADR 0005 (declarations, attachments, scopes), as amended by ADR 0009,
+   - **ADR 0009** (explicit seams: the net kinds, every symbol's pins, processors, transports and encodings, the CMRInet Node, head devices, derived stations, the relation table), the drawing contract this file is compiled from,
+   - the owner's rulings of 2026-10-23: the `PanelColumn` is the logical column and model board lamps are `ModelLamp` devices in no column; layout-wide facts live on a `Railroad` symbol; a field may reference another symbol's field with the macro `<ROLE:KIND:Field>`; `Name` is the identity key everywhere,
    - `docs/review/processor-cases-2026-10-16.md`, 
    - the glossary §2,
    - FieldUnit `docs/adr/0005-appliance-driver-architecture.md` and its picture `0005-ctc-interface-layers.svg`: the two seams and the transport catalog, the definitive architecture this file is shaped on.
@@ -31,7 +33,8 @@ The Data Model itself is defined above, with names and relationships. What is un
 | Sections and entities: layout, interlockings, machines, control points, appliances, track, columns, processors, chips, devices, bindings, geometry | view 2026-10-16 §3, §4 |
 | Code lines, transports, encodings, authored addresses | ADR 0001 D1, D4, D13, D15 |
 | Interlocking membership and hierarchy, field units, mileposts, heads | ADR 0004 D12, D13, D7, D6 |
-| Bus declarations, attachments, scopes, addresses; a node is a processor | ADR 0005 S1 to S7, C1 to C11 |
+| Bus declarations, attachments, scopes, addresses | ADR 0005 S1 to S7, C1 to C11, as amended by ADR 0009 C1: a CMRInet Node is a driver on the line that provides a bus, not a processor |
+| Processors run logic and anchor transports; transports are mechanisms, encodings ride a transport instance; stations are derived; one entity on several sheets; the keys the compiler reads; the relation table | ADR 0009 §3.3, §3.4, §3.5, §3.8, §3.9, §3.10, §3.12 |
 | Identity by qualified railroad name; relations by name, not containment; errors as inconsistent facts, absence as information | view O2, O9, O13; glossary §2 |
 | Processors, field units and control points as independent entities | processor-cases §1, §5 |
 | The interface layers: Seam 1 Codeline between office and field logic; Seam 2 Hardware I/O on the panel side and the field side, local or remote; the transport catalog, any transport bindable to any seam | FieldUnit ADR 0005, `0005-ctc-interface-layers.svg` |
@@ -39,7 +42,7 @@ The Data Model itself is defined above, with names and relationships. What is un
 ## 3. Definition of done
 
 - **DoD1. Lossless round trip.** KiCad schematic → **[Data Model] → compiler output → on-disk representation → reader input → [Data Model]** → generators. The two bracketed models are equal. Proven by: compile SPCoast, write, read, compare the models; then write again and compare the bytes. The first leg, schematic → model, drops source-isms on purpose (R2) and is not part of the round trip.
-- **DoD2. Coverage.** The Data Model in the file captures the relationships, actors and dependencies articulated in the ADRs. Proven by: every recipe of ADR 0005 §7 and every section of the view §4 is readable from the compiled SPCoast file, with Sargent, Gilroy Caltrain, Gilroy Interchange, Watsonville and the desk present; a replica KiCad project that contains only the Sargent Interlocking (R3) evaluates to the same structure as the Sargent Interlocking from the SPCoast layout project.
+- **DoD2. Coverage.** The Data Model in the file captures the relationships, actors and dependencies articulated in the ADRs. Proven by: every relation of ADR 0009 §3.12 and every section of the view §4 is readable from the compiled SPCoast file, with all seven interlockings and the desk present; a replica KiCad project that contains only the Sargent Interlocking (R3) evaluates to the same structure as the Sargent Interlocking from the SPCoast layout project.
 - **DoD3. Schema.** The on-disk representation has a schema that defines its intended structure.  The compiler output validates correctly against it. Proven by: Validate the SPCoast project's compiled output, adversarial review of the schema and the validation mechanism.
 
 ## 4. Architecture
@@ -66,10 +69,10 @@ DoD3 asks for a schema; R3 demands a well defined, simple format and R2 forbids 
 R1 says the scope that declares a bus is a fact of the model (ADR 0005 S5: an attachment finds its declaration by wire, sheet, layout), and R3 says a one-interlocking file must be a natural thing to write.
 
 ```
-schema, layout{settings, transports{}, codelines{}, processors{}}, interlockings{name}, machines{name}, provenance
+schema, layout{name, railroad, region, era, rulebook, transports{}, codelines{}, ioEncodings{}, processors{}}, interlockings{name}, officeUnits{name}, provenance
 ```
 
-The top level is the layout and the file's own head. The layout scope holds the entities whose names are layout-wide: the transports, the code lines and the processors, a Remote I/O node (the Caltrain CMRInet node) being a processor with `transport` and `address` (ADR 0005 S2). Each interlocking or machine dictionary holds only railroad things: `settings`; the appliances and track (interlocking) or the columns (machine); `codelines[]`, the encoding instances with their authored address (ADR 0001 D4); `fieldUnit` or `officeUnit` naming the processor that runs it; `devices[]`, one row per device instance, with its bindings; `geometry`.
+The top level is the layout and the file's own head. The layout's own facts, its name, the prototype railroad and region, the era and the rulebook, are the `Railroad` symbol's (owner's ruling 2026-10-23). The layout scope holds the entities whose names are layout-wide (ADR 0009 §3.9): the transports, each with the processors that anchor it and, on a CMRInet line, its nodes keyed by UA; the code lines and the I/O encodings, each an encoding on a transport instance; and the processors, each with its drivers keyed by address. Each interlocking holds only railroad things: its one `codeline`; `fieldUnit.processor`; `houses{}` by control point name with milepost and maintainer call; the appliances and track (open until the trackplan piece of the compiler lands); `devices[]`, one row per device instance, with its bindings as routes; `geometry`. Each office unit holds its `style`, its `processor`, its `columns{}` by number, each naming its house or, where no `CP Name` is drawn yet, its interlocking, and its `devices[]`. Stations are derived (ADR 0009 §3.8) and absent.
 
 | Option | For | Against |
 |---|---|---|
@@ -78,9 +81,9 @@ The top level is the layout and the file's own head. The layout scope holds the 
 
 ### 4.4 The compiler resolves scopes to names
 
-R2 draws the boundary. The sheets and netlist in a KiCad project are how the drawing says "which bus"; Studio's canvas will say it another way. The KiCad compiler internally resolves each relation by wire, sheet and layout (ADR 0005 S5) and writes the named relation: a chip's `processor`, a node's `transport`, a consumer's chain, a binding's chip and pin. An override field on a symbol yields the same relation plus an `info` diagnostic (ADR 0005 C8).
+R2 draws the boundary. The sheets and netlist in a KiCad project are how the drawing says "which bus"; Studio's canvas will say it another way. The KiCad compiler internally resolves each relation by wire and by its fallback, sheet hierarchy or field (ADR 0009 §3.12), and writes the named relation: a driver's bus owner, a node's `transport`, a unit's `processor`, a binding's route. The two forms must agree, or the compiler reports an error and writes nothing; a fallback used alone is an `info` in its log (ADR 0005 C8).
 
-The Data Model holds names only.
+The Data Model holds names only. The same boundary applies to macros: a field that reads `ctc/<STRUCTURE:RAILROAD:Name>/codeline/` in the drawing is expanded by the compiler against the one symbol of that Role and Kind in scope, and the file carries `ctc/SPCoast/codeline/`. The drawing keeps one source for the railroad's name; every reader stays a reader.
 
 | Option | For | Against |
 |---|---|---|
@@ -89,27 +92,31 @@ The Data Model holds names only.
 
 ### 4.5 Names and references
 
-R1 says identity is the qualified railroad name only (view O2): no UUIDs, no ordinals or index IDs, case preserved and compared case-folded. The Data Model encodes it so:
+R1 says identity is the qualified railroad name only (view O2): no UUIDs, no ordinals or index IDs, case preserved and compared case-folded. ADR 0009 §3.10 says which drawn field is the name: `Name` on every seam entity, `CP Name` on a house, `Column` on a column, `Address` on a driver or a CMRInet Node; `Value` is drawing and is never read. Where a library symbol has no `Name` yet (the OfficeUnit and the encodings on 2026-10-23), the compiler reads the Value and reports it. The Data Model encodes identity so:
 
-- A dictionary key is the entity's own name within its scope. Its qualified name is the scope's name, a colon, and the key: `Sargent:835`, `SPCoast South:13`. Entities of the layout scope (interlockings, machines, transports, code lines) have no prefix: `Sargent`, `CMRInet`. A name may not contain a colon.
-- A processor is a layout-scope entity: one namespace for the whole layout, because one processor can serve several interlockings (processor-cases §1). Its name is the Value of its `Processor` symbol; when an interlocking draws none, the compiler declares one named after the interlocking, and likewise one per machine. So Luchessa's cpNode Xiao is the processor `Luchessa`, Corporal's is `Corporal`, the drawn Caltrain node is `Caltrain`, and the desk's is `SPCoast South`. Each entity kind has its own dictionary, so the interlocking `Luchessa` and the processor `Luchessa` coexist; a reference is typed by the field it sits in (`fieldUnit.host` names a processor). Two `Processor` symbols with one Value anywhere in the layout is a duplicate declaration, an error (ADR 0005 C10).
-- A chip is `processor/address`: `Luchessa/0x20` and `Corporal/0x20` are two MCP23017s at the same I2C address on two processors, and no collision exists because the chip key carries the processor. Where one address serves two uses the key is `processor/address/use` (`Sargent/0x40/pwm` and `Sargent/0x40/servo`, the PCA9685 as both, view I3).
-- A **row** is one element of a `devices[]` list: one device instance (view §3.1). The word names the list element and nothing else.
-- **A reference is always the qualified name, in every scope**, including from inside the scope that declares the entity: a Sargent device serves `Sargent:835`, not `835`.
-- A row has no identity (view §7 item 2). Nothing references a row, so no `id` key exists and the schema rejects one. A reader that reports on a row names it by its scope and its natural key (`serves` or `shows`, the type, `column` where present).
+- A dictionary key is the entity's own name within its scope. Its qualified name is the scope's name, a colon, and the key: `Sargent:835`, `Luchessa:Carnadero`. Entities of the layout scope (interlockings, office units, transports, code lines, I/O encodings, processors) have no prefix: `Sargent`, `MQTT`, `JohnCTC`. A name may not contain a colon or a slash.
+- A processor is a layout-scope entity: one namespace for the whole layout, because one processor can serve several units (ADR 0009 §3.3; SPCoastApp runs Gilroy Caltrain's logic and anchors the CMRInet line). Its name is its `Name`. Several placed `Processor` symbols with one name are one processor (ADR 0009 §3.9); two that declare different attributes are an error. The compiler invents no processor: a unit's processor is the one its `Processor` wire reaches, or the one in scope, or absent and reported.
+- A transport is a layout-scope entity declared once and placed once per processor that connects to it; those processors are its `anchors`. A code line or I/O encoding names its `transport` and the `processor` whose instance it rides, so two encodings on one broker from two processors are two entries.
+- A CMRInet Node's identity is its transport plus its UA (ADR 0009 §3.5): `transports.CMRInet.nodes."30"`. Written as a bus owner it is `CMRInet/30`.
+- A driver is keyed by its address on its bus: `processors.Sargent.drivers."0x20"`; a node's bits by `IB.n` and `OB.n`. `Sargent/0x20` and `Corporal/0x20` are two MCP23017s at one I2C address, and no collision exists because the key carries the owner.
+- A **route** is a device pin's binding, `owner/address/pin`: `Sargent/0x20/B1` on a processor's bus, `CMRInet/30/OB.7/D` on a node's. The owner is a processor name or `transport/UA`; a reader tells them apart because the first segment names one or the other.
+- A **row** is one element of a `devices[]` list: one device instance (view §3.1). The word names the list element and nothing else. A row has no identity (view §7 item 2). Nothing references a row, so no `id` key exists and the schema rejects one. A reader that reports on a row names it by its scope and its natural key (`serves` or `shows`, the type, `column` or `head` where present).
+- **A reference is always the qualified name, in every scope**, including from inside the scope that declares the entity: a Sargent device serves `Sargent:835`, not `835`; a board lamp on the desk shows `Watsonville:837T1`.
 
 | Option | For | Against |
 |---|---|---|
-| **Always qualified** (chosen) | one form, so a reader needs no scope context and `grep` finds every reference; a diagnostic quotes a name without saying where it found it; a machine's devices, which have no interlocking scope, need no special rule | a few bytes per row; renaming an interlocking touches every reference to it, which is a tool's job anyway |
-| Bare within the declaring scope, qualified across scopes (withdrawn 2026-10-19) | terser; a rename touches less | every reader carries a resolver that depends on where a field sits; the canonical form needs a shortening rule; machine devices need a rule of their own |
+| **Always qualified** (chosen) | one form, so a reader needs no scope context and `grep` finds every reference; a diagnostic quotes a name without saying where it found it; an office unit's devices, which have no interlocking scope, need no special rule | a few bytes per row; renaming an interlocking touches every reference to it, which is a tool's job anyway |
+| Bare within the declaring scope, qualified across scopes (withdrawn 2026-10-19) | terser; a rename touches less | every reader carries a resolver that depends on where a field sits; the canonical form needs a shortening rule; office devices need a rule of their own |
 | Row ids for devices | a report can point at a row | an id that is not a name is an identity the model forbids (O2), and a device has no name |
 | Processors declared under the interlocking that drew them (rev 2) | the file shows which sheet holds the symbol | that is a KiCad fact (R2); the name is layout-wide, so the dictionary must be too |
+| A node as a processor with `transport` and `address` (rev 3) | one dictionary for everything that holds drivers | a CMRInet Node runs no logic and anchors nothing; it is a driver on the line that provides a bus (ADR 0009 §3.5, C1) |
+| Bindings as `processor/address/use` chip references (rev 3) | short | a node's bus had no owner form; `use` doubled an address the drawing states once as two drivers at two addresses |
 
 ### 4.6 The file's head: schema and provenance
 
 DoD3 asks the file to say which schema it follows; R1 asks it to say which versions of the libraries and reference data it was compiled against (view I21), since it names those by key and never copies them; R2 limits what it may say about where it came from.
 
-- `schema`: the string `layout-model/v2.0.0`. The schema file is semantically versioned `schemas/layout-model/v2.0.0.json` in this repo until the chain moves into FieldUnit as its own PR (view O15), when the old `schemas/interlocking-plant/v1.json` is retired (O16).
+- `schema`: the string `layout-model/v3.0.0`. The schema file is semantically versioned `schemas/layout-model/v3.0.0.json` in this repo until the chain moves into FieldUnit as its own PR (view O15), when the old `schemas/interlocking-plant/v1.json` is retired (O16). A reader picks the schema by this string.
 - `provenance`: a property of the layout. 
    - The string `source-type/KiCad`; 
    - the compiler's name and version; 
@@ -123,7 +130,7 @@ DoD3 asks the file to say which schema it follows; R1 asks it to say which versi
 R1 says absence is information, not an error (view O13), incomplete models are allowed, their gaps are found by the readers and stubbed where useful by the emulator's mocks, and reference data is created in its simpleton form as the compiler first needs it.
 
 - A field that is absent is absent (view §4): a device without a binding, an interlocking without a field unit, a processor without a board are valid - but incomplete - files. The reader reports each absence as `info` when it evaluates (§4.6); the file does not.
-- Reference data (chip definitions by IC, aspect and indication tables by rulebook, driver type keys, encodings) is named by key in the file and by version in `provenance`; no row is copied. Each set lives in its own place with its own small document, not in this file.
+- Reference data (driver definitions by IC, boards, transport and encoding kinds and their pairing, aspect and indication tables by rulebook) is named by key in the file and by version in `provenance`; no row is copied. Each set lives in its own place with its own small document, not in this file.
 
 The alternative, copying the referenced rows into the file so it reads stand-alone, was rejected: it makes the file a second source of every table (the one-source rule of `AGENTS.md`), and a version in `provenance` gives a reader the same guarantee.
 
@@ -135,15 +142,15 @@ Sorting every list means that no list's order carries meaning. That is deliberat
 
 Tested via a writer (`tools/layout_model.dumps` and a script (`tests/test_layout_model_file.py`) to prove that a shuffled model writes the same bytes.
 
-### 4.9 Hosts: where logic runs
+### 4.9 Processors: where logic runs and what anchors connections
 
-R2 forbids hidden connections, and the model had one: wherever a unit's logic runs on something not drawn, the compiler's default "one processor per interlocking, named after it" stood in for it. Three patterns already in the file close the gap, and they compose:
+R2 forbids hidden connections, and rev 3 had two: a `host` the drawing did not contain, invented by the compiler or named through a field, and a node that was a processor. ADR 0009 closes both, and the file follows it.
 
-- **A host is a processor.** `layout.processors{}` admits a processor with a `side`, a `board` and no chips, and a unit names its host. A Mac app is a processor like a Xiao: drawn once as a `Processor` symbol with a board of its own and named from every unit that runs on it, through the `Host` field on the Interlocking symbol (processor-cases §1). Several units naming one host is already allowed, since processor names are layout-wide.
-- **No invented processor.** The compiler derives a processor for an interlocking only when that interlocking draws Local I/O chips of its own. An interlocking whose devices bind only to Remote I/O nodes, or that draws no devices yet, gets none invented; its field unit has no host until the drawing names one, and that absence is reported by the reader.
-- **The line's host runs the all-remote unit.** By the remote I/O rule (processor-cases §1) a node hosts no unit, so the logic of a field unit whose I/O is all CMRInet runs where the line is polled: the transport's `host`, a processor drawn like any other (`CMRI Host`, a FieldUnit plus CMRInet host, over RS485 or IP). An all-JMRI unit runs on the MQTT client that talks to JMRI (`JMRI Host`), with JMRI itself the Remote I/O node on the MQTT transport. The virtual code line is the catalog's in-process kind, a `Codeline-Transport-Virtual` symbol whose host owns the buffer, with code lines and stations on it exactly as on MQTT.
-
-The drawing holds the deployment of the day and evolves (the owner, 2026-10-20). Day 0: every field unit runs on `Plant Host`, each attached to a code line like any other, its devices absent and mocked by the emulator. Day 1: one interlocking gets a field processor, the drawing changes, the code is regenerated. Day N: every interlocking with a field processor is real, and what remains on hosts is the Seam 2 remote I/O that is not emulated: the CMRI app and the JMRI app, each a FieldUnit plus a transport client. No second deployment lives in the drawing and no generator rehosts anything: the file says where every unit runs, and §6 shows all three days at once.
+- **A processor is drawn, and a unit is wired to it.** `Processor` is a symbol with a `Name` and a `Board`; an Interlocking's or OfficeUnit's `Processor` wire says where its logic runs (§3.3). `fieldUnit.processor` and `officeUnits.<name>.processor` carry that and nothing else. The compiler invents no processor; a unit the drawing leaves unwired has no processor, and the reader reports the absence.
+- **A transport is a mechanism, anchored once per processor that connects to it.** Each placed `Transport-*` symbol is wired to the processor that runs the code for it, and the symbol may be placed once per such processor (§3.4). `transports.<name>.anchors` lists them. An encoding rides a particular instance, so `codelines.<name>` and `ioEncodings.<name>` carry `transport` and `processor` both: the AAR tokens ride MQTT at JohnCTC, the JMRI objects ride MQTT at Gilroy.
+- **Remote I/O is an encoding or a node, not a processor.** JMRI drivers sit on their processor's own bus, with the JMRI encoding on that processor's MQTT instance as the fact (§3.6); a CMRInet Node is a driver on the line that provides a bus for its bits (§3.5), written under its transport by UA with its declared bytes and the bits in use. The unit whose I/O is all remote runs on whatever processor its wire names; today Gilroy Caltrain runs on SPCoastApp, the processor that also anchors the CMRInet line, and the file says exactly that.
+- **Layout-wide facts have a symbol.** The layout's name, prototype railroad, region, era and rulebook are the `Railroad` symbol's fields on the root sheet, one per project, and land in `layout` (owner's ruling 2026-10-23). A field elsewhere may reference them with `<ROLE:KIND:Field>`, resolved to the one symbol of that Role and Kind in scope and expanded by the compiler (§4.4). The grammar is the libraries' own keys, so the compiler needs no table; two such symbols in scope is an error, and the fix is a wire, never a second mechanism.
+- **The drawing is the deployment.** The file carries the drawing as it stands: today every interlocking has a field processor and a desk runs on JohnCTC. A view that elides devices, drivers and processors yields the emulated layout of an earlier day (the owner, 2026-10-23), and that view is a consumer's to build, not a second deployment in the drawing.
 
 ## 5. The Data Model shape
 
@@ -155,471 +162,46 @@ How the file lands on those layers, artifact by artifact:
 
 | FieldUnit ADR 0005 artifact | In the file |
 |---|---|
-| Transport catalog (DC pulses, MQTT, LocoNet, CMRInet, virtual/in-process) | `layout.transports{}`: this layout's instances, each of a kind in the reference data, declared once and bound by name |
-| Seam 1, Codeline: controls down, indications up | `layout.codelines{}`: an encoding on a transport. Office end: the machine's `attachments[]`. Field end: the interlocking's `codelines[]` entry, the station with its authored address |
-| Seam 2, Hardware I/O, panel side and field side: Local I/O (GPIO, I2C, SPI) | chips on the unit's host processor, `layout.processors{}.chips` |
-| Seam 2: Remote I/O node, with its adapter, one per transport | a processor with `transport` and `address` that hosts no unit (Caltrain, JMRI); the adapter is the transport kind, reference data; the unit's logic runs on the transport's `host`, a processor drawn like any other (§4.9) |
-| Office logic, the cTc code machine | `machines{}` with `officeUnit.host` |
-| Panel devices: levers, buttons, lamps | the machine's `devices[]` rows |
-| Field logic, one per location: codeline handler, safety logic | `interlockings{}` with `fieldUnit.host` |
-| Field devices: motors, LEDs, detectors | the interlocking's `devices[]` rows |
+| Transport catalog (DC pulses, MQTT, LocoNet, CMRInet, virtual/in-process) | `layout.transports{}`: this layout's mechanisms, each of a kind in the reference data, declared once, anchored on the processors that connect to it |
+| Seam 1, Codeline: controls down, indications up | `layout.codelines{}`: an encoding on a transport instance. Field end: each interlocking's `codeline`. Office end: the office unit's columns, whose houses derive the stations (ADR 0009 §3.8); nothing is written per station |
+| Seam 2, Hardware I/O, panel side and field side: Local I/O (GPIO, I2C, SPI) | `layout.processors{}.drivers`, keyed by address on the processor's bus; a device's binding is a route onto one of them |
+| Seam 2: Remote I/O over a transport | an I/O encoding, `layout.ioEncodings{}`, on the processor's own transport instance, with its drivers on the processor's bus (JMRI); or a CMRInet Node, `layout.transports.<line>.nodes{}` by UA, declaring its bytes and providing a bus for its bits, with routes `line/UA/OB.n/D` |
+| Office logic, the CTC machine | `officeUnits{}` with `processor` |
+| Panel devices: levers, buttons, lamps | the office unit's `devices[]` rows: a column device carries its `column`; a model board lamp carries none and `shows` its indications |
+| Field logic, one per location: codeline handler, safety logic | `interlockings{}` with `fieldUnit.processor` |
+| Field devices: motors, LEDs, detectors | the interlocking's `devices[]` rows; a head device `serves` its mast and names its `head` |
 | Codeline adapters, I/O managers | runtime parts of a unit, not facts a person states: no key |
 
-Which seam a transport serves is not written either: a transport a code line names serves Seam 1, one a node names serves Seam 2, and one transport may do both. The reader derives it (R1).
-
+Which seam a transport serves is not written: a transport a code line rides serves Seam 1, one an I/O encoding or a node rides serves Seam 2, and one transport may do both, as MQTT does. The reader derives it (R1).
 
 Then the file's shape, drawn on the same layers:
 
 ![The Data Model shape](0008/shape.svg)
 
-One json file, a collection of facts organized by scope, relations linked by name, drawn on the cTc interface layers of FieldUnit ADR 0005: the office band is a machine, the field band holds the interlockings, Seam 1 is the code lines between them, Seam 2 is each band's I/O row, and the transport catalog stands beside them. Yellow is a declaration; white is an artifact that attaches via a relationship. Box titles are file paths.
+One JSON file, a collection of facts organized by scope, relations linked by name, drawn on the cTc interface layers of FieldUnit ADR 0005: the office band is an office unit, the field band holds the interlockings, Seam 1 is the code lines between them, Seam 2 is each band's I/O row, and the transport catalog stands beside them. Yellow is a layout-scope entity; white is a row or a reference to one. Box titles are file paths.
 
-- **Red dashed**: a reference by qualified name, a fact written in the file. A row's `serves`, a unit's `host`, a binding's chip, a code line's `transport` (the Seam 1 binding), a node's `transport` (the Seam 2 binding). The lever's `serves Sargent:835` runs from the office band to the field band in the same form it has anywhere.
-- **Blue**: code line membership, the two facts the control path from a lever to its appliance is derived from: the machine's `attachments[]` entry (office end) and the interlocking's `codelines[]` entry (field end). The file never writes that path.
+- **Red dashed**: a reference by name, a fact written in the file. A row's `serves`, a unit's `processor`, a route's owner, a code line's `transport` and `processor` (the Seam 1 binding), a node under its line (the Seam 2 binding). The lever's `serves Sargent:835` runs from the office band to the field band in the same form it has anywhere.
+- **Blue**: code line membership, the two facts the control path from a lever to its appliance is derived from: the interlocking's `codeline` (field end) and the office unit's column naming the house or interlocking (office end). The file never writes that path, nor the stations.
 
-A processor has one name for the whole layout, so `Luchessa/0x20` and `Corporal/0x20` are two chips at one I2C address. A Remote I/O node (Caltrain) attaches by transport and address and hosts no unit; its field unit runs on the line's host, the CMRI app, drawn as a processor (§4.9). Which seam a transport serves is derived from what binds to it.
+What is not in the file: sheets, nets, references, KiCad symbol units (source-isms); macros (expanded); diagnostics (an error means no file; absence is read from the file); stations, routes between lever and appliance, signals, tokens, head aspects, resolved settings, the seam a transport serves (the evaluator derives them in memory); the libraries and the reference data (named by key and version, never copied); any order in a list (every intended order is an explicit address or key).
 
-What is not in the file: sheets, nets, references, units (source-isms); diagnostics (an error means no file; absence is read from the file); routes, signals, tokens, casts, resolved settings, the seam a transport serves and the control path from a lever to its appliance (the evaluator derives them in memory); the libraries and the reference data (named by key and version, never copied); any order in a list (every intended order is an explicit address or key).
+## 6. The example, compiled
 
-## 6. The example, validated
+`schemas/layout-model/examples/spcoast.layout.json` is the compiler's output on the SPCoast project at Railroad `1dd4190`, written by `schemas/layout-model/examples/make_spcoast_layout.py` from the project's current netlist export, never typed. It validates against `schemas/layout-model/v3.0.0.json` and is in canonical form; two compiles are byte-identical; `tests/test_layout_compiler.py` proves the relation table of ADR 0009 §3.12 on the same netlist on every run and `tests/test_layout_model_file.py` the canonical form. At 4,567 lines it is not reproduced here. Read off it:
 
-`schemas/layout-model/examples/spcoast-excerpt.json`, reproduced in full. It is generated by the script beside it, validates against `schemas/layout-model/v2.0.0.json`, and is in canonical form; `tests/test_layout_model_file.py` proves all three on every run. Railroad names are the drawing's as of 2026-10-19; the Luchessa and Corporal processors and their chips are the intended design, since neither sheet has field I/O drawn yet; the hosts of §4.9 are drawn as intended: `Plant Host` for Watsonville (Day 0), `CMRI Host` for Gilroy Caltrain, `JMRI Host` and the `JMRI` node for Gilroy Interchange; the JMRI pin names are the simpleton of a parked ruling (ADR 0005 §8); `provenance` values are placeholders of valid form.
+- `layout`: name SPCoast, railroad Southern Pacific, region Coast Line, era 1960+, rulebook GCOR, from the `Railroad` symbol.
+- `layout.transports`: TimeCode anchored on JohnCTC; MQTT anchored on JohnCTC and on Gilroy, the one broker placed twice; CMRInet anchored on SPCoastApp, with node `30` of type C, 2 input and 3 output bytes, and its 14 `IB.n` and 20 `OB.n` bits.
+- `layout.codelines`: `AAR Tokens`, encoding AAR on MQTT at JohnCTC, topic `ctc/SPCoast/codeline/` expanded from the macro; `US&S 506` on TimeCode at JohnCTC. `layout.ioEncodings`: `JMRI` on MQTT at Gilroy; `CMRInet` on CMRInet at SPCoastApp.
+- `layout.processors`: eight, with their boards and 46 drivers by address; `Sargent/0x20` and `Corporal/0x20` coexist.
+- `interlockings`: seven. Luchessa's `codeline` is `US&S 506` and its houses are Luchessa, Gilroy and Carnadero; every other interlocking is on `AAR Tokens`. Gilroy Caltrain's `fieldUnit.processor` is SPCoastApp and its heads route through `CMRInet/30/OB.n/D`; every other unit runs on the processor of its name, Gilroy Interchange on `Gilroy`. 155 field device rows.
+- `officeUnits."SPCoast South"`: style US&S, processor JohnCTC, fourteen columns, of which 5, 6 and 7 name the Luchessa houses and the rest name their interlocking until a `CP Name` is drawn; 75 panel device rows, the model board lamps without a column, each showing qualified indications such as `Watsonville:837T1`.
+- `provenance`: source type KiCad, the compiler and its version, the netlist's name and hash and the Railroad repository's `git describe`.
 
-```json
-{
-  "interlockings": {
-    "Corporal": {
-      "codelines": [
-        {
-          "address": "Corporal",
-          "codeline": "AAR Tokens@MQTT"
-        }
-      ],
-      "fieldUnit": {
-        "host": "Corporal"
-      }
-    },
-    "Gilroy Caltrain": {
-      "appliances": {
-        "773": {
-          "appliance": "switch",
-          "controlPoint": "Gilroy Caltrain:Gilroy Caltrain",
-          "style": "powered"
-        },
-        "774NAB": {
-          "appliance": "mast",
-          "heads": {
-            "A": {
-              "style": "CPL"
-            },
-            "B": {
-              "style": "CPL"
-            }
-          },
-          "style": "double"
-        }
-      },
-      "codelines": [
-        {
-          "address": "Gilroy Caltrain",
-          "codeline": "AAR Tokens@MQTT"
-        }
-      ],
-      "controlPoints": {
-        "Gilroy Caltrain": {}
-      },
-      "devices": [
-        {
-          "bindings": [
-            {
-              "chip": "Caltrain/CMRI",
-              "function": "LAMP",
-              "pin": "OUT.7"
-            }
-          ],
-          "serves": "Gilroy Caltrain:774NAB",
-          "type": {
-            "appliance": "head"
-          }
-        },
-        {
-          "bindings": [
-            {
-              "chip": "Caltrain/CMRI",
-              "function": "N",
-              "pin": "OUT.1"
-            },
-            {
-              "chip": "Caltrain/CMRI",
-              "function": "NWK",
-              "pin": "IN.1"
-            }
-          ],
-          "serves": "Gilroy Caltrain:773",
-          "type": {
-            "appliance": "switch",
-            "style": "powered"
-          }
-        }
-      ],
-      "fieldUnit": {
-        "host": "CMRI Host"
-      }
-    },
-    "Gilroy Interchange": {
-      "appliances": {
-        "777": {
-          "appliance": "switch",
-          "controlPoint": "Gilroy Interchange:Gilroy North",
-          "osCircuit": "Gilroy Interchange:777T1",
-          "style": "lock"
-        },
-        "781": {
-          "appliance": "switch",
-          "controlPoint": "Gilroy Interchange:Gilroy South",
-          "osCircuit": "Gilroy Interchange:781T1",
-          "style": "lock"
-        }
-      },
-      "codelines": [
-        {
-          "address": "Gilroy Interchange",
-          "codeline": "AAR Tokens@MQTT"
-        }
-      ],
-      "controlPoints": {
-        "Gilroy North": {
-          "milepost": 77.7
-        },
-        "Gilroy South": {
-          "milepost": 78.1
-        }
-      },
-      "devices": [
-        {
-          "bindings": [
-            {
-              "chip": "JMRI/MQTT",
-              "function": "M",
-              "pin": "Turnout"
-            },
-            {
-              "chip": "JMRI/MQTT",
-              "function": "N",
-              "pin": "Turnout-Feedback.N"
-            },
-            {
-              "chip": "JMRI/MQTT",
-              "function": "R",
-              "pin": "Turnout-Feedback.R"
-            }
-          ],
-          "serves": "Gilroy Interchange:777",
-          "type": {
-            "appliance": "switch",
-            "style": [
-              "dual",
-              "lock",
-              "powered"
-            ]
-          }
-        }
-      ],
-      "fieldUnit": {
-        "host": "JMRI Host"
-      }
-    },
-    "Luchessa": {
-      "codelines": [
-        {
-          "address": "Luchessa",
-          "codeline": "AAR Tokens@MQTT"
-        }
-      ],
-      "controlPoints": {
-        "CP Carnadero": {},
-        "CP Gilroy": {},
-        "CP Luchessa": {}
-      },
-      "fieldUnit": {
-        "host": "Luchessa"
-      }
-    },
-    "Sargent": {
-      "appliances": {
-        "835": {
-          "appliance": "switch",
-          "controlPoint": "Sargent:Sargent",
-          "osCircuit": "Sargent:835T1",
-          "style": "lock"
-        },
-        "836NAB": {
-          "appliance": "mast",
-          "heads": {
-            "A": {
-              "style": "CPL"
-            },
-            "B": {
-              "style": "CPL"
-            }
-          },
-          "style": "double"
-        }
-      },
-      "codelines": [
-        {
-          "address": "Sargent",
-          "codeline": "AAR Tokens@MQTT"
-        }
-      ],
-      "controlPoints": {
-        "Sargent": {
-          "milepost": 83.5
-        }
-      },
-      "devices": [
-        {
-          "address": "1",
-          "bindings": [
-            {
-              "chip": "Sargent/0x40/pwm",
-              "function": "LAMP",
-              "pin": "B1"
-            }
-          ],
-          "serves": "Sargent:836NAB",
-          "type": {
-            "appliance": "head"
-          }
-        },
-        {
-          "bindings": [
-            {
-              "chip": "Sargent/0x20",
-              "function": "M",
-              "pin": "B1"
-            },
-            {
-              "chip": "Sargent/0x20",
-              "function": "N",
-              "pin": "B2"
-            }
-          ],
-          "serves": "Sargent:835",
-          "type": {
-            "appliance": "switch",
-            "style": [
-              "dual",
-              "lock",
-              "powered"
-            ]
-          }
-        }
-      ],
-      "fieldUnit": {
-        "host": "Sargent"
-      }
-    },
-    "Watsonville": {
-      "codelines": [
-        {
-          "address": "Watsonville",
-          "codeline": "AAR Tokens@MQTT"
-        }
-      ],
-      "description": "Day 0: no field processor yet; its devices are absent and the emulator mocks them",
-      "fieldUnit": {
-        "host": "Plant Host"
-      }
-    }
-  },
-  "layout": {
-    "codelines": {
-      "AAR Tokens@MQTT": {
-        "encoding": "AAR",
-        "transport": "MQTT"
-      }
-    },
-    "division": "South",
-    "name": "SPCoast",
-    "processors": {
-      "Caltrain": {
-        "address": "30",
-        "board": "cpNode",
-        "chips": {
-          "CMRI": {
-            "ic": "CMRI"
-          }
-        },
-        "side": "field",
-        "transport": "CMRInet"
-      },
-      "CMRI Host": {
-        "board": "macOS app",
-        "description": "FieldUnit + CMRInet host: runs the logic of the all-CMRI field units and polls the line",
-        "side": "field"
-      },
-      "Corporal": {
-        "board": "cpNode Xiao",
-        "chips": {
-          "0x20": {
-            "ic": "MCP23017"
-          }
-        },
-        "side": "field"
-      },
-      "JMRI": {
-        "board": "JMRI",
-        "chips": {
-          "MQTT": {
-            "ic": "JMRI"
-          }
-        },
-        "description": "Remote I/O node: JMRI drives the devices over MQTT; a pin is the JMRI object a driver stands for (simpleton)",
-        "side": "field",
-        "transport": "MQTT"
-      },
-      "JMRI Host": {
-        "board": "macOS app",
-        "description": "FieldUnit + MQTT client: runs the logic of the all-JMRI field units",
-        "side": "field"
-      },
-      "Luchessa": {
-        "board": "cpNode Xiao",
-        "chips": {
-          "0x20": {
-            "ic": "MCP23017"
-          },
-          "0x21": {
-            "ic": "MCP23017"
-          }
-        },
-        "side": "field"
-      },
-      "Plant Host": {
-        "board": "macOS app",
-        "description": "Day 0: hosts the field units that have no field processor yet; their devices are absent and the emulator mocks them",
-        "side": "field"
-      },
-      "Sargent": {
-        "board": "cpNode Xiao",
-        "chips": {
-          "0x20": {
-            "ic": "MCP23017"
-          },
-          "0x40/pwm": {
-            "ic": "PCA9685"
-          },
-          "0x40/servo": {
-            "ic": "PCA9685"
-          }
-        },
-        "side": "field"
-      },
-      "SPCoast South": {
-        "board": "ESP32",
-        "chips": {
-          "0x2C": {
-            "ic": "MAX7313"
-          }
-        },
-        "side": "office"
-      }
-    },
-    "railroad": "SPCoast",
-    "settings": {
-      "era": "1970s",
-      "rulebook": "SP 1969"
-    },
-    "transports": {
-      "CMRInet": {
-        "host": "CMRI Host",
-        "kind": "CMRI",
-        "params": {
-          "baud": "28800",
-          "port": "/dev/cu.usbserial-CMRI"
-        }
-      },
-      "MQTT": {
-        "kind": "MQTT",
-        "params": {
-          "broker": "192.168.1.21:1883",
-          "topic": "ctc/SPCoast/codeline/"
-        }
-      }
-    }
-  },
-  "machines": {
-    "SPCoast South": {
-      "attachments": [
-        {
-          "codeline": "AAR Tokens@MQTT",
-          "columns": [
-            "13"
-          ],
-          "interlocking": "Sargent"
-        }
-      ],
-      "columns": {
-        "13": {
-          "interlocking": "Sargent"
-        }
-      },
-      "devices": [
-        {
-          "bindings": [
-            {
-              "chip": "SPCoast South/0x2C",
-              "function": "WLS",
-              "pin": "A7"
-            }
-          ],
-          "column": "SPCoast South:13",
-          "serves": "Sargent:835",
-          "type": {
-            "appliance": "lever",
-            "style": "lock"
-          }
-        }
-      ],
-      "officeUnit": {
-        "host": "SPCoast South"
-      },
-      "panelStyle": "US&S 506 lever panel"
-    }
-  },
-  "provenance": {
-    "compiler": {
-      "name": "kicad2layout",
-      "version": "0.0.0-example"
-    },
-    "libraries": {
-      "Railroad-Field": "example",
-      "Railroad-HardwareIO": "example",
-      "Railroad-Office": "example",
-      "Railroad-Trackplan": "example"
-    },
-    "referenceData": {
-      "boards": "example",
-      "chips": "example",
-      "encodings": "example"
-    },
-    "source": {
-      "describe": "example",
-      "path": "SPCoast/SPCoast.kicad_pro",
-      "sha256": "50d858e0985ecc7f60418aaf0cc5ab587f42c2570a884095a9e8ccacd0f6545c"
-    },
-    "sourceType": "KiCad"
-  },
-  "schema": "layout-model/v2.0.0"
-}
-```
-
-Read off the example: the Caltrain node is a processor that attaches to the layout's CMRInet transport by its address and declares the bits its devices use; no row names the transport or the UA (ADR 0005 S1); its field unit's host is `CMRI Host`, the processor that polls the line, and Watsonville's is `Plant Host` with no devices at all (§4.9). `Luchessa/0x20` and `Corporal/0x20` are different chips at one I2C address (§4.5). Every reference is a qualified name, whether it stays in its scope (`Sargent:835` from a Sargent row) or crosses one (the lever in `SPCoast South:13` serves `Sargent:835`); the layout's own entities carry no prefix. Nothing says sheet, net, reference or unit (R2). The canonical order puts `interlockings` before `layout` and `schema` last: the rule is one rule, with no exception for the head.
+What the compiler reported while writing it, none an error: 11 columns without `CP Name`; 16 JMRI drivers without an address, so their devices' bindings are absent (FieldUnit ADR 0005 §8, parked); the OfficeUnit and the four encodings named by Value until their libraries gain `Name`. Every relation that both a wire and a fallback resolve agrees; none disagrees.
 
 ## 7. Decision
 
-Ratify §4 and the schema `schemas/layout-model/v2.0.0.json` as the on-disk representation of the Layout Data Model, the public interface: one JSON file, facts nested by scope with processors at the layout, scopes resolved to qualified names by the compiler, rows without identity, a head of schema and layout-level provenance, no diagnostics, absence as information, reference data by key, canonical serialisation. Milestone D writes it; milestone E reads it; §3 gates both.
+Ratify §4 and the schema `schemas/layout-model/v3.0.0.json` as the on-disk representation of the Layout Data Model, the public interface: one JSON file, facts nested by scope with the layout's own facts, transports, code lines, I/O encodings, processors and CMRInet Nodes at the layout, scopes and macros resolved to names by the compiler, bindings as routes, stations derived and absent, rows without identity, a head of schema and layout-level provenance, no diagnostics, absence as information, reference data by key, canonical serialisation. Milestone D writes it; milestone E reads it; §3 gates both.
 
 ## 8. Record
 
@@ -636,21 +218,29 @@ How the choices were made, in order:
 - 2026-10-20. The owner: the picture showed code lines and transports as siblings with no binding between them, and FieldUnit ADR 0005's interface layers (two seams, a transport catalog) are the definitive architecture. The picture is redrawn on those layers with both seam bindings drawn, the artifact-to-file mapping table is in §4.3, and the prose uses Local I/O and Remote I/O node. No key changed.
 - 2026-10-20. The owner: virtual field units ran "on a host" never drawn, over a virtual code line never defined, and an all-CMRI or all-JMRI field unit has no field processor either; a hidden connection in a document that forbids them. §4.9 closes it with three existing patterns (a host is a processor; no invented processor; the line's host runs the all-remote unit) and the owner's Day 0 to Day N evolution of the drawing. The example gains `Plant Host`, `CMRI Host`, `JMRI Host` and the `JMRI` node, and Gilroy Caltrain's host is corrected. No key changed.
 
+- 2026-10-21 to 23. ADR 0009 redrew the project so that every seam relation is a wire with a named fallback, and ruled the node a driver, the processor the anchor of transports, stations derived, `Name` the key (accepted 2026-10-23). Its C4 asked for this rev 4.
+- 2026-10-23. The owner's rulings while the seam reader was built: the `PanelColumn` is the logical column tied to a control point and the panel I/O hardware is not, so model board lamps are `ModelLamp` devices in no column (Railroad `1dce092`); layout-wide facts need a place that is neither a transport nor an office unit, so a `Railroad` symbol on the root sheet carries name, railroad, region, era and rulebook (`d52017c`); a topic root is layout data, not reference data, so a field may reference another symbol's field with `<ROLE:KIND:Field>`, keyed by the libraries' own keys so the compiler needs no table (`21536f1`); `Name` on processors and transports, and on the OfficeUnit and the encodings to follow. The seam reader, `tools/layout_compiler`, found the Interchange heads drawn CPL and bound CL, the §3.7 error, fixed in the drawing (`1dd4190`); its output is §6.
+
 ## 9. Consequences
 
 - C1. Milestone D's compiler writes this file and nothing else; its contract is the schema plus §4.8. Its gates are §3.
 - C2. The reader library reads the file, evaluates in memory (view O4) and reports; FieldUnit's generators and emulator consume the reader's result, not the file's text.
 - C3. The scope resolver of ADR 0005 C11 lives in the compiler (§4.4). The duplicate-address and two-candidates rules of ADR 0005 C10 are compiler errors: no file is written. The reader reports absences as `info` from the file alone.
-- C4. `schemas/layout-model/v2.0.0.json`, `tools/layout_model` (validate, canonical write) and the gates exist now and are ratified with this ADR. `track` and `geometry` are open objects until the compiler fixes them (view §4.7); fixing them is a minor version.
+- C4. `schemas/layout-model/v3.0.0.json`, `tools/layout_model` (validate by the file's version, canonical write), `tools/layout_compiler` (the seam reader, the first piece of milestone D) and the gates exist now and are ratified with this ADR. `appliances`, `track` and `geometry` are open objects until the trackplan piece of the compiler fixes them (view §4.7); fixing them is a minor version. `v2.0.0.json` and its typed example retire in the commit that follows ratification.
 - C5. The view §7 items 1 (section names) and 2 (row identity) close here: the names are those of §4.3 and §6, read against the glossary §2.4; rows have no identity.
 - C6. The old compilers, `schemas/interlocking-plant/v1.json` and the generated Luchessa JSON stay as reference until §3 passes, then go in one commit (layout-model-plan §0).
 - C7. The compiler keeps its own log for errors and forensics (sheet, reference, unit); the file never carries them.
 - C8. The schema is the public interface (R3): a change to the Data Model that changes the file is a schema version, with a migration for files already written, never a quiet edit.
-- C9. The compiler invents no processor for an interlocking without Local I/O chips of its own; the reader reports a unit without a host (§4.9).
+- C9. The compiler invents no processor; a unit's processor is what its wire or its scope names, and the reader reports a unit without one (§4.9).
+- C10. The compiler expands macros `<ROLE:KIND:Field>` against the one symbol of that Role and Kind in scope; the file carries values. Two in scope is a compiler error (§4.4, §4.9).
+- C11. ADR 0009 §3.10 gains Kind `RAILROAD` under `STRUCTURE`, the macro rule, model board lamps as PANEL devices of Style `board` without a `Column` pin, and `Name` as the key on processors, transports, office units and encodings; its §3.2 says IC `CMRI` where the drawing and the vocabulary say `CMRInet`. These are amendments for its next revision, not changes to its decision.
 
 ## 10. Out of scope
 
 - The evaluated model's serialisation, still deferred (view O5); it is an in-memory result keyed to the file's hash.
 - The reference data sets' own shape: each gets its simpleton version and document when the compiler first needs it.
 - `geometry` in detail (view §4.7).
-- Generator options, including which processor hosts what in the emulator (processor-cases case 6).
+- Generator options, including which processor runs what in the emulator (processor-cases case 6), and the Day 0 view that elides hardware (§4.9).
+- The JMRI driver's address, the JMRI object (FieldUnit ADR 0005 §8, parked): until ruled, those bindings are absent.
+- The all-explicit and all-implicit copies of the project (ADR 0009 C7); this file is compiled from the "both" copy.
+- The trackplan: appliances, track circuits, policies and the control point membership derived from signals; with it, the retirement of the `CP` field from the Trackplan library.
