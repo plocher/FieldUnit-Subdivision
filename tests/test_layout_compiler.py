@@ -15,7 +15,7 @@ from tools import layout_model
 from tools.layout_compiler import emit, seams
 from tools.layout_compiler.source import Net, PinRef, Symbol, from_netlist, from_symbols
 
-NETLIST = Path(os.environ.get("SPCOAST_NETLIST", Path.home() / "Dropbox/KiCad/Railroad/SPCoast/production/railroad-after.net"))
+NETLIST = Path(os.environ.get("SPCOAST_NETLIST", Path.home() / "Dropbox/KiCad/Railroad/SPCoast/production/SPCoast.net"))
 
 
 def sym(ref, lib, sheet, value="", **fields):
