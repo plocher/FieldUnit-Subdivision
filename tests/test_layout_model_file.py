@@ -6,7 +6,7 @@ from pathlib import Path
 
 from tools import layout_model
 
-EXAMPLE = Path(__file__).resolve().parents[1] / "schemas" / "layout-model" / "examples" / "spcoast-excerpt.json"
+EXAMPLE = Path(__file__).resolve().parents[1] / "schemas" / "layout-model" / "examples" / "spcoast.layout.json"
 
 
 class LayoutModelFileTests(unittest.TestCase):
@@ -20,7 +20,7 @@ class LayoutModelFileTests(unittest.TestCase):
         text = EXAMPLE.read_text(encoding="utf-8")
         self.assertEqual(layout_model.dumps(layout_model.loads(text)), text)
         shuffled = json.loads(json.dumps(self.model))  # a fresh object, same facts
-        shuffled["layout"]["processors"]["Sargent"]["chips"] = dict(reversed(list(shuffled["layout"]["processors"]["Sargent"]["chips"].items())))
+        shuffled["layout"]["processors"]["Sargent"]["drivers"] = dict(reversed(list(shuffled["layout"]["processors"]["Sargent"]["drivers"].items())))
         shuffled["interlockings"]["Sargent"]["devices"].reverse()
         self.assertEqual(layout_model.dumps(shuffled), text)
 

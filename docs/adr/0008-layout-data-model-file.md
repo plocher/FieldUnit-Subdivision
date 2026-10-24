@@ -1,7 +1,7 @@
 # 0008. The Layout Data Model File
 
-- Status: proposed, rev 4, 2026-10-24. Rewritten on ADR 0009 (explicit seams) and the owner's rulings of 2026-10-23 and 2026-10-24. The schema is a new major, `schemas/layout-model/v3.0.0.json`, and the example (§6) is the compiler's output on the SPCoast project, never typed; both are part of what is ratified.
-- Decision requested: **ratify**, the architecture of the on-disk representation: §4 and the schema `schemas/layout-model/v3.0.0.json` it describes.
+- Status: accepted, rev 4, 2026-10-24 (the owner: "ADR Approved"). Rewritten on ADR 0009 (explicit seams) and the owner's rulings of 2026-10-23 and 2026-10-24. The schema is a new major, `schemas/layout-model/v3.0.0.json`, and the example (§6) is the compiler's output on the SPCoast project, never typed; both are part of what is ratified.
+- Decision: **ratified** 2026-10-24, the architecture of the on-disk representation: §4 and the schema `schemas/layout-model/v3.0.0.json` it describes.
 - Builds on: 
    - `docs/review/layout-model-view-2026-10-16.md` (the Data Model's content: sections, O1 to O16), 
    - ADR 0001 (encoding on transport, authored addresses), 

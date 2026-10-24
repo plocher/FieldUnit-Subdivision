@@ -13,19 +13,19 @@ from typing import Any
 
 import jsonschema
 
-SCHEMA_ID = "layout-model/v2.0.0"            # rev 3 (ADR 0008); kept until rev 4 is ratified
-SCHEMA_V3 = "layout-model/v3.0.0"            # rev 4 on ADR 0009: the compiler writes this
+SCHEMA_ID = "layout-model/v3.0.0"            # ADR 0008 rev 4 on ADR 0009, ratified 2026-10-24: the compiler writes this
+SCHEMA_V3 = SCHEMA_ID
 SCHEMA_DIR = Path(__file__).resolve().parents[2] / "schemas" / "layout-model"
-SCHEMA_PATH = SCHEMA_DIR / "v2.0.0.json"
+SCHEMA_PATH = SCHEMA_DIR / "v3.0.0.json"
 
 _DIGITS = re.compile(r"(\d+)")
 _SPACES = re.compile(r"\s+")
 
 
 def schema_path(model: Any = None) -> Path:
-    """The schema a model names in its ``schema`` string (``layout-model/<version>``); v2.0.0 when it names none."""
+    """The schema a model names in its ``schema`` string (``layout-model/<version>``); v3.0.0 when it names none."""
     sid = model.get("schema") if isinstance(model, dict) else None
-    version = sid.split("/", 1)[1] if isinstance(sid, str) and sid.startswith("layout-model/") and "/" in sid else "v2.0.0"
+    version = sid.split("/", 1)[1] if isinstance(sid, str) and sid.startswith("layout-model/") and "/" in sid else "v3.0.0"
     path = SCHEMA_DIR / f"{version}.json"
     return path if path.is_file() else SCHEMA_PATH
 
