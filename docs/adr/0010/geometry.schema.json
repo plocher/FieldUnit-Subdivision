@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spcoast.com/schemas/layout-model/v3.1.0-geometry.json",
+  "title": "geometry (proposed for layout-model/v3.1.0, ADR 0010)",
+  "description": "The drawing of one interlocking as a design fact: where each named thing sits and how the track runs, in the interlocking's own frame (millimetres from the top-left of its drawn extent, x right, y down). Joined to meaning by name only; never read for connectivity.",
+  "$defs": {
+    "coordinate": {
+      "type": "number"
+    },
+    "point": {
+      "type": "object",
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "$ref": "#/$defs/coordinate"
+        },
+        "y": {
+          "$ref": "#/$defs/coordinate"
+        }
+      }
+    },
+    "polyline": {
+      "description": "Ordered vertices, SVG points syntax: 'x,y x,y ...'. A string because a JSON list is sorted by the canonical form.",
+      "type": "string",
+      "pattern": "^-?\\d+(\\.\\d+)?,-?\\d+(\\.\\d+)?( -?\\d+(\\.\\d+)?,-?\\d+(\\.\\d+)?)+$"
+    },
+    "placement": {
+      "description": "Where a glyph sits: its origin, its turn (degrees, counter-clockwise as seen on the page, 0/90/180/270) and its mirror (x: top for bottom; y: left for right), applied mirror first. The glyph itself is the reader's.",
+      "type": "object",
+      "required": [
+        "at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "$ref": "#/$defs/point"
+        },
+        "rotation": {
+          "type": "integer",
+          "enum": [
+            90,
+            180,
+            270
+          ]
+        },
+        "mirror": {
+          "type": "string",
+          "enum": [
+            "x",
+            "y"
+          ]
+        },
+        "heads": {
+          "description": "A mast's heads by letter: a head cannot exist alone (view §4).",
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Z]$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/placement"
+          }
+        }
+      }
+    },
+    "track": {
+      "description": "One drawn run of track between two things: the circuit it belongs to (absent for dark track) and, where an end is an appliance's track port, that port by name (Sargent:835.R). An end at a joint or a marker is absent: the circuit's bounds are track's business.",
+      "type": "object",
+      "required": [
+        "points"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "points": {
+          "$ref": "#/$defs/polyline"
+        },
+        "circuit": {
+          "type": "string",
+          "pattern": "^[^:/\\s][^:/]*:[^:/\\s][^:/]*$"
+        },
+        "from": {
+          "type": "string",
+          "pattern": "^[^:/\\s][^:/]*:[^:/\\s][^:/]*\\.[A-Za-z0-9_]+$"
+        },
+        "to": {
+          "type": "string",
+          "pattern": "^[^:/\\s][^:/]*:[^:/\\s][^:/]*\\.[A-Za-z0-9_]+$"
+        }
+      }
+    },
+    "marker": {
+      "description": "A track symbol with no railroad name of its own (a joint, END CTC, NextCP, a milepost, a policy sign): its kind as the libraries spell it, its placement, and the circuit at each of its track pins, so a reader joins it to track by name.",
+      "type": "object",
+      "required": [
+        "kind",
+        "at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "at": {
+          "$ref": "#/$defs/point"
+        },
+        "rotation": {
+          "type": "integer",
+          "enum": [
+            90,
+            180,
+            270
+          ]
+        },
+        "mirror": {
+          "type": "string",
+          "enum": [
+            "x",
+            "y"
+          ]
+        },
+        "circuits": {
+          "description": "The circuit at each track pin of the marker, by pin name; a pin on dark track is absent.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[^:/\\s][^:/]*:[^:/\\s][^:/]*$"
+          }
+        }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "appliances": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/placement"
+      }
+    },
+    "houses": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/placement"
+      }
+    },
+    "mileposts": {
+      "description": "Milepost anchors by milepost (ADR 0004 D7: the Value is the milepost, so it is the marker's name). Luchessa draws two; Sargent none.",
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^\\d+(\\.\\d+)?$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/placement"
+      }
+    },
+    "track": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/track"
+      }
+    },
+    "markers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/marker"
+      }
+    }
+  }
+}

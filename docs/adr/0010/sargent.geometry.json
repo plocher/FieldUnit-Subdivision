@@ -1,0 +1,248 @@
+{
+  "appliances": {
+    "1": {
+      "at": {
+        "x": 29.21,
+        "y": 16.51
+      },
+      "mirror": "y"
+    },
+    "1NAT": {
+      "at": {
+        "x": 106.68,
+        "y": 33.02
+      }
+    },
+    "1SAT": {
+      "at": {
+        "x": 50.8,
+        "y": 33.02
+      }
+    },
+    "2SAT": {
+      "at": {
+        "x": 48.26,
+        "y": 16.51
+      }
+    },
+    "835": {
+      "at": {
+        "x": 78.74,
+        "y": 33.02
+      },
+      "mirror": "y"
+    },
+    "836NAB": {
+      "at": {
+        "x": 91.44,
+        "y": 29.21
+      },
+      "heads": {
+        "A": {
+          "at": {
+            "x": 87.63,
+            "y": 29.21
+          }
+        },
+        "B": {
+          "at": {
+            "x": 90.17,
+            "y": 29.21
+          }
+        }
+      }
+    },
+    "836SA": {
+      "at": {
+        "x": 59.69,
+        "y": 36.83
+      },
+      "heads": {
+        "A": {
+          "at": {
+            "x": 63.5,
+            "y": 36.83
+          },
+          "rotation": 180
+        }
+      },
+      "rotation": 180
+    },
+    "836SB": {
+      "at": {
+        "x": 59.69,
+        "y": 20.32
+      },
+      "heads": {
+        "B": {
+          "at": {
+            "x": 58.42,
+            "y": 20.32
+          },
+          "rotation": 180
+        }
+      },
+      "rotation": 180
+    },
+    "Corporal:2NAT": {
+      "at": {
+        "x": 16.51,
+        "y": 33.02
+      }
+    },
+    "HBA": {
+      "at": {
+        "x": 40.64,
+        "y": 33.02
+      }
+    },
+    "MC1": {
+      "at": {
+        "x": 91.44,
+        "y": 0.0
+      }
+    }
+  },
+  "houses": {
+    "Sargent": {
+      "at": {
+        "x": 91.44,
+        "y": 0.0
+      }
+    }
+  },
+  "markers": [
+    {
+      "at": {
+        "x": 0.0,
+        "y": 30.48
+      },
+      "circuits": {
+        "Track": "Corporal:2NAT"
+      },
+      "kind": "RULE_261"
+    },
+    {
+      "at": {
+        "x": 0.0,
+        "y": 33.02
+      },
+      "circuits": {
+        "To": "Corporal:2NAT"
+      },
+      "kind": "NEXT_CP"
+    },
+    {
+      "at": {
+        "x": 26.67,
+        "y": 33.02
+      },
+      "circuits": {
+        "A": "Corporal:2NAT",
+        "B": "Sargent:1SAT"
+      },
+      "kind": "IRJ"
+    },
+    {
+      "at": {
+        "x": 41.91,
+        "y": 16.51
+      },
+      "circuits": {
+        "CTC": "Sargent:2SAT"
+      },
+      "kind": "END_CTC"
+    },
+    {
+      "at": {
+        "x": 55.88,
+        "y": 13.97
+      },
+      "circuits": {
+        "To": "Sargent:2SAT"
+      },
+      "kind": "RULE_105"
+    },
+    {
+      "at": {
+        "x": 59.69,
+        "y": 16.51
+      },
+      "circuits": {
+        "A": "Sargent:835T1",
+        "B": "Sargent:2SAT"
+      },
+      "kind": "IRJ_SIGNAL",
+      "rotation": 180
+    },
+    {
+      "at": {
+        "x": 59.69,
+        "y": 33.02
+      },
+      "circuits": {
+        "A": "Sargent:835T1",
+        "B": "Sargent:1SAT"
+      },
+      "kind": "IRJ_SIGNAL",
+      "rotation": 180
+    },
+    {
+      "at": {
+        "x": 91.44,
+        "y": 33.02
+      },
+      "circuits": {
+        "A": "Sargent:835T1",
+        "B": "Sargent:1NAT"
+      },
+      "kind": "IRJ_SIGNAL"
+    },
+    {
+      "at": {
+        "x": 120.65,
+        "y": 30.48
+      },
+      "circuits": {
+        "Track": "Sargent:1NAT"
+      },
+      "kind": "RULE_261"
+    },
+    {
+      "at": {
+        "x": 120.65,
+        "y": 33.02
+      },
+      "circuits": {
+        "To": "Sargent:1NAT"
+      },
+      "kind": "NEXT_CP"
+    }
+  ],
+  "track": [
+    {
+      "circuit": "Corporal:2NAT",
+      "points": "0.0,33.02 25.4,33.02"
+    },
+    {
+      "circuit": "Sargent:1NAT",
+      "points": "92.71,33.02 120.65,33.02"
+    },
+    {
+      "circuit": "Sargent:1SAT",
+      "points": "27.94,33.02 58.42,33.02"
+    },
+    {
+      "circuit": "Sargent:2SAT",
+      "points": "43.18,16.51 58.42,16.51"
+    },
+    {
+      "points": "0.0,0.0 11.43,0.0",
+      "to": "Sargent:1.R"
+    },
+    {
+      "points": "0.0,16.51 11.43,16.51",
+      "to": "Sargent:1.N"
+    }
+  ]
+}
