@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import contextlib
 import os
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Iterator, List, Optional
 
 from kicad_services import types as ktypes
 
@@ -365,3 +366,15 @@ class KicadCliNetlistExporter:
                 schematic_path,
             )
         return output_path
+
+
+@contextlib.contextmanager
+def exported_netlist(schematic_path: Path, kicad_cli: Optional[Path] = None) -> Iterator[Path]:
+    """A fresh netlist of ``schematic_path`` in a temporary directory, deleted when the block ends.
+
+    The netlist rule (owner, 2026-10-24): a netlist is a cache of the KiCad project's state and is invalid as soon
+    as the project changes, so a generated one is volatile: made in a temp location, used once, deleted. Callers
+    that must read a saved netlist (a machine without KiCad) take that staleness on themselves.
+    """
+    with tempfile.TemporaryDirectory(prefix="kicad_netlist_") as tmp:
+        yield KicadCliNetlistExporter(kicad_cli).export(Path(schematic_path), Path(tmp) / "fresh.net")

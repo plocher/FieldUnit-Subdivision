@@ -93,20 +93,42 @@ def pin_name(pinfunction: str, number: str) -> str:
     return pinfunction.rsplit("_", 1)[0] if pinfunction else number
 
 
-def from_netlist(path: Path) -> Source:
-    """Read a kicad-cli ``kicadsexpr`` netlist export through the generic KiCad services."""
+def _services():
     import sys
     tools = str(Path(__file__).resolve().parents[1])
     if tools not in sys.path:                     # kicad_services imports itself as a top-level package
         sys.path.insert(0, tools)
-    from kicad_services.netlist_reader import NetlistReader
+    from kicad_services import netlist_reader
+    return netlist_reader
 
-    model = NetlistReader().read(Path(path))
+
+def from_netlist(path: Path) -> Source:
+    """Read a kicad-cli ``kicadsexpr`` netlist export through the generic KiCad services.
+
+    A saved netlist is a cache of the project's state (the netlist rule, ``AGENTS.md``): a caller that passes one
+    answers for its freshness. ``from_project`` is the form that cannot be stale."""
+    model = _services().NetlistReader().read(Path(path))
     symbols = {ref: Symbol(ref, c.lib_id, c.value, dict(c.fields), c.sheetpath or "/") for ref, c in model.components.items()}
     nets = [Net(n.name, tuple(PinRef(p.reference, pin_name(p.pinfunction, p.pin), p.pintype) for p in n.nodes)) for n in model.nets]
     root = Path(model.source) if model.source else None               # the export names the root schematic
     project = root.with_suffix(".kicad_pro") if root and root.with_suffix(".kicad_pro").is_file() else root
     return Source(Path(path), symbols, nets, list(model.sheets), project)
+
+
+def from_project(schematic: Path) -> Source:
+    """The drawing read through a netlist exported now and deleted at once (the netlist rule; needs kicad-cli)."""
+    with _services().exported_netlist(Path(schematic)) as net:
+        return from_netlist(net)
+
+
+def kicad_cli_available() -> bool:
+    return _services().KicadCliNetlistExporter().available()
+
+
+def from_path(path: Path) -> Source:
+    """``from_project`` for a ``.kicad_sch``, ``from_netlist`` for anything else."""
+    path = Path(path)
+    return from_project(path) if path.suffix == ".kicad_sch" else from_netlist(path)
 
 
 def from_symbols(symbols: Iterable[Symbol], nets: Iterable[Net], path: Path = Path("<memory>")) -> Source:
