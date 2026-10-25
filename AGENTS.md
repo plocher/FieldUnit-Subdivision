@@ -95,6 +95,11 @@ uv run tools/run_plant_graph_smoke.sh          # Luchessa end-to-end; needs kica
 - `CP` must equal a MAIN HOUSE Value.
 - Direction and policy markers: the symbol's Kind/Role records the rule. It replaces the `Rulebook` field. The compiler still requires `Rulebook` (it is behind; to be updated). `Direction` where applicable.
 - Track nets need labels, except OS legs, dark track and derail nets.
+- An interlocking's trackplan is one sheet, and its placements are read for geometry only (ADR 0010 C5). What is
+  on the trackplan is decided by Role: `APPLIANCE`, `TRACK`, `POLICY`, plus the house (`STRUCTURE` with Kind
+  `CONTROL_POINT`); never by library, symbol name or position on the sheet. A `DEVICE`, an `IODRIVER`, the
+  processor and the `Interlocking` declaration on the same sheet are not geometry. A wire is track when it ends
+  on a pin of a trackplan symbol; which circuit it is comes from the netlist, never from coordinates.
 
 **Desk schematics (RailroadPanel lib).** Compiled by `tools/controller_graph/` (CLI `parse_kicad_controller.py`) and cross-checked against plants by `tools/link_subdivision.py`.
 
