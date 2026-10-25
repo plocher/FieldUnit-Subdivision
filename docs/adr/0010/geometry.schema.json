@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://spcoast.com/schemas/layout-model/v3.1.0-geometry.json",
-  "title": "geometry (proposed for layout-model/v3.1.0, ADR 0010)",
-  "description": "The drawing of one interlocking as a design fact: where each named thing sits and how the track runs, in the interlocking's own frame (millimetres from the top-left of its drawn extent, x right, y down). Joined to meaning by name only; never read for connectivity.",
+  "title": "geometry and glyphs (proposed for layout-model/v3.1.0, ADR 0010)",
+  "description": "The drawing as a design fact. geometry: where each named thing of one interlocking sits and how its track runs, in the interlocking's own frame (millimetres from the top-left of its drawn extent, x right, y down), joined to meaning by name only and never read for connectivity. glyphs: the pictures the placements name, each stated once with its ports and its shape, so every view is drawn from the Layout Data Model File alone.",
   "$defs": {
     "coordinate": {
       "type": "number"
@@ -28,16 +28,25 @@
       "type": "string",
       "pattern": "^-?\\d+(\\.\\d+)?,-?\\d+(\\.\\d+)?( -?\\d+(\\.\\d+)?,-?\\d+(\\.\\d+)?)+$"
     },
+    "glyphKey": {
+      "description": "The drawing's own name for a glyph: library and symbol, 'Railroad-Trackplan:Switch_Lock'. The library's version is in provenance.",
+      "type": "string",
+      "pattern": "^[^:\\s][^:]*:[^:\\s][^:]*$"
+    },
     "placement": {
-      "description": "Where a glyph sits: its origin, its turn (degrees, counter-clockwise as seen on the page, 0/90/180/270) and its mirror (x: top for bottom; y: left for right), applied mirror first. The glyph itself is the reader's.",
+      "description": "Where a glyph sits: its anchor (the glyph's origin, which is its bottom-left pin) on the page, its turn (degrees, counter-clockwise as seen on the page, 0/90/180/270) and its mirror (x: top for bottom; y: left for right), applied mirror first, then turn, then translate; and which glyph.",
       "type": "object",
       "required": [
-        "at"
+        "at",
+        "glyph"
       ],
       "additionalProperties": false,
       "properties": {
         "at": {
           "$ref": "#/$defs/point"
+        },
+        "glyph": {
+          "$ref": "#/$defs/glyphKey"
         },
         "rotation": {
           "type": "integer",
@@ -67,7 +76,7 @@
       }
     },
     "track": {
-      "description": "One drawn run of track between two things: the circuit it belongs to (absent for dark track) and, where an end is an appliance's track port, that port by name (Sargent:835.R). An end at a joint or a marker is absent: the circuit's bounds are track's business.",
+      "description": "One drawn run of track between two things: the circuit it belongs to (absent for dark track) and, where an end is an appliance's track port, that port by name (Luchessa:783.R). An end at a joint or a marker is absent: the circuit's bounds are track's business.",
       "type": "object",
       "required": [
         "points"
@@ -92,11 +101,12 @@
       }
     },
     "marker": {
-      "description": "A track symbol with no railroad name of its own (a joint, END CTC, NextCP, a milepost, a policy sign): its kind as the libraries spell it, its placement, and the circuit at each of its track pins, so a reader joins it to track by name.",
+      "description": "A track symbol with no railroad name of its own (a joint, END CTC, NextCP, an industry, a policy sign): its kind as the libraries spell it, its placement and glyph, and the circuit at each of its track pins, so a reader joins it to track by name.",
       "type": "object",
       "required": [
         "kind",
-        "at"
+        "at",
+        "glyph"
       ],
       "additionalProperties": false,
       "properties": {
@@ -106,6 +116,9 @@
         },
         "at": {
           "$ref": "#/$defs/point"
+        },
+        "glyph": {
+          "$ref": "#/$defs/glyphKey"
         },
         "rotation": {
           "type": "integer",
@@ -131,44 +144,295 @@
           }
         }
       }
+    },
+    "stroke": {
+      "description": "KiCad's stroke, written only where it is not the default: a width in millimetres (KiCad's 0 means 'the default, which depends on context' and is not written), a dash type other than solid.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "dash",
+            "dot",
+            "dash_dot",
+            "dash_dot_dot"
+          ]
+        }
+      }
+    },
+    "fill": {
+      "description": "KiCad's fill, written only where there is one: outline (the stroke colour), background (the sheet's body colour) or a colour of its own.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "outline",
+            "background",
+            "color"
+          ]
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9a-f]{6}$"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "primitive": {
+      "description": "One drawn element of a glyph, in the glyph's frame: millimetres, x right, y down, the anchor pin at 0,0.",
+      "oneOf": [
+        {
+          "description": "Connected line segments.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "points"
+          ],
+          "properties": {
+            "type": {
+              "const": "polyline"
+            },
+            "points": {
+              "$ref": "#/$defs/polyline"
+            },
+            "stroke": {
+              "$ref": "#/$defs/stroke"
+            },
+            "fill": {
+              "$ref": "#/$defs/fill"
+            }
+          }
+        },
+        {
+          "description": "A circle.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "center",
+            "radius"
+          ],
+          "properties": {
+            "type": {
+              "const": "circle"
+            },
+            "center": {
+              "$ref": "#/$defs/point"
+            },
+            "radius": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "stroke": {
+              "$ref": "#/$defs/stroke"
+            },
+            "fill": {
+              "$ref": "#/$defs/fill"
+            }
+          }
+        },
+        {
+          "description": "A circular arc through three points, as KiCad states it.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "start",
+            "mid",
+            "end"
+          ],
+          "properties": {
+            "type": {
+              "const": "arc"
+            },
+            "start": {
+              "$ref": "#/$defs/point"
+            },
+            "mid": {
+              "$ref": "#/$defs/point"
+            },
+            "end": {
+              "$ref": "#/$defs/point"
+            },
+            "stroke": {
+              "$ref": "#/$defs/stroke"
+            },
+            "fill": {
+              "$ref": "#/$defs/fill"
+            }
+          }
+        },
+        {
+          "description": "An axis-aligned rectangle by two opposite corners.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "start",
+            "end"
+          ],
+          "properties": {
+            "type": {
+              "const": "rectangle"
+            },
+            "start": {
+              "$ref": "#/$defs/point"
+            },
+            "end": {
+              "$ref": "#/$defs/point"
+            },
+            "stroke": {
+              "$ref": "#/$defs/stroke"
+            },
+            "fill": {
+              "$ref": "#/$defs/fill"
+            }
+          }
+        },
+        {
+          "description": "Fixed text that is part of the picture (the H of a hand-thrown switch). A field shown through the symbol is not a primitive: the Layout Data Model File carries the field.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "text",
+            "at",
+            "size"
+          ],
+          "properties": {
+            "type": {
+              "const": "text"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1
+            },
+            "at": {
+              "$ref": "#/$defs/point"
+            },
+            "size": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "rotation": {
+              "type": "number"
+            },
+            "justify": {
+              "type": "string",
+              "pattern": "^(left|right|top|bottom)( (left|right|top|bottom))?$"
+            },
+            "stroke": {
+              "$ref": "#/$defs/stroke"
+            },
+            "fill": {
+              "$ref": "#/$defs/fill"
+            }
+          }
+        }
+      ]
+    },
+    "glyph": {
+      "description": "One picture, stated once: its ports (every pin, by name, in the glyph's frame; the anchor pin is 0,0) and its shape. The shape is a list and the canonical form sorts it: drawing order is not a fact.",
+      "type": "object",
+      "required": [
+        "ports",
+        "shape"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ports": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/point"
+          }
+        },
+        "shape": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/primitive"
+          }
+        }
+      }
+    },
+    "glyphs": {
+      "description": "layout.glyphs: every glyph any interlocking's geometry names, by glyph key; nothing the layout does not draw.",
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[^:\\s][^:]*:[^:\\s][^:]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/glyph"
+      }
+    },
+    "geometry": {
+      "description": "interlockings.<name>.geometry.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "appliances": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/placement"
+          }
+        },
+        "houses": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/placement"
+          }
+        },
+        "mileposts": {
+          "description": "Milepost anchors by milepost (ADR 0004 D7: the Value is the milepost, so it is the marker's name). Luchessa draws two; Sargent none.",
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^\\d+(\\.\\d+)?$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/placement"
+          }
+        },
+        "track": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/track"
+          }
+        },
+        "markers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/marker"
+          }
+        }
+      }
     }
   },
   "type": "object",
   "additionalProperties": false,
+  "required": [
+    "geometry",
+    "glyphs"
+  ],
   "properties": {
-    "appliances": {
-      "type": "object",
-      "additionalProperties": {
-        "$ref": "#/$defs/placement"
-      }
+    "geometry": {
+      "$ref": "#/$defs/geometry"
     },
-    "houses": {
-      "type": "object",
-      "additionalProperties": {
-        "$ref": "#/$defs/placement"
-      }
-    },
-    "mileposts": {
-      "description": "Milepost anchors by milepost (ADR 0004 D7: the Value is the milepost, so it is the marker's name). Luchessa draws two; Sargent none.",
-      "type": "object",
-      "propertyNames": {
-        "pattern": "^\\d+(\\.\\d+)?$"
-      },
-      "additionalProperties": {
-        "$ref": "#/$defs/placement"
-      }
-    },
-    "track": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/track"
-      }
-    },
-    "markers": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/marker"
-      }
+    "glyphs": {
+      "$ref": "#/$defs/glyphs"
     }
   }
 }
