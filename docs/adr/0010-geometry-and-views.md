@@ -1,8 +1,8 @@
 # 0010. Geometry: the drawing as a design fact, and the four views that read it
 
-- Status: proposed, rev 1, 2026-10-24. One ask: ratify §4 and the schema fragment `0010/geometry.schema.json` as the `geometry` object of the Layout Data Model File, schema `layout-model/v3.1.0`.
+- Status: proposed, rev 2, 2026-10-24 (rev 1 the same day; rev 2 after the owner's Industry symbol, §7). One ask: ratify §4 and the schema fragment `0010/geometry.schema.json` as the `geometry` object of the Layout Data Model File, schema `layout-model/v3.1.0`.
 - Builds on: `docs/review/layout-model-view-2026-10-16.md` §4.7 and O12 (the rule this ADR details), ADR 0008 rev 4 (§4.3, §4.4, §4.5, §4.6, §4.8, C4, C8, §10), ADR 0009 §3.10 (the trackplan Roles and Kinds), ADR 0004 D7 (mileposts) and D12 (scope by sheet), ADR 0003 D1 (N/W is LEFT), `AGENTS.md` ("never infer connectivity from coordinates"), the owner's four views of 2026-10-24, and `docs/review/handoff-0010-geometry-2026-10-24.md`.
-- Pictures: `0010/sargent-geometry.svg` (the facts), `0010/four-views.svg` (what each view keeps and drops). Both, and the worked example `0010/sargent.geometry.json`, are generated from the Sargent trackplan sheet at Railroad `d51f78e` by `0010/make_pictures.py`, never typed.
+- Pictures: `0010/sargent-geometry.svg` (the facts), `0010/four-views.svg` (what each view keeps and drops). Both, and the worked example `0010/sargent.geometry.json`, are generated from the Sargent trackplan sheet at Railroad `37a0dcd` by `0010/make_pictures.py`, never typed. The script exports the netlist it needs with kicad-cli and deletes it; a saved netlist is never read.
 - Runs in parallel with the trackplan semantics segment (`handoff-compiler-semantics-2026-10-24.md`); the two meet at the circuit names and at schema 3.1.0 (§4.10).
 
 ## Decisions requested
@@ -115,7 +115,7 @@ The handoff asked how a run without a named circuit is keyed. It is not: a run i
 
 ### 4.6 Where a run ends
 
-R2 again: the route finder must paint the reverse leg of a switch and not its normal leg, and may not find the leg by where the line ends. A run that ends at a switch's track port names it, `from` or `to` in the run's own point order: `to: "Sargent:1.R"`. A run that ends at a joint or a marker names nothing: the circuit's bounds are `track`'s business, and the marker row already says which circuits meet there. A run that both begins and ends at joints, the common case, carries only its circuit and its points.
+R2 again: the route finder must paint the reverse leg of a switch and not its normal leg, and may not find the leg by where the line ends. A run that ends at a switch's track port names it, `from` or `to` in the run's own point order: `to: "Luchessa:783.R"`. Whether a wire or a joint meets a port is the designer's choice and both are drawn: on the SPCoast project three runs end at a port, all at Luchessa (783's reverse leg, both legs of 799); every other port is met by a joint, a derail or an Industry symbol directly, and then there is no run. A run that ends at a joint or a marker names nothing: the circuit's bounds are `track`'s business, and the marker row already says which circuits meet there. A run that both begins and ends at joints, the common case, carries only its circuit and its points.
 
 ### 4.7 Order along the subdivision is derived
 
@@ -143,12 +143,12 @@ R5: the Trackplan library states each glyph once, and `provenance.libraries` nam
 
 ![The geometry facts of Sargent](0010/sargent-geometry.svg)
 
-`0010/sargent.geometry.json`, 248 lines, validated against the fragment and in canonical form, is Sargent's `geometry` object as the compiler would write it. Read off it:
+`0010/sargent.geometry.json`, 254 lines, validated against the fragment and in canonical form, is Sargent's `geometry` object as the compiler would write it. Read off it:
 
 - `appliances`: eleven placements. `835` at 78.74, 33.02 with `mirror: y`, so its points face east; `836NAB` with heads `A` and `B` nested; `836SA` and `836SB` turned 180, standing on the far side of their track; `Corporal:2NAT`, the approach circuit of the next interlocking, placed here as a reference by qualified name; `MC1` at the house.
 - `houses.Sargent` at 91.44, 0.0, the top of the extent.
-- `track`: six rows. Four circuits, each one straight run between two joints; two runs of dark track, each ending at a port of the hand-thrown switch beyond END CTC (`to: Sargent:1.N`, `to: Sargent:1.R`). The OS circuit `835T1` has no run: its three legs are inside the switch glyph, and each joint touches a port directly.
-- `markers`: ten rows. Three signal joints, each naming the OS circuit on `A` and the circuit it bounds on `B`; one plain joint between `Corporal:2NAT` and `1SAT`; END CTC with `CTC: Sargent:2SAT` and no `DARK` circuit; two NextCP ends; two Rule 261 signs and one Rule 105 sign, each naming the circuit its pin stands on.
+- `track`: four rows, one circuit each, each one straight run between two joints. The OS circuit `835T1` has no run: its three legs are inside the switch glyph, and each joint touches a port directly. The hand-thrown switch beyond END CTC has no run either: an Industry symbol stands on each of its N and R ports.
+- `markers`: twelve rows. Three signal joints, each naming the OS circuit on `A` and the circuit it bounds on `B`; one plain joint between `Corporal:2NAT` and `1SAT`; END CTC with `CTC: Sargent:2SAT` and no `DARK` circuit; two NextCP ends; two Industry ends (`kind: INDUSTRY`, track exists past this point but is not drawn) on the hand-thrown switch's ports, naming no circuit because dark track has none; two Rule 261 signs and one Rule 105 sign, each naming the circuit its pin stands on.
 - `mileposts`: absent. Sargent draws none; Luchessa will write `78.3` and `79.3`.
 
 ![The four views, from the one object](0010/four-views.svg)
@@ -157,7 +157,7 @@ What each view keeps and drops, from that object alone:
 
 | View | Reads | Keeps | Drops |
 |---|---|---|---|
-| Thinline | `track` rows whose circuit stands under a Rule 261 or 251 sign (`markers` by circuit), `appliances` masts whose signal joint bounds such a circuit, the NextCP rows, `houses.milepost` for the strip | one closed line per interlocking, the circuits' lamps, the masts that govern main track, the ends | the siding and its mast, dark track, the switch, every joint, the house |
+| Thinline | `track` rows whose circuit stands under a Rule 261 or 251 sign (`markers` by circuit), `appliances` masts whose signal joint bounds such a circuit, the NextCP rows, `houses.milepost` for the strip | one closed line per interlocking, the circuits' lamps, the masts that govern main track, the ends | the siding and its mast, the industries, the switch, every joint, the house |
 | Model board | everything | every row, switch legs and joint ticks at their placements, a lamp at each circuit's placement, masts with heads, the house | nothing; it styles everything |
 | Route finder | the model board plus the evaluator's route (view §5) | the board, with the route's circuits and the switch's chosen leg painted over the same rows and ports (`from`, `to`) | nothing |
 | Documentation packet | the model board | the board at print scale beside the tables the packet already lists | nothing |
@@ -173,6 +173,7 @@ Ratify §4 and `0010/geometry.schema.json` as the `geometry` object of schema `l
 - 2026-10-16. The view fixed the rule (§4.7) and the owner made geometry a design section to be written against the Sargent picture as its first consumer (O12). ADR 0008 kept it an open object through four revisions and listed it out of scope (§10).
 - 2026-10-24. The owner asked whether the geographic layout had been missed, naming the four views. The closing session of the ADR 0008 segment wrote the handoff with six decisions and defaults.
 - 2026-10-24, this session. Read the Sargent, Luchessa and Corporal trackplan sheets with jBOM's loader and the production netlist. Findings that shaped §4: the canonical form sorts every list, so a polyline cannot be a list (§4.4); the OS circuit's legs are inside the switch glyph and the joints touch its ports with no wire, so geometry's runs are the designer's lines between symbols and nothing more (§4.1, §5); the panel sheets place devices in one column at one x, so their placements are drafting, not design (§4.8); the hand-thrown switch beyond END CTC has stubs drawn into dark track, which the netlist reports as unconnected single-pin nets and the file writes as runs without a circuit (§4.6); every sheet draws mileposts rising to the right, which the reader need not assume (§4.7). The round-trip question and the key question dissolved into ADR 0008 §4.1, §4.6 and §4.5 (§4.2, §4.5). The handoff's office-unit default was overturned by the R2 test (§4.8).
+- 2026-10-24, rev 2. Settled with the owner: no label placement is written, the label is the symbol's attribute and the file already carries it; a view that draws its own glyph needs only the library's origin and port offsets, which §4.3 and the netlist supply. The owner replaced the stubs drawn into dark track at Sargent, Corporal and Luchessa with a new Trackplan symbol, Industry (Role `TRACK`, Kind `INDUSTRY`, one pin: "track exists past this point, but is not drawn"), and gave Luchessa's industry spur an END CTC (Railroad `37a0dcd`; ADR 0009 §3.10's TRACK list gains `INDUSTRY`). The example and pictures were regenerated: Sargent's two dark runs became two `INDUSTRY` marker rows with no circuit, and no run on the project now ends anywhere but at a symbol, so the compiler piece can report a run that ends at no port as an error. §4.6's port rule stays, for the three runs at Luchessa that meet a switch port directly. The owner's rule on netlists: never read a saved one without checking that it is stale; export a fresh one, use it, delete it. The picture script does so.
 
 ## 8. Consequences
 

@@ -6,8 +6,9 @@ Writes, beside this script:
 
 - ``geometry.schema.json``: the proposed ``$defs/geometry`` fragment for schema 3.1.0 (ADR 0010 §4).
 - ``sargent.geometry.json``: Sargent's ``geometry`` object as the proposal would have the compiler write it, read
-  from ``SPCoast/Sargent.kicad_sch`` (placements, wires, junctions) and ``SPCoast/production/SPCoast.net`` (which
-  net is which circuit), normalised and in canonical form, validated against the fragment.
+  from ``SPCoast/Sargent.kicad_sch`` (placements, wires, junctions) and a netlist of the project that the script
+  exports with kicad-cli, uses and deletes (which net is which circuit; a saved netlist is never read, since it
+  may be stale), normalised and in canonical form, validated against the fragment.
 - ``sargent-geometry.svg``: the facts drawn: frame, polylines, placements, nothing styled.
 - ``four-views.svg``: the four views the owner named, each derived from the same object.
 
@@ -203,11 +204,25 @@ def chain(wires, breaks: set) -> list[list[tuple[float, float]]]:
     return polylines
 
 
+def fresh_netlist(project_root: Path):
+    """Export the project's netlist to a temporary file; the caller deletes it. Never a saved copy (owner, 2026-10-24)."""
+    from kicad_services.netlist_reader import KicadCliNetlistExporter
+
+    return KicadCliNetlistExporter().export(project_root / "SPCoast" / "SPCoast.kicad_sch")
+
+
 def build(railroad: Path, netlist: Path | None = None):
     sheet = railroad / "SPCoast" / f"{INTERLOCKING}.kicad_sch"
     symbols, wires, junctions = read_sheet(sheet)
     pins_by_lib = read_library_pins(railroad / "symbols" / "Railroad-Trackplan.kicad_sym")
-    src = from_netlist(netlist or railroad / "SPCoast" / "production" / "SPCoast.net")
+    if netlist is None:
+        tmp = fresh_netlist(railroad)
+        try:
+            src = from_netlist(tmp)
+        finally:
+            tmp.unlink(missing_ok=True)
+    else:
+        src = from_netlist(netlist)
     netsyms = {r: s for r, s in src.symbols.items() if s.sheet.rstrip("/").endswith(INTERLOCKING)}
 
     trackplan = {r: s for r, s in symbols.items() if s["fields"].get("Role") in TRACKPLAN_ROLES}
@@ -389,7 +404,8 @@ def draw_facts(g, origin) -> str:
     b = ['<g transform="translate(40,90)">']
     b.append('<text class="h" x="0" y="-66">Sargent: the geometry facts, as the file would hold them (docs/adr/0010/sargent.geometry.json)</text>')
     b.append(f'<text class="s" x="0" y="-48">Frame: millimetres from the top-left of the drawn extent, x right, y down. The KiCad sheet origin was {origin[0]}, {origin[1]} mm away and is not written.</text>')
-    b.append('<text class="s" x="0" y="-34">Blue dot: a placement (name, r = rotation, m = mirror). Blue ring: a head on its mast. Black line: a track row with its circuit. Grey dashes: a track row of no circuit, ending at a switch port.</text>')
+    dark = " Grey dashes: a track row of no circuit, ending at a switch port." if any("circuit" not in t for t in g["track"]) else ""
+    b.append(f'<text class="s" x="0" y="-34">Blue dot: a placement (name, r = rotation, m = mirror). Blue ring: a head on its mast. Black line: a track row with its circuit.{dark}</text>')
     b.append('<text class="s" x="0" y="-20">Green diamond: a marker, numbered in the table. Dashed red: the extent. Nothing here is a glyph: the glyphs are each view\'s own.</text>')
     b.append(f'<rect class="frame" x="0" y="0" width="{w*S:.0f}" height="{h*S:.0f}"/>')
     b.append('<text class="s" x="2" y="-4">0,0</text>')
@@ -545,7 +561,7 @@ def draw_views(g) -> str:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--railroad", type=Path, default=Path.home() / "Dropbox/KiCad/Railroad")
-    ap.add_argument("--netlist", type=Path, default=None, help="a netlist export other than production/SPCoast.net")
+    ap.add_argument("--netlist", type=Path, default=None, help="read this netlist instead of exporting a fresh one with kicad-cli")
     ap.add_argument("--out", type=Path, default=HERE, help="write the four files here instead of beside the script")
     a = ap.parse_args(argv)
     geometry, origin = build(a.railroad, a.netlist)

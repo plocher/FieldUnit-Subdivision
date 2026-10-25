@@ -144,7 +144,7 @@ Symbol attribute names that are used by the compiler:
       - `DEVICE` in the field, with Appliance `head` on the head devices; 
       - `IODRIVER` and `SETTING` in hardware I/O. 
     - A symbol with no Role is drawing only. `CAST` and `MACHINE` were implementation words and are gone from the libraries and sheets (Railroad `edits/2026-10-23-roles.py`); the symbol-field lint follows (`tools/contract/lint_symbol_fields.py`).
-  - `Kind`: the sub-class where a Role alone does not say what the symbol is: `STRUCTURE` is `INTERLOCKING`, `CONTROL_POINT` or `PROCESSOR`; `TRACK` is `IRJ`, `IRJ_SIGNAL`, `END_CTC`, `MILEPOST`, `NEXT_CP` or `BUMPER`; `POLICY` is the rule number; a `TRANSPORT` is `MQTT`, `CMRI`, `TIMECODE` or `LOCONET`; an encoding is `AAR`, `USS506`, `BITS`, `JMRI` or `CMRI`. An encoding's Kind must pair with its transport's Kind (reference data). Roles that classify by `Appliance` and `Style` instead (`APPLIANCE`, `DEVICE`, `PANEL`) carry no Kind.
+  - `Kind`: the sub-class where a Role alone does not say what the symbol is: `STRUCTURE` is `INTERLOCKING`, `CONTROL_POINT` or `PROCESSOR`; `TRACK` is `IRJ`, `IRJ_SIGNAL`, `END_CTC`, `MILEPOST`, `NEXT_CP`, `BUMPER` (the track ends) or `INDUSTRY` (track exists past this point, but is not drawn; added 2026-10-24); `POLICY` is the rule number; a `TRANSPORT` is `MQTT`, `CMRI`, `TIMECODE` or `LOCONET`; an encoding is `AAR`, `USS506`, `BITS`, `JMRI` or `CMRI`. An encoding's Kind must pair with its transport's Kind (reference data). Roles that classify by `Appliance` and `Style` instead (`APPLIANCE`, `DEVICE`, `PANEL`) carry no Kind.
   - `Style`: the variant within an appliance, and the one key two symbols must agree on: a head's style (`CL`, `CPL`, `UQ`, `LQ`) on the trackplan head and fixed in the head device; a mast's (`single`, `double`, `dwarf`); a switch's (`powered`, `manual`, `manual_sensed`, `lock`, `dual`, `derail`); a track circuit's (`virtual`); a lamp's or lever's on the panel; the OfficeUnit's (`US&S`).
   - `Topic` on MQTT Encodings
   - `Reference` and `Value` are never used.  How a key is derived in KiCad is KiCad's business (e.g., the Address attribute may have `${Value}` as its content, that is OK.). Library defaults for names, hosts and transports are empty: we've chosen to NOT use placeholders because inadvertant "update all symbols from Library" with the wrong checkboxes is a disaster. The compiler's "missing" report is the tutorial prompt. Fixed facts (Role, Kind, Style, a topic template) keep their defaults.
@@ -207,6 +207,9 @@ Ratify §3 as the drawing contract the milestone D compiler reads, and §3.11 as
   `f204f45`).
 - 2026-10-23. Head devices renamed with fixed styles, LQ semaphore, CPL-Pixel, Interchange heads CL
   (`54f3fa9`); definitions refreshed and local buses local (`ab119e3`). The node's pin ruled `Transport`.
+- 2026-10-24. `INDUSTRY` added to the TRACK Kinds (§3.10) with the owner's Industry symbol (Railroad `37a0dcd`),
+  which replaced the wires drawn into dark track at Sargent, Corporal and Luchessa. A reader keys by Kind, never
+  by symbol name, so "track ends" and "track continues, not drawn" need two Kinds. Raised in ADR 0010.
 - Two slips recorded for the method: a script reset discarded the owner's uncommitted edits once, recovered
   from KiCad's backup archive (`e477212`); a commit was gated on the wrong check once and reset.
 
