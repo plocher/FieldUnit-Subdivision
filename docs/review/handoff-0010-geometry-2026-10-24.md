@@ -1,5 +1,9 @@
 # Handoff: ADR 0010, geometry and the four views of the trackplan
 
+> Closed 2026-10-25. ADR 0010 is accepted (2026-10-24, `6b99317`). Items 1 and 2 below are done; items 3 and 4
+> continue as ADR 0010 C2 and C3 in `handoff-compiler-semantics-2026-10-24.md`, the one handoff for the compiler
+> segment. Kept as the record of the asks and defaults the ADR started from.
+
 Written 2026-10-24 at the close of the ADR 0008 rev 4 segment, for the session that proposes ADR 0010. It runs in
 parallel with `handoff-compiler-semantics-2026-10-24.md`, the trackplan semantics; the two meet at the
 `appliances` and `track` objects (both pieces read the same symbols) and at the schema's next minor version.
