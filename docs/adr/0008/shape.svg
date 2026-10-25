@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 680" font-family="Helvetica, Arial, sans-serif" font-size="13">
+  <rect width="1000" height="680" fill="#ffffff"/>
+  <title>The Layout Data Model File (v3.0.0) on the cTc interface layers: office, Seam 1 codeline, field; Seam 2 hardware I/O on each side; the transport catalog</title>
+  <defs>
+    <marker id="r" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b00000"/></marker>
+    <marker id="b" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f5fbf"/></marker>
+  </defs>
+
+  <!-- file -->
+  <rect x="20" y="10" width="960" height="660" rx="12" fill="#f4f4f4" stroke="#555" stroke-width="1.5"/>
+  <text x="36" y="32" font-weight="bold" fill="#333">spcoast.layout.json</text>
+  <text x="200" y="32" fill="#555" font-size="12">schema: layout-model/v3.0.0    layout: name SPCoast, railroad, region, era, rulebook (the Railroad symbol)    provenance: source type, compiler, source, versions</text>
+
+  <!-- ===== OFFICE band: officeUnits."SPCoast South" ===== -->
+  <rect x="56" y="48" width="648" height="196" rx="8" fill="#dde6f0" stroke="#555" stroke-width="1.5"/>
+  <text x="68" y="68" font-weight="bold" fill="#333">OFFICE</text>
+  <text x="130" y="68" fill="#333" font-size="12">officeUnits."SPCoast South": style US&amp;S, columns{13: interlocking Sargent; 5: house Luchessa:Luchessa}, settings, geometry</text>
+
+  <text x="68" y="88" fill="#777" font-size="10">PANEL DEVICES</text>
+  <rect x="68" y="92" width="400" height="50" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="78" y="108" fill="#333" font-size="12">devices[]  a row: lever/lock, column 13, serves Sargent:835</text>
+  <text x="78" y="123" fill="#555" font-size="11">bindings: WLS → route JohnCTC/0x2C/A7</text>
+  <text x="78" y="137" fill="#555" font-size="11">a row: lamp/board, no column, shows Watsonville:837T1 → JohnCTC/0x2C/A6</text>
+
+  <text x="68" y="160" fill="#777" font-size="10">PANEL I/O  ·  SEAM 2, panel side</text>
+  <rect x="68" y="164" width="300" height="34" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="78" y="178" fill="#333" font-size="11">layout.processors.JohnCTC</text>
+  <text x="78" y="192" fill="#555" font-size="11">board cpNode-Xiao; drivers 0x20 … 0x2D: MAX7313</text>
+  <path d="M 300 142 L 300 164" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+
+  <text x="68" y="216" fill="#777" font-size="10">OFFICE LOGIC  ·  the CTC machine</text>
+  <rect x="68" y="220" width="300" height="18" rx="4" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="78" y="233" fill="#333" font-size="12">officeUnits."SPCoast South".processor: JohnCTC</text>
+  <path d="M 340 220 L 340 198" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+  <rect x="380" y="220" width="312" height="18" rx="4" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="390" y="233" fill="#333" font-size="10">office end: columns name houses or interlockings; stations are derived, not written</text>
+
+  <!-- ===== SEAM 1 band: layout.codelines ===== -->
+  <polygon points="68,258 680,258 692,282 680,306 68,306 56,282" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="76" y="276" font-weight="bold" fill="#333">SEAM 1  ·  Codeline</text>
+  <text x="76" y="296" fill="#555" font-size="11">controls ▼ indications ▲   layout.codelines{}: an encoding on a transport instance</text>
+  <rect x="400" y="262" width="272" height="40" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="410" y="277" fill="#333" font-size="12">codelines."AAR Tokens"   ·   codelines."US&amp;S 506"</text>
+  <text x="410" y="292" fill="#555" font-size="11">encoding AAR; transport MQTT; processor JohnCTC; topic</text>
+  <path d="M 556 238 L 556 262" fill="none" stroke="#1f5fbf" stroke-width="2" marker-end="url(#b)"/>
+  <path d="M 672 288 L 740 288" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+
+  <!-- ===== FIELD band: interlockings ===== -->
+  <rect x="56" y="320" width="648" height="338" rx="8" fill="#dde6f0" stroke="#555" stroke-width="1.5"/>
+  <text x="68" y="340" font-weight="bold" fill="#333">FIELD</text>
+  <text x="120" y="340" fill="#333" font-size="12">interlockings{}: one per location. codeline, fieldUnit, houses{}, appliances, track, devices[], geometry</text>
+
+  <!-- Sargent column -->
+  <text x="68" y="360" fill="#333" font-size="12" font-weight="bold">interlockings.Sargent</text>
+  <text x="68" y="378" fill="#777" font-size="10">FIELD LOGIC</text>
+  <rect x="68" y="382" width="190" height="18" rx="4" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="78" y="395" fill="#333" font-size="12">fieldUnit.processor: Sargent</text>
+  <rect x="268" y="382" width="200" height="18" rx="4" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="278" y="395" fill="#333" font-size="12">codeline: AAR Tokens  (field end)</text>
+  <path d="M 368 382 L 368 312 L 440 312 L 440 302" fill="none" stroke="#1f5fbf" stroke-width="2" marker-end="url(#b)"/>
+  <rect x="68" y="406" width="400" height="18" rx="4" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="78" y="419" fill="#333" font-size="11">houses{Sargent: milepost 83.5, maintainerCall Sargent:MC1}   a 506 field station would be a house with its column</text>
+
+  <text x="68" y="444" fill="#777" font-size="10">FIELD I/O  ·  SEAM 2, field side</text>
+  <rect x="68" y="448" width="205" height="48" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="78" y="463" fill="#333" font-size="11">layout.processors.Sargent</text>
+  <text x="78" y="477" fill="#555" font-size="11">board cpNode-Xiao; drivers 0x20 MCP23017,</text>
+  <text x="78" y="490" fill="#555" font-size="11">0x26 PCA9685, 0x27 PCA9685, D2 GPIO, D3 GPIO</text>
+  <path d="M 240 400 L 240 448" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+  <rect x="283" y="448" width="185" height="48" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="293" y="463" fill="#333" font-size="11">layout.processors.Gilroy</text>
+  <text x="293" y="477" fill="#555" font-size="11">anchors MQTT too: ioEncodings.JMRI rides</text>
+  <text x="293" y="490" fill="#555" font-size="11">it; JMRI drivers sit on Gilroy's own bus</text>
+
+  <text x="68" y="518" fill="#777" font-size="10">FIELD DEVICES</text>
+  <rect x="68" y="522" width="400" height="64" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="78" y="539" fill="#333" font-size="12">devices[]  a row: switch (powered, lock, dual), serves Sargent:835</text>
+  <text x="78" y="555" fill="#555" font-size="11">bindings: M → route Sargent/0x20/B1, N → Sargent/0x20/B2 …</text>
+  <text x="78" y="571" fill="#555" font-size="11">a row: head CPL, serves Sargent:836NAB, head A: S0 → Sargent/0x26/A7</text>
+  <path d="M 230 522 L 230 496" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+
+  <!-- Caltrain column -->
+  <text x="490" y="360" fill="#333" font-size="12" font-weight="bold">interlockings."Gilroy Caltrain"</text>
+  <rect x="486" y="382" width="210" height="18" rx="4" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="496" y="395" fill="#333" font-size="12">fieldUnit.processor: SPCoastApp</text>
+  <rect x="486" y="448" width="210" height="48" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="496" y="463" fill="#333" font-size="11">layout.processors.SPCoastApp</text>
+  <text x="496" y="477" fill="#555" font-size="11">board MacOS; no drivers of its own; it runs</text>
+  <text x="496" y="490" fill="#555" font-size="11">the unit's logic and anchors CMRInet</text>
+  <path d="M 590 400 L 590 448" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+  <path d="M 696 468 L 752 468" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+  <rect x="486" y="522" width="210" height="64" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="496" y="537" fill="#333" font-size="11">devices[]  a row: head CPL, serves</text>
+  <text x="496" y="551" fill="#333" font-size="11">Gilroy Caltrain:774NAB, head B</text>
+  <text x="496" y="565" fill="#555" font-size="11">S0 → route CMRInet/30/OB.10/D</text>
+  <text x="496" y="579" fill="#555" font-size="11">the owner is the line and the UA</text>
+  <path d="M 696 560 L 752 560" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+
+  <!-- serves Sargent:835 from the office row, down the gutter -->
+  <path d="M 68 112 L 44 112 L 44 545 L 68 545" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+  <text x="68" y="608" fill="#b00000" font-size="10">the lever serves Sargent:835 by name, from the office band to the field band: the same form in any scope. The path it travels, and the field station, are derived (blue).</text>
+  <text x="68" y="630" fill="#555" font-size="11">Not written: field stations, the seam a transport serves, macros (expanded), sheets, nets, references, diagnostics.</text>
+
+  <!-- ===== TRANSPORT CATALOG: layout.transports ===== -->
+  <rect x="740" y="48" width="224" height="610" rx="8" fill="#e9eef5" stroke="#555" stroke-width="1.5"/>
+  <text x="752" y="68" font-weight="bold" fill="#333">TRANSPORT CATALOG</text>
+  <text x="752" y="86" fill="#555" font-size="11">layout.transports{}: this layout's mechanisms,</text>
+  <text x="752" y="100" fill="#555" font-size="11">each of a kind in the reference data, anchored</text>
+  <text x="752" y="114" fill="#555" font-size="11">once per processor that connects to it</text>
+  <rect x="752" y="150" width="200" height="40" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="762" y="166" fill="#333" font-size="12">transports.TimeCode</text>
+  <text x="762" y="181" fill="#555" font-size="11">kind TIMECODE; anchors [JohnCTC]</text>
+  <rect x="752" y="262" width="200" height="54" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="762" y="278" fill="#333" font-size="12">transports.MQTT</text>
+  <text x="762" y="293" fill="#555" font-size="11">kind MQTT; broker; anchors [Gilroy, JohnCTC]</text>
+  <text x="762" y="307" fill="#555" font-size="11">one broker, two instances, two encodings</text>
+  <text x="752" y="332" fill="#b00000" font-size="10">← Seam 1 binding: transport and processor, by name</text>
+  <rect x="752" y="448" width="200" height="40" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="762" y="464" fill="#333" font-size="12">transports.CMRInet</text>
+  <text x="762" y="479" fill="#555" font-size="11">kind CMRI; port, baud; anchors [SPCoastApp]</text>
+  <text x="752" y="504" fill="#b00000" font-size="10">← the anchor, by name</text>
+  <rect x="752" y="514" width="200" height="76" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="762" y="529" fill="#333" font-size="11">transports.CMRInet.nodes."30"</text>
+  <text x="762" y="543" fill="#555" font-size="11">a CMRInet Node: a driver on the line that</text>
+  <text x="762" y="557" fill="#555" font-size="11">provides a bus; nodeType C, 2 in 3 out bytes;</text>
+  <text x="762" y="571" fill="#555" font-size="11">bits IB.1 … IB.14, OB.1 … OB.20 in use.</text>
+  <text x="762" y="585" fill="#555" font-size="11">Not a processor. Seam 2 binding ▲</text>
+  <path d="M 935 514 L 935 488" fill="none" stroke="#b00000" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#r)"/>
+  <text x="752" y="612" fill="#555" font-size="11">Kinds (reference data): TIMECODE, MQTT,</text>
+  <text x="752" y="626" fill="#555" font-size="11">LOCONET, CMRI. Any transport binds to any</text>
+  <text x="752" y="640" fill="#555" font-size="11">seam; the seam is derived, never written.</text>
+</svg>

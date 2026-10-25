@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" font-family="Helvetica, Arial, sans-serif" font-size="14">
+  <rect width="960" height="560" fill="#ffffff"/>
+  <title>Scopes: where an attachment looks for its bus declaration</title>
+
+  <!-- layout -->
+  <rect x="20" y="20" width="620" height="520" rx="12" fill="#f4f4f4" stroke="#555" stroke-width="1.5"/>
+  <text x="36" y="44" font-weight="bold" fill="#333">3  layout</text>
+  <rect x="300" y="36" width="320" height="40" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="312" y="52" fill="#333">declares bus: Codeline-Transport-MQTT</text>
+  <text x="312" y="68" fill="#333" font-size="12">facts of the bus: Broker, Topic, Host</text>
+
+  <!-- sheet -->
+  <rect x="40" y="90" width="580" height="430" rx="12" fill="#e9eef5" stroke="#555" stroke-width="1.5"/>
+  <text x="56" y="114" font-weight="bold" fill="#333">2  sheet (Gilroy Caltrain)</text>
+  <rect x="300" y="104" width="300" height="40" rx="6" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="312" y="120" fill="#333">declares bus: Processor (CMRInet node)</text>
+  <text x="312" y="136" fill="#333" font-size="12">attaches to CMRInet: Address 30</text>
+  <text x="56" y="140" fill="#666" font-size="12">a second node here: draw it</text>
+  <text x="56" y="156" fill="#666" font-size="12">on a sub-sheet of its own</text>
+
+  <!-- wire -->
+  <rect x="60" y="180" width="540" height="320" rx="12" fill="#d2dde9" stroke="#555" stroke-width="1.5"/>
+  <text x="76" y="204" font-weight="bold" fill="#333">1  wire (a net in the netlist)</text>
+  <rect x="100" y="260" width="200" height="56" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="112" y="280" fill="#333">attachment: Driver-CMRI-OB</text>
+  <text x="112" y="300" fill="#333" font-size="12">its own address only: Bit 7</text>
+  <rect x="360" y="260" width="200" height="56" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="372" y="280" fill="#333">attachment: Device-Lamp</text>
+  <text x="372" y="300" fill="#333" font-size="12">wired to the driver's pin</text>
+  <line x1="300" y1="288" x2="360" y2="288" stroke="#333" stroke-width="2"/>
+  <text x="100" y="370" fill="#666" font-size="12">A wire is the innermost scope: a pin binds to the</text>
+  <text x="100" y="386" fill="#666" font-size="12">declaration at the other end of its net (a chip, a chain).</text>
+  <text x="100" y="420" fill="#666" font-size="12">A field on the attachment (Processor, Transport)</text>
+  <text x="100" y="436" fill="#666" font-size="12">names a declaration explicitly: an override, lint info.</text>
+  <text x="100" y="470" fill="#666" font-size="12">No declaration of this kind on the wire: look outward.</text>
+
+  <!-- resolution arrow: driver looks outward -->
+  <path d="M 200 260 C 200 215, 250 200, 290 150" fill="none" stroke="#b00000" stroke-width="2.5" stroke-dasharray="6 4"/>
+  <polygon points="290,150 282,162 296,160" fill="#b00000"/>
+  <text x="120" y="236" fill="#b00000" font-size="12">looks outward</text>
+
+  <!-- legend -->
+  <rect x="660" y="20" width="280" height="520" rx="12" fill="#ffffff" stroke="#555" stroke-width="1.5"/>
+  <text x="676" y="46" font-weight="bold" fill="#333">The rule</text>
+  <text x="676" y="72" fill="#333" font-size="13">An attachment of bus kind K binds to the</text>
+  <text x="676" y="90" fill="#333" font-size="13">declarations of kind K in the innermost</text>
+  <text x="676" y="108" fill="#333" font-size="13">scope that holds one:</text>
+  <text x="692" y="134" fill="#333" font-size="13">1  wire</text>
+  <text x="692" y="152" fill="#333" font-size="13">2  sheet</text>
+  <text x="692" y="170" fill="#333" font-size="13">3  layout</text>
+  <text x="676" y="202" fill="#333" font-size="13">exactly one found: bound</text>
+  <text x="676" y="220" fill="#333" font-size="13">field names one: bound, info</text>
+  <text x="676" y="238" fill="#b00000" font-size="13">two found, no field: error</text>
+  <text x="676" y="256" fill="#b00000" font-size="13">none found anywhere: error</text>
+  <text x="676" y="284" fill="#333" font-size="13">two of one kind on one sheet:</text>
+  <text x="676" y="302" fill="#333" font-size="13">a sub-sheet each</text>
+
+  <text x="676" y="340" font-weight="bold" fill="#333">Two kinds of symbol</text>
+  <rect x="676" y="354" width="22" height="16" fill="#fff3cc" stroke="#8a6d00" stroke-width="2"/>
+  <text x="706" y="367" fill="#333" font-size="13">declaration: one per bus,</text>
+  <text x="706" y="384" fill="#333" font-size="13">holds every fact of the bus</text>
+  <rect x="676" y="400" width="22" height="16" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+  <text x="706" y="413" fill="#333" font-size="13">attachment: holds only its</text>
+  <text x="706" y="430" fill="#333" font-size="13">own address on that bus</text>
+
+  <text x="676" y="470" fill="#666" font-size="12">Scopes are facts of the drawing:</text>
+  <text x="676" y="486" fill="#666" font-size="12">nets and the sheet tree, both</text>
+  <text x="676" y="502" fill="#666" font-size="12">in the netlist. Never coordinates,</text>
+  <text x="676" y="518" fill="#666" font-size="12">never a KiCad group.</text>
+</svg>

@@ -345,6 +345,8 @@ Code names that stay until a rename: the KiCad Role `CONTROLLED_POINT` of
 
 ## 5. Deployment: what the model records
 
+> Superseded by ADR 0009 §3.3 and §3.7 (2026-10-23): the drawing is the deployment; the "both-and" default, generator re-hosting and re-targeting are withdrawn. Kept as history.
+
 (Rev 7 title: "Hosting".)
 
 The drawings say what exists: plants, per-plant field hardware (§5a),

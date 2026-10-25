@@ -41,6 +41,12 @@ uv run tools/run_plant_graph_smoke.sh          # Luchessa end-to-end; needs kica
 
 - `kicad-cli` is not on PATH. Tools find it through `KICAD_CLI` or the app bundle
   (`/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli`). Without KiCad, pass `--netlist <file.net>`.
+- **Netlists are a cached version of the KiCad project's state.** They become invalid whenever the KiCad
+  project is modified. Agents and the FieldUnit Data Model compiler may use netlists as part of their
+  activities and follow these rules (owner, 2026-10-24): (A) never use a stale cached netlist; (B) treat
+  generated netlists as volatile artifacts, created in a temp location and deleted when their immediate
+  use is complete (`KicadCliNetlistExporter` exports one; the old rule, prefer the `.net` and refresh it
+  with `make netlist`, had agents reading a stale copy for several turns before noticing).
 - Environment overrides: `KICAD_RAILROAD_LIB`, `KICAD_LUCHESSA_SCH`.
 - `render_plant_picture.py` needs Graphviz `dot`.
 - Virtual plant host. The build command is not scripted yet; this is the known-good form:
@@ -56,7 +62,8 @@ uv run tools/run_plant_graph_smoke.sh          # Luchessa end-to-end; needs kica
   `~/Dropbox/KiCad/Railroad/Archive/SPCoast/<Project>/` (shared rules in `Archive/SPCoast/kicad.mk`).
   The unified `SPCoast` project is maintained by hand in KiCad since the 2026-10-07 cutover; its
   migration script is retired in `docs/archive/unify/`. Derived files (netlists, ERC reports, JSON,
-  SVG) go in `<project>/production/`, never beside the schematics. The old compilers are proofs of concept,
+  SVG) go in `<project>/production/`, never beside the schematics; a netlist kept there is a cache
+  under the netlist rule above. The old compilers are proofs of concept,
   kept to check the new project against the archive, not to compile it.
 - Set `PYTHONDONTWRITEBYTECODE=1` or clean up `__pycache__`. Stale caches reference removed modules.
 - `tools/kicad_services` imports `jbom` as an installed package, the PyPI release pinned in `pyproject.toml`; the old `sys.path` reach into the jBOM checkout is gone (KiCad services survey, decision 2). To test against the live checkout, uncomment the `[tool.uv.sources]` block in `pyproject.toml` and `uv sync`; do not commit that. jBOM's own command line is a `uv tool install jbom`, separate from this venv.
@@ -88,6 +95,11 @@ uv run tools/run_plant_graph_smoke.sh          # Luchessa end-to-end; needs kica
 - `CP` must equal a MAIN HOUSE Value.
 - Direction and policy markers: the symbol's Kind/Role records the rule. It replaces the `Rulebook` field. The compiler still requires `Rulebook` (it is behind; to be updated). `Direction` where applicable.
 - Track nets need labels, except OS legs, dark track and derail nets.
+- An interlocking's trackplan is one sheet, and its placements are read for geometry only (ADR 0010 C5). What is
+  on the trackplan is decided by Role: `APPLIANCE`, `TRACK`, `POLICY`, plus the house (`STRUCTURE` with Kind
+  `CONTROL_POINT`); never by library, symbol name or position on the sheet. A `DEVICE`, an `IODRIVER`, the
+  processor and the `Interlocking` declaration on the same sheet are not geometry. A wire is track when it ends
+  on a pin of a trackplan symbol; which circuit it is comes from the netlist, never from coordinates.
 
 **Desk schematics (RailroadPanel lib).** Compiled by `tools/controller_graph/` (CLI `parse_kicad_controller.py`) and cross-checked against plants by `tools/link_subdivision.py`.
 
@@ -161,4 +173,4 @@ full sketch) is still open. Propose options; do not pick one on your own.
   - Names are case-preserved when produced and compared case-insensitively when consumed. Only case is folded, so `Luchessa` and `CP Luchessa` stay distinct.
   - Legacy stations still named `CP_<X>` are renamed when each is cut over, after checking whether it is an interlocking or a single CP.
 - `secrets.h` is gitignored everywhere. Never commit credentials.
-- **Before editing any `.kicad_sch`/`.kicad_pro`**, check for `~*.lck` or a running KiCad; the user often has it open. Prefer reading the `.net`, and refresh it with `make netlist`, which rebuilds it when the `.kicad_sch` is newer.
+- **Before editing any `.kicad_sch`/`.kicad_pro`**, check for `~*.lck` or a running KiCad; the user often has it open. Prefer reading the drawing through a netlist, under the netlist rule in Commands.

@@ -2,6 +2,7 @@
 
 - Status: accepted
 - Date: 2026-10-01
+- Amended 2026-10-23 by [ADR 0009](0009-explicit-seams.md): D12 (bare names) and D13 (stations as encoding instances) are superseded by `CP Name` and derived stations; the "drawn default" rule by "the drawing is the deployment".
 
 Replaces the spike S2 note (`docs/review/codeline-type-contract.md`, removed). Terms follow FieldUnit
 `docs/GLOSSARY.md` (rewritten 2026-10-01).
@@ -143,7 +144,7 @@ A code line type is one encoding on one transport. Examples: AAR tokens over MQT
 | Generator | the model, type definitions, a target selection | Policy: chooses the code line type (the drawn default, or another target such as virtual or 506); builds each code chart from the type's defaults and the authored overrides, or checks an authored chart; checks capacity and size limits for that target; emits the interlocking application and the CTC machine application with one set of chart tables. | change the model |
 | Run time | the emitted applications (or a JSON model loaded by FieldUnit, `PlantSerializer`) | Encoding and decoding by the chart; the `TEK` check (D8); optional size checks when a JSON model is loaded | allocate, group or choose |
 
-- A drawn `Codeline-MQTT` does not limit generation. From the same interlocking model the generator
+- **Superseded by ADR 0009 §3.7 (2026-10-23): the drawing is the deployment; a generator re-targets no line and re-hosts no unit; a different deployment is a different drawing.** Original: a drawn `Codeline-MQTT` does not limit generation. From the same interlocking model the generator
   can emit a virtual version or a 506 version. The code line type is a generation target. The drawn
   symbol states the layout's default.
 - The CTC machine and the field unit read one chart. Neither end builds its own (one source per fact).
@@ -191,6 +192,8 @@ This choice is provisional: build one worked example, and change it if tables ar
 
 ### D12. Names: no `CP` prefix in the sources, and no normalization code
 
+**Superseded by ADR 0009 §3.9 (2026-10-23).** The key every join reads is the house's `CP Name` field; the Value is a display macro of it and may carry `CP ` for the railroad's signs. Appliance `CP` fields and panel columns' `CP Name` carry the identical string. No bare-name rule remains.
+
 - A KiCad name never contains `CP_` or `CP `. A `MAIN HOUSE` Value is the bare name: `Gilroy`, not `CP Gilroy`.
 - A model board can put `CP ` in front of a name for display, to match the signs on the railroad.
 - Fix every source once. Write no code that adds or strips a prefix.
@@ -201,6 +204,8 @@ This choice is provisional: build one worked example, and change it if tables ar
   prefix (AGENTS.md "Naming"; FieldUnit test `testStationLookupFoldsCaseOnly`).
 
 ### D13. Field stations are drawn as encoding instances; the address is a field on each (final form in D15)
+
+**Superseded by ADR 0009 §3.7 (2026-10-23).** An encoding is placed once beside its transport and carries no Station or Address. Stations are derived: one per interlocking on an AAR line, addressed by name; one per house on a US&S 506 line, addressed by the house's desk column number. D4 holds: the column number is the authored address.
 
 - An encoding that selects stations (US&S 506) is drawn once for each field station. Each instance
   is wired to the `Encoding` pin of its transport. The instance carries:

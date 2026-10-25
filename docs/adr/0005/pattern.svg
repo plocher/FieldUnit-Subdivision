@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 620" font-family="Helvetica, Arial, sans-serif" font-size="13">
+  <rect width="1000" height="620" fill="#ffffff"/>
+  <title>One shape at every level: a symbol attaches upward by its address and declares a bus downward</title>
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#333"/></marker>
+  </defs>
+
+  <text x="20" y="30" font-size="16" font-weight="bold" fill="#333">The same shape at every level</text>
+  <text x="20" y="50" fill="#555">Top half of a box: what it attaches to, and its address there.  Bottom half: the bus it declares for the things below it.</text>
+
+  <!-- column titles -->
+  <text x="30" y="90" font-weight="bold" fill="#333">local (I2C)</text>
+  <text x="270" y="90" font-weight="bold" fill="#333">local (pixel chain)</text>
+  <text x="510" y="90" font-weight="bold" fill="#333">hosted (CMRInet)</text>
+  <text x="760" y="90" font-weight="bold" fill="#333">brokered (MQTT)</text>
+
+  <!-- helper: box = rect 210x74 with mid line -->
+  <!-- col 1 -->
+  <g>
+    <rect x="30" y="100" width="210" height="74" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+    <line x1="30" y1="137" x2="240" y2="137" stroke="#333" stroke-width="1"/>
+    <text x="40" y="118" fill="#333" font-weight="bold">Processor  Sargent</text>
+    <text x="40" y="132" fill="#777" font-size="11">implicit today: one per interlocking</text>
+    <rect x="30" y="137" width="210" height="37" rx="0" fill="#fff3cc" stroke="none"/>
+    <text x="40" y="153" fill="#333">declares: I2C bus, GPIO pins</text>
+    <text x="40" y="168" fill="#555" font-size="11">facts: Board, clock…</text>
+    <line x1="135" y1="174" x2="135" y2="214" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+    <text x="142" y="198" fill="#777" font-size="11">by sheet</text>
+
+    <rect x="30" y="216" width="210" height="74" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+    <text x="40" y="234" fill="#333" font-weight="bold">Driver-I2C-MCP23017</text>
+    <text x="40" y="248" fill="#333">attaches: Address 0x20</text>
+    <rect x="30" y="253" width="210" height="37" fill="#fff3cc"/>
+    <text x="40" y="269" fill="#333">declares: 16 binary pins</text>
+    <text x="40" y="284" fill="#555" font-size="11">pin N is bit N-1</text>
+    <line x1="135" y1="290" x2="135" y2="330" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+    <text x="142" y="314" fill="#777" font-size="11">by wire</text>
+
+    <rect x="30" y="332" width="210" height="52" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+    <text x="40" y="350" fill="#333" font-weight="bold">Device-Switch 835</text>
+    <text x="40" y="366" fill="#333">attaches: pin B3 (the net)</text>
+    <text x="40" y="380" fill="#555" font-size="11">declares nothing: a leaf</text>
+  </g>
+
+  <!-- col 2 -->
+  <g>
+    <rect x="270" y="100" width="210" height="74" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+    <text x="280" y="118" fill="#333" font-weight="bold">Processor  Sargent</text>
+    <text x="280" y="132" fill="#777" font-size="11">the same one</text>
+    <rect x="270" y="137" width="210" height="37" fill="#fff3cc"/>
+    <text x="280" y="153" fill="#333">declares: GPIO pins</text>
+    <line x1="375" y1="174" x2="375" y2="214" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+    <text x="382" y="198" fill="#777" font-size="11">by sheet</text>
+
+    <rect x="270" y="216" width="210" height="74" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+    <text x="280" y="234" fill="#333" font-weight="bold">Driver-GPIO-Pixel</text>
+    <text x="280" y="248" fill="#333">attaches: Address D2 (the pin)</text>
+    <rect x="270" y="253" width="210" height="37" fill="#fff3cc"/>
+    <text x="280" y="269" fill="#333">declares: one chain, unbounded</text>
+    <text x="280" y="284" fill="#555" font-size="11">length = highest address used</text>
+    <line x1="375" y1="290" x2="375" y2="330" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+    <text x="382" y="314" fill="#777" font-size="11">by wire</text>
+
+    <rect x="270" y="332" width="210" height="52" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+    <text x="280" y="350" fill="#333" font-weight="bold">Device-Lamp  backdrop</text>
+    <text x="280" y="366" fill="#333">attaches: Address 1-50</text>
+    <text x="280" y="380" fill="#555" font-size="11">spans disjoint per chain</text>
+
+    <rect x="270" y="396" width="210" height="52" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+    <text x="280" y="414" fill="#333" font-weight="bold">Cast-Head-Color  Head A</text>
+    <text x="280" y="430" fill="#333">attaches: Address 7</text>
+    <text x="280" y="444" fill="#555" font-size="11">a cast attaches like a device</text>
+  </g>
+
+  <!-- col 3 -->
+  <g>
+    <rect x="510" y="100" width="220" height="74" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+    <text x="520" y="118" fill="#333" font-weight="bold">Codeline-Transport-CMRInet</text>
+    <text x="520" y="132" fill="#777" font-size="11">on the root sheet (or any sheet)</text>
+    <rect x="510" y="137" width="220" height="37" fill="#fff3cc"/>
+    <text x="520" y="153" fill="#333">declares: one serial line</text>
+    <text x="520" y="168" fill="#555" font-size="11">facts: Port, Baud, Host (who polls)</text>
+    <line x1="620" y1="174" x2="620" y2="214" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+    <text x="627" y="198" fill="#777" font-size="11">by layout, or Transport field</text>
+
+    <rect x="510" y="216" width="220" height="74" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+    <text x="520" y="234" fill="#333" font-weight="bold">Processor  Caltrain node</text>
+    <text x="520" y="248" fill="#333">attaches: Address 30 (the UA)</text>
+    <rect x="510" y="253" width="220" height="37" fill="#fff3cc"/>
+    <text x="520" y="269" fill="#333">declares: the node's input and</text>
+    <text x="520" y="284" fill="#333">output bits</text>
+    <line x1="620" y1="290" x2="620" y2="330" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+    <text x="627" y="314" fill="#777" font-size="11">by sheet</text>
+
+    <rect x="510" y="332" width="220" height="74" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+    <text x="520" y="350" fill="#333" font-weight="bold">Driver-CMRI-OB</text>
+    <text x="520" y="364" fill="#333">attaches: Bit 7</text>
+    <rect x="510" y="369" width="220" height="37" fill="#fff3cc"/>
+    <text x="520" y="385" fill="#333">declares: one binary pin</text>
+    <line x1="620" y1="406" x2="620" y2="446" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+    <text x="627" y="430" fill="#777" font-size="11">by wire</text>
+
+    <rect x="510" y="448" width="220" height="52" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+    <text x="520" y="466" fill="#333" font-weight="bold">Device-Lamp</text>
+    <text x="520" y="482" fill="#333">attaches: pin D (the net)</text>
+  </g>
+
+  <!-- col 4 -->
+  <g>
+    <rect x="760" y="100" width="220" height="74" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+    <text x="770" y="118" fill="#333" font-weight="bold">Codeline-Transport-MQTT</text>
+    <text x="770" y="132" fill="#777" font-size="11">on the root sheet</text>
+    <rect x="760" y="137" width="220" height="37" fill="#fff3cc"/>
+    <text x="770" y="153" fill="#333">declares: one broker session</text>
+    <text x="770" y="168" fill="#555" font-size="11">facts: Broker, Topic, Railroad, Host</text>
+    <line x1="870" y1="174" x2="870" y2="214" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+    <text x="877" y="198" fill="#777" font-size="11">by layout</text>
+
+    <rect x="760" y="216" width="220" height="74" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+    <text x="770" y="234" fill="#333" font-weight="bold">Driver-JMRI-Turnout</text>
+    <text x="770" y="248" fill="#333">attaches: no address written</text>
+    <rect x="760" y="253" width="220" height="37" fill="#fff3cc"/>
+    <text x="770" y="269" fill="#333">declares: one binary pin</text>
+    <text x="770" y="284" fill="#555" font-size="11">topic derived from the device's name</text>
+    <line x1="870" y1="290" x2="870" y2="330" stroke="#333" stroke-width="1.5" marker-end="url(#a)"/>
+    <text x="877" y="314" fill="#777" font-size="11">by wire</text>
+
+    <rect x="760" y="332" width="220" height="52" rx="6" fill="#ffffff" stroke="#333" stroke-width="1.5"/>
+    <text x="770" y="350" fill="#333" font-weight="bold">Device-Switch 777</text>
+    <text x="770" y="366" fill="#333">attaches: pin M (the net)</text>
+  </g>
+
+  <!-- footer -->
+  <rect x="20" y="530" width="960" height="70" rx="8" fill="#f4f4f4" stroke="#999"/>
+  <text x="34" y="552" fill="#333" font-weight="bold">Consequences you can read off the picture</text>
+  <text x="34" y="572" fill="#333">A node is a Processor: it attaches upward (UA) and declares downward (bits), like a chip. "Who polls" is a fact of the line, so Host sits on the transport.</text>
+  <text x="34" y="590" fill="#333">A driver never names its transport: the declaration above it already did. A copied fact (UA on 34 drivers) is the smell this shape removes.</text>
+</svg>
