@@ -82,10 +82,10 @@ trackplan semantics piece and the geometry piece read the same symbols and ship 
 of C2 can be built against the ratified geometry fragment while the semantics shape is still being proposed, so 3
 can run beside 2 if the session prefers, but 3.1.0 ships once.
 
-0. **The netlist rule in the tooling.** `tests/test_layout_compiler.py` and `make_spcoast_layout.py` export a fresh
-   netlist through `KicadCliNetlistExporter` into a temp location and delete it after use when `kicad-cli` is
-   present; `SPCOAST_NETLIST` and the positional argument stay as explicit overrides for a machine without KiCad,
-   with the warning that an override is the caller's cache. First, because every later gate compiles the project.
+0. **The netlist rule in the tooling.** Done 2026-10-25 (`ea08e28`): `kicad_services.netlist_reader.exported_netlist`
+   exports into a temp directory and deletes it; `layout_compiler.source.from_project` reads through it;
+   `compile_layout.py` takes the root `.kicad_sch`; the SPCoast test class and `make_spcoast_layout.py` export fresh,
+   with `SPCOAST_NETLIST` and the positional argument as the caller's cache on a machine without KiCad.
 1. **ADR 0009 amendments** (0008 C11 lists them; the owner said amendments, not a new decision): §3.10 gains Kind
    `RAILROAD`, the macro rule, model board lamps as PANEL devices of Style `board` without a `Column` pin, `Name` on
    every keyed symbol and `Value` never read, `Kind` on an encoded driver and `Kind.name` as its key, a Mast as a
@@ -120,21 +120,29 @@ can run beside 2 if the session prefers, but 3.1.0 ships once.
    Gates: the relation table grows rows for each trackplan relation (wire, fallback, check), tested on the SPCoast
    project; the example regenerated and byte-stable; `test_drawing_has_no_errors` stays green; the counts in 0008 §6
    updated by reading them off the Layout Data Model File.
-3. **ADR 0010 C1, schema `layout-model/v3.1.0`**: one version adds `$defs/geometry` as `docs/adr/0010/geometry.schema.json`
-   states it (lifted, not retyped), `layout.glyphs{}`, and the `appliances` and `track` shapes of item 2; one example
-   regenerated; one migration note (ADR 0008 C8); ADR 0008 §4.1's "named by key and version, never copied" amended:
-   the glyphs a layout draws with are copied once into `layout.glyphs{}`, the libraries and the reference data stay
-   named. ADR 0008 C4's open objects close. DoD4 is checked here: every key of the fragment names its view in 0010 §4.
-4. **ADR 0010 C2, the compiler piece**: a placement reader over the `.kicad_sch` files through `tools/kicad_services`
-   (`SchematicPlacementReader` reads symbols today; wires and junctions are added beside it) and a glyph reader over
-   the symbol libraries beside `SymbolLibraryReader` (pins, pin lines, polylines, circles, three-point arcs,
-   rectangles, fixed text, stroke and fill); the generic part is a kicad-primitives ticket under ADR 0007. The
-   compiler scopes placements to an interlocking by sheet (ADR 0004 D12), normalises per 0010 §4.2 and §4.3 (origin
-   at the bottom-left pin: least y, then least x, in the library frame; the library is untouched, C8), joins runs to
-   circuits through the netlist and never the reverse, and reports a run that ends at no port as an error (0010 §7,
-   rev 2). Tests: DoD2 (translate a trackplan sheet, byte-identical), DoD3 (placement reader off, byte-identical
-   outside `geometry`), the per-pin transform assertion the picture script already makes, and a 90-degree rotated
-   fixture (the project draws rotations and mirrors; prove each case the library has). The example regenerated.
+3. **ADR 0010 C1, schema `layout-model/v3.1.0`**: `schemas/layout-model/v3.1.0.json` exists since 2026-10-25 as a
+   **draft**, v3.0.0 plus the 0010 fragment's `$defs` lifted by script (geometry, glyphs, `provenance.libraries`
+   written), marked so in its description; item 2 adds the `appliances` and `track` shapes to it, and 3.1.0 ships once,
+   with the example regenerated and one migration note (ADR 0008 C8), ADR 0008 §4.1's "named by key and version,
+   never copied" amended (the glyphs a layout draws with are copied once into `layout.glyphs{}`; the libraries and
+   the reference data stay named), and ADR 0008 C4's open objects closed. DoD4 is checked here: every key of the
+   fragment names its view in 0010 §4.
+4. **ADR 0010 C2, the compiler piece.** Done 2026-10-25 in `tools/layout_compiler/geometry.py` over the extended
+   services (`SchematicPlacementReader` now reads wires, junctions and properties; `SymbolLibraryReader` pin lines
+   and graphics with KiCad's stroke and fill; `NetlistReader` each sheet's file; `library_table.py` the
+   `sym-lib-table`); `compile_layout.py --geometry` writes every interlocking's `geometry` and `layout.glyphs` under
+   schema 3.1.0; without the flag the readers are off. `tests/test_geometry.py`: DoD2 (Sargent's sheet translated in
+   a scratch copy, byte-identical), DoD3 (reader off, byte-identical outside `geometry`, `glyphs`, `libraries` and
+   the schema string), the per-pin check over every placement of the seven interlockings, the twelve orientations
+   in memory, and the direction of a 90-degree turn asked of kicad-cli (`tests/fixtures/kicad/rotation_probe.py`:
+   counter-clockwise as seen on the page; the project draws only 0, 180, mirror x and mirror y). Findings for the
+   next items: (a) `Railroad-Trackplan:Milepost` has no `Name` field, so the two Luchessa mileposts are keyed from
+   `Value` at info (`identity.value`); a library edit by the owner closes it. (b) Geometry writes a circuit only
+   where a track circuit marker stands on the net; the OS circuit of a switch (`835T1` on Sargent's three signal
+   joints, Luchessa's three port runs) is item 2's to name, through one `circuit_of_net` shared by both pieces.
+   (c) A run is stated from its lesser end, so a port may appear as `from` where the ADR's prose example says `to`;
+   both are the ADR's "in the run's own point order". (d) The generic reader additions are a kicad-primitives
+   ticket under ADR 0007, not yet filed. The example stays at 3.0.0 until item 3.
 5. **ADR 0010 C3, the first view**: `tools/render_plant_picture.py` reading the Layout Data Model File (no KiCad
    schematic, no netlist, no symbol library, no archived drawing) as the model board and the route finder, the first
    gate (DoD1); the thinline second. `tools/plant_graph` retires behind it under ADR 0008 C6's "then go in one

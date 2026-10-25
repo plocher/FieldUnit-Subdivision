@@ -114,15 +114,21 @@ class NetlistReader:
             ):
                 model.source = item[1]
             elif item[0] == Symbol("sheet"):
+                name = ""
+                file = ""
                 for sub in item[1:]:
-                    if (
-                        isinstance(sub, list)
-                        and sub
-                        and sub[0] == Symbol("name")
-                        and len(sub) >= 2
-                        and isinstance(sub[1], str)
-                    ):
-                        model.sheets.append(sub[1])
+                    if not (isinstance(sub, list) and sub):
+                        continue
+                    if sub[0] == Symbol("name") and len(sub) >= 2 and isinstance(sub[1], str):
+                        name = sub[1]
+                    elif sub[0] == Symbol("title_block"):
+                        for tb in sub[1:]:
+                            if isinstance(tb, list) and tb and tb[0] == Symbol("source") and len(tb) >= 2 and isinstance(tb[1], str):
+                                file = tb[1]
+                if name:
+                    model.sheets.append(name)
+                    if file:
+                        model.sheet_files[name] = file
 
     def _parse_component(self, node: Any) -> Optional[ktypes.NetlistComponent]:
         from sexpdata import Symbol

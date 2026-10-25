@@ -57,6 +57,7 @@ class Source:
     nets: list[Net]
     sheets: list[str] = field(default_factory=list)
     project: Optional[Path] = None                                    # the KiCad project the drawing is: the one source
+    sheet_files: dict[str, str] = field(default_factory=dict)         # sheet path -> .kicad_sch file name, from the export
     _by_pin: dict[tuple[str, str], Net] = field(default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
@@ -112,7 +113,7 @@ def from_netlist(path: Path) -> Source:
     nets = [Net(n.name, tuple(PinRef(p.reference, pin_name(p.pinfunction, p.pin), p.pintype) for p in n.nodes)) for n in model.nets]
     root = Path(model.source) if model.source else None               # the export names the root schematic
     project = root.with_suffix(".kicad_pro") if root and root.with_suffix(".kicad_pro").is_file() else root
-    return Source(Path(path), symbols, nets, list(model.sheets), project)
+    return Source(Path(path), symbols, nets, list(model.sheets), project, dict(model.sheet_files))
 
 
 def from_project(schematic: Path) -> Source:

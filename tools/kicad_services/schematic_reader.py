@@ -1,4 +1,4 @@
-"""Read placed-symbol transforms from a KiCad schematic source."""
+"""Read placed-symbol transforms, wires and junctions from a KiCad schematic source, without interpreting them."""
 
 from __future__ import annotations
 
@@ -38,10 +38,30 @@ class SchematicPlacementReader:
             title_block=self._read_title_block(schematic_path),
         )
         for node in root[1:]:
-            placement = self._parse_symbol(node)
-            if placement is not None:
-                model.placements[placement.reference] = placement
+            if not (isinstance(node, list) and node):
+                continue
+            if node[0] == Symbol("wire"):
+                pts = self._child(node, "pts")
+                if pts is not None:
+                    model.wires.append(tuple((float(p[1]), float(p[2])) for p in pts[1:] if isinstance(p, list) and p and p[0] == Symbol("xy")))
+            elif node[0] == Symbol("junction"):
+                at = self._child(node, "at")
+                if at is not None:
+                    model.junctions.add((float(at[1]), float(at[2])))
+            else:
+                placement = self._parse_symbol(node)
+                if placement is not None:
+                    model.placements[placement.reference] = placement
         return model
+
+    @staticmethod
+    def _child(node: Any, tag: str) -> Any:
+        from sexpdata import Symbol
+
+        for child in node[1:]:
+            if isinstance(child, list) and child and child[0] == Symbol(tag):
+                return child
+        return None
 
     def _read_title_block(
         self,
@@ -70,6 +90,7 @@ class SchematicPlacementReader:
         reference = ""
         x = y = rotation = 0.0
         mirror = ""
+        properties: dict[str, str] = {}
         for item in node[1:]:
             if not (isinstance(item, list) and item):
                 continue
@@ -82,8 +103,10 @@ class SchematicPlacementReader:
             elif item[0] == Symbol("mirror") and len(item) >= 2:
                 mirror = str(item[1]).lower()
             elif item[0] == Symbol("property") and len(item) >= 3:
+                if isinstance(item[1], str) and isinstance(item[2], str):
+                    properties[item[1]] = item[2]
                 if item[1] == "Reference":
                     reference = str(item[2])
         if not reference or not lib_id:
             return None
-        return ktypes.SchematicPlacement(reference, lib_id, x, y, rotation, mirror)
+        return ktypes.SchematicPlacement(reference, lib_id, x, y, rotation, mirror, properties)
