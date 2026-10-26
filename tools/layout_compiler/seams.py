@@ -6,8 +6,8 @@ hierarchy or a field. When both resolve they must agree, or the compiler reports
 only one resolves, the compiler says so at ``info``. When neither does, the fact is ``missing``, which is the
 tutorial prompt (ADR 0009 §3.10), not an error: absence is information (ADR 0008 §4.7).
 
-Identity is the ``Name`` field everywhere; ``Value`` is drawing (ADR 0009 §3.10). Where a library symbol has no
-``Name`` yet, the Value stands in and the compiler reports it.
+Identity is the key attribute of each symbol (``Name`` on most, ``CP Name``, ``Column``, ``Address``, ``Head``);
+``Value`` is drawing and is never read (ADR 0009 §3.10). A symbol without its key has no name and is reported.
 """
 from __future__ import annotations
 
@@ -205,11 +205,12 @@ class Seams:
 # ---------------------------------------------------------------- helpers
 
 def name_of(s: Symbol, report: Report) -> str:
-    """The identity key: ``Name``; the Value stands in, reported, where the library has no Name yet (ADR 0009 §3.10)."""
+    """The identity key: ``Name``, never ``Value`` (ADR 0009 §3.10; the owner, 2026-10-25). A symbol whose library lacks
+    the attribute has no name, reported ``missing``: the fix is the attribute in the library and on its instances."""
     if "Name" in s.fields:                                            # stated, even empty: KiCad resolves ${Value} of "~" to nothing
         return s.get("Name")
-    report.info("identity.value", f"{s.lib_id} has no Name field; its Value {s.value!r} is its name until the library gains one", loc(s))
-    return s.value
+    report.missing("identity.name", f"{s.lib_id} has no Name field, so it has no name; Value is never read", loc(s))
+    return ""
 
 
 def device_name(s: Symbol, report: Report) -> Optional[str]:
@@ -325,6 +326,9 @@ def _railroad(sm: Seams) -> None:
 def _processors(sm: Seams) -> None:
     for s in sm.source.where("STRUCTURE", "PROCESSOR"):
         name = name_of(s, sm.report)
+        if not name:
+            sm.report.missing("entity.name", "a processor has no Name; it is not written", loc(s))
+            continue
         p = sm.processors.setdefault(name, Processor(name))
         p.syms.append(s)
         for attr, fld in (("board", "Board"), ("description", "Description")):
@@ -363,6 +367,9 @@ def _one_processor_on_sheet(sm: Seams, sheet: str) -> Optional[str]:
 def _transports(sm: Seams) -> None:
     for s in sm.source.where("TRANSPORT"):
         name = name_of(s, sm.report)
+        if not name:
+            sm.report.missing("entity.name", "a transport has no Name; it is not written", loc(s))
+            continue
         t = sm.transports.setdefault(name, Transport(name, s.kind))
         if t.kind != s.kind:
             sm.report.error("entity.conflict", f"transport {name}: Kind {t.kind} and {s.kind}", loc(s))
@@ -400,6 +407,9 @@ def _transport_on_net(sm: Seams, s: Symbol) -> Optional[tuple[str, Symbol]]:
 def _encodings(sm: Seams) -> None:
     for s in sm.source.where("CODELINE_ENCODING") + sm.source.where("IO_ENCODING"):
         name = name_of(s, sm.report)
+        if not name:
+            sm.report.missing("entity.name", "a encoding has no Name; it is not written", loc(s))
+            continue
         if name in sm.encodings:
             sm.report.error("entity.duplicate", f"two encodings named {name!r}", loc(s))
             continue
@@ -503,6 +513,9 @@ def _houses(sm: Seams) -> None:
 def _office_units(sm: Seams) -> None:
     for s in sm.source.where("OFFICE_UNIT"):
         name = name_of(s, sm.report)
+        if not name:
+            sm.report.missing("entity.name", "a office unit has no Name; it is not written", loc(s))
+            continue
         if name in sm.office_units:
             sm.report.error("entity.duplicate", f"two office units named {name!r}", loc(s))
             continue
