@@ -3,20 +3,24 @@
     "Christopher": {
       "appliances": {
         "1NAT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Christopher:Christopher South"
         },
         "1SAT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Christopher:Christopher North"
         },
         "01T": {
           "appliance": "track_circuit",
           "controlPoint": "Christopher:Christopher North"
         },
         "2NAT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Christopher:Christopher South"
         },
         "2SAT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Christopher:Christopher North"
         },
         "813": {
           "appliance": "switch",
@@ -754,8 +758,7 @@
               "To": "Christopher:2SAT"
             },
             "glyph": "Railroad-Trackplan:NextCP",
-            "kind": "NEXT_CP",
-            "rotation": 180
+            "kind": "NEXT_CP"
           },
           {
             "at": {
@@ -777,8 +780,7 @@
               "To": "Christopher:1SAT"
             },
             "glyph": "Railroad-Trackplan:NextCP",
-            "kind": "NEXT_CP",
-            "rotation": 180
+            "kind": "NEXT_CP"
           },
           {
             "at": {
@@ -802,6 +804,11 @@
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Christopher:813.C"
+              ]
+            },
             "rotation": 180
           },
           {
@@ -815,6 +822,11 @@
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Christopher:815A.N"
+              ]
+            },
             "rotation": 180
           },
           {
@@ -827,7 +839,15 @@
               "B": "Christopher:815T1"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Christopher:813.N"
+              ],
+              "B": [
+                "Christopher:815.C"
+              ]
+            }
           },
           {
             "at": {
@@ -839,7 +859,12 @@
               "B": "Christopher:01T"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Christopher:813.R"
+              ]
+            }
           },
           {
             "at": {
@@ -863,7 +888,15 @@
               "B": "Christopher:815AT1"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Christopher:815.R"
+              ],
+              "B": [
+                "Christopher:815A.R"
+              ]
+            }
           },
           {
             "at": {
@@ -875,7 +908,15 @@
               "B": "Christopher:817T1"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Christopher:815.N"
+              ],
+              "B": [
+                "Christopher:817.N"
+              ]
+            }
           },
           {
             "at": {
@@ -887,7 +928,12 @@
               "B": "Christopher:817T1"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "B": [
+                "Christopher:817.R"
+              ]
+            }
           },
           {
             "at": {
@@ -899,7 +945,12 @@
               "B": "Christopher:2NAT"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Christopher:815A.C"
+              ]
+            }
           },
           {
             "at": {
@@ -911,7 +962,12 @@
               "B": "Christopher:1NAT"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Christopher:817.C"
+              ]
+            }
           },
           {
             "at": {
@@ -922,8 +978,7 @@
               "To": "Christopher:2NAT"
             },
             "glyph": "Railroad-Trackplan:NextCP",
-            "kind": "NEXT_CP",
-            "rotation": 180
+            "kind": "NEXT_CP"
           },
           {
             "at": {
@@ -945,8 +1000,7 @@
               "To": "Christopher:1NAT"
             },
             "glyph": "Railroad-Trackplan:NextCP",
-            "kind": "NEXT_CP",
-            "rotation": 180
+            "kind": "NEXT_CP"
           },
           {
             "at": {
@@ -1019,24 +1073,28 @@
             "circuits": {
               "To": "Christopher:1NAT"
             },
+            "interlocking": "Corporal",
             "kind": "NEXT_CP"
           },
           {
             "circuits": {
               "To": "Christopher:1SAT"
             },
+            "interlocking": "Luchessa",
             "kind": "NEXT_CP"
           },
           {
             "circuits": {
               "To": "Christopher:2NAT"
             },
+            "interlocking": "Corporal",
             "kind": "NEXT_CP"
           },
           {
             "circuits": {
               "To": "Christopher:2SAT"
             },
+            "interlocking": "Luchessa",
             "kind": "NEXT_CP"
           }
         ],
@@ -1210,23 +1268,29 @@
       "appliances": {
         "1": {
           "appliance": "switch",
+          "controlPoint": "Corporal:Corporal",
           "indicationCeiling": "RESTRICTING/RESTRICTING",
           "style": "manual_sensed"
         },
         "1NAT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Corporal:Corporal"
         },
         "1SAT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Corporal:Corporal"
         },
         "01T": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Corporal:Corporal"
         },
         "2NAT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Corporal:Corporal"
         },
         "2SAT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Corporal:Corporal"
         },
         "829": {
           "appliance": "switch",
@@ -1721,10 +1785,11 @@
           },
           "829D": {
             "at": {
-              "x": 53.34,
+              "x": 66.04,
               "y": 19.05
             },
-            "glyph": "Railroad-Trackplan:Derail"
+            "glyph": "Railroad-Trackplan:Derail",
+            "mirror": "y"
           },
           "830NAB": {
             "at": {
@@ -1890,6 +1955,11 @@
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Corporal:829.C"
+              ]
+            },
             "rotation": 180
           },
           {
@@ -1903,6 +1973,11 @@
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Corporal:831.R"
+              ]
+            },
             "rotation": 180
           },
           {
@@ -1915,7 +1990,15 @@
               "B": "Corporal:831T1"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Corporal:829.N"
+              ],
+              "B": [
+                "Corporal:831.N"
+              ]
+            }
           },
           {
             "at": {
@@ -1926,7 +2009,12 @@
               "To": "Corporal:829T1"
             },
             "glyph": "Railroad-Trackplan:Rule105-RestrictedSpeed",
-            "kind": "RULE_105"
+            "kind": "RULE_105",
+            "ports": {
+              "To": [
+                "Corporal:829D.C"
+              ]
+            }
           },
           {
             "at": {
@@ -1938,7 +2026,12 @@
               "B": "Corporal:01T"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Corporal:829D.C"
+              ]
+            }
           },
           {
             "at": {
@@ -1950,7 +2043,12 @@
               "B": "Corporal:1NAT"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Corporal:831.C"
+              ]
+            }
           },
           {
             "at": {
@@ -1962,6 +2060,11 @@
             },
             "glyph": "Railroad-Trackplan:IRJ-END_CTC",
             "kind": "END_CTC",
+            "ports": {
+              "DARK": [
+                "Corporal:1.C"
+              ]
+            },
             "rotation": 180
           },
           {
@@ -1983,6 +2086,7 @@
             },
             "glyph": "Railroad-Trackplan:Industry",
             "kind": "INDUSTRY",
+            "name": "Corporal:Beet Loader 1",
             "rotation": 180
           },
           {
@@ -1992,6 +2096,7 @@
             },
             "glyph": "Railroad-Trackplan:Industry",
             "kind": "INDUSTRY",
+            "name": "Corporal:Beet Loader 2",
             "rotation": 180
           },
           {
@@ -2040,7 +2145,7 @@
           },
           {
             "circuit": "Corporal:829T1",
-            "from": "Corporal:829D.R",
+            "from": "Corporal:829D.C",
             "points": "66.04,19.05 73.66,19.05"
           },
           {
@@ -2083,33 +2188,38 @@
             "circuits": {
               "To": "Corporal:1SAT"
             },
+            "interlocking": "Christopher",
             "kind": "NEXT_CP"
           },
           {
             "circuits": {
               "To": "Corporal:2NAT"
             },
+            "interlocking": "Sargent",
             "kind": "NEXT_CP"
           },
           {
             "circuits": {
               "To": "Corporal:2SAT"
             },
+            "interlocking": "Christopher",
             "kind": "NEXT_CP"
           },
           {
             "kind": "INDUSTRY",
+            "name": "Corporal:Beet Loader 1",
             "ports": {
               "EoT": [
-                "Corporal:1.N"
+                "Corporal:1.R"
               ]
             }
           },
           {
             "kind": "INDUSTRY",
+            "name": "Corporal:Beet Loader 2",
             "ports": {
               "EoT": [
-                "Corporal:1.R"
+                "Corporal:1.N"
               ]
             }
           }
@@ -2132,7 +2242,7 @@
             "mast": "Corporal:832NA",
             "ports": {
               "A": [
-                "Corporal:829D.R"
+                "Corporal:829D.C"
               ]
             }
           },
@@ -2199,7 +2309,7 @@
             "circuit": "Corporal:829T1",
             "ports": [
               "Corporal:829.R",
-              "Corporal:829D.C"
+              "Corporal:829D.R"
             ]
           }
         ],
@@ -2226,7 +2336,7 @@
             "kind": "RULE_105",
             "ports": {
               "To": [
-                "Corporal:829D.R"
+                "Corporal:829D.C"
               ]
             }
           },
@@ -2243,19 +2353,24 @@
     "Gilroy Caltrain": {
       "appliances": {
         "1NAT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Gilroy Caltrain:Gilroy Caltrain"
         },
         "1SAT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Gilroy Caltrain:Gilroy Caltrain"
         },
         "01T": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Gilroy Caltrain:Gilroy Caltrain"
         },
         "02T": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Gilroy Caltrain:Gilroy Caltrain"
         },
         "03T": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Gilroy Caltrain:Gilroy Caltrain"
         },
         "771": {
           "appliance": "switch",
@@ -2883,6 +2998,11 @@
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Gilroy Caltrain:771.C"
+              ]
+            },
             "rotation": 180
           },
           {
@@ -2895,7 +3015,15 @@
               "B": "Gilroy Caltrain:773T1"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Gilroy Caltrain:771.R"
+              ],
+              "B": [
+                "Gilroy Caltrain:773.C"
+              ]
+            }
           },
           {
             "at": {
@@ -2907,7 +3035,12 @@
               "B": "Gilroy Caltrain:1NAT"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Gilroy Caltrain:771.N"
+              ]
+            }
           },
           {
             "at": {
@@ -2919,7 +3052,15 @@
               "B": "Gilroy Caltrain:775T1"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Gilroy Caltrain:773.N"
+              ],
+              "B": [
+                "Gilroy Caltrain:775.C"
+              ]
+            }
           },
           {
             "at": {
@@ -2931,7 +3072,12 @@
               "B": "Gilroy Caltrain:01T"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Gilroy Caltrain:773.R"
+              ]
+            }
           },
           {
             "at": {
@@ -2943,7 +3089,12 @@
               "B": "Gilroy Caltrain:03T"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Gilroy Caltrain:775.R"
+              ]
+            }
           },
           {
             "at": {
@@ -2955,7 +3106,12 @@
               "B": "Gilroy Caltrain:02T"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Gilroy Caltrain:775.N"
+              ]
+            }
           },
           {
             "at": {
@@ -2999,8 +3155,7 @@
               "To": "Gilroy Caltrain:1NAT"
             },
             "glyph": "Railroad-Trackplan:NextCP",
-            "kind": "NEXT_CP",
-            "rotation": 180
+            "kind": "NEXT_CP"
           },
           {
             "at": {
@@ -3138,12 +3293,14 @@
             "circuits": {
               "To": "Gilroy Caltrain:1NAT"
             },
+            "interlocking": "Gilroy Interchange",
             "kind": "NEXT_CP"
           },
           {
             "circuits": {
               "To": "Gilroy Caltrain:1SAT"
             },
+            "interlocking": "Lick",
             "kind": "NEXT_CP"
           }
         ],
@@ -3295,13 +3452,16 @@
     "Gilroy Interchange": {
       "appliances": {
         "1NAT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Gilroy Interchange:Gilroy North"
         },
         "1SAT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Gilroy Interchange:Gilroy North"
         },
         "01T": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Gilroy Interchange:Gilroy North"
         },
         "02T": {
           "appliance": "track_circuit",
@@ -3879,6 +4039,11 @@
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Gilroy Interchange:777.C"
+              ]
+            },
             "rotation": 180
           },
           {
@@ -3891,7 +4056,12 @@
               "B": "Gilroy Interchange:01T"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Gilroy Interchange:777.R"
+              ]
+            }
           },
           {
             "at": {
@@ -3903,7 +4073,12 @@
               "B": "Gilroy Interchange:02T"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Gilroy Interchange:777.N"
+              ]
+            }
           },
           {
             "at": {
@@ -3927,7 +4102,12 @@
               "B": "Gilroy Interchange:781T1"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "B": [
+                "Gilroy Interchange:781.N"
+              ]
+            }
           },
           {
             "at": {
@@ -3940,6 +4120,11 @@
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Gilroy Interchange:781.R"
+              ]
+            },
             "rotation": 180
           },
           {
@@ -3952,7 +4137,12 @@
               "B": "Gilroy Interchange:1NAT"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Gilroy Interchange:781.C"
+              ]
+            }
           },
           {
             "at": {
@@ -4021,12 +4211,14 @@
             "circuits": {
               "To": "Gilroy Interchange:1NAT"
             },
+            "interlocking": "Luchessa",
             "kind": "NEXT_CP"
           },
           {
             "circuits": {
               "To": "Gilroy Interchange:1SAT"
             },
+            "interlocking": "Gilroy Caltrain",
             "kind": "NEXT_CP"
           }
         ],
@@ -4143,23 +4335,28 @@
     "Luchessa": {
       "appliances": {
         "1NAT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Luchessa:Carnadero"
         },
         "1SAT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Luchessa:Luchessa"
         },
         "01T": {
           "appliance": "track_circuit",
           "controlPoint": "Luchessa:Gilroy"
         },
         "2NAT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Luchessa:Carnadero"
         },
         "02T": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Luchessa:Gilroy"
         },
         "3NAT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Luchessa:Carnadero"
         },
         "783": {
           "appliance": "switch",
@@ -4921,7 +5118,12 @@
               "CTC": "Luchessa:02T"
             },
             "glyph": "Railroad-Trackplan:IRJ-END_CTC",
-            "kind": "END_CTC"
+            "kind": "END_CTC",
+            "ports": {
+              "DARK": [
+                "Luchessa:Gilroy Industry.EoT"
+              ]
+            }
           },
           {
             "at": {
@@ -4929,7 +5131,8 @@
               "y": 26.67
             },
             "glyph": "Railroad-Trackplan:Industry",
-            "kind": "INDUSTRY"
+            "kind": "INDUSTRY",
+            "name": "Luchessa:Gilroy Industry"
           },
           {
             "at": {
@@ -4942,6 +5145,11 @@
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Luchessa:783.C"
+              ]
+            },
             "rotation": 180
           },
           {
@@ -4966,6 +5174,11 @@
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Luchessa:795D.C"
+              ]
+            },
             "rotation": 180
           },
           {
@@ -4978,7 +5191,15 @@
               "B": "Luchessa:795T1"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Luchessa:783.N"
+              ],
+              "B": [
+                "Luchessa:795.N"
+              ]
+            }
           },
           {
             "at": {
@@ -4990,7 +5211,12 @@
               "B": "Luchessa:01T"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Luchessa:795.C"
+              ]
+            }
           },
           {
             "at": {
@@ -5002,7 +5228,12 @@
               "B": "Luchessa:1NAT"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Luchessa:783.R"
+              ]
+            }
           },
           {
             "at": {
@@ -5014,7 +5245,12 @@
               "B": "Luchessa:799T1"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "B": [
+                "Luchessa:799.C"
+              ]
+            }
           },
           {
             "at": {
@@ -5026,7 +5262,12 @@
               "B": "Luchessa:3NAT"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Luchessa:799.R"
+              ]
+            }
           },
           {
             "at": {
@@ -5038,7 +5279,12 @@
               "B": "Luchessa:2NAT"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Luchessa:799.N"
+              ]
+            }
           },
           {
             "at": {
@@ -5082,8 +5328,7 @@
               "To": "Luchessa:3NAT"
             },
             "glyph": "Railroad-Trackplan:NextCP",
-            "kind": "NEXT_CP",
-            "rotation": 180
+            "kind": "NEXT_CP"
           },
           {
             "at": {
@@ -5094,8 +5339,7 @@
               "To": "Luchessa:2NAT"
             },
             "glyph": "Railroad-Trackplan:NextCP",
-            "kind": "NEXT_CP",
-            "rotation": 180
+            "kind": "NEXT_CP"
           },
           {
             "at": {
@@ -5106,8 +5350,7 @@
               "To": "Luchessa:1NAT"
             },
             "glyph": "Railroad-Trackplan:NextCP",
-            "kind": "NEXT_CP",
-            "rotation": 180
+            "kind": "NEXT_CP"
           }
         ],
         "mileposts": {
@@ -5186,34 +5429,44 @@
             "circuits": {
               "CTC": "Luchessa:02T"
             },
-            "kind": "END_CTC"
+            "kind": "END_CTC",
+            "ports": {
+              "DARK": [
+                "Luchessa:Gilroy Industry.EoT"
+              ]
+            }
           },
           {
             "circuits": {
               "To": "Luchessa:1NAT"
             },
+            "interlocking": "Christopher",
             "kind": "NEXT_CP"
           },
           {
             "circuits": {
               "To": "Luchessa:1SAT"
             },
+            "interlocking": "Gilroy Interchange",
             "kind": "NEXT_CP"
           },
           {
             "circuits": {
               "To": "Luchessa:2NAT"
             },
+            "interlocking": "Christopher",
             "kind": "NEXT_CP"
           },
           {
             "circuits": {
               "To": "Luchessa:3NAT"
             },
+            "interlocking": "Hollister",
             "kind": "NEXT_CP"
           },
           {
-            "kind": "INDUSTRY"
+            "kind": "INDUSTRY",
+            "name": "Luchessa:Gilroy Industry"
           }
         ],
         "joints": [
@@ -5383,17 +5636,21 @@
       "appliances": {
         "1": {
           "appliance": "switch",
+          "controlPoint": "Sargent:Sargent",
           "indicationCeiling": "RESTRICTING/RESTRICTING",
           "style": "manual_sensed"
         },
         "1NAT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Sargent:Sargent"
         },
         "1SAT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Sargent:Sargent"
         },
         "2SAT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Sargent:Sargent"
         },
         "835": {
           "appliance": "switch",
@@ -5437,6 +5694,7 @@
         "HBA": {
           "appliance": "lamp",
           "controlPoint": "Sargent:Sargent",
+          "milepost": 83.4,
           "style": "non_vital"
         },
         "MC1": {
@@ -5857,7 +6115,7 @@
           "HBA": {
             "at": {
               "x": 40.64,
-              "y": 33.02
+              "y": 38.1
             },
             "glyph": "Railroad-Trackplan:AUXILIARY"
           },
@@ -5907,7 +6165,8 @@
               "y": 0.0
             },
             "glyph": "Railroad-Trackplan:Industry",
-            "kind": "INDUSTRY"
+            "kind": "INDUSTRY",
+            "name": "Sargent:Beet Loader 1"
           },
           {
             "at": {
@@ -5915,7 +6174,8 @@
               "y": 16.51
             },
             "glyph": "Railroad-Trackplan:Industry",
-            "kind": "INDUSTRY"
+            "kind": "INDUSTRY",
+            "name": "Sargent:Beet Loader 2"
           },
           {
             "at": {
@@ -5938,7 +6198,12 @@
               "CTC": "Sargent:2SAT"
             },
             "glyph": "Railroad-Trackplan:IRJ-END_CTC",
-            "kind": "END_CTC"
+            "kind": "END_CTC",
+            "ports": {
+              "DARK": [
+                "Sargent:1.C"
+              ]
+            }
           },
           {
             "at": {
@@ -5962,6 +6227,11 @@
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Sargent:835.R"
+              ]
+            },
             "rotation": 180
           },
           {
@@ -5975,6 +6245,11 @@
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Sargent:835.N"
+              ]
+            },
             "rotation": 180
           },
           {
@@ -5987,7 +6262,12 @@
               "B": "Sargent:1NAT"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Sargent:835.C"
+              ]
+            }
           },
           {
             "at": {
@@ -6054,27 +6334,31 @@
             "circuits": {
               "To": "Corporal:2NAT"
             },
+            "interlocking": "Corporal",
             "kind": "NEXT_CP"
           },
           {
             "circuits": {
               "To": "Sargent:1NAT"
             },
+            "interlocking": "Watsonville",
             "kind": "NEXT_CP"
           },
           {
             "kind": "INDUSTRY",
+            "name": "Sargent:Beet Loader 1",
             "ports": {
               "EoT": [
-                "Sargent:1.N"
+                "Sargent:1.R"
               ]
             }
           },
           {
             "kind": "INDUSTRY",
+            "name": "Sargent:Beet Loader 2",
             "ports": {
               "EoT": [
-                "Sargent:1.R"
+                "Sargent:1.N"
               ]
             }
           }
@@ -6158,38 +6442,48 @@
     "Watsonville": {
       "appliances": {
         "1BT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "1CT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "1DT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "1ET": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "01T": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "2AT": {
           "appliance": "track_circuit",
           "controlPoint": "Watsonville:Watsonville"
         },
         "2BT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "2CT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "2DT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "2ET": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "02T": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "3": {
           "appliance": "switch",
@@ -6198,31 +6492,40 @@
           "style": "powered"
         },
         "3BT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "3CT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "3DT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "3ET": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "03T": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "4BT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "4CT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "4DT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "4ET": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "5": {
           "appliance": "switch",
@@ -6231,28 +6534,36 @@
           "style": "powered"
         },
         "5BT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "5CT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "5DT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "5ET": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "6BT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "6CT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "6DT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "6ET": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "7": {
           "appliance": "switch",
@@ -6261,16 +6572,20 @@
           "style": "powered"
         },
         "7BT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "7CT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "7DT": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "7ET": {
-          "appliance": "track_circuit"
+          "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville"
         },
         "9": {
           "appliance": "switch",
@@ -6328,6 +6643,7 @@
         },
         "0100T": {
           "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville",
           "members": [
             "Watsonville:15T1",
             "Watsonville:17T1",
@@ -6336,10 +6652,14 @@
             "Watsonville:23T1",
             "Watsonville:25T1"
           ],
+          "settings": {
+            "Display": "0100T: [15T1,17T1,19T1,21T1,23T1,25T1]"
+          },
           "style": "virtual"
         },
         "0101T": {
           "appliance": "track_circuit",
+          "controlPoint": "Watsonville:Watsonville",
           "members": [
             "Watsonville:3T1",
             "Watsonville:03T",
@@ -6349,6 +6669,9 @@
             "Watsonville:11T1",
             "Watsonville:13T1"
           ],
+          "settings": {
+            "Display": "0101T: [03T,3T1,5T1,7T1,9T1,11T1,13T1]"
+          },
           "style": "virtual"
         },
         "837": {
@@ -8119,7 +8442,12 @@
               "To": "Watsonville:837T1"
             },
             "glyph": "Railroad-Trackplan:NextCP",
-            "kind": "NEXT_CP"
+            "kind": "NEXT_CP",
+            "ports": {
+              "To": [
+                "Watsonville:837.C"
+              ]
+            }
           },
           {
             "at": {
@@ -8131,7 +8459,12 @@
               "B": "Watsonville:03T"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Watsonville:837.N"
+              ]
+            }
           },
           {
             "at": {
@@ -8143,7 +8476,12 @@
               "B": "Watsonville:02T"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Watsonville:837.R"
+              ]
+            }
           },
           {
             "at": {
@@ -8158,6 +8496,17 @@
           },
           {
             "at": {
+              "x": 26.67,
+              "y": 36.83
+            },
+            "circuits": {
+              "To": "Watsonville:02T"
+            },
+            "glyph": "Railroad-Trackplan:Rule93-Yard Limits",
+            "kind": "RULE_93"
+          },
+          {
+            "at": {
               "x": 38.1,
               "y": 24.13
             },
@@ -8166,29 +8515,28 @@
               "B": "Watsonville:3T1"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
-          },
-          {
-            "at": {
-              "x": 38.1,
-              "y": 24.13
-            },
-            "circuits": {
-              "To": "Watsonville:03T"
-            },
-            "glyph": "Railroad-Trackplan:Rule93-Yard Limits",
-            "kind": "RULE_93"
+            "kind": "IRJ",
+            "ports": {
+              "B": [
+                "Watsonville:3.C"
+              ]
+            }
           },
           {
             "at": {
               "x": 40.64,
-              "y": 45.72
+              "y": 24.13
             },
             "circuits": {
-              "To": "Watsonville:02T"
+              "To": "Watsonville:3T1"
             },
             "glyph": "Railroad-Trackplan:Rule93-Yard Limits",
-            "kind": "RULE_93"
+            "kind": "RULE_93",
+            "ports": {
+              "To": [
+                "Watsonville:3.C"
+              ]
+            }
           },
           {
             "at": {
@@ -8200,7 +8548,15 @@
               "B": "Watsonville:5T1"
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Watsonville:3.R"
+              ],
+              "B": [
+                "Watsonville:5.C"
+              ]
+            }
           },
           {
             "at": {
@@ -8212,7 +8568,12 @@
               "B": "Watsonville:1ET"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Watsonville:3.N"
+              ]
+            }
           },
           {
             "at": {
@@ -8224,7 +8585,15 @@
               "B": "Watsonville:7T1"
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Watsonville:5.N"
+              ],
+              "B": [
+                "Watsonville:7.C"
+              ]
+            }
           },
           {
             "at": {
@@ -8236,7 +8605,12 @@
               "B": "Watsonville:2ET"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Watsonville:5.R"
+              ]
+            }
           },
           {
             "at": {
@@ -8248,7 +8622,15 @@
               "B": "Watsonville:9T1"
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Watsonville:7.N"
+              ],
+              "B": [
+                "Watsonville:9.C"
+              ]
+            }
           },
           {
             "at": {
@@ -8260,7 +8642,12 @@
               "B": "Watsonville:3ET"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Watsonville:7.R"
+              ]
+            }
           },
           {
             "at": {
@@ -8272,7 +8659,15 @@
               "B": "Watsonville:11T1"
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Watsonville:9.N"
+              ],
+              "B": [
+                "Watsonville:11.C"
+              ]
+            }
           },
           {
             "at": {
@@ -8295,7 +8690,12 @@
               "B": "Watsonville:4ET"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Watsonville:9.R"
+              ]
+            }
           },
           {
             "at": {
@@ -8319,7 +8719,15 @@
               "B": "Watsonville:13T1"
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Watsonville:11.N"
+              ],
+              "B": [
+                "Watsonville:13.C"
+              ]
+            }
           },
           {
             "at": {
@@ -8331,7 +8739,12 @@
               "B": "Watsonville:5ET"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Watsonville:11.R"
+              ]
+            }
           },
           {
             "at": {
@@ -8343,7 +8756,12 @@
               "B": "Watsonville:6ET"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Watsonville:13.R"
+              ]
+            }
           },
           {
             "at": {
@@ -8355,7 +8773,12 @@
               "B": "Watsonville:7ET"
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "kind": "IRJ_SIGNAL"
+            "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Watsonville:13.N"
+              ]
+            }
           },
           {
             "at": {
@@ -8619,7 +9042,12 @@
               "B": "Watsonville:25T1"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "B": [
+                "Watsonville:25.R"
+              ]
+            }
           },
           {
             "at": {
@@ -8631,7 +9059,12 @@
               "B": "Watsonville:25T1"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "B": [
+                "Watsonville:25.N"
+              ]
+            }
           },
           {
             "at": {
@@ -8643,7 +9076,12 @@
               "B": "Watsonville:23T1"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "B": [
+                "Watsonville:23.R"
+              ]
+            }
           },
           {
             "at": {
@@ -8655,7 +9093,12 @@
               "B": "Watsonville:21T1"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "B": [
+                "Watsonville:21.R"
+              ]
+            }
           },
           {
             "at": {
@@ -8667,7 +9110,12 @@
               "B": "Watsonville:19T1"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "B": [
+                "Watsonville:19.R"
+              ]
+            }
           },
           {
             "at": {
@@ -8679,7 +9127,12 @@
               "B": "Watsonville:17T1"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "B": [
+                "Watsonville:17.R"
+              ]
+            }
           },
           {
             "at": {
@@ -8691,7 +9144,12 @@
               "B": "Watsonville:15T1"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "B": [
+                "Watsonville:15.R"
+              ]
+            }
           },
           {
             "at": {
@@ -8703,7 +9161,12 @@
               "B": "Watsonville:2AT"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Watsonville:25.C"
+              ]
+            }
           },
           {
             "at": {
@@ -8715,7 +9178,12 @@
               "B": "Watsonville:23T1"
             },
             "glyph": "Railroad-Trackplan:IRJ",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "B": [
+                "Watsonville:23.N"
+              ]
+            }
           },
           {
             "at": {
@@ -8727,7 +9195,15 @@
               "B": "Watsonville:21T1"
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Watsonville:23.C"
+              ],
+              "B": [
+                "Watsonville:21.N"
+              ]
+            }
           },
           {
             "at": {
@@ -8739,7 +9215,15 @@
               "B": "Watsonville:19T1"
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Watsonville:21.C"
+              ],
+              "B": [
+                "Watsonville:19.N"
+              ]
+            }
           },
           {
             "at": {
@@ -8751,7 +9235,15 @@
               "B": "Watsonville:17T1"
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Watsonville:19.C"
+              ],
+              "B": [
+                "Watsonville:17.N"
+              ]
+            }
           },
           {
             "at": {
@@ -8764,6 +9256,11 @@
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "kind": "IRJ_SIGNAL",
+            "ports": {
+              "A": [
+                "Watsonville:15.C"
+              ]
+            },
             "rotation": 180
           },
           {
@@ -8776,7 +9273,15 @@
               "B": "Watsonville:15T1"
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
-            "kind": "IRJ"
+            "kind": "IRJ",
+            "ports": {
+              "A": [
+                "Watsonville:17.C"
+              ],
+              "B": [
+                "Watsonville:15.N"
+              ]
+            }
           }
         ],
         "track": [
@@ -8822,7 +9327,7 @@
           },
           {
             "circuit": "Watsonville:02T",
-            "points": "26.67,36.83 31.75,36.83 40.64,45.72 49.53,54.61 82.55,87.63 87.63,87.63"
+            "points": "26.67,36.83 31.75,36.83 49.53,54.61 82.55,87.63 87.63,87.63"
           },
           {
             "circuit": "Watsonville:3BT",
@@ -9011,6 +9516,7 @@
             "circuits": {
               "To": "Watsonville:837T1"
             },
+            "interlocking": "Sargent",
             "kind": "NEXT_CP",
             "ports": {
               "To": [
@@ -9587,10 +10093,15 @@
           },
           {
             "circuits": {
-              "To": "Watsonville:03T"
+              "To": "Watsonville:3T1"
             },
             "direction": "BOTH",
-            "kind": "RULE_93"
+            "kind": "RULE_93",
+            "ports": {
+              "To": [
+                "Watsonville:3.C"
+              ]
+            }
           },
           {
             "circuits": {
@@ -9759,6 +10270,16 @@
           }
         },
         "shape": [
+          {
+            "at": {
+              "x": -10.16,
+              "y": 0.0
+            },
+            "justify": "right",
+            "size": 1.016,
+            "text": "${Name}",
+            "type": "text"
+          },
           {
             "points": "-2.54,0.0 -1.27,0.0",
             "stroke": {
@@ -10052,6 +10573,15 @@
           }
         },
         "shape": [
+          {
+            "at": {
+              "x": 0.0,
+              "y": 2.54
+            },
+            "size": 1.016,
+            "text": "${Interlocking}",
+            "type": "text"
+          },
           {
             "points": "0.0,-1.27 1.27,0.0",
             "stroke": {
@@ -12916,14 +13446,14 @@
       "version": "0.3.0"
     },
     "libraries": {
-      "Railroad-Trackplan": "split-projects-final-95-g27496ce"
+      "Railroad-Trackplan": "split-projects-final-96-g96c6b4e"
     },
     "referenceData": {
       "driverEncodings": "2026-10-23",
       "encodingTransportPairing": "2026-10-23"
     },
     "source": {
-      "describe": "split-projects-final-95-g27496ce",
+      "describe": "split-projects-final-96-g96c6b4e",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad"
