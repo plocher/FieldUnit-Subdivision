@@ -9,6 +9,15 @@ labelled by its source: **C11** (listed there), **0008** (ratified in ADR 0008 �
 contract is whole), **code** (what `seams.py` does and the drawing obeys, recorded), or **xref** (a cross-reference
 or vocabulary correction). Nothing below has an unlabelled source.
 
+## The owner's rulings (2026-10-25)
+
+- Decision 1: **`CMRI`**, everywhere. RIO1 changed in the drawing (Railroad `27496ce`). §3.2's node entry reads
+  "IC `CMRI`".
+- Decision 2: **agreed**. The fallback is gone from `name_of`, and ADR 0008 §4.5's sentence is struck, with an
+  ADR 0008 §8 entry.
+- Decision 3: **"good enough for now"**. The key is listed per symbol.
+- Decisions 4 to 8 are still open, and so is the rev as a whole. ADR 0009 stays unedited until they are settled.
+
 ## Decisions requested
 
 1. **The CMRInet IC token.** The owner typed IC `CMRInet` by hand twice: in the library and on the Caltrain

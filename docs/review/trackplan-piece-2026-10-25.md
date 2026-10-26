@@ -5,7 +5,80 @@ piece is `tools/layout_compiler/trackplan.py`, the shapes are `$defs/appliance`,
 `$defs/trackSymbol` and `$defs/portRef` of `schemas/layout-model/v3.1.0.json`, and the scenarios are
 `tests/test_trackplan.py`. Nothing in ADR 0008, 0009 or 0010 is edited until the owner settles the points below.
 
-## Decisions requested
+## The owner's rulings (2026-10-25)
+
+- Decision 1, membership outside the limits: **signals protect routes through an interlocking. Yard, dark and
+  industry track is outside interlocking protection by definition. Approach blocks and the track between
+  interlockings are TBD, for when the ABS and APB rules are added.** The compiler now writes `controlPoint` on a
+  switch or a circuit only where signals protect it. On unprotected track the `CP` field is not written, and the
+  compiler reports it at info (`control_point.unprotected`). A lamp keeps its field, because signals say nothing
+  about lamps.
+- Decision 3: **the `A` pin is "the 'protected by a signal' beginning of a route"**. It is recorded in the
+  compiler, in the schema's description of `joints`, and in ADR 0009 §3.10 when rev 3 is applied.
+- Decision 4: **HBA is not on 1SAT.** A hot box alarm is not a track circuit. It is associated with a milepost and
+  the timetable, so crews know where it is and which train is being checked. Its `MC` pin touching 1SAT's net is a
+  drawing slip for the owner. Until then the compiler reports it at info and writes nothing.
+- The notation `interlocking:token` (`Corporal:2NAT` at Sargent) names a code line indication token from that
+  interlocking. It is a placeholder for the ABS/APB work. The compiler names track by it and writes no appliance
+  for it.
+- Decision 2, the two-house circuits (783, 815A), is still open. The `CP` field decides there until the owner
+  rules.
+
+## After the adversarial review (`trackplan-piece-review-2026-10-25.md`, 17 findings)
+
+Applied (`c9c3a5d`, `e53f236`):
+
+- Protection crosses plain joints between switch circuits. A circuit with no switch that lies between two of them
+  joins their group. Christopher's 815, Watsonville's ladder 15 to 25 and the circuits between them are inside.
+  The yard tracks off the ladder are outside (finding 5).
+- `osCircuit` is the circuit the switch's track carries. A switch with no track writes none and is reported
+  (findings 9, 10).
+- New errors: a signal joint turned around, a joint with one circuit on both sides, END CTC turned around, two
+  masts on one joint, and ADR 0003 rules 6 and 7 for mast names and head letters (findings 7, 9, 11).
+- Geometry takes its symbols by the same nearest-interlocking rule (finding 16). Scenarios read diagnostics as
+  (code, symbol) tables (finding 13). `portRef` has the name rule of `qualifiedName` (finding 14).
+- Counts are corrected below.
+
+### Still open, for the owner
+
+1. **A NextCP's destination (blocker, finding 1).** All 18 NextCPs state it, but only in `Value`, which is never
+   read. A circuit prefix recovers it for one of them. ADR 0010 §4.7 promises it in `track`. Default: a key
+   attribute on `NextCP` in the library and on its instances (a functional name, for example `To` or `Next`, with
+   content `${Value}`, by a dated script). The compiler then writes it on the end row and checks it in pairs. A
+   destination off the layout (`Lick`, `Hollister`) is reported at info. While reading this, the review found
+   that Christopher's two NextCPs both say `Sargent`, yet Corporal lies between them.
+2. **The geometry join (blocker, finding 2).** At Corporal and Sargent, two `INDUSTRY` rows have the same kind and
+   circuits. They differ only by `ports`, which geometry markers do not carry. Default: geometry markers carry the
+   same `ports` map, by an amendment to ADR 0010 (C6, the fragment is ratified), plus a gate that every marker
+   joins exactly one `track` row.
+3. **Dark-track adjacency (finding 3).** At Luchessa, END CTC's `DARK` pin meets the Industry on one net, and
+   nothing records the meeting. An open pin and a pin on dark track look alike. Options: (a) report an open track
+   pin as missing, and write which ends meet on dark track; (b) name these symbols (the alternative in C6).
+   Default: (a).
+4. **Two control points' signals on one circuit (findings 6 and 8).** The `CP` field decides, at info, pending a
+   ruling. Christopher 815, 815A and 01T bound by North and South, field North. Gilroy Interchange 02T bound by
+   North and South. Luchessa 783 bound by Luchessa (joint B7001) and Gilroy (B7003), field Luchessa. Luchessa 01T
+   bound by all three houses, field Gilroy.
+5. **ADR 0003 rule 8 crossovers (finding 4).** One circuit with two generated OS names, such as 815T1 and 815AT1
+   with no joint between them, is an error today. Rule 8 names such a circuit. Default: apply rule 8 (a switch
+   before a derail, then the lowest number) when every name in the circuit has the generated form, and report an
+   error only when a drawn marker disagrees. This doesn't arise on SPCoast.
+6. **The glossary (finding 6).** It says "the `CP` field of an appliance assigns it to a control point". The owner's
+   ruling makes the signals assign it for track. Default: a glossary delta.
+7. **What is written twice (finding 10).** A mast's `controlPoint` equals its joint's. `track.mileposts` equals
+   geometry's keys. Default: keep both, the first as a relation the compiler resolves (like `fieldUnit.processor`)
+   and the second because geometry is optional.
+8. **A detection block in `TC` (finding 12).** ADR 0003 rule 8 and ADR 0002 D16 make a TC that lists several circuits
+   legal. Schema 3.1.0 has no form for it, so the compiler refuses to write. None is drawn.
+9. **`AGENTS.md` (finding 15).** It says the OS circuit "defaults to `<switch>T1`; a `TC` field overrides it". The
+   library's TC default does that, and the compiler applies no default of its own. Default: correct the sentence.
+
+Not done, and tracked here: checking a virtual circuit's members and a reference's appliance, Corporal:2NAT's
+Rule 261 drawn at both Sargent and Corporal, a gate that the example equals a fresh compile, and the schema nits of
+finding 14 (style as a string where devices write a list, Kind not constrained per list, no `propertyNames`, no
+`settings` on a track symbol).
+
+## Decisions requested (as proposed)
 
 1. **What `controlPoint` means outside the limits.** The signals determine membership for the OS circuits, the
    switches and derails in them, and the masts. They do not determine it for approach and yard circuits, for lamps
@@ -77,11 +150,14 @@ How the shapes were chosen:
 | Circuit of a track net | the track circuit marker on the circuit | a switch's `TC` (its OS circuit) | one name per circuit |
 | Trackplan head to its mast | `M` wire to a mast's `H` pin | none | one letter per mast |
 
-## On SPCoast (Railroad `a3642e4`)
+## On SPCoast (Railroad `27496ce`, the owner's export of 2026-10-25 22:30)
 
-- No error except one, found by this piece. Watsonville drew two masts named `838NAB` (signal 838N on 837's N and R
-  legs). The geometry reader had been silently writing one over the other. The owner renamed one `838NCD` on
-  2026-10-25. Its heads are still lettered A and B.
-- No circuit carries two names. No derived membership disagrees with a `CP` field. `control_point.shared` is
-  reported twice (783, 815A). 41 memberships come from the wire only (masts, maintainer calls), and 77 from the
-  field only (decision 1).
+- No error. The one error this piece found at `a3642e4` is fixed: Watsonville drew two masts named `838NAB`
+  (signal 838N on 837's N and R legs), and the geometry reader had been silently writing one over the other. The
+  owner renamed the second mast `838NCD` and relettered its heads C and D (Railroad `7ecb9d9`).
+- No circuit carries two names. No membership the signals give disagrees with a `CP` field.
+  `control_point.shared` is reported six times (open decision 4). Membership after the rulings:
+  - 35 masts and 7 maintainer calls by wire;
+  - every switch and circuit inside the limits by its signals;
+  - the shared cases and the lamps by their `CP` field;
+  - 60 `CP` fields on unprotected track not written.
