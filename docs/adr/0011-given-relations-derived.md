@@ -1,18 +1,20 @@
 # 0011. Given, relations, derived: what the Layout Data Model File states, and how it is written and read
 
-- Status: **proposed** 2026-10-26, for the owner's ruling. Nothing in ADR 0008, 0009 or 0010, the schema or the
-  compiler changes until the decisions below are ruled.
+- Status: **proposed** 2026-10-26, rev 3, for the owner's ruling (rev 2: incomplete is not in error; rev 3: what lasts
+  and what is transient). Nothing in ADR 0008, 0009 or 0010, the schema or the compiler changes until the decisions
+  below are ruled.
 - Amends: ADR 0008 §4.4 (named relations), §4.5 (`settings`), §4.6 and §4.7 (incomplete and in error), §4.8 (canonical
   form covers the stamp) and the schema; ADR 0009 §3.12 (the relation table becomes normative rules with a conformance suite); ADR 0010
   §4.10 and C2 (geometry optional).
-- Builds on: the owner's discussion of 2026-10-26, which began at a field the compiler dropped (`Milepost` on an
+- Builds on: the owner's discussion of 2026-10-26, which began at a field the KiCad compiler dropped (`Milepost` on an
   appliance) and ended at what Studio would need if this file were its native format; ADR 0008 R2 and R3 (the Studio
   test, the file as a future source); the control point rulings of 2026-10-26
   (`docs/review/trackplan-piece-2026-10-25.md`), which made "stated" and "inherited" a distinction the file must keep.
 
 ## Decisions requested
 
-Each line has a default; the sections below argue it.
+Each line has a default; the sections below argue it. All six are about what lasts, the data model and its rules;
+the KiCad compiler is a transient writer of it (§1).
 
 1. **Three maps.** Every entity and every row holds `given` (what was stated, as fields), `relations` (what was stated
    as connections) and `derived` (what the rules compute). Default: yes (§2).
@@ -25,8 +27,8 @@ Each line has a default; the sections below argue it.
    O15).
 5. **Incomplete is not in error.** A missing fact leaves its derived facts absent and the file is written; how loudly
    to say so is each writer's choice. Facts that contradict each other are an error, and whether a writer saves a file
-   in error is its own policy: the KiCad compiler does not; Studio may, as work in progress (§6). Default: yes.
-6. **Geometry always.** Every file carries geometry; the compiler's `--geometry` flag goes. Default: yes (§7).
+   in error is its own policy: the KiCad importer does not; Studio may, as work in progress (§6). Default: yes.
+6. **Geometry always.** Every file carries geometry; the KiCad importer's `--geometry` flag goes. Default: yes (§7).
 
 Two limits are recorded, not decided (§8): KiCad is the one source until Studio exists, and the flow from KiCad is
 one way.
@@ -46,6 +48,21 @@ what was stated.
 
 ADR 0008 R3 asks the file to be usable as the source file of Studio. The test this ADR applies throughout is the
 owner's: what would Studio need if this file were its native format?
+
+### What lasts and what is transient
+
+The KiCad-to-data-model compiler is needed now and not once Studio exists (the owner, 2026-10-26). What Studio and
+every consumer need, and what this ADR is about, is what lasts:
+
+- **Lasting:** the schema with its three maps (§2); the writer and reader policies (§3, §4); the derivation's rules,
+  conformance suite and reference implementation (§5). These belong to the data model, not to any tool that writes it.
+- **Transient:** the KiCad importer, what is called the compiler today. Under this ADR it reads the drawing, writes
+  `given` and `relations`, and calls the shared derivation. It is one writer among others, with no standing the others
+  lack; it retires when Studio exists, or stays as an import path.
+
+The test for where a piece of code or a rule belongs: if Studio would need it, it is lasting and lives with the data
+model; if only reading KiCad needs it (netlists, sheets, references, the sheet hierarchy, `Value`), it is the
+importer's. Nothing lasting may live only in the importer.
 
 ## 2. Three maps
 
@@ -122,19 +139,19 @@ The three maps capture different facts, so one subject may appear in two of them
 
 ## 5. One definition of the computation
 
-Every writer must produce the same `derived` from the same facts: the compiler from KiCad today, Studio later,
-whatever language Studio is written in. Three parts, one version:
+Every writer must produce the same `derived` from the same facts: the KiCad importer today, Studio later, whatever
+language Studio is written in. Three parts, one version:
 
 - **Normative rules.** The relation table of ADR 0009 §3.12 and the derivations it does not yet hold (circuits and
   their names, control point propagation, ports and links, a mast's heads), written as rules and versioned by date.
   This is a text change to ADR 0009 that waits for this ADR.
 - **A conformance suite, as data.** Each case is a file: `given` and `relations` in; the expected `derived` and the
   expected diagnostics (by code and symbol) out. The scenario tables in `tests/test_trackplan.py` and
-  `tests/test_layout_compiler.py` become its first cases. Diagnostics are part of the suite so that the compiler and
-  Studio report one problem with one code.
-- **A reference derivation.** The compiler's resolution, split out of `tools/layout_compiler` into
-  `tools/layout_model/derive.py`, taking the three maps and returning `derived` and the diagnostics. The KiCad
-  compiler becomes a reader of KiCad that writes `given` and `relations` and calls it.
+  `tests/test_layout_compiler.py` become its first cases. Diagnostics are part of the suite so that every writer
+  reports one problem with one code.
+- **A reference derivation.** `tools/layout_model/derive.py`, beside the schema's reader and writer: it takes the
+  three maps and returns `derived` and the diagnostics. Today that logic lives inside the KiCad compiler (§9 lists
+  it); it moves out, and the importer calls it.
 
 Default location: `schemas/layout-model/rules/` (the rules' version and changelog) and
 `schemas/layout-model/conformance/` (the cases), beside the schema, moving to FieldUnit with it (view O15).
@@ -146,15 +163,15 @@ Two different conditions, which ADR 0008 §4.7 already separates (absence is inf
 - **Incomplete.** A fact is not stated: a layout with no `CP Name` on any house, a device with no binding. The rules
   derive what they can; whatever depends on the missing fact is absent from `derived`. The file is written, with no
   promise that every consumer can do useful work with it (§4, item 3). How much to say about the gaps is the writer's
-  choice: the KiCad compiler reports each at `missing`, as today.
+  choice: the KiCad importer reports each at `missing`, as today.
 - **In error.** Stated facts contradict each other: a `CP` naming no house, two names on one circuit, two houses
   reaching an appliance that states none. The model must be fixed. The facts in conflict derive nothing; the rest
   derives as usual.
 
 Whether a writer saves a file in error is its own policy, not the file's:
 
-- **The KiCad compiler is picky.** It is a compiler, and its output feeds generators: a drawing in error writes no
-  file (ADR 0008 §4.6 kept), and the diagnostics go to its log.
+- **The KiCad importer is picky.** Its output feeds generators while KiCad is the source: a drawing in error writes
+  no file (ADR 0008 §4.6 kept), and the diagnostics go to its log.
 - **Studio is not a compiler.** It is an editor that saves work in progress. It may save a layout in error, read it
   back and keep improving it, treating completeness and correctness as a lifecycle gate rather than a refusal to
   save. Its diagnostics are its own display (out of scope).
@@ -165,16 +182,16 @@ given the same facts write the same `derived`, whatever each chooses to say abou
 ## 7. Geometry always
 
 ADR 0010 made the placement reader optional (`--geometry`, C2). Studio needs geometry and so does every expected
-consumer (the four views). Default: every file carries it, the flag goes, and the compiler always reads the sheets
-and libraries beside the netlist. Geometry's own rows take the same three maps: a placement is `given`; a run's
+consumer (the four views). Default: every file carries it, the flag goes, and the KiCad importer always reads the
+sheets and libraries beside the netlist. Geometry's own rows take the same three maps: a placement is `given`; a run's
 `circuit` and `from`/`to` ports are `derived`.
 
 ## 8. Limits (recorded, not decided)
 
 - **KiCad is the one source until Studio exists.** Nothing generates KiCad from this file, so the file cannot be a
-  source: it is compiled output, and an edit to it is lost at the next compile. When Studio exists, this rule is
+  source: it is the importer's output, and an edit to it is lost at the next import. When Studio exists, this rule is
   revisited (ADR 0008 §4.6's single source).
-- **The flow from KiCad is one way.** The compiler drops references, `Value`, KiCad's housekeeping fields and the
+- **The flow from KiCad is one way.** The importer drops references, `Value`, KiCad's housekeeping fields and the
   sheet hierarchy, and writes each wire as a named relation. A round trip back to KiCad is neither needed nor exact.
 
 ## 9. Consequences
@@ -183,9 +200,13 @@ and libraries beside the netlist. Geometry's own rows take the same three maps: 
   will be 2.x over the published 1.x (the owner, 2026-10-26). Every entity changes shape, the 3.0.0 ones included:
   transports, encodings, processors, CMRInet Nodes, drivers, houses, columns, devices, appliances, track rows,
   geometry.
-- The compiler splits in two: the KiCad reader (`seams.py`, `trackplan.py`, `geometry.py`, writing `given` and
-  `relations`) and the reference derivation (§5). `CONSUMED`, `NOT_SETTINGS` and `settings_of` go.
-- The example is regenerated in its own commit; the tests become the conformance suite plus the KiCad reader's own.
+- **The derivation moves out of the compiler.** Most of what `tools/layout_compiler` holds is lasting and moves to
+  the reference derivation (§5): the relation table's resolution of explicit form against fallback (`seams.py`);
+  circuits and their names, control point propagation, ports, links, named ends and NextCP pairing (`trackplan.py`);
+  a run's circuit and ports (`geometry.py`). What stays is the importer: reading the netlist, the sheets and the
+  libraries, `key_of`'s table of key fields, wires turned into named `relations`, and the macro expansion of ADR 0008
+  §4.4. `CONSUMED`, `NOT_SETTINGS` and `settings_of` go.
+- The example is regenerated in its own commit; the tests become the conformance suite plus the importer's own.
 - `tools/contract/lint_symbol_fields.py` is unaffected: it checks the library, not the file.
 
 ## 10. Out of scope

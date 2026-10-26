@@ -7,7 +7,7 @@ One list of what is decided and what waits for the owner. Each proposed ADR open
 
 | ADR | Subject | Asked of the owner |
 |---|---|---|
-| [0011](0011-given-relations-derived.md) | What the Layout Data Model File states: `given`, `relations` and `derived` on every entity and row; the writer and reader policies; one definition of the computation (rules, conformance suite, reference derivation); incomplete is not in error, and saving a file in error is each writer's policy; geometry always. Amends 0008, 0009 §3.12, 0010. | Six decisions, each with a default (proposed 2026-10-26). |
+| [0011](0011-given-relations-derived.md) | What lasts beyond the transient KiCad compiler, and what the Layout Data Model File states: `given`, `relations` and `derived` on every entity and row; the writer and reader policies; one definition of the computation (rules, conformance suite, reference derivation); incomplete is not in error, and saving a file in error is each writer's policy; geometry always. Amends 0008, 0009 §3.12, 0010. | Six decisions, each with a default (proposed 2026-10-26). |
 | [0002](0002-symbol-contract.md) | What each KiCad symbol records | Frozen 2026-10-03: too complicated to approve as-is. Rewritten to rules after the cleanup pass (#30), then approved. |
 | [0003](0003-name-grammar.md) | One grammar for the names of appliances, signals and track circuits | Frozen 2026-10-03, same reason; the owner's in-progress edits are committed as they stood. Rewritten to rules after #30. |
 

@@ -155,6 +155,26 @@ the track with `Milepost`, a Rule 93 sign moved).
   and ADR text (0008, 0009, 0010) for all of the above, which waits for the owner.
 - Tests: 240, all green against the owner's export of 2026-10-26 12:37, no gate skipped.
 
+### Later the same session: ADR 0011 proposed, and the work reframed
+
+The owner's discussion of where drawn fields land ended in **ADR 0011 (proposed, rev 3, `docs/adr/0011-given-relations-derived.md`)**:
+every entity and row holds `given`, `relations` and `derived`; a writer policy and a reader policy; one definition of
+the computation (normative rules, a conformance suite as data, a reference derivation in `tools/layout_model`);
+incomplete is not in error, and saving a file in error is each writer's policy; geometry always. Six decisions wait for
+the owner.
+
+**The compiler is transient** (the owner, 2026-10-26). It is needed while KiCad is the source and not once Studio
+exists. What lasts is the schema, the policies and the derivation. So the remaining work is reframed:
+
+- Most of what this branch built in `tools/layout_compiler` is derivation (the relation table's resolution, circuits,
+  control point propagation, ports, links, named ends, NextCP pairing, a run's circuit). If ADR 0011 is ruled, it
+  moves to the reference derivation, and the compiler shrinks to a KiCad importer that writes `given` and `relations`.
+- Item 3 (ADR text) now includes ADR 0011's rulings and the ADR 0009 text that makes the relation table and the
+  propagation normative rules. Item 5 (the first view) reads `derived` under the reader policy.
+- `AGENTS.md`'s "Direction" and its compiler sections describe the compiler as the destination; they change only with
+  the owner's agreement, after the ruling on 0011.
+- ADR 0003 rule 8 crossovers and detection blocks in `TC` are held for a separate discussion (the owner).
+
 ## The work, in order
 
 The seven semantics items (the owner's list of 2026-10-25) and ADR 0010's C1, C2 and C3 are one sequence. The
