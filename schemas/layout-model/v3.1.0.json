@@ -1,0 +1,991 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spcoast.com/schemas/layout-model/v3.1.0.json",
+  "title": "Layout Data Model File",
+  "description": "ADR 0008 rev 4 on ADR 0009. One file holds one layout: what a person states, nested by scope, every relation a name. Transports, code lines, I/O encodings, processors and CMRInet Nodes are entities; a binding is a route on a bus owner. Stations are derived and absent. Absent is absent. Nothing here names a sheet, a net, a reference or a KiCad symbol unit. Draft of 3.1.0 (ADR 0010 C1, 2026-10-25): geometry and glyphs landed as 0010/geometry.schema.json states them; appliances and track stay open until the trackplan semantics piece fixes them in this same version, and 3.1.0 ships once, with its migration note, when both are in.",
+  "type": "object",
+  "required": [
+    "schema",
+    "layout"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "layout-model/v3.1.0"
+    },
+    "layout": {
+      "$ref": "#/$defs/layout"
+    },
+    "interlockings": {
+      "$ref": "#/$defs/namedMap",
+      "additionalProperties": {
+        "$ref": "#/$defs/interlocking"
+      }
+    },
+    "officeUnits": {
+      "$ref": "#/$defs/namedMap",
+      "additionalProperties": {
+        "$ref": "#/$defs/officeUnit"
+      }
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    }
+  },
+  "$defs": {
+    "name": {
+      "description": "An entity's own name within its scope: case preserved, compared case-folded, never a colon or a slash, no leading or trailing space, no line break or tab.",
+      "type": "string",
+      "pattern": "^[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?$"
+    },
+    "qualifiedName": {
+      "description": "A reference to an entity of an interlocking scope: the interlocking's name, a colon, the entity's name. Always this form, in every scope (ADR 0008 §4.5).",
+      "type": "string",
+      "pattern": "^[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?:[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?$"
+    },
+    "layoutName": {
+      "description": "A reference to an entity of the layout scope (an interlocking, office unit, transport, code line, I/O encoding or processor): its bare name.",
+      "$ref": "#/$defs/name"
+    },
+    "route": {
+      "description": "A device pin's binding: bus owner, address on that bus, driver pin. Three segments: a processor's bus, processor/address/pin (Sargent/0x20/B1). Four: a CMRInet Node's bus, transport/UA/IB.n or OB.n/pin (CMRInet/30/OB.7/D). The segment count tells the owner's kind (ADR 0009 §3.3, §3.5).",
+      "type": "string",
+      "oneOf": [
+        {
+          "pattern": "^[^:/\\s]+/[^:/\\s]+/[^:/\\s]+$"
+        },
+        {
+          "pattern": "^[^:/\\s]+/[^:/\\s]+/(IB|OB)\\.\\d+/[^:/\\s]+$"
+        }
+      ]
+    },
+    "namedMap": {
+      "description": "A dictionary keyed by entity name.",
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/name"
+      }
+    },
+    "settings": {
+      "description": "Every other field a person states on the entity, keyed as drawn (Topic, Broker, hold_ms, Color); values are strings. Which ones apply is reference data (ADR 0008 §4.7).",
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "boolean"
+        ]
+      }
+    },
+    "layout": {
+      "description": "The layout and its layout-scope entities. name, railroad, region, era and rulebook are the Railroad symbol's facts (owner's ruling 2026-10-23).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/name"
+        },
+        "railroad": {
+          "type": "string",
+          "description": "The prototype railroad."
+        },
+        "region": {
+          "type": "string",
+          "description": "The prototype region the layout models; not division or subdivision, which are terms of art."
+        },
+        "era": {
+          "type": "string"
+        },
+        "rulebook": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "settings": {
+          "$ref": "#/$defs/settings"
+        },
+        "transports": {
+          "$ref": "#/$defs/namedMap",
+          "additionalProperties": {
+            "$ref": "#/$defs/transport"
+          }
+        },
+        "codelines": {
+          "$ref": "#/$defs/namedMap",
+          "additionalProperties": {
+            "$ref": "#/$defs/encodingInstance"
+          }
+        },
+        "ioEncodings": {
+          "$ref": "#/$defs/namedMap",
+          "additionalProperties": {
+            "$ref": "#/$defs/encodingInstance"
+          }
+        },
+        "processors": {
+          "$ref": "#/$defs/namedMap",
+          "additionalProperties": {
+            "$ref": "#/$defs/processor"
+          }
+        },
+        "glyphs": {
+          "$ref": "#/$defs/glyphs"
+        }
+      }
+    },
+    "transport": {
+      "description": "A mechanism (ADR 0009 §3.4): a broker, a serial port and baud, DC pulses. Declared once; placed once per processor that connects to it, and those processors are its anchors.",
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "A transport kind key in the reference data: MQTT, CMRI, TIMECODE, LOCONET."
+        },
+        "settings": {
+          "$ref": "#/$defs/settings",
+          "description": "Broker, Port, Baud, ... as drawn."
+        },
+        "anchors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/layoutName"
+          },
+          "description": "The processors on which an instance of this transport is drawn: the ones that run the code for an encoding riding it. A FieldUnit reaches its code line's transport through the code line; that is derived, not written."
+        },
+        "nodes": {
+          "type": "object",
+          "description": "CMRInet Nodes on this line, keyed by UA; a CMRInet Node's identity is transport plus UA (ADR 0009 §3.5). Only on a transport of kind CMRI.",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[^:/\\s]+$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/cmrinetNode"
+          }
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "CMRI"
+          }
+        }
+      },
+      "else": {
+        "not": {
+          "required": [
+            "nodes"
+          ]
+        }
+      }
+    },
+    "cmrinetNode": {
+      "description": "A CMRInet Node: a driver on the line that provides a bus for its bits (ADR 0009 §3.5). The compiler checks the declared bytes cover the bits used (bits numbered from 1); it never invents them.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ic": {
+          "type": "string"
+        },
+        "nodeType": {
+          "type": "string"
+        },
+        "inputBytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "outputBytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bits": {
+          "type": "object",
+          "description": "The bits in use, keyed IB.n or OB.n (direction from the bit's pin type); each is a driver with one pin D.",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^(IB|OB)\\.\\d+$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/driver"
+          }
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "encodingInstance": {
+      "description": "An encoding riding a transport instance (ADR 0009 §3.4): a code line (codelines{}) or remote I/O (ioEncodings{}). processor is the anchor of the transport instance it rides.",
+      "type": "object",
+      "required": [
+        "encoding"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "encoding": {
+          "type": "string",
+          "description": "An encoding kind key in the reference data: AAR, USS506, BITS, JMRI, CMRI."
+        },
+        "transport": {
+          "$ref": "#/$defs/layoutName"
+        },
+        "processor": {
+          "$ref": "#/$defs/layoutName"
+        },
+        "settings": {
+          "$ref": "#/$defs/settings",
+          "description": "topic, chart, version, ... with macros expanded."
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "processor": {
+      "description": "What runs a FieldUnit's or OfficeUnit's logic and anchors its connections (ADR 0009 §3.3). Its drivers are keyed by their address on its bus.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "board": {
+          "type": "string",
+          "description": "A board key in the reference data; it also says whether the generator makes firmware or an application."
+        },
+        "drivers": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[^:/\\s]+$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/driver"
+          }
+        },
+        "settings": {
+          "$ref": "#/$defs/settings"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "driver": {
+      "type": "object",
+      "required": [
+        "ic"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ic": {
+          "type": "string",
+          "description": "A driver key in the reference data: MCP23017, PCA9685, MAX7313, GPIO, MQTT-JMRI, ..."
+        },
+        "kind": {
+          "type": "string",
+          "description": "An encoded driver's object class, stated by its symbol: a JMRI TURNOUT, SENSOR, SIGNALMAST or LIGHT. Such a driver carries no address of its own; its key is kind.name of the device it serves (ADR 0005 S4, R11) unless an Address is drawn to override it."
+        },
+        "settings": {
+          "$ref": "#/$defs/settings"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "interlocking": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "settings": {
+          "$ref": "#/$defs/settings"
+        },
+        "codeline": {
+          "$ref": "#/$defs/layoutName",
+          "description": "The one code line this FieldUnit attaches to (ADR 0009 §3.8)."
+        },
+        "fieldUnit": {
+          "$ref": "#/$defs/fieldUnit"
+        },
+        "houses": {
+          "$ref": "#/$defs/namedMap",
+          "additionalProperties": {
+            "$ref": "#/$defs/house"
+          }
+        },
+        "appliances": {
+          "type": "object",
+          "description": "The trackplan; open in v3.0.0 until the compiler reads it."
+        },
+        "track": {
+          "type": "object",
+          "description": "Track circuits, joints and policies; open in v3.0.0."
+        },
+        "devices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/device"
+          }
+        },
+        "geometry": {
+          "$ref": "#/$defs/geometry"
+        }
+      }
+    },
+    "fieldUnit": {
+      "description": "The FieldUnit of an interlocking: the processor that runs its logic (ADR 0009 §3.3). Absent when the drawing does not say.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "processor": {
+          "$ref": "#/$defs/layoutName"
+        },
+        "settings": {
+          "$ref": "#/$defs/settings"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "house": {
+      "description": "An instrument house at a control point; on a US&S 506 line it is a field station, addressed by its column (derived, not written).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "milepost": {
+          "type": "number"
+        },
+        "maintainerCall": {
+          "$ref": "#/$defs/qualifiedName"
+        },
+        "settings": {
+          "$ref": "#/$defs/settings"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "device": {
+      "description": "One row of devices[]: one device instance, without identity (ADR 0008 §4.5).",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "object",
+          "required": [
+            "appliance"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "appliance": {
+              "type": "string"
+            },
+            "style": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Always a sorted list, one shape for one fact (ADR 0008 §4.8)."
+            }
+          }
+        },
+        "serves": {
+          "$ref": "#/$defs/qualifiedName",
+          "description": "The appliance this device serves; for a head device, its mast."
+        },
+        "head": {
+          "type": "string",
+          "pattern": "^[A-Z]$",
+          "description": "The head letter a head device renders."
+        },
+        "shows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/qualifiedName"
+          },
+          "description": "The indications a lamp shows, OR'd."
+        },
+        "column": {
+          "$ref": "#/$defs/name",
+          "description": "The office unit column a panel device sits in; a model board device has none."
+        },
+        "address": {
+          "type": "string",
+          "description": "The device's own address on a chain (a pixel index)."
+        },
+        "settings": {
+          "$ref": "#/$defs/settings"
+        },
+        "bindings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/binding"
+          }
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "binding": {
+      "type": "object",
+      "required": [
+        "function",
+        "route"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "function": {
+          "type": "string",
+          "description": "The device pin, polarity marks removed."
+        },
+        "route": {
+          "$ref": "#/$defs/route"
+        },
+        "invert": {
+          "const": true,
+          "description": "The instance polarity override: the device's Invert field names this pin (FieldUnit ADR 0005 layer 3, Subdivision ADR 0003 D6). Absent when not inverted."
+        }
+      }
+    },
+    "officeUnit": {
+      "description": "An OfficeUnit (never machine): its style, the processor that runs it, its columns and its panel devices. Its field stations are derived from its interlockings and columns.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "style": {
+          "type": "string"
+        },
+        "processor": {
+          "$ref": "#/$defs/layoutName"
+        },
+        "settings": {
+          "$ref": "#/$defs/settings"
+        },
+        "columns": {
+          "$ref": "#/$defs/namedMap",
+          "additionalProperties": {
+            "$ref": "#/$defs/column"
+          }
+        },
+        "devices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/device"
+          }
+        },
+        "geometry": {
+          "type": "object"
+        }
+      }
+    },
+    "column": {
+      "description": "A logical column tied to a control point (owner's ruling 2026-10-23). house when CP Name is stated; interlocking alone when it is not (read from the folder).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "house": {
+          "$ref": "#/$defs/qualifiedName"
+        },
+        "interlocking": {
+          "$ref": "#/$defs/layoutName"
+        },
+        "settings": {
+          "$ref": "#/$defs/settings"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "provenance": {
+      "description": "A property of the file about the whole layout and nothing below it: what produced this file and the one source it was compiled from, the KiCad project.",
+      "type": "object",
+      "required": [
+        "sourceType",
+        "compiler"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "sourceType": {
+          "type": "string"
+        },
+        "compiler": {
+          "type": "object",
+          "required": [
+            "name",
+            "version"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            }
+          }
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "The project file, relative to its repository."
+            },
+            "describe": {
+              "type": "string",
+              "description": "git describe of that repository."
+            }
+          }
+        },
+        "libraries": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "referenceData": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "coordinate": {
+      "type": "number"
+    },
+    "point": {
+      "type": "object",
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "$ref": "#/$defs/coordinate"
+        },
+        "y": {
+          "$ref": "#/$defs/coordinate"
+        }
+      }
+    },
+    "polyline": {
+      "description": "Ordered vertices, SVG points syntax: 'x,y x,y ...'. A string because a JSON list is sorted by the canonical form.",
+      "type": "string",
+      "pattern": "^-?\\d+(\\.\\d+)?,-?\\d+(\\.\\d+)?( -?\\d+(\\.\\d+)?,-?\\d+(\\.\\d+)?)+$"
+    },
+    "glyphKey": {
+      "description": "The drawing's own name for a glyph: library and symbol, 'Railroad-Trackplan:Switch_Lock'. The library's version is in provenance.",
+      "type": "string",
+      "pattern": "^[^:\\s][^:]*:[^:\\s][^:]*$"
+    },
+    "placement": {
+      "description": "Where a glyph sits: its anchor (the glyph's origin, which is its bottom-left pin) on the page, its turn (degrees, counter-clockwise as seen on the page, 0/90/180/270) and its mirror (x: top for bottom; y: left for right), applied mirror first, then turn, then translate; and which glyph.",
+      "type": "object",
+      "required": [
+        "at",
+        "glyph"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "$ref": "#/$defs/point"
+        },
+        "glyph": {
+          "$ref": "#/$defs/glyphKey"
+        },
+        "rotation": {
+          "type": "integer",
+          "enum": [
+            90,
+            180,
+            270
+          ]
+        },
+        "mirror": {
+          "type": "string",
+          "enum": [
+            "x",
+            "y"
+          ]
+        },
+        "heads": {
+          "description": "A mast's heads by letter: a head cannot exist alone (view §4).",
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Z]$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/placement"
+          }
+        }
+      }
+    },
+    "track": {
+      "description": "One drawn run of track between two things: the circuit it belongs to (absent for dark track) and, where an end is an appliance's track port, that port by name (Luchessa:783.R). An end at a joint or a marker is absent: the circuit's bounds are track's business.",
+      "type": "object",
+      "required": [
+        "points"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "points": {
+          "$ref": "#/$defs/polyline"
+        },
+        "circuit": {
+          "type": "string",
+          "pattern": "^[^:/\\s][^:/]*:[^:/\\s][^:/]*$"
+        },
+        "from": {
+          "type": "string",
+          "pattern": "^[^:/\\s][^:/]*:[^:/\\s][^:/]*\\.[A-Za-z0-9_]+$"
+        },
+        "to": {
+          "type": "string",
+          "pattern": "^[^:/\\s][^:/]*:[^:/\\s][^:/]*\\.[A-Za-z0-9_]+$"
+        }
+      }
+    },
+    "marker": {
+      "description": "A track symbol with no railroad name of its own (a joint, END CTC, NextCP, an industry, a policy sign): its kind as the libraries spell it, its placement and glyph, and the circuit at each of its track pins, so a reader joins it to track by name.",
+      "type": "object",
+      "required": [
+        "kind",
+        "at",
+        "glyph"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "at": {
+          "$ref": "#/$defs/point"
+        },
+        "glyph": {
+          "$ref": "#/$defs/glyphKey"
+        },
+        "rotation": {
+          "type": "integer",
+          "enum": [
+            90,
+            180,
+            270
+          ]
+        },
+        "mirror": {
+          "type": "string",
+          "enum": [
+            "x",
+            "y"
+          ]
+        },
+        "circuits": {
+          "description": "The circuit at each track pin of the marker, by pin name; a pin on dark track is absent.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[^:/\\s][^:/]*:[^:/\\s][^:/]*$"
+          }
+        }
+      }
+    },
+    "stroke": {
+      "description": "KiCad's stroke, written only where it is not the default: a width in millimetres (KiCad's 0 means 'the default, which depends on context' and is not written), a dash type other than solid.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "dash",
+            "dot",
+            "dash_dot",
+            "dash_dot_dot"
+          ]
+        }
+      }
+    },
+    "fill": {
+      "description": "KiCad's fill, written only where there is one: outline (the stroke colour), background (the sheet's body colour) or a colour of its own.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "outline",
+            "background",
+            "color"
+          ]
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9a-f]{6}$"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "primitive": {
+      "description": "One drawn element of a glyph, in the glyph's frame: millimetres, x right, y down, the anchor pin at 0,0.",
+      "oneOf": [
+        {
+          "description": "Connected line segments.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "points"
+          ],
+          "properties": {
+            "type": {
+              "const": "polyline"
+            },
+            "points": {
+              "$ref": "#/$defs/polyline"
+            },
+            "stroke": {
+              "$ref": "#/$defs/stroke"
+            },
+            "fill": {
+              "$ref": "#/$defs/fill"
+            }
+          }
+        },
+        {
+          "description": "A circle.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "center",
+            "radius"
+          ],
+          "properties": {
+            "type": {
+              "const": "circle"
+            },
+            "center": {
+              "$ref": "#/$defs/point"
+            },
+            "radius": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "stroke": {
+              "$ref": "#/$defs/stroke"
+            },
+            "fill": {
+              "$ref": "#/$defs/fill"
+            }
+          }
+        },
+        {
+          "description": "A circular arc through three points, as KiCad states it.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "start",
+            "mid",
+            "end"
+          ],
+          "properties": {
+            "type": {
+              "const": "arc"
+            },
+            "start": {
+              "$ref": "#/$defs/point"
+            },
+            "mid": {
+              "$ref": "#/$defs/point"
+            },
+            "end": {
+              "$ref": "#/$defs/point"
+            },
+            "stroke": {
+              "$ref": "#/$defs/stroke"
+            },
+            "fill": {
+              "$ref": "#/$defs/fill"
+            }
+          }
+        },
+        {
+          "description": "An axis-aligned rectangle by two opposite corners.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "start",
+            "end"
+          ],
+          "properties": {
+            "type": {
+              "const": "rectangle"
+            },
+            "start": {
+              "$ref": "#/$defs/point"
+            },
+            "end": {
+              "$ref": "#/$defs/point"
+            },
+            "stroke": {
+              "$ref": "#/$defs/stroke"
+            },
+            "fill": {
+              "$ref": "#/$defs/fill"
+            }
+          }
+        },
+        {
+          "description": "Fixed text that is part of the picture (the H of a hand-thrown switch). A field shown through the symbol is not a primitive: the Layout Data Model File carries the field.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "text",
+            "at",
+            "size"
+          ],
+          "properties": {
+            "type": {
+              "const": "text"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1
+            },
+            "at": {
+              "$ref": "#/$defs/point"
+            },
+            "size": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "rotation": {
+              "type": "number"
+            },
+            "justify": {
+              "type": "string",
+              "pattern": "^(left|right|top|bottom)( (left|right|top|bottom))?$"
+            },
+            "stroke": {
+              "$ref": "#/$defs/stroke"
+            },
+            "fill": {
+              "$ref": "#/$defs/fill"
+            }
+          }
+        }
+      ]
+    },
+    "glyph": {
+      "description": "One picture, stated once: its ports (every pin, by name, in the glyph's frame; the anchor pin is 0,0) and its shape. The shape is a list and the canonical form sorts it: drawing order is not a fact.",
+      "type": "object",
+      "required": [
+        "ports",
+        "shape"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ports": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/point"
+          }
+        },
+        "shape": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/primitive"
+          }
+        }
+      }
+    },
+    "glyphs": {
+      "description": "layout.glyphs: every glyph any interlocking's geometry names, by glyph key; nothing the layout does not draw.",
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[^:\\s][^:]*:[^:\\s][^:]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/glyph"
+      }
+    },
+    "geometry": {
+      "description": "interlockings.<name>.geometry.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "appliances": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/placement"
+          }
+        },
+        "houses": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/placement"
+          }
+        },
+        "mileposts": {
+          "description": "Milepost anchors by milepost (ADR 0004 D7: the Value is the milepost, so it is the marker's name). Luchessa draws two; Sargent none.",
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^\\d+(\\.\\d+)?$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/placement"
+          }
+        },
+        "track": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/track"
+          }
+        },
+        "markers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/marker"
+          }
+        }
+      }
+    }
+  }
+}

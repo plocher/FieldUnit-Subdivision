@@ -33,7 +33,7 @@ The symbol libraries are registered globally in
 
 ```zsh
 uv sync                                        # once per checkout: .venv with Python 3.14, jbom (the PyPI release) and sexpdata
-uv run python -m unittest discover -s tests -q # 147 tests
+uv run python -m unittest discover -s tests -q # 201 tests; the SPCoast gates export a fresh netlist with kicad-cli and skip without it
 uv run tools/run_plant_graph_smoke.sh          # Luchessa end-to-end; needs kicad-cli. Fails today: the old compiler reports 5 known diagnostics on the archived drawing (#15)
 ```
 
@@ -70,7 +70,8 @@ uv run tools/run_plant_graph_smoke.sh          # Luchessa end-to-end; needs kica
 
 ## Layout
 
-- `tools/kicad_services/`: generic KiCad readers (netlist, schematic placement, symbol library pin contracts). Reuse these; do not write new s-expression parsers.
+- `tools/kicad_services/`: generic KiCad readers (netlist with its sheet files and a fresh-export context manager, schematic placements with wires and junctions, symbol library pin contracts and graphics, the `sym-lib-table`). Reuse these; do not write new s-expression parsers.
+- `tools/layout_compiler/`: the milestone D compiler (`seams.py` the relation table of ADR 0009; `geometry.py` the placements, runs and glyphs of ADR 0010; `emit.py` the Layout Data Model File). CLI `tools/compile_layout.py PROJECT.kicad_sch -o OUT [--geometry]`; schema in `schemas/layout-model/`.
 - `tools/plant_graph/`: plant compiler (`compiler.py`), routes, indications, portable model, FieldUnit projection, layout and picture.
 - `tools/controller_graph/`: controller compiler (columns are CPs, appliances, drive bits from IODRIVER pins, codelines with stub/empty-sheet handling, §7 diagnostics).
 - `tools/link/`: subdivision linker (pairing by normalized name, placeholder stations, §7a cross-checks, codeline instances, source hashes, JSON model).

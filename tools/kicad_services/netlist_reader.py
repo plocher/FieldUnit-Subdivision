@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import contextlib
 import os
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Iterator, List, Optional
 
 from kicad_services import types as ktypes
 
@@ -113,15 +114,21 @@ class NetlistReader:
             ):
                 model.source = item[1]
             elif item[0] == Symbol("sheet"):
+                name = ""
+                file = ""
                 for sub in item[1:]:
-                    if (
-                        isinstance(sub, list)
-                        and sub
-                        and sub[0] == Symbol("name")
-                        and len(sub) >= 2
-                        and isinstance(sub[1], str)
-                    ):
-                        model.sheets.append(sub[1])
+                    if not (isinstance(sub, list) and sub):
+                        continue
+                    if sub[0] == Symbol("name") and len(sub) >= 2 and isinstance(sub[1], str):
+                        name = sub[1]
+                    elif sub[0] == Symbol("title_block"):
+                        for tb in sub[1:]:
+                            if isinstance(tb, list) and tb and tb[0] == Symbol("source") and len(tb) >= 2 and isinstance(tb[1], str):
+                                file = tb[1]
+                if name:
+                    model.sheets.append(name)
+                    if file:
+                        model.sheet_files[name] = file
 
     def _parse_component(self, node: Any) -> Optional[ktypes.NetlistComponent]:
         from sexpdata import Symbol
@@ -365,3 +372,15 @@ class KicadCliNetlistExporter:
                 schematic_path,
             )
         return output_path
+
+
+@contextlib.contextmanager
+def exported_netlist(schematic_path: Path, kicad_cli: Optional[Path] = None) -> Iterator[Path]:
+    """A fresh netlist of ``schematic_path`` in a temporary directory, deleted when the block ends.
+
+    The netlist rule (owner, 2026-10-24): a netlist is a cache of the KiCad project's state and is invalid as soon
+    as the project changes, so a generated one is volatile: made in a temp location, used once, deleted. Callers
+    that must read a saved netlist (a machine without KiCad) take that staleness on themselves.
+    """
+    with tempfile.TemporaryDirectory(prefix="kicad_netlist_") as tmp:
+        yield KicadCliNetlistExporter(kicad_cli).export(Path(schematic_path), Path(tmp) / "fresh.net")

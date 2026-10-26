@@ -10,10 +10,12 @@ import subprocess
 from pathlib import Path
 from typing import Any, Optional
 
+from .geometry import Geometry
 from .seams import REFERENCE_DATA, Seams
 
 SCHEMA = "layout-model/v3.0.0"
-COMPILER = {"name": "layout_compiler", "version": "0.1.0"}
+SCHEMA_WITH_GEOMETRY = "layout-model/v3.1.0"      # ADR 0010 C1: geometry and glyphs; shipped with the trackplan semantics piece
+COMPILER = {"name": "layout_compiler", "version": "0.2.0"}
 
 
 def _clean(d: dict) -> dict:
@@ -38,7 +40,9 @@ def _source(project: Optional[Path]) -> dict[str, Any]:
     return _clean({"path": path, "describe": _git(["describe", "--always", "--dirty"], project.parent)})
 
 
-def emit(sm: Seams, source_path: Optional[Path] = None) -> dict[str, Any]:  # source_path kept for callers; the project is the source
+def emit(sm: Seams, source_path: Optional[Path] = None, geometry: Optional[Geometry] = None) -> dict[str, Any]:
+    """The Layout Data Model File. ``source_path`` is kept for callers; the project is the source. With ``geometry``
+    (ADR 0010), each interlocking carries its ``geometry`` and the layout its ``glyphs`` under schema 3.1.0."""
     layout: dict[str, Any] = dict(sm.railroad)
     layout["transports"] = {
         t.name: _clean({
@@ -73,7 +77,10 @@ def emit(sm: Seams, source_path: Optional[Path] = None) -> dict[str, Any]:  # so
             "fieldUnit": _clean({"processor": ix.processor}),
             "houses": {h.cp_name: _clean({"milepost": h.milepost, "maintainerCall": h.maintainer_call}) for h in ix.houses.values()},
             "devices": [device(d) for d in ix.devices],
+            "geometry": geometry.interlockings.get(ix.name) if geometry else None,
         }) for ix in sm.interlockings.values()}
+    if geometry is not None:
+        layout["glyphs"] = dict(geometry.glyphs)
     office_units = {
         ou.name: _clean({
             "style": ou.style,
@@ -85,4 +92,7 @@ def emit(sm: Seams, source_path: Optional[Path] = None) -> dict[str, Any]:  # so
 
     provenance: dict[str, Any] = {"sourceType": "KiCad", "compiler": dict(COMPILER), "referenceData": dict(REFERENCE_DATA),
                                   "source": _source(sm.source.project)}
-    return _clean({"schema": SCHEMA, "layout": _clean(layout), "interlockings": interlockings, "officeUnits": office_units, "provenance": provenance})
+    if geometry is not None:
+        provenance["libraries"] = dict(geometry.libraries)
+    schema = SCHEMA_WITH_GEOMETRY if geometry is not None else SCHEMA
+    return _clean({"schema": schema, "layout": _clean(layout), "interlockings": interlockings, "officeUnits": office_units, "provenance": provenance})

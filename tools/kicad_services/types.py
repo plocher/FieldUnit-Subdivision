@@ -16,6 +16,31 @@ class SymbolPin:
     electrical_type: str
     x: float = 0.0
     y: float = 0.0
+    rotation: float = 0.0          # the direction the pin's line is drawn from (x, y), degrees, KiCad's library frame (y up)
+    length: float = 0.0
+    hidden: bool = False
+
+
+@dataclass(frozen=True)
+class SymbolGraphic:
+    """One drawn element of a symbol unit, as the library states it (library frame, y up, KiCad's origin).
+
+    ``kind`` is polyline, circle, arc, rectangle or text. ``points`` holds the polyline's vertices, the circle's
+    centre, the arc's start, mid and end, the rectangle's two corners, or the text's anchor. Style values are
+    KiCad's own: a stroke width of 0 means the context's default; a fill colour is (r, g, b, a) as written.
+    """
+
+    kind: str
+    points: tuple[tuple[float, float], ...] = ()
+    radius: float = 0.0
+    text: str = ""
+    size: float = 0.0
+    rotation: float = 0.0
+    justify: str = ""
+    stroke_width: float = 0.0
+    stroke_type: str = ""
+    fill_type: str = ""
+    fill_color: Optional[tuple[float, float, float, float]] = None
 
 
 @dataclass(frozen=True)
@@ -26,6 +51,7 @@ class LibrarySymbol:
     reference_prefix: str
     pins: tuple[SymbolPin, ...]
     properties: dict[str, str] = field(default_factory=dict)
+    graphics: tuple[SymbolGraphic, ...] = ()
 
 
 @dataclass
@@ -85,6 +111,7 @@ class NetlistModel:
     components: dict[str, NetlistComponent] = field(default_factory=dict)
     nets: list[Net] = field(default_factory=list)
     sheets: list[str] = field(default_factory=list)
+    sheet_files: dict[str, str] = field(default_factory=dict)   # sheet path ("/South-cTc/Sargent/") -> its .kicad_sch file name
 
 
 @dataclass(frozen=True)
@@ -97,6 +124,9 @@ class SchematicPlacement:
     y: float
     rotation: float
     mirror: str = ""
+    properties: dict[str, str] = field(default_factory=dict)
+
+
 @dataclass(frozen=True)
 class SchematicTitleBlock:
     """Title-block metadata extracted from one KiCad schematic."""
@@ -115,3 +145,5 @@ class SchematicPlacementModel:
     path: Path
     placements: dict[str, SchematicPlacement] = field(default_factory=dict)
     title_block: SchematicTitleBlock = field(default_factory=SchematicTitleBlock)
+    wires: list[tuple[tuple[float, float], ...]] = field(default_factory=list)   # each wire's vertices as drawn
+    junctions: set[tuple[float, float]] = field(default_factory=set)

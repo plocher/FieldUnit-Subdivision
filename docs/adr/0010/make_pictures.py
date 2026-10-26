@@ -37,7 +37,7 @@ import jsonschema  # noqa: E402
 from jbom.common.sexp_parser import load_kicad_file  # noqa: E402
 from sexpdata import Symbol  # noqa: E402
 
-from layout_compiler.source import from_netlist  # noqa: E402
+from layout_compiler.source import from_netlist, from_project  # noqa: E402
 from tools import layout_model  # noqa: E402
 
 INTERLOCKING = "Sargent"
@@ -378,26 +378,13 @@ def chain(wires, breaks: set) -> list[list[tuple[float, float]]]:
     return polylines
 
 
-def fresh_netlist(project_root: Path):
-    """Export the project's netlist to a temporary file; the caller deletes it. Never a saved copy (owner, 2026-10-24)."""
-    from kicad_services.netlist_reader import KicadCliNetlistExporter
-
-    return KicadCliNetlistExporter().export(project_root / "SPCoast" / "SPCoast.kicad_sch")
-
-
 def build(railroad: Path, netlist: Path | None = None):
     sheet = railroad / "SPCoast" / f"{INTERLOCKING}.kicad_sch"
     symbols, wires, junctions = read_sheet(sheet)
     library = read_library(railroad / "symbols" / f"{GLYPH_LIBRARY}.kicad_sym")
     pins_by_lib = {name: e["pins"] for name, e in library.items()}
-    if netlist is None:
-        tmp = fresh_netlist(railroad)
-        try:
-            src = from_netlist(tmp)
-        finally:
-            tmp.unlink(missing_ok=True)
-    else:
-        src = from_netlist(netlist)
+    # exported now and deleted at once, unless the caller named a saved netlist and answers for it (the netlist rule)
+    src = from_project(railroad / "SPCoast" / "SPCoast.kicad_sch") if netlist is None else from_netlist(netlist)
     netsyms = {r: s for r, s in src.symbols.items() if s.sheet.rstrip("/").endswith(INTERLOCKING)}
 
     trackplan = {r: s for r, s in symbols.items() if s["fields"].get("Role") in TRACKPLAN_ROLES}

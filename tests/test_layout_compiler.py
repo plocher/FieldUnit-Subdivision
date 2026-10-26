@@ -2,8 +2,10 @@
 
 Two kinds. The rules are tested on small sources built in memory: the explicit and implicit forms of a relation,
 their disagreement, the macro, the scope rule, the head vocabulary. The relation table is tested on the SPCoast
-project when its netlist is present (``SPCOAST_NETLIST``, default the Railroad production export); that gate is
-the "both" copy of the three-copy experiment (ADR 0009 C7) and is skipped, never faked, when the file is absent.
+project when it is present (``SPCOAST_PROJECT``, default ``~/Dropbox/KiCad/Railroad/SPCoast/SPCoast.kicad_sch``)
+and kicad-cli can export its netlist fresh (the netlist rule, ``AGENTS.md``: a saved netlist is a cache and may be
+stale; ``SPCOAST_NETLIST`` names one anyway on a machine without KiCad, and that caller answers for it). That gate
+is the "both" copy of the three-copy experiment (ADR 0009 C7) and is skipped, never faked, when neither is at hand.
 """
 from __future__ import annotations
 
@@ -13,9 +15,22 @@ from pathlib import Path
 
 from tools import layout_model
 from tools.layout_compiler import emit, seams
-from tools.layout_compiler.source import Net, PinRef, Symbol, from_netlist, from_symbols
+from tools.layout_compiler.source import Net, PinRef, Symbol, from_netlist, from_project, from_symbols, kicad_cli_available
 
-NETLIST = Path(os.environ.get("SPCOAST_NETLIST", Path.home() / "Dropbox/KiCad/Railroad/SPCoast/production/SPCoast.net"))
+PROJECT = Path(os.environ.get("SPCOAST_PROJECT", Path.home() / "Dropbox/KiCad/Railroad/SPCoast/SPCoast.kicad_sch"))
+NETLIST = Path(os.environ["SPCOAST_NETLIST"]) if os.environ.get("SPCOAST_NETLIST") else None
+
+
+def spcoast_source():
+    """The SPCoast drawing, exported fresh; a saved netlist only when the caller named one; None when neither is at hand."""
+    if NETLIST is not None:
+        return from_netlist(NETLIST) if NETLIST.is_file() else None
+    if PROJECT.is_file() and kicad_cli_available():
+        return from_project(PROJECT)
+    return None
+
+
+SPCOAST_AVAILABLE = (NETLIST is not None and NETLIST.is_file()) or (PROJECT.is_file() and kicad_cli_available())
 
 
 def sym(ref, lib, sheet, value="", **fields):
@@ -186,13 +201,13 @@ class RuleTests(unittest.TestCase):
         self.assertEqual(layout_model.dumps(layout_model.loads(layout_model.dumps(model))), layout_model.dumps(model))
 
 
-@unittest.skipUnless(NETLIST.is_file(), f"SPCoast netlist not present: {NETLIST}")
+@unittest.skipUnless(SPCOAST_AVAILABLE, f"SPCoast project not present or kicad-cli missing: {NETLIST or PROJECT}")
 class SPCoastRelationTable(unittest.TestCase):
     """ADR 0009 §3.12 on the 'both' copy: every explicit relation agrees with its fallback or stands alone; none disagree."""
 
     @classmethod
     def setUpClass(cls):
-        cls.sm = seams.resolve(from_netlist(NETLIST))
+        cls.sm = seams.resolve(spcoast_source())
 
     def test_no_disagreement_between_wire_and_fallback(self):
         self.assertEqual([str(d) for d in self.sm.report.diags if d.code.endswith(".disagree")], [])
@@ -257,7 +272,7 @@ class SPCoastRelationTable(unittest.TestCase):
         self.assertEqual(self.sm.railroad, {"name": "SPCoast", "railroad": "Southern Pacific", "region": "Coast Line", "era": "1960+", "rulebook": "GCOR"})
 
     def test_model_validates_and_round_trips(self):
-        model = emit.emit(self.sm, NETLIST)
+        model = emit.emit(self.sm)
         self.assertEqual(layout_model.errors(model), [])
         text = layout_model.dumps(model)
         self.assertEqual(layout_model.dumps(layout_model.loads(text)), text)
