@@ -2,8 +2,8 @@
 
 - Status: **proposed** 2026-10-26, for the owner's ruling. Nothing in ADR 0008, 0009 or 0010, the schema or the
   compiler changes until the decisions below are ruled.
-- Amends: ADR 0008 §4.4 (named relations), §4.5 (`settings`), §4.6 (no file on error), §4.8 (canonical form covers the
-  stamp) and the schema; ADR 0009 §3.12 (the relation table becomes normative rules with a conformance suite); ADR 0010
+- Amends: ADR 0008 §4.4 (named relations), §4.5 (`settings`), §4.6 and §4.7 (incomplete and in error), §4.8 (canonical
+  form covers the stamp) and the schema; ADR 0009 §3.12 (the relation table becomes normative rules with a conformance suite); ADR 0010
   §4.10 and C2 (geometry optional).
 - Builds on: the owner's discussion of 2026-10-26, which began at a field the compiler dropped (`Milepost` on an
   appliance) and ended at what Studio would need if this file were its native format; ADR 0008 R2 and R3 (the Studio
@@ -16,15 +16,16 @@ Each line has a default; the sections below argue it.
 
 1. **Three maps.** Every entity and every row holds `given` (what was stated, as fields), `relations` (what was stated
    as connections) and `derived` (what the rules compute). Default: yes (§2).
-2. **Writer policy** as in §3: `given` and `relations` exactly as stated; `derived` all or nothing, from a conforming
-   derivation, stamped with its rules version; any edit re-derives or drops it. Default: yes.
+2. **Writer policy** as in §3: `given` and `relations` exactly as stated; `derived` holds everything the rules can
+   derive from them, by a conforming derivation, stamped with its rules version; any edit re-derives it. Default: yes.
 3. **Reader policy** as in §4: for meaning, `derived` then `relations` then `given`, first hit wins; `derived` is a
    cache a reader may rebuild; unknown keys skipped and reported. Default: yes.
 4. **One definition of the computation**: normative rules, a conformance suite as data, a reference derivation, one
    version for the three (§5). Default: they live in this repo beside the schema and move to FieldUnit with it (view
    O15).
-5. **Saving with errors.** A writer may save `given` and `relations` without `derived` when the derivation reports
-   errors. Default: yes; the compiler writes such a file and exits non-zero (§6).
+5. **Incomplete is not in error.** A missing fact leaves its derived facts absent and the file is written; how loudly
+   to say so is each writer's choice. Facts that contradict each other are an error, and whether a writer saves a file
+   in error is its own policy: the KiCad compiler does not; Studio may, as work in progress (§6). Default: yes.
 6. **Geometry always.** Every file carries geometry; the compiler's `--geometry` flag goes. Default: yes (§7).
 
 Two limits are recorded, not decided (§8): KiCad is the one source until Studio exists, and the flow from KiCad is
@@ -98,12 +99,13 @@ The three maps capture different facts, so one subject may appear in two of them
 ## 3. Writer policy
 
 1. `given` and `relations` hold exactly what was stated. A writer never writes an inherited fact into either.
-2. `derived` is written whole or not at all, by a derivation that passes the conformance suite (§5). It is never
-   written by hand and never partly.
+2. `derived` holds everything the rules can derive from `given` and `relations`, by a derivation that passes the
+   conformance suite (§5). A fact the rules cannot reach for want of a stated fact is absent; so is a fact whose
+   evidence contradicts itself. `derived` is never written by hand, and never holds less than the rules derive.
 3. `derived` is stamped: `provenance.rules` names the rules version that produced it, present exactly when `derived`
    is.
-4. Any change to `given` or `relations` makes `derived` stale. The writer re-derives it, or drops it, before it
-   saves. A file never carries a `derived` that does not match its facts.
+4. Any change to `given` or `relations` makes `derived` stale. The writer re-derives it before it saves. A file never
+   carries a `derived` that does not match its facts.
 5. The canonical form of ADR 0008 §4.8 covers all three maps and the stamp, so two conforming writers given the same
    facts write the same bytes.
 
@@ -111,10 +113,12 @@ The three maps capture different facts, so one subject may appear in two of them
 
 1. For the meaning of a name, a reader looks in `derived`, then `relations`, then `given`; the first hit wins. A
    reader with a specific purpose (a diagnostic, an editor) may read one map directly.
-2. `derived` is a cache. Where it is absent, or stamped with rules the reader does not hold, a reader that needs
-   meaning rebuilds it with a conforming derivation. What a reader that cannot derive does is its own stance (the code
-   generator's is out of scope here).
-3. A key the reader does not know is skipped and reported at info (ADR 0008 C8, strict writer and lenient reader).
+2. `derived` is a cache. Where it is stamped with rules the reader does not hold, a reader that needs meaning
+   rebuilds it with a conforming derivation.
+3. A file may be incomplete. Each consumer decides whether it holds enough for its own work, as a capability gate: the
+   documentation views may draw a layout no code generator can yet build a sketch for. What a consumer does short of
+   what it needs is its own stance (the code generator's is out of scope here).
+4. A key the reader does not know is skipped and reported at info (ADR 0008 C8, strict writer and lenient reader).
 
 ## 5. One definition of the computation
 
@@ -135,12 +139,28 @@ whatever language Studio is written in. Three parts, one version:
 Default location: `schemas/layout-model/rules/` (the rules' version and changelog) and
 `schemas/layout-model/conformance/` (the cases), beside the schema, moving to FieldUnit with it (view O15).
 
-## 6. Saving with errors
+## 6. Incomplete is not in error
 
-ADR 0008 §4.6 says a source with compiler errors never generates a file. Studio cannot work under that rule: a layout
-is wrong for most of the time it is being edited. Default: a writer may save `given` and `relations` without
-`derived` when the derivation reports errors. Such a file is complete and unresolved; §4.2 says what a reader does
-with it. The compiler writes it and exits non-zero, and the diagnostics stay in its log, not the file (§4.6 kept).
+Two different conditions, which ADR 0008 §4.7 already separates (absence is information, view O13):
+
+- **Incomplete.** A fact is not stated: a layout with no `CP Name` on any house, a device with no binding. The rules
+  derive what they can; whatever depends on the missing fact is absent from `derived`. The file is written, with no
+  promise that every consumer can do useful work with it (§4, item 3). How much to say about the gaps is the writer's
+  choice: the KiCad compiler reports each at `missing`, as today.
+- **In error.** Stated facts contradict each other: a `CP` naming no house, two names on one circuit, two houses
+  reaching an appliance that states none. The model must be fixed. The facts in conflict derive nothing; the rest
+  derives as usual.
+
+Whether a writer saves a file in error is its own policy, not the file's:
+
+- **The KiCad compiler is picky.** It is a compiler, and its output feeds generators: a drawing in error writes no
+  file (ADR 0008 §4.6 kept), and the diagnostics go to its log.
+- **Studio is not a compiler.** It is an editor that saves work in progress. It may save a layout in error, read it
+  back and keep improving it, treating completeness and correctness as a lifecycle gate rather than a refusal to
+  save. Its diagnostics are its own display (out of scope).
+
+The conformance suite (§5) fixes what `derived` holds in every case, incomplete and in error included, so two writers
+given the same facts write the same `derived`, whatever each chooses to say about it.
 
 ## 7. Geometry always
 
@@ -170,7 +190,7 @@ and libraries beside the netlist. Geometry's own rows take the same three maps: 
 
 ## 10. Out of scope
 
-- The code generator's stance on a file without `derived`.
+- The code generator's stance on a file short of what it needs.
 - Studio itself, its editor and its diagnostics display.
 - Recording how a derived fact was reached (`controlPointBy: stated | chain | house`), until a consumer asks.
 - ADR 0003 rule 8 crossovers and detection blocks in `TC`, held for a separate discussion (the owner, 2026-10-26).
