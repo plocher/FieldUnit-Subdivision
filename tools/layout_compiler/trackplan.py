@@ -15,8 +15,12 @@ D3); two different names on one circuit are an error. A circuit with neither is 
 one place the field lives, ADR 0009 and the unify decisions) and stands with its ``A`` pin inside the limits it
 governs. A circuit bounded on its ``A`` sides by the signal joints of one control point belongs to it, and so does
 every appliance in it; a mast belongs to the control point of the joint its ``SIGNAL`` pin stands on; a maintainer
-call to the house its ``MC`` pin is wired to. An appliance's own ``CP`` field is the fallback, and the two must agree;
-the field retires when every value agrees with the derivation (handoff item 6).
+call to the house its ``MC`` pin is wired to. Signals protect routes through an interlocking: yard, dark and industry
+track is outside that protection by definition, so a switch or circuit no signal protects has no control point, and
+approach blocks and the track between interlockings wait for the ABS/APB rules (the owner, 2026-10-25). An
+appliance's own ``CP`` field must agree where the signals speak, decides where two control points' signals bound one
+circuit, and is the only statement for a lamp; on unprotected track it is not written. The ``A`` pin of a signal joint
+is where the route it protects begins.
 
 Nothing here reads a coordinate, a net name, a reference or ``Value``.
 """
@@ -193,13 +197,15 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
             report.info("joint.inside", f"{ix.name}: a signal joint (CP {cp!r}) has no switch on its A side; A is the side inside the "
                         "limits it governs", loc(s))
 
-    def derived(s: Symbol, pin: str) -> Optional[str]:
+    def protecting(s: Symbol, pin: str) -> set[str]:
+        """The control points whose signal joints bound the circuit at this pin: the signals that protect routes
+        through it (the owner, 2026-10-25)."""
         n = net(s, pin)
         cps = region_cps.get(union.find(n.name), set()) if n else set()
         if len(cps) > 1:
             report.info("control_point.shared", f"{ix.name}: {s.get('Name')} is in a circuit bounded by the signals of "
                         f"{', '.join(sorted(cps))}; the signals do not say which control point it belongs to", loc(s))
-        return next(iter(cps)) if len(cps) == 1 else None
+        return cps
 
     # ------------------------------------------------------------------ appliances
     for s in syms:
@@ -218,6 +224,8 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
         row: dict[str, Any] = {"appliance": appliance, "style": s.get("Style") or None,
                                "settings": {k: v for k, v in settings_of(s).items() if k not in READ}}
         explicit = None
+        on_track = False                                                  # a switch or a circuit: its control point is the signals'
+        protected: set[str] = set()
         if appliance == "mast":
             joints = [o for o, p in others(s, "SIGNAL") if o.kind == "IRJ_SIGNAL" and p == "SIGNAL"]
             if len(joints) == 1:
@@ -228,19 +236,28 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
                 report.error("mast.joint", f"{ix.name}: mast {name} stands on {len(joints)} signal joints", loc(s))
             row["heads"] = _heads(s, others, report, ix.name)
         elif is_switch(s):
-            explicit = derived(s, "C")
+            on_track, protected = True, protecting(s, "C")
             if s.get("TC") and "," not in s.get("TC"):
                 row["osCircuit"] = qualify(s.get("TC"), ix.name)
             row["indicationCeiling"] = s.get("IndicationCeiling") or None
         elif appliance == "track_circuit":
-            if net(s, "TC"):
-                explicit = derived(s, "TC")
+            on_track = True
+            protected = protecting(s, "TC") if net(s, "TC") else set()
             if s.get("Style") == "virtual":
                 row["members"] = [qualify(t.strip(), ix.name) for t in s.get("IndicationToken").split(",") if t.strip()]
         elif appliance == "lamp" and s.get("Style") == "maintainer_call":
             calls = [cp for cp, h in ix.houses.items() if h.maintainer_call == qualify(name, ix.name)]
             explicit = calls[0] if len(calls) == 1 else None
         field_cp = house(s.get("CP"), s) if s.get("CP") else None
+        if on_track:
+            explicit = next(iter(protected)) if len(protected) == 1 else None
+            if not protected:
+                # yard, dark and industry track is outside interlocking protection by definition; approach blocks and the
+                # track between interlockings wait for the ABS/APB rules (the owner, 2026-10-25)
+                if field_cp:
+                    report.info("control_point.unprotected", f"{ix.name}: {appliance} {name} is protected by no signal; "
+                                f"its CP field {field_cp!r} is not written", loc(s))
+                field_cp = None
         cp = compare(explicit, field_cp, f"{ix.name}: {appliance} {name} in control point", loc(s), report, "appliance.control_point")
         row["controlPoint"] = f"{ix.name}:{cp}" if cp else None
         if appliance in ("lamp", "contact") and net(s, "MC") and net(s, "MC").name in plan.circuit_of:

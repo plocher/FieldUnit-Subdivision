@@ -1018,7 +1018,7 @@
         },
         "controlPoint": {
           "$ref": "#/$defs/qualifiedName",
-          "description": "The house (control point) the appliance belongs to: derived from the signal joints that bound its circuit, from the joint a mast stands on, from the house a maintainer call is wired to; else the appliance's CP field as drawn. Absent when neither states it."
+          "description": "The house (control point) the appliance belongs to. A switch or circuit: the control point whose signals protect it (the signal joints bounding its circuit), absent on yard, dark and industry track and on approach blocks (ABS/APB later); where two control points' signals bound it, its CP field. A mast: its signal joint's. A maintainer call: the house it is wired to. A lamp: its CP field."
         },
         "osCircuit": {
           "allOf": [
@@ -1115,7 +1115,7 @@
       "additionalProperties": false,
       "properties": {
         "joints": {
-          "description": "IRJ and IRJ_SIGNAL: insulated joints, each between the circuits on its A and B pins; a signal joint's A pin is inside the limits it governs.",
+          "description": "IRJ and IRJ_SIGNAL: insulated joints, each between the circuits on its A and B pins; a signal joint's A pin is where the route it protects begins, inside the interlocking.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/trackSymbol"

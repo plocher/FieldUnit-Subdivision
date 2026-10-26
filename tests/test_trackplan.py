@@ -166,18 +166,21 @@ TC2  | Track Circuit   | APPLIANCE | Appliance=track_circuit Name=1SAT CP=East
 
 class Membership(unittest.TestCase):
     def test_signals_give_every_appliance_inside_and_every_mast_its_control_point(self):
+        """Signals protect routes through the interlocking: the approach circuits outside the joints have no control
+        point, whatever their CP field says (the owner, 2026-10-25; approach blocks wait for ABS/APB)."""
         sm, ix = compile_(ONE_SWITCH, ONE_SWITCH_NETS)
         table = {n: (a["appliance"], a.get("controlPoint")) for n, a in ix["appliances"].items()}
         self.assertEqual(table, {
             "835": ("switch", "X:East"),
             "836NAB": ("mast", "X:East"), "836SA": ("mast", "X:East"), "836SB": ("mast", "X:East"),
-            "1NAT": ("track_circuit", "X:East"), "1SAT": ("track_circuit", "X:East"), "2SAT": ("track_circuit", "X:East"),
+            "1NAT": ("track_circuit", None), "1SAT": ("track_circuit", None), "2SAT": ("track_circuit", None),
         })
         self.assertEqual(ix["appliances"]["836NAB"]["heads"], {"A": {"style": "CPL"}, "B": {"style": "CPL"}})
         self.assertEqual(ix["appliances"]["836SB"]["heads"], {"B": {"style": "UQ"}})
         # derived and stated agree on the switch; an approach circuit is stated only; a mast is derived only
         by = lambda code: sorted(d.text.split(": ")[1].split(" in ")[0] for d in sm.report.by_code(code))
-        self.assertEqual(by("appliance.control_point.implicit_only"), ["track_circuit 1NAT", "track_circuit 1SAT", "track_circuit 2SAT"])
+        self.assertEqual(by("appliance.control_point.implicit_only"), [])
+        self.assertEqual(len(sm.report.by_code("control_point.unprotected")), 3)
         self.assertEqual(by("appliance.control_point.explicit_only"), ["mast 836NAB", "mast 836SA", "mast 836SB"])
 
     def test_a_cp_field_that_disagrees_with_the_signals_is_an_error(self):
@@ -206,14 +209,32 @@ class Membership(unittest.TestCase):
         sm, _ = compile_(ONE_SWITCH.replace("Name=836SA", "Name=836NAB"), ONE_SWITCH_NETS)
         self.assertIn("appliance.duplicate", codes(sm, "error"))
 
+    def test_a_switch_in_dark_track_has_no_control_point(self):
+        given = """
+H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
+SW1  | Switch_Manual_Sensed | APPLIANCE | Appliance=switch Style=manual_sensed Name=1 CP=East
+E1   | IRJ-END_CTC     | TRACK     | Kind=END_CTC
+"""
+        sm, ix = compile_(given, "dark | E1.DARK SW1.C\n")
+        self.assertEqual(sm.report.errors, [])
+        self.assertNotIn("controlPoint", ix["appliances"]["1"])
+        self.assertEqual(len(sm.report.by_code("control_point.unprotected")), 1)
+
+    def test_a_lamp_keeps_its_cp_field(self):
+        given = """
+H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
+L1   | AUXILIARY       | APPLIANCE | Appliance=lamp Style=non_vital Name=NFLK CP=East
+"""
+        sm, ix = compile_(given, "")
+        self.assertEqual(ix["appliances"]["NFLK"]["controlPoint"], "X:East")
+
     def test_a_virtual_circuit_lists_its_members(self):
         given = """
 H1   | House                 | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
 V1   | Track Circuit_Virtual | APPLIANCE | Appliance=track_circuit Style=virtual Name=0100T IndicationToken=15T1,17T1 CP=East
 """
         sm, ix = compile_(given, "")
-        self.assertEqual(ix["appliances"]["0100T"], {"appliance": "track_circuit", "style": "virtual", "members": ["X:15T1", "X:17T1"],
-                                                     "controlPoint": "X:East"})
+        self.assertEqual(ix["appliances"]["0100T"], {"appliance": "track_circuit", "style": "virtual", "members": ["X:15T1", "X:17T1"]})
 
     def test_the_output_validates(self):
         sm, _ = compile_(ONE_SWITCH, ONE_SWITCH_NETS)
