@@ -992,7 +992,7 @@
     "portRef": {
       "description": "A switch's track port by qualified name: the switch, a dot, C, N or R (a derail's C or R).",
       "type": "string",
-      "pattern": "^[^:/\\s][^:/]*:[^:/\\s][^:/]*\\.(C|N|R)$"
+      "pattern": "^[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?:[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?\\.(C|N|R)$"
     },
     "appliance": {
       "description": "A named thing on the trackplan (ADR 0010 §4.1, by Role APPLIANCE): a switch or derail, a mast with its heads, a track circuit, a lamp or a contact. Keyed by its Name; geometry's appliances{} uses the same keys. A reference to another interlocking's appliance (a qualified name drawn here) is not an appliance of this one. Derived things stay out: a switch's gang and a derail's dependence follow from the names (ADR 0003 D8); signals, routes and limits are the evaluator's.",
@@ -1021,12 +1021,8 @@
           "description": "The house (control point) the appliance belongs to. A switch or circuit: the control point whose signals protect it (the signal joints bounding its circuit), absent on yard, dark and industry track and on approach blocks (ABS/APB later); where two control points' signals bound it, its CP field. A mast: its signal joint's. A maintainer call: the house it is wired to. A lamp: its CP field."
         },
         "osCircuit": {
-          "allOf": [
-            {
-              "$ref": "#/$defs/qualifiedName"
-            }
-          ],
-          "description": "A switch's OS circuit, its TC field (the library default is the switch's name and T1, ADR 0003 D3)."
+          "$ref": "#/$defs/qualifiedName",
+          "description": "The circuit a switch's or derail's track carries: its OS circuit (the circuit's marker, or else the switch's TC, whose library default is the switch's name and T1, ADR 0003 D3). Absent on dark track."
         },
         "indicationCeiling": {
           "type": "string",
@@ -1097,6 +1093,7 @@
           "$ref": "#/$defs/qualifiedName"
         },
         "controlPoint": {
+          "description": "A signal joint's control point: its CP field, or the interlocking's one house when it states none.",
           "$ref": "#/$defs/qualifiedName"
         },
         "direction": {

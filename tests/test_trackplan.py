@@ -53,6 +53,11 @@ def codes(sm, severity: str) -> list[str]:
     return sorted(d.code for d in sm.report.diags if d.severity == severity)
 
 
+def diags(sm, *prefixes: str) -> list[tuple[str, str]]:
+    """The diagnostics as a table of (code, symbol reference): structured fields, never the message text."""
+    return sorted((d.code, d.where.split(" ")[0].rsplit("/", 1)[-1]) for d in sm.report.diags if d.code.startswith(prefixes))
+
+
 # One switch inside three signal joints of house East: the Sargent shape.
 ONE_SWITCH = """
 H1   | House            | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
@@ -149,7 +154,7 @@ dc   | D1.C J1.A
         self.assertEqual(ix["track"]["links"], [{"ports": ["X:795.R", "X:795D.R"], "circuit": "X:795T1"}])
         self.assertEqual(ix["track"]["joints"][0]["circuits"], {"A": "X:795T1"})
         self.assertEqual(ix["appliances"]["795D"], {"appliance": "switch", "style": "derail", "indicationCeiling": "STOP/RESTRICTING",
-                                                    "controlPoint": "X:Gilroy"})
+                                                    "osCircuit": "X:795T1", "controlPoint": "X:Gilroy"})
 
     def test_a_reference_to_another_interlockings_circuit_names_the_track_but_is_no_appliance(self):
         given = """
@@ -177,11 +182,12 @@ class Membership(unittest.TestCase):
         })
         self.assertEqual(ix["appliances"]["836NAB"]["heads"], {"A": {"style": "CPL"}, "B": {"style": "CPL"}})
         self.assertEqual(ix["appliances"]["836SB"]["heads"], {"B": {"style": "UQ"}})
-        # derived and stated agree on the switch; an approach circuit is stated only; a mast is derived only
-        by = lambda code: sorted(d.text.split(": ")[1].split(" in ")[0] for d in sm.report.by_code(code))
-        self.assertEqual(by("appliance.control_point.implicit_only"), [])
-        self.assertEqual(len(sm.report.by_code("control_point.unprotected")), 3)
-        self.assertEqual(by("appliance.control_point.explicit_only"), ["mast 836NAB", "mast 836SA", "mast 836SB"])
+        # derived and stated agree on the switch; an approach circuit's CP field is not written; a mast is derived only
+        self.assertEqual(diags(sm, "appliance.control_point", "control_point"), [
+            ("appliance.control_point.explicit_only", "M1"), ("appliance.control_point.explicit_only", "M2"),
+            ("appliance.control_point.explicit_only", "M3"),
+            ("control_point.unprotected", "TC1"), ("control_point.unprotected", "TC2"), ("control_point.unprotected", "TC3"),
+        ])
 
     def test_a_cp_field_that_disagrees_with_the_signals_is_an_error(self):
         given = ONE_SWITCH.replace("CP_Name=East", "CP_Name=East\nH2 | House | STRUCTURE | Kind=CONTROL_POINT CP_Name=West", 1)
@@ -209,6 +215,37 @@ class Membership(unittest.TestCase):
         sm, _ = compile_(ONE_SWITCH.replace("Name=836SA", "Name=836NAB"), ONE_SWITCH_NETS)
         self.assertIn("appliance.duplicate", codes(sm, "error"))
 
+    def test_protection_crosses_plain_joints_between_switches_but_not_into_the_yard(self):
+        """Watsonville's shape: a ladder of switches joined by plain joints behind one signal; a track between two ladder
+        switches is inside; a yard track off one switch is outside (the owner, 2026-10-25)."""
+        given = """
+H1   | House         | STRUCTURE | Kind=CONTROL_POINT CP_Name=Yard
+J1   | IRJ-Signal    | TRACK     | Kind=IRJ_SIGNAL CP=Yard
+SW1  | Switch_Powered | APPLIANCE | Appliance=switch Style=powered Name=15 TC=15T1
+SW2  | Switch_Powered | APPLIANCE | Appliance=switch Style=powered Name=17 TC=17T1
+SW3  | Switch_Powered | APPLIANCE | Appliance=switch Style=powered Name=19 TC=19T1
+P1   | IRJ           | TRACK     | Kind=IRJ
+P2   | IRJ           | TRACK     | Kind=IRJ
+P3   | IRJ           | TRACK     | Kind=IRJ
+P4   | IRJ           | TRACK     | Kind=IRJ
+TCa  | Track Circuit | APPLIANCE | Appliance=track_circuit Name=2AT CP=Yard
+TCy  | Track Circuit | APPLIANCE | Appliance=track_circuit Name=7BT CP=Yard
+B1   | Bumper        | TRACK     | Kind=BUMPER
+"""
+        sm, ix = compile_(given, """
+in   | J1.A SW1.C
+l1   | SW1.N P1.A
+l2   | P1.B SW2.C
+a1   | SW2.N P2.A
+a2   | P2.B TCa.TC P3.A
+a3   | P3.B SW3.R
+y1   | SW1.R P4.A
+y2   | P4.B TCy.TC B1.EoT
+""")
+        self.assertEqual(sm.report.errors, [])
+        self.assertEqual({n: a.get("controlPoint") for n, a in ix["appliances"].items()},
+                         {"15": "X:Yard", "17": "X:Yard", "19": None, "2AT": "X:Yard", "7BT": None})
+
     def test_a_switch_in_dark_track_has_no_control_point(self):
         given = """
 H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
@@ -228,6 +265,15 @@ L1   | AUXILIARY       | APPLIANCE | Appliance=lamp Style=non_vital Name=NFLK CP
         sm, ix = compile_(given, "")
         self.assertEqual(ix["appliances"]["NFLK"]["controlPoint"], "X:East")
 
+    def test_a_maintainer_call_belongs_to_the_house_it_is_wired_to(self):
+        given = """
+H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
+H2   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=West
+MC1  | MaintainerCall  | APPLIANCE | Appliance=lamp Style=maintainer_call Name=MC1
+"""
+        sm, ix = compile_(given, "mc | H2.MC MC1.MC\n")
+        self.assertEqual(ix["appliances"]["MC1"]["controlPoint"], "X:West")
+
     def test_a_virtual_circuit_lists_its_members(self):
         given = """
 H1   | House                 | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
@@ -239,6 +285,57 @@ V1   | Track Circuit_Virtual | APPLIANCE | Appliance=track_circuit Style=virtual
     def test_the_output_validates(self):
         sm, _ = compile_(ONE_SWITCH, ONE_SWITCH_NETS)
         self.assertEqual(layout_model.errors(emit.emit(sm)), [])
+
+
+class Checks(unittest.TestCase):
+    """Each fact inconsistency the trackplan piece can see, as one scenario: (code, the symbol it names)."""
+
+    def check(self, sym_table: str, net_table: str, want: list[tuple[str, str]]):
+        sm, _ = compile_(sym_table, net_table)
+        self.assertEqual([x for x in diags(sm, *{c for c, _ in want}) if x[0] in {c for c, _ in want}], want)
+
+    def test_a_signal_joint_turned_around(self):
+        self.check(ONE_SWITCH, ONE_SWITCH_NETS.replace("c    | SW1.C J1.A", "c    | SW1.C J1.B").replace("w    | J1.B", "w    | J1.A"),
+                   [("joint.reversed", "J1")])
+
+    def test_a_joint_with_one_circuit_on_both_sides(self):
+        given = ONE_SWITCH + "J9 | IRJ | TRACK | Kind=IRJ\n"
+        self.check(given, ONE_SWITCH_NETS.replace("e1   | J2.B TC2.TC", "e1   | J2.B TC2.TC J9.A J9.B"), [("joint.loop", "J9")])
+
+    def test_end_ctc_turned_around(self):
+        given = """
+H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
+E1   | IRJ-END_CTC     | TRACK     | Kind=END_CTC
+TC1  | Track Circuit   | APPLIANCE | Appliance=track_circuit Name=2SAT
+I1   | Industry        | TRACK     | Kind=INDUSTRY
+"""
+        self.check(given, "d | E1.DARK TC1.TC\nc | E1.CTC I1.EoT\n", [("end_ctc.sides", "E1")])
+
+    def test_two_masts_on_one_signal_joint(self):
+        self.check(ONE_SWITCH, ONE_SWITCH_NETS.replace("s2   | J2.SIGNAL M2.SIGNAL", "s2   | J2.SIGNAL M2.SIGNAL M3.SIGNAL")
+                   .replace("s3   | J3.SIGNAL M3.SIGNAL\n", ""), [("joint.masts", "J2")])
+
+    def test_a_mast_on_no_joint(self):
+        self.check(ONE_SWITCH, ONE_SWITCH_NETS.replace("s3   | J3.SIGNAL M3.SIGNAL\n", ""), [("mast.joint", "M3")])
+
+    def test_a_mast_named_for_heads_it_does_not_carry(self):
+        sm, _ = compile_(ONE_SWITCH.replace("Name=836NAB", "Name=836NCD"), ONE_SWITCH_NETS)
+        self.assertEqual(codes(sm, "error"), ["mast.heads"])
+
+    def test_one_head_letter_on_two_masts_of_one_signal(self):
+        given = ONE_SWITCH.replace("Name=836SA", "Name=836NA").replace("Signal Head - CL  | APPLIANCE | Appliance=head Style=CL Name=A",
+                                                                          "Signal Head - CL  | APPLIANCE | Appliance=head Style=CL Name=A")
+        sm, _ = compile_(given, ONE_SWITCH_NETS)
+        self.assertIn("mast.letters", codes(sm, "error"))
+
+    def test_a_switch_with_no_track(self):
+        given = """
+H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
+SW1  | Switch_Lock     | APPLIANCE | Appliance=switch Style=lock Name=9 TC=9T1 CP=East
+"""
+        sm, ix = compile_(given, "")
+        self.assertEqual(diags(sm, "switch.track"), [("switch.track", "SW1")])
+        self.assertNotIn("osCircuit", ix["appliances"]["9"])
 
 
 @unittest.skipUnless(SPCOAST_AVAILABLE, f"SPCoast project not present or kicad-cli missing: {NETLIST or PROJECT}")

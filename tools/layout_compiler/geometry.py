@@ -24,7 +24,7 @@ from typing import Any, Optional
 
 from .seams import Seams, loc, name_of
 from .source import Symbol
-from .trackplan import TRACKPLAN_ROLES, is_switch, port_ref
+from .trackplan import TRACKPLAN_ROLES, is_switch, port_ref, unit_of
 
 COORDINATE_DECIMALS = 2     # placements and runs sit on the drawing's grid (§4.2)
 GLYPH_DECIMALS = 4          # a glyph's primitives have up to four
@@ -249,7 +249,7 @@ def read(sm: Seams, project_dir: Optional[Path] = None, libraries: Optional[dict
     project = _Project(Path(project_dir), libraries)
 
     for ix in sm.interlockings.values():
-        trackplan = [s for s in src.symbols.values() if s.role in TRACKPLAN_ROLES and s.sheet.startswith(ix.sym.sheet)]
+        trackplan = [s for s in src.symbols.values() if s.role in TRACKPLAN_ROLES and unit_of(sm, s) == ix.name]
         sheets = sorted({s.sheet for s in trackplan})
         if not sheets:
             continue                                                     # nothing drawn: absent is absent
