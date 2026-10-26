@@ -13,10 +13,10 @@ from typing import Any
 
 import jsonschema
 
-SCHEMA_ID = "layout-model/v3.0.0"            # ADR 0008 rev 4 on ADR 0009, ratified 2026-10-24: the compiler writes this
-SCHEMA_V3 = SCHEMA_ID
+SCHEMA_ID = "layout-model/v3.1.0"            # ADR 0008 rev 4 with ADR 0010's geometry and the trackplan piece: the compiler writes this
+SCHEMA_V3 = "layout-model/v3.0.0"
 SCHEMA_DIR = Path(__file__).resolve().parents[2] / "schemas" / "layout-model"
-SCHEMA_PATH = SCHEMA_DIR / "v3.0.0.json"
+SCHEMA_PATH = SCHEMA_DIR / "v3.1.0.json"
 
 _DIGITS = re.compile(r"(\d+)")
 _SPACES = re.compile(r"\s+")

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://spcoast.com/schemas/layout-model/v3.1.0.json",
   "title": "Layout Data Model File",
-  "description": "ADR 0008 rev 4 on ADR 0009. One file holds one layout: what a person states, nested by scope, every relation a name. Transports, code lines, I/O encodings, processors and CMRInet Nodes are entities; a binding is a route on a bus owner. Stations are derived and absent. Absent is absent. Nothing here names a sheet, a net, a reference or a KiCad symbol unit. Version 3.1.0 (2026-10-25) adds each interlocking's appliances and track (the trackplan piece) and geometry, and the layout's glyphs (ADR 0010); a 3.0.0 file migrates to 3.1.0 by its schema string alone.",
+  "description": "ADR 0008 rev 4 on ADR 0009. One file holds one layout: what a person states, nested by scope, every relation a name. Transports, code lines, I/O encodings, processors and CMRInet Nodes are entities; a binding is a route on a bus owner. Stations are derived and absent. Absent is absent. Nothing here names a sheet, a net, a reference or a KiCad symbol unit. Version 3.1.0 (2026-10-25) adds each interlocking's appliances and track (the trackplan piece) and geometry, and the layout's glyphs (ADR 0010); a 3.0.0 file migrates to 3.1.0 by its schema string alone (v3.1.0-migration.md).",
   "type": "object",
   "required": [
     "schema",
