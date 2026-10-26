@@ -1,4 +1,4 @@
-"""The seam facts as the Layout Data Model File, schema ``layout-model/v3.0.0`` (ADR 0008 rev 4).
+"""The seam and trackplan facts as the Layout Data Model File, schema ``layout-model/v3.1.0`` (ADR 0008 rev 4, ADR 0010).
 
 Only what the drawing states lands here, resolved to names (ADR 0008 §4.4, §4.5). Nothing derived is written:
 stations, the seam a transport serves, the path from a lever to its appliance are the reader library's to compute.
@@ -13,9 +13,9 @@ from typing import Any, Optional
 from .geometry import Geometry
 from .seams import REFERENCE_DATA, Seams
 
-SCHEMA = "layout-model/v3.0.0"
-SCHEMA_WITH_GEOMETRY = "layout-model/v3.1.0"      # ADR 0010 C1: geometry and glyphs; shipped with the trackplan semantics piece
-COMPILER = {"name": "layout_compiler", "version": "0.2.0"}
+SCHEMA = "layout-model/v3.1.0"                    # appliances and track (the trackplan piece) with geometry and glyphs (ADR 0010 C1)
+SCHEMA_WITH_GEOMETRY = SCHEMA                     # one version: the placement reader on or off writes the same schema
+COMPILER = {"name": "layout_compiler", "version": "0.3.0"}
 
 
 def _clean(d: dict) -> dict:
@@ -41,8 +41,9 @@ def _source(project: Optional[Path]) -> dict[str, Any]:
 
 
 def emit(sm: Seams, source_path: Optional[Path] = None, geometry: Optional[Geometry] = None) -> dict[str, Any]:
-    """The Layout Data Model File. ``source_path`` is kept for callers; the project is the source. With ``geometry``
-    (ADR 0010), each interlocking carries its ``geometry`` and the layout its ``glyphs`` under schema 3.1.0."""
+    """The Layout Data Model File. ``source_path`` is kept for callers; the project is the source. Each interlocking
+    carries its ``appliances`` and ``track`` (the trackplan piece); with ``geometry`` (ADR 0010), its ``geometry``
+    and the layout its ``glyphs`` too."""
     layout: dict[str, Any] = dict(sm.railroad)
     layout["transports"] = {
         t.name: _clean({
@@ -71,11 +72,14 @@ def emit(sm: Seams, source_path: Optional[Path] = None, geometry: Optional[Geome
             "settings": d.settings,
             "bindings": [_clean({"function": b.function, "route": b.route, "invert": b.invert or None}) for b in d.bindings]})
 
+    plans = sm.trackplan.plans if sm.trackplan else {}
     interlockings = {
         ix.name: _clean({
             "codeline": ix.codeline,
             "fieldUnit": _clean({"processor": ix.processor}),
             "houses": {h.cp_name: _clean({"milepost": h.milepost, "maintainerCall": h.maintainer_call}) for h in ix.houses.values()},
+            "appliances": plans[ix.name].appliances if ix.name in plans else None,
+            "track": plans[ix.name].track if ix.name in plans else None,
             "devices": [device(d) for d in ix.devices],
             "geometry": geometry.interlockings.get(ix.name) if geometry else None,
         }) for ix in sm.interlockings.values()}
@@ -94,5 +98,4 @@ def emit(sm: Seams, source_path: Optional[Path] = None, geometry: Optional[Geome
                                   "source": _source(sm.source.project)}
     if geometry is not None:
         provenance["libraries"] = dict(geometry.libraries)
-    schema = SCHEMA_WITH_GEOMETRY if geometry is not None else SCHEMA
-    return _clean({"schema": schema, "layout": _clean(layout), "interlockings": interlockings, "officeUnits": office_units, "provenance": provenance})
+    return _clean({"schema": SCHEMA, "layout": _clean(layout), "interlockings": interlockings, "officeUnits": office_units, "provenance": provenance})

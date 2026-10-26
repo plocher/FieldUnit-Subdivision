@@ -31,7 +31,7 @@ NOT_SETTINGS = {"Role", "Kind", "Style", "Appliance", "Name", "IC", "Address", "
                 "CP", "TC", "Transport", "Processor", "NodeType", "InputBytes", "OutputBytes", "IndicationCeiling",
                 "Display", "Milepost", "CP Name", "Column", "Reference", "Value", "Footprint", "Datasheet", "Description",
                 "Sheetname", "Sheetfile", "ki_keywords", "ki_fp_filters", "ki_description", "ki_locked", "Era", "Railroad",
-                "Region", "Rulebook"}
+                "Region", "Rulebook", "Direction"}
 
 
 @dataclass(frozen=True)
@@ -199,6 +199,7 @@ class Seams:
     encodings: dict[str, Encoding] = field(default_factory=dict)
     interlockings: dict[str, Interlocking] = field(default_factory=dict)
     office_units: dict[str, OfficeUnit] = field(default_factory=dict)
+    trackplan: Optional["object"] = None                              # trackplan.Trackplan: appliances, track, circuits
 
 
 # ---------------------------------------------------------------- helpers
@@ -304,6 +305,8 @@ def resolve(source: Source) -> Seams:
     _devices(seams)
     _heads(seams)
     _reach(seams)
+    from . import trackplan                                           # it builds on the seam helpers
+    seams.trackplan = trackplan.read(seams)
     return seams
 
 
