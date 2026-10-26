@@ -132,6 +132,29 @@ owner edits).
 Next session: items 3 (the ADR text, after the owner rules on the open points) and 5 (the first view, which needs
 the two blockers above settled).
 
+## Status after the session of 2026-10-26 (the owner's review of item 2)
+
+The owner reviewed item 2 point by point; the rulings are in `docs/review/trackplan-piece-2026-10-25.md` ("The
+owner's rulings (2026-10-26)"). They **supersede the control point rulings of 2026-10-25 above**: a control point is
+the house whose field unit wires an appliance, not the routes its signals protect. Implemented in `a9bd3ed`, the
+example in `f50aa9f`; Railroad `96c6b4e` baselines the owner's edits (NextCP `Interlocking`, Industry `Name`, HBA off
+the track with `Milepost`, a Rule 93 sign moved).
+
+- **Control point by propagation from the houses.** One house gives every appliance its house; with two or more the
+  stated `CP` fields are roots and the rest inherit along their relations. Every SPCoast appliance has one (141);
+  the signal protection groups are gone, and so is the 60 dropped in the item above.
+- **`key_of`** is the one place identity is read (`KEYS` by Role and Kind).
+- **Both view blockers are closed.** NextCPs state their destination (all 18 pair up; Christopher's say Corporal and
+  Luchessa now). Ends may carry names, a pin reference names a named end's pin, and a marker joins its row by name or
+  ports; Luchessa's END CTC to Gilroy Industry is recorded.
+- **An appliance's milepost** is written; a field nothing consumes passes through as a setting.
+- **Protection and authority limits** (signal joints, END CTC, Rule 93: the circuit a Rule 93 sign is on is inside
+  the yard limits) are the views' to derive, item 5.
+- **Item 6 (`CP` field retirement) is withdrawn**: the field is the sparse root of the propagation and stays.
+- Open from the 2026-10-25 list: rule 8 crossovers, detection blocks in `TC`, `AGENTS.md`'s OS default sentence,
+  and ADR text (0008, 0009, 0010) for all of the above, which waits for the owner.
+- Tests: 240, all green against the owner's export of 2026-10-26 12:37, no gate skipped.
+
 ## The work, in order
 
 The seven semantics items (the owner's list of 2026-10-25) and ADR 0010's C1, C2 and C3 are one sequence. The

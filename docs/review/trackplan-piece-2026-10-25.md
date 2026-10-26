@@ -5,6 +5,38 @@ piece is `tools/layout_compiler/trackplan.py`, the shapes are `$defs/appliance`,
 `$defs/trackSymbol` and `$defs/portRef` of `schemas/layout-model/v3.1.0.json`, and the scenarios are
 `tests/test_trackplan.py`. Nothing in ADR 0008, 0009 or 0010 is edited until the owner settles the points below.
 
+## The owner's rulings (2026-10-26)
+
+These supersede the control point rulings of 2026-10-25 below, which conflated route protection with the house an
+appliance is wired to. Implemented in `a9bd3ed`.
+
+1. **A control point is the house whose field unit has an appliance's I/O**, vital (switch machines, track circuits,
+   signals) or ancillary (lamps, local levers, approach circuits). Route protection is a different fact, bounded by
+   the signal joints from their `A` pins; authority limits are bounded by END CTC and Rule 93. Both are the views'.
+2. **The houses are the roots.** One house is every appliance's control point. With two or more, which in the 506
+   era follows from one switch lever and one signal lever per column, the stated `CP` fields are the roots and the
+   rest inherit:
+   - a gang's switch without a letter leads; its lettered switches and derails follow (a split is a warning);
+   - an OS circuit follows its switch, and only its switch;
+   - a mast and its signal joint, either way: the designer states it on either;
+   - a signal joint gives the circuits beside it that hold no switch;
+   - a circuit gives a circuit across a plain joint that holds no switch;
+   - a virtual circuit follows its members; a maintainer call its `MC` wire.
+
+   A stated field wins, silently. Two houses reaching an appliance that states none is an error, and so is none
+   reaching it (an incomplete graph). A lamp named `Interlocking:token` is not local and needs no `CP`.
+3. **Explicit only where the chains need it.** On SPCoast the `CP` fields on track circuits sit exactly where two
+   chains meet: Christopher 01T, Gilroy Interchange 01T and 02T, Luchessa 01T. Open point 4 below is answered by this.
+4. **The circuit a Rule 93 sign stands on is inside the yard limits.** Yard limits change nothing about signals,
+   circuits or switch protection where they exist (Watsonville's 840).
+5. **`key_of`**: one table, in the compiler, of each symbol's key attribute. An implementation choice that keeps the
+   decision in one place.
+6. **Ends may carry a name** (the library's Industry has `Name = ${VALUE}`; five are named). A pin reference names a
+   switch port or a named end's pin, so Luchessa's END CTC records the industry on its `DARK` pin. Open points 1, 2
+   and 3 below are answered: NextCP carries `Interlocking`, markers join by name or ports.
+7. **Milepost is optional, general geographic context**, written on an appliance (HBA, 83.4). A field nothing
+   consumes passes through as a setting, never dropped.
+
 ## The owner's rulings (2026-10-25)
 
 - Decision 1, membership outside the limits: **signals protect routes through an interlocking. Yard, dark and
