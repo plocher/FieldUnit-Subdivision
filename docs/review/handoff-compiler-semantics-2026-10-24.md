@@ -136,8 +136,10 @@ can run beside 2 if the session prefers, but 3.1.0 ships once.
    the schema string), the per-pin check over every placement of the seven interlockings, the twelve orientations
    in memory, and the direction of a 90-degree turn asked of kicad-cli (`tests/fixtures/kicad/rotation_probe.py`:
    counter-clockwise as seen on the page; the project draws only 0, 180, mirror x and mirror y). Findings for the
-   next items: (a) `Railroad-Trackplan:Milepost` has no `Name` field, so the two Luchessa mileposts are keyed from
-   `Value` at info (`identity.value`); a library edit by the owner closes it. (b) Geometry writes a circuit only
+   next items: (a) `Railroad-Trackplan:Milepost` had no `Name` field; closed by the owner on 2026-10-25, `Name = ${Value}`
+   in the library and on every instance, with three new mileposts so the region is grounded at its start: Lick
+   `55.3` and `77.1` at Gilroy Caltrain, `770` at Gilroy Interchange (its decimal point to be confirmed). The live
+   compile with geometry reports no geometry info; the Railroad working tree holds the edit uncommitted. (b) Geometry writes a circuit only
    where a track circuit marker stands on the net; the OS circuit of a switch (`835T1` on Sargent's three signal
    joints, Luchessa's three port runs) is item 2's to name, through one `circuit_of_net` shared by both pieces.
    (c) A run is stated from its lesser end, so a port may appear as `from` where the ADR's prose example says `to`;
@@ -167,7 +169,9 @@ can run beside 2 if the session prefers, but 3.1.0 ships once.
 10. **The boundary to milestone E**: the reader library (ADR 0008 C2) reads the Layout Data Model File, evaluates in
     memory, reports absences as info; FieldUnit's generators consume the reader's result. The four views of ADR 0010
     are readers in this sense, and the first of them (item 5) is this segment's gate; the library itself is **not
-    this segment's work; do not start it without the owner.**
+    this segment's work; do not start it without the owner.** When it is written: strict writer, lenient reader
+    (ADR 0008 C8, settled 2026-10-25). The reader skips keys it does not know and reports each at info; the compiler
+    keeps validating its output exactly.
 
 ## Rules this session must keep
 
@@ -207,5 +211,11 @@ can run beside 2 if the session prefers, but 3.1.0 ships once.
   `PYTHONDONTWRITEBYTECODE=1` for the tests.
 - Commit finished work every turn with Conventional Commits and a "Verified:" section; never push unless the owner
   asks; the owner merges. Goldens change in their own commit; prefer behavioural gates.
+- Tests (owner, 2026-10-25). A scenario sets up its context explicitly, with tables, and checks its result
+  explicitly, with tables, so it documents itself; a fixture file is opaque to the reader of the scenario. The
+  Given tables of a compiler scenario are netlist fragments in relational form (symbols with their fields and
+  pins, nets with their members), built in memory for the reader under test. Fixtures are for regression tests,
+  where the whole file is the scenario, and for the parts of a KiCad project that do not change and carry no
+  user content (a library copy, a sheet skeleton). The fresh export of the live project stays the integration gate.
 - Adversarial review by a fresh agent, anchored on the sources of truth and not on the writer's reasoning, before
   asking the owner to ratify anything; save the report verbatim under `docs/review/`.
