@@ -138,7 +138,7 @@ can run beside 2 if the session prefers, but 3.1.0 ships once.
    counter-clockwise as seen on the page; the project draws only 0, 180, mirror x and mirror y). Findings for the
    next items: (a) `Railroad-Trackplan:Milepost` had no `Name` field; closed by the owner on 2026-10-25, `Name = ${Value}`
    in the library and on every instance, with three new mileposts so the region is grounded at its start: Lick
-   `55.3` and `77.1` at Gilroy Caltrain, `770` at Gilroy Interchange (its decimal point to be confirmed). The live
+   `55.3` and `77.1` at Gilroy Caltrain, `77.0` at Gilroy Interchange. The live
    compile with geometry reports no geometry info; the Railroad working tree holds the edit uncommitted. (b) Geometry writes a circuit only
    where a track circuit marker stands on the net; the OS circuit of a switch (`835T1` on Sargent's three signal
    joints, Luchessa's three port runs) is item 2's to name, through one `circuit_of_net` shared by both pieces.
