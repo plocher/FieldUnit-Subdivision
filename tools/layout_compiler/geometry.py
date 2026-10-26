@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
 
-from .seams import Seams, loc, name_of
+from .seams import Seams, key_of, loc
 from .source import Symbol
 from .trackplan import TRACKPLAN_ROLES, is_switch, port_ref, unit_of
 
@@ -352,7 +352,7 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
     for s in trackplan:
         if s.role != "APPLIANCE" or s.get("Appliance") == "head" or s.ref not in placed:
             continue
-        name = name_of(s, report)
+        name = key_of(s, report)
         if not name:
             report.missing("geometry.name", f"{ix.name}: an {s.lib_id} has no Name; its placement is not written", loc(s))
             continue
@@ -367,7 +367,7 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         if owner is None:
             report.missing("geometry.head", f"{ix.name}: head {s.ref} is on no mast's M pin; its placement is not written", loc(s))
             continue
-        appliances[masts[owner]].setdefault("heads", {})[name_of(s, report)] = placement(s.ref)
+        appliances[masts[owner]].setdefault("heads", {})[key_of(s, report)] = placement(s.ref)
 
     house_rows = {h.cp_name: placement(h.sym.ref) for h in houses if h.sym.ref in placed}
 
@@ -384,7 +384,7 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
             row["circuit"] = c
         for key, e in zip(("from", "to"), ends):
             if e and is_switch(symbols[e[0]]):
-                row[key] = port_ref(ix.name, name_of(symbols[e[0]], report), e[1])
+                row[key] = port_ref(ix.name, key_of(symbols[e[0]], report), e[1])
         track.append(row)
 
     markers: list[dict[str, Any]] = []
@@ -393,13 +393,19 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         if s.role == "APPLIANCE" or s.ref not in placed:
             continue
         if s.role == "TRACK" and s.kind == "MILEPOST":
-            mileposts[name_of(s, report)] = placement(s.ref)
+            mileposts[key_of(s, report)] = placement(s.ref)
             continue
         row = {"kind": s.kind, **placement(s.ref)}
         circuits = {pin: circuit(net_of(s.ref, pin)) for pin in placed[s.ref][2]}
         circuits = {pin: c for pin, c in circuits.items() if c}
         if circuits:
             row["circuits"] = circuits
+        # the marker joins its track row by name where the symbol has one, else by kind, circuits and ports (ADR 0010 C6)
+        drawn = sm.trackplan.row_of(ix.name, s.ref) if sm.trackplan else {}
+        if drawn.get("name"):
+            row["name"] = drawn["name"]
+        elif drawn.get("ports"):
+            row["ports"] = drawn["ports"]
         markers.append(row)
 
     if len(report.errors) > errors_before:

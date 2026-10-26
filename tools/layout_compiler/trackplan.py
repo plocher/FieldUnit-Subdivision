@@ -11,18 +11,17 @@ R) and a derail's (C to R), split at every joint and end. Its name is the track 
 nets, or else the ``TC`` field of a switch in it, the OS circuit (the library's default is ``${Value}T1``, ADR 0003
 D3); two different names on one circuit are an error. A circuit with neither is dark track and has no name.
 
-**Control point membership** is derived from the signals: an ``IRJ-Signal`` states its control point in ``CP`` (the
-one place the field lives, ADR 0009 and the unify decisions) and stands with its ``A`` pin inside the limits it
-governs. A circuit bounded on its ``A`` sides by the signal joints of one control point belongs to it, and so does
-every appliance in it; a mast belongs to the control point of the joint its ``SIGNAL`` pin stands on; a maintainer
-call to the house its ``MC`` pin is wired to. Signals protect routes through an interlocking: yard, dark and industry
-track is outside that protection by definition, so a switch or circuit no signal protects has no control point, and
-approach blocks and the track between interlockings wait for the ABS/APB rules (the owner, 2026-10-25). An
-appliance's own ``CP`` field must agree where the signals speak, decides where two control points' signals bound one
-circuit, and is the only statement for a lamp; on unprotected track it is not written. The ``A`` pin of a signal joint
-is where the route it protects begins.
+**Control point** is the house whose field unit has the I/O for an appliance, vital or not; it is not the routes the
+signals protect (the owner, 2026-10-26). The houses are the roots: an interlocking with one house gives it to every
+appliance; with two or more, the stated ``CP`` fields are the roots and the rest inherit along their relations
+(``_control_points``). Protection and authority limits (signal joints, END CTC, Rule 93) are the views' to derive from
+the rows written here. The ``A`` pin of a signal joint is where the route it protects begins; the circuit a Rule 93
+sign stands on is inside the yard limits.
 
-Nothing here reads a coordinate, a net name, a reference or ``Value``.
+An end of track may carry a name (an industry). Where a pin's track meets a switch port or a named end with no circuit
+between, ``ports`` records it: the only record of dark track.
+
+Nothing here reads a coordinate, a net name, a reference or ``Value``; every name is read through ``key_of``.
 """
 from __future__ import annotations
 
@@ -31,7 +30,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
-from .seams import Seams, compare, loc, qualify, settings_of
+from .seams import Seams, compare, key_of, loc, milepost_of, qualify, settings_of
 from .source import Net, Symbol
 
 TRACKPLAN_ROLES = frozenset({"APPLIANCE", "TRACK", "POLICY"})
@@ -40,10 +39,10 @@ SWITCH_PORTS = ("C", "N", "R")
 DERAIL_PORTS = ("C", "R")
 JOINTS = frozenset({"IRJ", "IRJ_SIGNAL"})
 ENDS = frozenset({"END_CTC", "NEXT_CP", "BUMPER", "INDUSTRY"})
-# The fields the trackplan piece reads; with seams.NOT_SETTINGS they are never written as settings.
-READ = {"CP", "TC", "IndicationCeiling", "IndicationToken", "Direction", "Display"}
 # ADR 0003: a mast is its signal (lever and side) plus its heads' letters, ascending (rules 6 and 7).
 MAST_NAME = re.compile(r"^(0?[1-9]\d{0,3}[LRNSEW])([A-Z]+)$")
+# ADR 0003 D8: a gang id is a switch name less its trailing letter; the switch named by the id alone leads the gang.
+GANG = re.compile(r"(?<=\d)[A-Z]$")
 
 
 def on_trackplan(s: Symbol) -> bool:
@@ -62,7 +61,7 @@ def ports_of(s: Symbol) -> tuple[str, ...]:
 
 
 def port_ref(interlocking: str, name: str, port: str) -> str:
-    """A switch port by qualified name: ``Luchessa:783.R``."""
+    """A switch port or a named track symbol's pin, by qualified name: ``Luchessa:783.R``, ``Luchessa:Gilroy Industry.EoT``."""
     return f"{qualify(name, interlocking)}.{port}"
 
 
@@ -74,6 +73,7 @@ class Plan:
     circuit_of: dict[str, Optional[str]] = field(default_factory=dict)        # net name -> qualified circuit
     appliances: dict[str, dict[str, Any]] = field(default_factory=dict)
     track: dict[str, Any] = field(default_factory=dict)
+    rows: dict[str, dict[str, Any]] = field(default_factory=dict)          # symbol reference -> its track row
 
 
 @dataclass
@@ -85,6 +85,11 @@ class Trackplan:
         if net is None or interlocking not in self.plans:
             return None
         return self.plans[interlocking].circuit_of.get(net.name)
+
+    def row_of(self, interlocking: str, ref: str) -> dict[str, Any]:
+        """The track row a joint, end or policy sign is written as, for geometry's marker to join."""
+        plan = self.plans.get(interlocking)
+        return plan.rows.get(ref, {}) if plan else {}
 
 
 class _Union:
@@ -109,7 +114,23 @@ def read(sm: Seams) -> Trackplan:
                 + sm.source.under(ix.sym.sheet, "POLICY") if unit_of(sm, s) == ix.name]
         if syms:
             out.plans[ix.name] = _plan(sm, ix, syms)
+    _pair_next_cps(sm, out)
     return out
+
+
+def _pair_next_cps(sm: Seams, out: Trackplan) -> None:
+    """A NextCP names the interlocking its track leads to; that interlocking's NextCPs lead back as many times. One
+    beyond the layout (Lick, Hollister) is reported at info."""
+    count: dict[tuple[str, str], int] = defaultdict(int)
+    for a, plan in out.plans.items():
+        for row in plan.track.get("ends", []):
+            if row["kind"] == "NEXT_CP" and row.get("interlocking"):
+                count[(a, row["interlocking"])] += 1
+    for (a, b), n in sorted(count.items()):
+        if b not in out.plans:
+            sm.report.info("next_cp.off_layout", f"{a}: {n} NextCP{'s lead' if n > 1 else ' leads'} to {b}, which is not on this layout")
+        elif count.get((b, a), 0) != n:
+            sm.report.error("next_cp.pair", f"{a} has {n} NextCP{'s' * (n > 1)} to {b}, but {b} has {count.get((b, a), 0)} back to {a}")
 
 
 def unit_of(sm: Seams, s: Symbol) -> Optional[str]:
@@ -148,13 +169,13 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
     named: dict[str, dict[str, list[str]]] = defaultdict(lambda: {"marker": [], "os": []})
     for s in syms:
         if s.role == "APPLIANCE" and s.get("Appliance") == "track_circuit" and net(s, "TC"):
-            named[union.find(net(s, "TC").name)]["marker"].append(qualify(s.get("Name"), ix.name))
+            named[union.find(net(s, "TC").name)]["marker"].append(qualify(key_of(s), ix.name))
         elif is_switch(s) and s.get("TC"):
             n = next((net(s, p) for p in ports_of(s) if net(s, p)), None)
             if n is None:
                 continue
             if "," in s.get("TC"):
-                report.error("switch.tc_block", f"{ix.name}: switch {s.get('Name')} lists several circuits in TC ({s.get('TC')}); "
+                report.error("switch.tc_block", f"{ix.name}: switch {key_of(s)} lists several circuits in TC ({s.get('TC')}); "
                              "a detection block has no form in schema 3.1.0", loc(s))
                 continue
             named[union.find(n.name)]["os"].append(qualify(s.get("TC"), ix.name))
@@ -175,87 +196,14 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
         return plan.circuit_of.get(n.name) if n else None
 
     # ------------------------------------------------------------------ control points
-    houses = {h.casefold(): h for h in ix.houses}
-    one_house = next(iter(ix.houses)) if len(ix.houses) == 1 else None
-
-    def house(cp: str, s: Symbol) -> Optional[str]:
-        h = houses.get(cp.casefold())
-        if h is None:
-            report.error("control_point.house", f"{ix.name}: {s.get('Name') or s.kind} names control point {cp!r}, which is no house of "
-                         f"{ix.name} ({', '.join(sorted(ix.houses)) or 'none'})", loc(s))
-        return h
-
-    def region(s: Symbol, pin: str) -> Optional[str]:
-        n = net(s, pin)
-        return union.find(n.name) if n else None
-
-    switch_regions = {union.find(n.name) for s in syms for n in (net(s, p) for p in ports_of(s)) if n is not None}
-
-    joint_cp: dict[str, Optional[str]] = {}
-    region_cps: dict[str, set[str]] = defaultdict(set)
-    for s in syms:
-        if s.kind != "IRJ_SIGNAL":
-            continue
-        stated = house(s.get("CP"), s) if s.get("CP") else None
-        cp = compare(stated, one_house, f"{ix.name}: a signal joint's control point", loc(s), report, "joint.control_point")
-        joint_cp[s.ref] = cp
-        a, b = region(s, "A"), region(s, "B")
-        if a is not None and cp:
-            region_cps[a].add(cp)
-        if b in switch_regions and a not in switch_regions:
-            report.error("joint.reversed", f"{ix.name}: a signal joint (CP {cp!r}) has a switch on its B side and none on its A side; "
-                         "A is where the route it protects begins", loc(s))
-
-    # Protection reaches from a signal joint's A side across plain joints between switch circuits: the interlocking's
-    # limits. A switch circuit no signal bounds directly (Christopher's 815, Watsonville's ladder 15 to 25) takes the
-    # control points of the signals that bound its group. A circuit with no switch is inside only when plain joints join
-    # it to two or more switch circuits of the group, so a route runs through it (Luchessa's 01T between 795 and 799);
-    # a yard track off the ladder is not (the owner, 2026-10-25: yard, dark and industry track is outside).
-    plain = [(region(s, "A"), region(s, "B")) for s in syms if s.kind == "IRJ"]
-    plain = [(a, b) for a, b in plain if a and b and a != b]
-    groups = _Union()
-    for a, b in plain:
-        if a in switch_regions and b in switch_regions:
-            groups.join(a, b)
-    neighbours: dict[str, set[str]] = defaultdict(set)
-    for a, b in plain:
-        if b in switch_regions and a not in switch_regions:
-            neighbours[a].add(b)
-        if a in switch_regions and b not in switch_regions:
-            neighbours[b].add(a)
-    between = {r for r, sw in neighbours.items() if len(sw) >= 2 and r not in region_cps}
-    for r in between:                                                     # a circuit between switches joins their groups
-        for x in neighbours[r]:
-            groups.join(r, x)
-    group_cps: dict[str, set[str]] = defaultdict(set)
-    for r, cps in region_cps.items():
-        if r in switch_regions:
-            group_cps[groups.find(r)] |= cps
-
-    def protecting(s: Symbol, pin: str) -> set[str]:
-        """The control points whose signal joints bound the circuit at this pin: the signals that protect routes
-        through it (the owner, 2026-10-25)."""
-        n = net(s, pin)
-        r = union.find(n.name) if n else None
-        if r is None:
-            cps: set[str] = set()
-        elif r in region_cps:
-            cps = region_cps[r]
-        elif r in switch_regions or r in between:
-            cps = group_cps.get(groups.find(r), set())
-        else:
-            cps = set()
-        if len(cps) > 1:
-            report.info("control_point.shared", f"{ix.name}: {s.get('Name')} is in a circuit bounded by the signals of "
-                        f"{', '.join(sorted(cps))}; the signals do not say which control point it belongs to", loc(s))
-        return cps
+    cp_of = _control_points(sm, ix, syms, union, net, others, circuit_names={c: r for r, c in circuit_of_region.items() if c})
 
     # ------------------------------------------------------------------ appliances
     for s in syms:
         if s.role != "APPLIANCE" or s.get("Appliance") == "head":
             continue
-        name = s.get("Name")
-        if not name or name == "~":
+        name = key_of(s)
+        if not name:
             report.missing("appliance.name", f"{ix.name}: an {s.get('Appliance') or s.lib_id} has no Name", loc(s))
             continue
         if ":" in name:
@@ -265,47 +213,23 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
             continue
         appliance = s.get("Appliance")
         row: dict[str, Any] = {"appliance": appliance, "style": s.get("Style") or None,
-                               "settings": {k: v for k, v in settings_of(s).items() if k not in READ}}
-        explicit = None
-        on_track = False                                                  # a switch or a circuit: its control point is the signals'
-        protected: set[str] = set()
+                               "milepost": milepost_of(s, report, f"{ix.name}: {appliance} {name}"),
+                               "settings": settings_of(s)}
         if appliance == "mast":
             joints = [o for o, p in others(s, "SIGNAL") if o.kind == "IRJ_SIGNAL" and p == "SIGNAL"]
-            if len(joints) == 1:
-                explicit = joint_cp.get(joints[0].ref)
-            elif not joints:
+            if not joints:
                 report.missing("mast.joint", f"{ix.name}: mast {name} stands on no signal joint", loc(s))
-            else:
+            elif len(joints) > 1:
                 report.error("mast.joint", f"{ix.name}: mast {name} stands on {len(joints)} signal joints", loc(s))
             row["heads"] = _heads(s, others, report, ix.name)
         elif is_switch(s):
-            on_track, protected = True, protecting(s, next((q for q in ports_of(s) if net(s, q)), "C"))   # its ports are one circuit
             row["osCircuit"] = next((circuit(s, p) for p in ports_of(s) if circuit(s, p)), None)
             if not any(net(s, p) for p in ports_of(s)):
                 report.missing("switch.track", f"{ix.name}: switch {name} has no track on any port", loc(s))
             row["indicationCeiling"] = s.get("IndicationCeiling") or None
-        elif appliance == "track_circuit":
-            on_track = True
-            protected = protecting(s, "TC") if net(s, "TC") else set()
-            if s.get("Style") == "virtual":
-                row["members"] = [qualify(t.strip(), ix.name) for t in s.get("IndicationToken").split(",") if t.strip()]
-        elif appliance == "lamp" and s.get("Style") == "maintainer_call":
-            calls = [cp for cp, h in ix.houses.items() if h.maintainer_call == qualify(name, ix.name)]
-            explicit = calls[0] if len(calls) == 1 else None
-        field_cp = house(s.get("CP"), s) if s.get("CP") else None
-        if on_track:
-            explicit = next(iter(protected)) if len(protected) == 1 else None
-            if not protected:
-                # yard, dark and industry track is outside interlocking protection by definition; approach blocks and the
-                # track between interlockings wait for the ABS/APB rules (the owner, 2026-10-25)
-                if field_cp:
-                    report.info("control_point.unprotected", f"{ix.name}: {appliance} {name} is protected by no signal; "
-                                f"its CP field {field_cp!r} is not written", loc(s))
-                field_cp = None
-        if on_track and not protected:
-            cp = None                                                    # outside protection: no control point, nothing missing
-        else:
-            cp = compare(explicit, field_cp, f"{ix.name}: {appliance} {name} in control point", loc(s), report, "appliance.control_point")
+        elif appliance == "track_circuit" and s.get("Style") == "virtual":
+            row["members"] = [qualify(t.strip(), ix.name) for t in s.get("IndicationToken").split(",") if t.strip()]
+        cp = cp_of.get(s.ref)
         row["controlPoint"] = f"{ix.name}:{cp}" if cp else None
         if appliance in ("lamp", "contact") and net(s, "MC") and net(s, "MC").name in plan.circuit_of:
             report.info("appliance.on_track", f"{ix.name}: {appliance} {name}'s MC pin is on the track of {circuit(s, 'MC') or 'dark track'}; "
@@ -331,20 +255,33 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
                              "(ADR 0003 rule 6)")
 
     # ------------------------------------------------------------------ track
+    def region(s: Symbol, pin: str) -> Optional[str]:
+        n = net(s, pin)
+        return union.find(n.name) if n else None
+
+    def pin_refs(s: Symbol, pin: str) -> list[str]:
+        """What the track at this pin meets by name: a switch's port, or a pin of a named track symbol (an end)."""
+        at = {port_ref(ix.name, key_of(o), op) for o, op in others(s, pin)
+              if key_of(o) and (op in ports_of(o) or (o.role == "TRACK" and o.kind != "MILEPOST"))}
+        return sorted(at)
+
+    switch_regions = {region(s, p) for s in syms for p in ports_of(s) if region(s, p)}
+    named_track: dict[str, Symbol] = {}
     joints, ends, policies = [], [], []
     for s in syms:
         if s.role not in ("TRACK", "POLICY") or s.kind == "MILEPOST":
             continue
         row: dict[str, Any] = {"kind": s.kind}
+        name = key_of(s) if s.role == "TRACK" else ""
+        if name:
+            if name in named_track or name in plan.appliances:
+                report.error("track.duplicate", f"{ix.name}: two symbols named {name!r} (ADR 0003 D8: names are unique in an interlocking)", loc(s))
+            named_track[name] = s
+            row["name"] = qualify(name, ix.name)
         pins = [p for p in src.pins_of(s.ref) if p != "SIGNAL"]
         circuits = {p: circuit(s, p) for p in pins}
         row["circuits"] = {p: c for p, c in circuits.items() if c}
-        ports: dict[str, list[str]] = {}
-        for p in pins:
-            at = sorted(port_ref(ix.name, o.get("Name"), op) for o, op in others(s, p) if op in ports_of(o) and o.get("Name"))
-            if at:
-                ports[p] = at
-        row["ports"] = ports
+        row["ports"] = {p: pin_refs(s, p) for p in pins if pin_refs(s, p)}
         if s.kind in JOINTS and region(s, "A") and region(s, "A") == region(s, "B"):
             report.error("joint.loop", f"{ix.name}: a joint has one circuit ({circuit(s, 'A') or 'dark track'}) on both sides; a joint "
                          "elsewhere is missing", loc(s))
@@ -352,14 +289,22 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
             report.error("end_ctc.sides", f"{ix.name}: END CTC has {circuit(s, 'DARK') or 'a circuit'} on DARK or dark track on CTC; "
                          "CTC is the side under the dispatcher's control", loc(s))
         if s.kind == "IRJ_SIGNAL":
-            masts = [o for o, p in others(s, "SIGNAL") if o.get("Appliance") == "mast" and o.get("Name")]
+            if region(s, "B") in switch_regions and region(s, "A") not in switch_regions:
+                report.error("joint.reversed", f"{ix.name}: a signal joint has a switch on its B side and none on its A side; "
+                             "A is where the route it protects begins", loc(s))
+            masts = [o for o, p in others(s, "SIGNAL") if o.get("Appliance") == "mast" and key_of(o)]
             if len(masts) > 1:
-                report.error("joint.masts", f"{ix.name}: one signal joint carries masts {', '.join(sorted(m.get('Name') for m in masts))}", loc(s))
-            row["mast"] = qualify(masts[0].get("Name"), ix.name) if len(masts) == 1 else None
-            row["controlPoint"] = f"{ix.name}:{joint_cp[s.ref]}" if joint_cp.get(s.ref) else None
+                report.error("joint.masts", f"{ix.name}: one signal joint carries masts {', '.join(sorted(key_of(m) for m in masts))}", loc(s))
+            row["mast"] = qualify(key_of(masts[0]), ix.name) if len(masts) == 1 else None
+            row["controlPoint"] = f"{ix.name}:{cp_of[s.ref]}" if cp_of.get(s.ref) else None
+        if s.kind == "NEXT_CP":
+            row["interlocking"] = s.get("Interlocking") or None
+            if not row["interlocking"]:
+                report.missing("next_cp.interlocking", f"{ix.name}: a NextCP states no Interlocking", loc(s))
         if s.role == "POLICY":
             row["direction"] = s.get("Direction") or None
         row = {k: v for k, v in row.items() if v not in (None, "", [], {})}
+        plan.rows[s.ref] = row
         (policies if s.role == "POLICY" else joints if s.kind in JOINTS else ends).append(row)
         if s.role == "TRACK" and s.kind not in JOINTS | ENDS:
             report.info("track.kind", f"{ix.name}: TRACK Kind {s.kind!r} is not one this compiler reads; written with the ends", loc(s))
@@ -374,12 +319,134 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
             members = [(src.symbols[x.ref], x.pin) for x in n.pins if x.ref in refs]
             if any(o.role == "TRACK" for o, _ in members):
                 continue
-            at = sorted(port_ref(ix.name, o.get("Name"), op) for o, op in members if op in ports_of(o) and o.get("Name"))
+            at = sorted(port_ref(ix.name, key_of(o), op) for o, op in members if op in ports_of(o) and key_of(o))
             if len(at) > 1:
                 links.append({"ports": at, **({"circuit": plan.circuit_of[n.name]} if plan.circuit_of.get(n.name) else {})})
-    mileposts = sorted(s.get("Name") for s in syms if s.kind == "MILEPOST" and s.get("Name"))
+    mileposts = sorted(key_of(s) for s in syms if s.kind == "MILEPOST" and key_of(s))
     plan.track = {k: v for k, v in {"joints": joints, "ends": ends, "policies": policies, "links": links, "mileposts": mileposts}.items() if v}
     return plan
+
+
+def _control_points(sm: Seams, ix, syms: list[Symbol], union: _Union, net, others,
+                    circuit_names: dict[str, str]) -> dict[str, Optional[str]]:
+    """Each appliance's and signal joint's control point, by symbol reference (the owner, 2026-10-26).
+
+    The houses are the roots. On a sheet with one house it is every appliance's control point. With two or more, the
+    stated ``CP`` fields and the maintainer calls' ``MC`` wires are the roots, and the rest inherit along these edges:
+    a gang's switch without a letter to its lettered switches and derails (ADR 0003 D8); a switch to its OS circuit,
+    the only chain an OS circuit follows; a mast and its signal joint, either way; a signal joint to the circuits on its
+    two sides that hold no switch; a circuit across a plain joint to one that holds no switch; a virtual circuit's members
+    to it. A stated field wins over every chain, silently, and stops the chains through it. Reached by chains from two
+    houses and stating none is an error, and so is reached by none: the graph is incomplete. A track circuit marker
+    stands for its circuit."""
+    report = sm.report
+    houses = {h.casefold(): h for h in ix.houses}
+    apps = [s for s in syms if s.role == "APPLIANCE" and s.get("Appliance") != "head" and key_of(s) and ":" not in key_of(s)]
+    joints = [s for s in syms if s.kind == "IRJ_SIGNAL"]
+
+    def region(s: Symbol, pin: str) -> Optional[str]:
+        n = net(s, pin)
+        return "r:" + union.find(n.name) if n else None
+
+    def node(s: Symbol) -> str:
+        if s.get("Appliance") == "track_circuit" and s.get("Style") != "virtual" and region(s, "TC"):
+            return region(s, "TC")
+        return s.ref
+
+    def what(s: Symbol) -> str:
+        return f"{s.get('Appliance') or 'signal joint'} {key_of(s) or loc(s)}"
+
+    stated: dict[str, str] = {}
+    origin: dict[str, Symbol] = {}
+    for s in apps + joints:
+        if not s.get("CP"):
+            continue
+        h = houses.get(s.get("CP").casefold())
+        if h is None:
+            report.error("control_point.house", f"{ix.name}: {what(s)} names control point {s.get('CP')!r}, which is no house of "
+                         f"{ix.name} ({', '.join(sorted(ix.houses)) or 'none'})", loc(s))
+            continue
+        stated[node(s)], origin[node(s)] = h, s
+    for s in apps:
+        if s.get("Appliance") == "lamp" and s.get("Style") == "maintainer_call":
+            calls = [cp for cp, h in ix.houses.items() if h.maintainer_call == qualify(key_of(s), ix.name)]
+            if len(calls) == 1:
+                if stated.get(s.ref, calls[0]) != calls[0]:
+                    report.error("control_point.disagree", f"{ix.name}: {what(s)} is wired to house {calls[0]} and states CP "
+                                 f"{stated[s.ref]!r}", loc(s))
+                stated[s.ref], origin[s.ref] = calls[0], s
+
+    if len(ix.houses) == 1:
+        root = next(iter(ix.houses))
+        return {s.ref: root for s in apps + joints}
+
+    edges: dict[str, set[str]] = defaultdict(set)
+    switch_regions = {region(s, p) for s in apps for p in ports_of(s) if region(s, p)}
+    switches = {key_of(s): s for s in apps if is_switch(s)}
+    for s in switches.values():
+        for p in ports_of(s):
+            if region(s, p):
+                edges[s.ref].add(region(s, p))
+        lead = switches.get(GANG.sub("", key_of(s)))
+        if lead is not None and lead is not s:
+            edges[lead.ref].add(s.ref)
+    for s in joints:
+        for o, p in others(s, "SIGNAL"):
+            if o.get("Appliance") == "mast" and p == "SIGNAL":
+                edges[s.ref].add(o.ref)
+                edges[o.ref].add(s.ref)
+        for side in ("A", "B"):
+            r = region(s, side)
+            if r and r not in switch_regions:
+                edges[s.ref].add(r)
+    for s in syms:
+        if s.kind == "IRJ":
+            a, b = region(s, "A"), region(s, "B")
+            if a and b and a != b:
+                if b not in switch_regions:
+                    edges[a].add(b)
+                if a not in switch_regions:
+                    edges[b].add(a)
+    for s in apps:
+        if s.get("Appliance") == "track_circuit" and s.get("Style") == "virtual":
+            for t in s.get("IndicationToken").split(","):
+                r = circuit_names.get(qualify(t.strip(), ix.name)) if t.strip() else None
+                if r:
+                    edges["r:" + r].add(s.ref)
+
+    reach: dict[str, dict[str, str]] = defaultdict(dict)                 # node -> house -> the stated symbol it came from
+    for seed, h in stated.items():
+        seen, todo = {seed}, list(edges[seed])
+        while todo:
+            n = todo.pop()
+            if n in seen or n in stated:
+                continue
+            seen.add(n)
+            reach[n].setdefault(h, key_of(origin[seed]) or origin[seed].kind)
+            todo.extend(edges[n])
+
+    out: dict[str, Optional[str]] = {}
+    for s in apps + joints:
+        n = node(s)
+        if n in stated:
+            out[s.ref] = stated[n]
+            continue
+        found = reach.get(n, {})
+        out[s.ref] = next(iter(found)) if len(found) == 1 else None
+        if s in joints and any(o.get("Appliance") == "mast" for o, _ in others(s, "SIGNAL")):
+            continue                                                      # its mast reports for it
+        if len(found) > 1:
+            report.error("control_point.chains", f"{ix.name}: {what(s)} is reached from "
+                         f"{' and '.join(f'{h} (by {via})' for h, via in sorted(found.items()))}; a CP field on it settles which", loc(s))
+        elif not found:
+            report.error("control_point.unreached", f"{ix.name}: no house reaches {what(s)}: no CP field on it and no chain to one",
+                         loc(s))
+    for s in switches.values():
+        lead = switches.get(GANG.sub("", key_of(s)))
+        if lead is not None and lead is not s and out.get(s.ref) and out.get(lead.ref) and out[s.ref] != out[lead.ref]:
+            report.warning("control_point.gang", f"{ix.name}: switch {key_of(s)} is on {out[s.ref]} but its gang's {key_of(lead)} is on "
+                           f"{out[lead.ref]}; one gang is one lever", loc(s))
+    return out
 
 
 def _heads(mast: Symbol, others, report, interlocking: str) -> dict[str, Any]:
@@ -389,12 +456,12 @@ def _heads(mast: Symbol, others, report, interlocking: str) -> dict[str, Any]:
         for o, p in others(mast, pin):
             if o.get("Appliance") != "head" or p != "M":
                 continue
-            letter = o.get("Name")
+            letter = key_of(o)
             if not letter:
-                report.missing("head.letter", f"{interlocking}: a head on mast {mast.get('Name')} has no Name (its letter)", loc(o))
+                report.missing("head.letter", f"{interlocking}: a head on mast {key_of(mast)} has no Name (its letter)", loc(o))
                 continue
             if letter in heads:
-                report.error("head.duplicate", f"{interlocking}: mast {mast.get('Name')} has two heads {letter}", loc(o))
+                report.error("head.duplicate", f"{interlocking}: mast {key_of(mast)} has two heads {letter}", loc(o))
             heads[letter] = {"style": o.get("Style")} if o.get("Style") else {}
     return heads
 

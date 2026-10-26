@@ -670,7 +670,7 @@
       }
     },
     "marker": {
-      "description": "A track symbol with no railroad name of its own (a joint, END CTC, NextCP, an industry, a policy sign): its kind as the libraries spell it, its placement and glyph, and the circuit at each of its track pins, so a reader joins it to track by name.",
+      "description": "A track symbol's placement (a joint, END CTC, NextCP, an industry, a policy sign): its kind as the libraries spell it, its placement and glyph, and the circuit at each of its track pins. It joins its track row by name where the symbol has one, else by kind, circuits and ports.",
       "type": "object",
       "required": [
         "kind",
@@ -710,6 +710,20 @@
           "additionalProperties": {
             "type": "string",
             "pattern": "^[^:/\\s][^:/]*:[^:/\\s][^:/]*$"
+          }
+        },
+        "name": {
+          "$ref": "#/$defs/qualifiedName",
+          "description": "The track row's name, where the symbol has one: the marker joins its row by it."
+        },
+        "ports": {
+          "description": "The track row's ports, where the symbol has no name: the marker joins its row by kind, circuits and ports.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/portRef"
+            }
           }
         }
       }
@@ -990,9 +1004,9 @@
       }
     },
     "portRef": {
-      "description": "A switch's track port by qualified name: the switch, a dot, C, N or R (a derail's C or R).",
+      "description": "A switch's track port, or a pin of a named track symbol, by qualified name: the switch or symbol, a dot, and the pin (a switch's C, N or R, a derail's C or R; an industry's EoT): Luchessa:783.R, Luchessa:Gilroy Industry.EoT.",
       "type": "string",
-      "pattern": "^[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?:[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?\\.(C|N|R)$"
+      "pattern": "^[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?:[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?\\.[A-Za-z][A-Za-z0-9_]*$"
     },
     "appliance": {
       "description": "A named thing on the trackplan (ADR 0010 §4.1, by Role APPLIANCE): a switch or derail, a mast with its heads, a track circuit, a lamp or a contact. Keyed by its Name; geometry's appliances{} uses the same keys. A reference to another interlocking's appliance (a qualified name drawn here) is not an appliance of this one. Derived things stay out: a switch's gang and a derail's dependence follow from the names (ADR 0003 D8); signals, routes and limits are the evaluator's.",
@@ -1016,9 +1030,13 @@
           "type": "string",
           "description": "The symbol's Style: a switch's powered, lock, dual, manual, manual_sensed or derail; a mast's single, double or dwarf; a lamp's maintainer_call or non_vital; a circuit's virtual."
         },
+        "milepost": {
+          "type": "number",
+          "description": "The milepost the symbol states, optional geographic context (a hot box alarm's location, for the timetable)."
+        },
         "controlPoint": {
           "$ref": "#/$defs/qualifiedName",
-          "description": "The house (control point) the appliance belongs to. A switch or circuit: the control point whose signals protect it (the signal joints bounding its circuit), absent on yard, dark and industry track and on approach blocks (ABS/APB later); where two control points' signals bound it, its CP field. A mast: its signal joint's. A maintainer call: the house it is wired to. A lamp: its CP field."
+          "description": "The house (control point) the appliance belongs to: its own CP field where it states one; else the one house of its interlocking; else, with two or more houses, the house its chain of relations reaches (a gang's switch without a letter to its other switches and derails, a switch to its OS circuit, a mast and its signal joint, a signal joint to the circuits beside it that hold no switch, a circuit across a plain joint, a virtual circuit's members to it, a maintainer call by its MC wire)."
         },
         "osCircuit": {
           "$ref": "#/$defs/qualifiedName",
@@ -1061,7 +1079,7 @@
       }
     },
     "trackSymbol": {
-      "description": "A track symbol with no railroad name (a joint, an end, a policy sign), as a row with no identity: its Kind as the libraries spell it, and the circuits and switch ports at its pins. A signal joint adds the mast standing on it and its control point (the CP field, the one place it is stated); a policy sign its Direction.",
+      "description": "A track symbol (a joint, an end, a policy sign) as a row: its Kind as the libraries spell it, and the circuits and named pins at its pins. An end may have a name (an industry); a signal joint adds the mast standing on it and its control point; a NextCP the interlocking it leads to; a policy sign its Direction.",
       "type": "object",
       "required": [
         "kind"
@@ -1072,6 +1090,10 @@
           "type": "string",
           "pattern": "^[A-Z][A-Z0-9_]*$"
         },
+        "name": {
+          "$ref": "#/$defs/qualifiedName",
+          "description": "The symbol's name where it has one (an industry); geometry's marker carries the same."
+        },
         "circuits": {
           "description": "The circuit at each track pin, by pin name (A, B; CTC, DARK; To; Track; EoT); a pin on dark track is absent. The same map geometry's markers[] carries, so a marker joins its row here by kind and circuits (ADR 0010 C6).",
           "type": "object",
@@ -1080,7 +1102,7 @@
           }
         },
         "ports": {
-          "description": "Where a pin's track meets a switch port with nothing between: the ports by pin name.",
+          "description": "Where a pin's track meets, with nothing between, a switch port or a pin of a named track symbol: by pin name. This is the only record of track that has no circuit (dark track).",
           "type": "object",
           "additionalProperties": {
             "type": "array",
@@ -1093,7 +1115,7 @@
           "$ref": "#/$defs/qualifiedName"
         },
         "controlPoint": {
-          "description": "A signal joint's control point: its CP field, or the interlocking's one house when it states none.",
+          "description": "A signal joint's control point: its CP field, or its mast's, or the interlocking's one house.",
           "$ref": "#/$defs/qualifiedName"
         },
         "direction": {
@@ -1103,6 +1125,10 @@
             "RIGHT",
             "BOTH"
           ]
+        },
+        "interlocking": {
+          "type": "string",
+          "description": "A NextCP's destination: the interlocking its track leads to, which may lie beyond the layout (Lick, Hollister)."
         }
       }
     },

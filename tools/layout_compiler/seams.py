@@ -6,8 +6,9 @@ hierarchy or a field. When both resolve they must agree, or the compiler reports
 only one resolves, the compiler says so at ``info``. When neither does, the fact is ``missing``, which is the
 tutorial prompt (ADR 0009 §3.10), not an error: absence is information (ADR 0008 §4.7).
 
-Identity is the key attribute of each symbol (``Name`` on most, ``CP Name``, ``Column``, ``Address``, ``Head``);
-``Value`` is drawing and is never read (ADR 0009 §3.10). A symbol without its key has no name and is reported.
+Identity is the key attribute of each symbol, read only through ``key_of`` (``Name`` on most; the table ``KEYS`` names
+the others); ``Value`` is drawing and is never read (ADR 0009 §3.10). A symbol without its key has no name and is
+reported.
 """
 from __future__ import annotations
 
@@ -26,12 +27,26 @@ REFERENCE_DATA = {"encodingTransportPairing": "2026-10-23", "driverEncodings": "
 TRANSPORT_OF_ENCODING = {"AAR": "MQTT", "USS506": "TIMECODE", "BITS": "TIMECODE", "JMRI": "MQTT", "CMRI": "CMRI"}
 # A driver whose IC is an encoding needs that I/O encoding on its processor (ADR 0009 §3.3, §3.6, §3.12 "IC native or encoded").
 ENCODING_OF_IC = {"MQTT-JMRI": "JMRI"}
-# The keys the compiler reads (ADR 0009 §3.10) and KiCad's own; every other drawn field with content is a setting, written as drawn.
-NOT_SETTINGS = {"Role", "Kind", "Style", "Appliance", "Name", "IC", "Address", "Bit", "Node", "Head", "Invert", "IndicationToken",
-                "CP", "TC", "Transport", "Processor", "NodeType", "InputBytes", "OutputBytes", "IndicationCeiling",
-                "Display", "Milepost", "CP Name", "Column", "Reference", "Value", "Footprint", "Datasheet", "Description",
-                "Sheetname", "Sheetfile", "ki_keywords", "ki_fp_filters", "ki_description", "ki_locked", "Era", "Railroad",
-                "Region", "Rulebook", "Direction"}
+# KiCad's own fields and the classifying keys every reader shares (ADR 0009 §3.10): never a setting.
+NOT_SETTINGS = {"Role", "Kind", "Style", "Appliance", "Name", "Reference", "Value", "Footprint", "Datasheet", "Description",
+                "Sheetname", "Sheetfile", "ki_keywords", "ki_fp_filters", "ki_description", "ki_locked"}
+# The fields each Role's reader consumes. A field is not a setting only on the symbols whose reader consumes it; on any
+# other symbol it is a setting, passed through as drawn (the owner, 2026-10-26: an attribute nothing reads is kept,
+# never dropped).
+CONSUMED = {
+    "STRUCTURE": {"CP Name", "Milepost", "Railroad", "Region", "Era", "Rulebook", "Processor"},
+    "COLUMN": {"Column", "CP Name"},
+    "TRANSPORT": {"Processor"},
+    "CODELINE_ENCODING": {"Transport", "Processor"},
+    "IO_ENCODING": {"Transport", "Processor"},
+    "OFFICE_UNIT": {"Processor"},
+    "IODRIVER": {"IC", "Address", "Bit", "Node", "NodeType", "InputBytes", "OutputBytes", "Transport", "Processor"},
+    "DEVICE": {"IC", "Address", "Head", "Invert"},
+    "PANEL": {"IC", "Address", "Head", "Invert", "IndicationToken"},
+    "APPLIANCE": {"CP", "TC", "IndicationCeiling", "IndicationToken", "Milepost"},
+    "TRACK": {"CP", "Interlocking"},
+    "POLICY": {"Direction"},
+}
 
 
 @dataclass(frozen=True)
@@ -54,6 +69,9 @@ class Report:
 
     def error(self, code, text, where=""):
         self.add(ERROR, code, text, where)
+
+    def warning(self, code, text, where=""):
+        self.add(WARNING, code, text, where)
 
     def info(self, code, text, where=""):
         self.add(INFO, code, text, where)
@@ -204,23 +222,48 @@ class Seams:
 
 # ---------------------------------------------------------------- helpers
 
-def name_of(s: Symbol, report: Report) -> str:
-    """The identity key: ``Name``, never ``Value`` (ADR 0009 §3.10; the owner, 2026-10-25). A symbol whose library lacks
-    the attribute has no name, reported ``missing``: the fix is the attribute in the library and on its instances."""
-    if "Name" in s.fields:                                            # stated, even empty: KiCad resolves ${Value} of "~" to nothing
-        return s.get("Name")
-    report.missing("identity.name", f"{s.lib_id} has no Name field, so it has no name; Value is never read", loc(s))
+# The key attribute of each kind of symbol, by Role and Kind (a Kind of None covers the Role): where a symbol keeps its
+# identity is decided here and nowhere else (the owner, 2026-10-26). Every other symbol's key is ``Name``. A node's or a
+# driver's ``Address`` is not a key: it is unique only on its line or bus, a relation its reader qualifies.
+KEYS = {("STRUCTURE", "CONTROL_POINT"): "CP Name", ("COLUMN", None): "Column"}
+
+
+def key_field(s: Symbol) -> str:
+    return KEYS.get((s.role, s.kind)) or KEYS.get((s.role, None)) or "Name"
+
+
+def key_of(s: Symbol, report: Optional[Report] = None) -> str:
+    """The symbol's identity, from its key attribute, never ``Value`` (ADR 0009 §3.10; the owner, 2026-10-25). Empty or
+    KiCad's ``~`` is no name. With a report, a symbol whose library lacks the attribute is reported ``missing``: the fix
+    is the attribute in the library and on its instances. Without one the name is optional, as on an end of track."""
+    k = key_field(s)
+    if k in s.fields:                                                 # stated, even empty: KiCad resolves ${Value} of "~" to nothing
+        v = s.get(k)
+        return "" if v == "~" else v
+    if report is not None:
+        report.missing(f"identity.{k.replace(' ', '_').lower()}", f"{s.lib_id} has no {k} field, so it has no name; Value is never read", loc(s))
     return ""
 
 
 def device_name(s: Symbol, report: Report) -> Optional[str]:
-    """A device's own name, its appliance's (Name = ${Value} since 2026-10-24); empty or KiCad's "~" is no name."""
-    n = name_of(s, report)
-    return n if n and n != "~" else None
+    """A device's own name, its appliance's (Name = ${Value} since 2026-10-24)."""
+    return key_of(s, report) or None
+
+
+def milepost_of(s: Symbol, report: Report, what: str) -> Optional[float]:
+    """The ``Milepost`` a symbol states, a number: optional, general geographic context (the owner, 2026-10-26)."""
+    if not s.get("Milepost"):
+        return None
+    try:
+        return float(s.get("Milepost"))
+    except ValueError:
+        report.error("milepost.number", f"{what}: Milepost {s.get('Milepost')!r} is not a number", loc(s))
+        return None
 
 
 def settings_of(s: Symbol) -> dict[str, str]:
-    return {k: v for k, v in s.fields.items() if k not in NOT_SETTINGS and not k.startswith("Pin.") and v.strip()}
+    consumed = CONSUMED.get(s.role, set())
+    return {k: v for k, v in s.fields.items() if k not in NOT_SETTINGS and k not in consumed and not k.startswith("Pin.") and v.strip()}
 
 
 def styles_of(s: Symbol) -> list[str]:
@@ -319,13 +362,13 @@ def _railroad(sm: Seams) -> None:
             sm.report.missing("railroad.missing", "no Railroad symbol: the layout's name, railroad, region, era and rulebook are not stated")
         return
     sm.railroad = {k.lower(): s.get(k) for k in ("Name", "Railroad", "Region", "Era", "Rulebook") if s.get(k)}
-    if not s.get("Name"):
+    if not key_of(s):
         sm.report.missing("railroad.name", "the Railroad symbol has no Name", loc(s))
 
 
 def _processors(sm: Seams) -> None:
     for s in sm.source.where("STRUCTURE", "PROCESSOR"):
-        name = name_of(s, sm.report)
+        name = key_of(s, sm.report)
         if not name:
             sm.report.missing("entity.name", "a processor has no Name; it is not written", loc(s))
             continue
@@ -349,7 +392,7 @@ def _anchor_of(sm: Seams, s: Symbol) -> Optional[str]:
         return None
     procs = [sm.source.symbols[p.ref] for p in net.others(s.ref) if sm.source.symbols[p.ref].kind == "PROCESSOR" and p.pin == "Processor"]
     p = one(procs, "processors on one Processor net", loc(s), sm.report, "processor.net")
-    return name_of(p, sm.report) if p else None
+    return key_of(p, sm.report) if p else None
 
 
 def _one_in_scope(syms: list[Symbol], sheet: str) -> Optional[Symbol]:
@@ -361,12 +404,12 @@ def _one_in_scope(syms: list[Symbol], sheet: str) -> Optional[Symbol]:
 
 def _one_processor_on_sheet(sm: Seams, sheet: str) -> Optional[str]:
     p = _one_in_scope(sm.source.where("STRUCTURE", "PROCESSOR"), sheet)
-    return name_of(p, sm.report) if p else None
+    return key_of(p, sm.report) if p else None
 
 
 def _transports(sm: Seams) -> None:
     for s in sm.source.where("TRANSPORT"):
-        name = name_of(s, sm.report)
+        name = key_of(s, sm.report)
         if not name:
             sm.report.missing("entity.name", "a transport has no Name; it is not written", loc(s))
             continue
@@ -401,12 +444,12 @@ def _transport_on_net(sm: Seams, s: Symbol) -> Optional[tuple[str, Symbol]]:
         return None
     ts = [sm.source.symbols[p.ref] for p in net.others(s.ref) if sm.source.symbols[p.ref].role == "TRANSPORT" and p.pin == "Transport"]
     t = one(ts, "transports on one Transport net", loc(s), sm.report, "transport.net")
-    return (name_of(t, sm.report), t) if t else None
+    return (key_of(t, sm.report), t) if t else None
 
 
 def _encodings(sm: Seams) -> None:
     for s in sm.source.where("CODELINE_ENCODING") + sm.source.where("IO_ENCODING"):
-        name = name_of(s, sm.report)
+        name = key_of(s, sm.report)
         if not name:
             sm.report.missing("entity.name", "a encoding has no Name; it is not written", loc(s))
             continue
@@ -457,7 +500,7 @@ def _codeline_in_folder(sm: Seams, sheet: str) -> Optional[str]:
 
 def _interlockings(sm: Seams) -> None:
     for s in sm.source.where("STRUCTURE", "INTERLOCKING"):
-        name = s.get("Name")
+        name = key_of(s, sm.report)
         if not name:
             sm.report.missing("interlocking.name", "an Interlocking symbol has no Name", loc(s))
             continue
@@ -480,7 +523,7 @@ def _unit_of_sheet(sm: Seams, sheet: str) -> Optional[Interlocking]:
 
 def _houses(sm: Seams) -> None:
     for s in sm.source.where("STRUCTURE", "CONTROL_POINT"):
-        cp = s.get("CP Name")
+        cp = key_of(s, sm.report)
         if not cp:
             sm.report.missing("house.cp_name", "a House has no CP Name", loc(s))
             continue
@@ -490,11 +533,7 @@ def _houses(sm: Seams) -> None:
             sm.report.error("house.interlocking", f"house {cp}: no Interlocking on its sheet or above", loc(s))
             continue
         h.interlocking = ix.name
-        if s.get("Milepost"):
-            try:
-                h.milepost = float(s.get("Milepost"))
-            except ValueError:
-                sm.report.error("house.milepost", f"house {cp}: Milepost {s.get('Milepost')!r} is not a number", loc(s))
+        h.milepost = milepost_of(s, sm.report, f"house {cp}")
         line = compare(_codeline_of(sm, s), ix.codeline, f"house {cp} is a station on", loc(s), sm.report, "house.codeline")
         h.codeline = line
         if line and ix.codeline and line != ix.codeline:
@@ -504,7 +543,7 @@ def _houses(sm: Seams) -> None:
             calls = [sm.source.symbols[p.ref] for p in mc.others(s.ref) if sm.source.symbols[p.ref].role == "APPLIANCE"]
             c = one(calls, "maintainer calls on one MC net", loc(s), sm.report, "house.mc")
             if c is not None:
-                h.maintainer_call = qualify(name_of(c, sm.report), ix.name)
+                h.maintainer_call = qualify(key_of(c, sm.report), ix.name)
         if cp in ix.houses:
             sm.report.error("entity.duplicate", f"two houses named {cp!r} in {ix.name}", loc(s))
         ix.houses[cp] = h
@@ -512,7 +551,7 @@ def _houses(sm: Seams) -> None:
 
 def _office_units(sm: Seams) -> None:
     for s in sm.source.where("OFFICE_UNIT"):
-        name = name_of(s, sm.report)
+        name = key_of(s, sm.report)
         if not name:
             sm.report.missing("entity.name", "a office unit has no Name; it is not written", loc(s))
             continue
@@ -537,7 +576,7 @@ def _bus_owner(sm: Seams, s: Symbol) -> Optional[str]:
         if p.pin != "IOBus":
             continue
         if o.kind == "PROCESSOR":
-            owners.append(name_of(o, sm.report))
+            owners.append(key_of(o, sm.report))
         elif o.role == "IODRIVER" and o.get("NodeType"):
             t = next((tn for tn, t in sm.transports.items() if o.get("Address") in t.nodes and t.nodes[o.get("Address")].sym.ref == o.ref), None)
             owners.append(f"{t}/{o.get('Address')}" if t else None)
@@ -707,7 +746,7 @@ def _house_by_cp(sm: Seams, cp: str) -> Optional[tuple[str, str]]:
 
 def _columns(sm: Seams) -> None:
     for s in sm.source.where("COLUMN"):
-        number = s.get("Column")
+        number = key_of(s, sm.report)
         where = loc(s)
         if not number:
             sm.report.missing("column.number", "a PanelColumn has no Column number", where)
@@ -776,7 +815,7 @@ def _devices(sm: Seams) -> None:
             col = one(cols, "columns on one Column net", where, sm.report, "device.column") if cols else None
             ou = next(iter(sm.office_units.values()), None) if len(sm.office_units) == 1 else None
             if col is not None and ou is not None:
-                column = ou.columns.get(col.get("Column"))
+                column = ou.columns.get(key_of(col))
                 dev.column = column.number if column else None
                 scope = column.interlocking if column else None
             elif s.get("Style") != "board" and col_net is None:
@@ -843,7 +882,7 @@ def _heads(sm: Seams) -> None:
             masts = [sm.source.symbols[p.ref] for p in net.others(h.ref)] if net else []
             masts = [m for m in masts if m.role == "APPLIANCE" and m.get("Appliance") == "mast"]
             if len(masts) == 1:
-                plan[(name_of(masts[0], sm.report), name_of(h, sm.report))] = h.get("Style")   # the trackplan head's Name is its letter
+                plan[(key_of(masts[0], sm.report), key_of(h, sm.report))] = h.get("Style")   # the trackplan head's Name is its letter
         by_head: dict[tuple[str, str], list[Device]] = defaultdict(list)
         for d in ix.devices:
             if d.appliance == "head" and d.serves and d.head:
