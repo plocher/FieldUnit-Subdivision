@@ -5441,14 +5441,14 @@
   "provenance": {
     "compiler": {
       "name": "layout_compiler",
-      "version": "0.1.0"
+      "version": "0.2.0"
     },
     "referenceData": {
       "driverEncodings": "2026-10-23",
       "encodingTransportPairing": "2026-10-23"
     },
     "source": {
-      "describe": "split-projects-final-92-gb309d9a",
+      "describe": "split-projects-final-93-ga3642e4",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad"
