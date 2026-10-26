@@ -3,24 +3,20 @@
     "Christopher": {
       "appliances": {
         "1NAT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Christopher:Christopher South"
+          "appliance": "track_circuit"
         },
         "1SAT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Christopher:Christopher North"
+          "appliance": "track_circuit"
         },
         "01T": {
           "appliance": "track_circuit",
           "controlPoint": "Christopher:Christopher North"
         },
         "2NAT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Christopher:Christopher South"
+          "appliance": "track_circuit"
         },
         "2SAT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Christopher:Christopher North"
+          "appliance": "track_circuit"
         },
         "813": {
           "appliance": "switch",
@@ -1214,29 +1210,23 @@
       "appliances": {
         "1": {
           "appliance": "switch",
-          "controlPoint": "Corporal:Corporal",
           "indicationCeiling": "RESTRICTING/RESTRICTING",
           "style": "manual_sensed"
         },
         "1NAT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Corporal:Corporal"
+          "appliance": "track_circuit"
         },
         "1SAT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Corporal:Corporal"
+          "appliance": "track_circuit"
         },
         "01T": {
-          "appliance": "track_circuit",
-          "controlPoint": "Corporal:Corporal"
+          "appliance": "track_circuit"
         },
         "2NAT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Corporal:Corporal"
+          "appliance": "track_circuit"
         },
         "2SAT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Corporal:Corporal"
+          "appliance": "track_circuit"
         },
         "829": {
           "appliance": "switch",
@@ -1248,6 +1238,7 @@
           "appliance": "switch",
           "controlPoint": "Corporal:Corporal",
           "indicationCeiling": "STOP/RESTRICTING",
+          "osCircuit": "Corporal:829T1",
           "style": "derail"
         },
         "830NAB": {
@@ -2252,24 +2243,19 @@
     "Gilroy Caltrain": {
       "appliances": {
         "1NAT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Gilroy Caltrain:Gilroy Caltrain"
+          "appliance": "track_circuit"
         },
         "1SAT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Gilroy Caltrain:Gilroy Caltrain"
+          "appliance": "track_circuit"
         },
         "01T": {
-          "appliance": "track_circuit",
-          "controlPoint": "Gilroy Caltrain:Gilroy Caltrain"
+          "appliance": "track_circuit"
         },
         "02T": {
-          "appliance": "track_circuit",
-          "controlPoint": "Gilroy Caltrain:Gilroy Caltrain"
+          "appliance": "track_circuit"
         },
         "03T": {
-          "appliance": "track_circuit",
-          "controlPoint": "Gilroy Caltrain:Gilroy Caltrain"
+          "appliance": "track_circuit"
         },
         "771": {
           "appliance": "switch",
@@ -3309,16 +3295,13 @@
     "Gilroy Interchange": {
       "appliances": {
         "1NAT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Gilroy Interchange:Gilroy North"
+          "appliance": "track_circuit"
         },
         "1SAT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Gilroy Interchange:Gilroy North"
+          "appliance": "track_circuit"
         },
         "01T": {
-          "appliance": "track_circuit",
-          "controlPoint": "Gilroy Interchange:Gilroy North"
+          "appliance": "track_circuit"
         },
         "02T": {
           "appliance": "track_circuit",
@@ -4160,28 +4143,23 @@
     "Luchessa": {
       "appliances": {
         "1NAT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Luchessa:Carnadero"
+          "appliance": "track_circuit"
         },
         "1SAT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Luchessa:Luchessa"
+          "appliance": "track_circuit"
         },
         "01T": {
           "appliance": "track_circuit",
           "controlPoint": "Luchessa:Gilroy"
         },
         "2NAT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Luchessa:Carnadero"
+          "appliance": "track_circuit"
         },
         "02T": {
-          "appliance": "track_circuit",
-          "controlPoint": "Luchessa:Gilroy"
+          "appliance": "track_circuit"
         },
         "3NAT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Luchessa:Carnadero"
+          "appliance": "track_circuit"
         },
         "783": {
           "appliance": "switch",
@@ -4255,6 +4233,7 @@
           "appliance": "switch",
           "controlPoint": "Luchessa:Gilroy",
           "indicationCeiling": "STOP/RESTRICTING",
+          "osCircuit": "Luchessa:795T1",
           "style": "derail"
         },
         "799": {
@@ -5404,21 +5383,17 @@
       "appliances": {
         "1": {
           "appliance": "switch",
-          "controlPoint": "Sargent:Sargent",
           "indicationCeiling": "RESTRICTING/RESTRICTING",
           "style": "manual_sensed"
         },
         "1NAT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Sargent:Sargent"
+          "appliance": "track_circuit"
         },
         "1SAT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Sargent:Sargent"
+          "appliance": "track_circuit"
         },
         "2SAT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Sargent:Sargent"
+          "appliance": "track_circuit"
         },
         "835": {
           "appliance": "switch",
@@ -6183,48 +6158,38 @@
     "Watsonville": {
       "appliances": {
         "1BT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "1CT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "1DT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "1ET": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "01T": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "2AT": {
           "appliance": "track_circuit",
           "controlPoint": "Watsonville:Watsonville"
         },
         "2BT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "2CT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "2DT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "2ET": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "02T": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "3": {
           "appliance": "switch",
@@ -6233,40 +6198,31 @@
           "style": "powered"
         },
         "3BT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "3CT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "3DT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "3ET": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "03T": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "4BT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "4CT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "4DT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "4ET": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "5": {
           "appliance": "switch",
@@ -6275,36 +6231,28 @@
           "style": "powered"
         },
         "5BT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "5CT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "5DT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "5ET": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "6BT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "6CT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "6DT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "6ET": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "7": {
           "appliance": "switch",
@@ -6313,20 +6261,16 @@
           "style": "powered"
         },
         "7BT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "7CT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "7DT": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "7ET": {
-          "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville"
+          "appliance": "track_circuit"
         },
         "9": {
           "appliance": "switch",
@@ -6384,7 +6328,6 @@
         },
         "0100T": {
           "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville",
           "members": [
             "Watsonville:15T1",
             "Watsonville:17T1",
@@ -6397,7 +6340,6 @@
         },
         "0101T": {
           "appliance": "track_circuit",
-          "controlPoint": "Watsonville:Watsonville",
           "members": [
             "Watsonville:3T1",
             "Watsonville:03T",
@@ -11260,7 +11202,7 @@
                 "ic": "CMRI"
               }
             },
-            "ic": "CMRInet",
+            "ic": "CMRI",
             "inputBytes": 2,
             "nodeType": "C",
             "outputBytes": 3
@@ -12974,14 +12916,14 @@
       "version": "0.3.0"
     },
     "libraries": {
-      "Railroad-Trackplan": "split-projects-final-94-g7ecb9d9"
+      "Railroad-Trackplan": "split-projects-final-95-g27496ce"
     },
     "referenceData": {
       "driverEncodings": "2026-10-23",
       "encodingTransportPairing": "2026-10-23"
     },
     "source": {
-      "describe": "split-projects-final-94-g7ecb9d9",
+      "describe": "split-projects-final-95-g27496ce",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad"
