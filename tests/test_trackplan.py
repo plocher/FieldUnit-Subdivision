@@ -217,7 +217,8 @@ class Membership(unittest.TestCase):
 
     def test_protection_crosses_plain_joints_between_switches_but_not_into_the_yard(self):
         """Watsonville's shape: a ladder of switches joined by plain joints behind one signal; a track between two ladder
-        switches is inside; a yard track off one switch is outside (the owner, 2026-10-25)."""
+        switches (2AT) is inside and carries protection on to the switch beyond it (19, drawn by its R port alone); a
+        yard track off one switch is outside (the owner, 2026-10-25)."""
         given = """
 H1   | House         | STRUCTURE | Kind=CONTROL_POINT CP_Name=Yard
 J1   | IRJ-Signal    | TRACK     | Kind=IRJ_SIGNAL CP=Yard
@@ -244,7 +245,7 @@ y2   | P4.B TCy.TC B1.EoT
 """)
         self.assertEqual(sm.report.errors, [])
         self.assertEqual({n: a.get("controlPoint") for n, a in ix["appliances"].items()},
-                         {"15": "X:Yard", "17": "X:Yard", "19": None, "2AT": "X:Yard", "7BT": None})
+                         {"15": "X:Yard", "17": "X:Yard", "19": "X:Yard", "2AT": "X:Yard", "7BT": None})
 
     def test_a_switch_in_dark_track_has_no_control_point(self):
         given = """

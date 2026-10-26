@@ -223,12 +223,14 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
             neighbours[a].add(b)
         if a in switch_regions and b not in switch_regions:
             neighbours[b].add(a)
+    between = {r for r, sw in neighbours.items() if len(sw) >= 2 and r not in region_cps}
+    for r in between:                                                     # a circuit between switches joins their groups
+        for x in neighbours[r]:
+            groups.join(r, x)
     group_cps: dict[str, set[str]] = defaultdict(set)
     for r, cps in region_cps.items():
         if r in switch_regions:
             group_cps[groups.find(r)] |= cps
-    between = {r: set().union(*(group_cps.get(groups.find(x), set()) for x in sw))
-               for r, sw in neighbours.items() if len(sw) >= 2 and r not in region_cps}
 
     def protecting(s: Symbol, pin: str) -> set[str]:
         """The control points whose signal joints bound the circuit at this pin: the signals that protect routes
@@ -239,10 +241,10 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
             cps: set[str] = set()
         elif r in region_cps:
             cps = region_cps[r]
-        elif r in switch_regions:
+        elif r in switch_regions or r in between:
             cps = group_cps.get(groups.find(r), set())
         else:
-            cps = between.get(r, set())
+            cps = set()
         if len(cps) > 1:
             report.info("control_point.shared", f"{ix.name}: {s.get('Name')} is in a circuit bounded by the signals of "
                         f"{', '.join(sorted(cps))}; the signals do not say which control point it belongs to", loc(s))
@@ -277,7 +279,7 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
                 report.error("mast.joint", f"{ix.name}: mast {name} stands on {len(joints)} signal joints", loc(s))
             row["heads"] = _heads(s, others, report, ix.name)
         elif is_switch(s):
-            on_track, protected = True, protecting(s, "C")
+            on_track, protected = True, protecting(s, next((q for q in ports_of(s) if net(s, q)), "C"))   # its ports are one circuit
             row["osCircuit"] = next((circuit(s, p) for p in ports_of(s) if circuit(s, p)), None)
             if not any(net(s, p) for p in ports_of(s)):
                 report.missing("switch.track", f"{ix.name}: switch {name} has no track on any port", loc(s))
