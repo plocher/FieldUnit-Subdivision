@@ -4,7 +4,7 @@ Operating-session runtime and virtual railroad simulator for the
 [FieldUnit](https://github.com/plocher/FieldUnit) ecosystem.
 
 `FieldUnit-Subdivision` connects multiple FieldUnit interlocking plants into one
-operating territory. It combines live track-circuit state, train progression,
+operating subdivision. It combines live track-circuit state, train progression,
 optional NPC traffic, crew interfaces, and an overhead model board. The physical
 dispatcher CTC machine remains the supervisory control source.
 
@@ -38,7 +38,7 @@ Subdivision runtime consumers
 | Layer | Owns | Does not own |
 | --- | --- | --- |
 | **KiCad + Railroad library** | Human interlocking plant design, topology drawing, title-block metadata | Runtime state, MQTT, desk wiring |
-| **Plant graph compiler** | Source parse, diagnostics, route harvest, board picture inputs | FieldUnit execution payload |
+| **Plant compiler** (proof of concept) | Source parse, diagnostics, route harvest, board picture inputs | FieldUnit execution payload |
 | **Portable model** | Editor-neutral interlocking model and static route equations | KiCad refs, runtime occupancy, desk columns |
 | **FieldUnit projection** | Map into the FieldUnit interlocking model JSON (switches, derails, OS, routes) plus deferred facts | Reinterpretation of routes at runtime |
 | **Subdivision runtime** | Hosting plants, train progression, board/crew views | Vital safety rules (those stay in FieldUnit) |
@@ -56,7 +56,7 @@ Design detail lives in:
 - **Control point**: The place where signals are controlled.
 - **Field station**: Addressable unit on the code line. Capacity follows the code
   line type (US&S 506 time code, GRS, NX, or electronic transports).
-- **Panel Column**: Physical modular slice of the office console. On the SPCoast
+- **Panel Column**: Physical modular slice of the CTC machine. On the SPCoast
   CTC machine (US&S style), one column is one code line address (US&S 506 time
   code: 16 steps; 7 controls and 7 indications per field station).
 - **Naming**: an interlocking (`Luchessa`) and the `CP Luchessa` house (a MAIN
@@ -73,9 +73,9 @@ FieldUnit's interlocking logic (`InterlockingPlant`).
 
 Attributes used:
 - CONTROLLED_POINT: Value creates a CP entity. Other symbols point at it by name through their CP field.
-- APPLIANCE: Value is a railroad name; the compiler creates an entity under a CP; that entity is in the CP's control/indication vocabulary, so desk levers and lamps match it by name and the codec cross-checks it; and a hardware-sheet proxy can name it to bind field I/O. Pins are track connectivity or attachment.
+- APPLIANCE: Value is a railroad name; the plant compiler creates an entity under a CP; that entity is in the CP's control/indication vocabulary, so desk levers and lamps match it by name and the codec cross-checks it; and a hardware-sheet proxy can name it to bind field I/O. Pins are track connectivity or attachment.
 - COMPONENT: Value names a part of the appliance it is attached to, folded into that parent. It is never matched by name from outside. Its I/O binds through the parent's proxy.
-- TRACK: no railroad name of its own. Pins are edges of the track graph; the compiler builds topology from them, and terminals carry a designation.
+- TRACK: no railroad name of its own. Pins are edges of the track graph; the plant compiler builds topology from them, and terminals carry a designation.
 - POLICY: changes how derived facts are computed. Value is a label; fields carry parameters; a pin locates it on the track.
 - ANNOTATION: documentation only, no effect on derivation.
 
@@ -126,7 +126,7 @@ python3 tools/parse_kicad_plant.py \
   --output /tmp/luchessa.plant.json
 ```
 
-Plant identity comes from `--plant-name` / `--plant-id`. The compiler does not
+Plant identity comes from `--plant-name` / `--plant-id`. The plant compiler does not
 infer identity from Main House board sections.
 
 ### 5. FieldUnit interlocking model JSON
@@ -174,14 +174,14 @@ FieldUnit build available.
 - **`runtime/web/`**: FastAPI/WebSocket server for the 2D SVG model board and
   mobile crew cabs.
 - **`profiles/`**: Layout-specific interlocking model JSON, topology links, roles, timetables.
-- **`tools/`**: Harvest helpers, KiCad compiler, validators, picture renderers.
+- **`tools/`**: Harvest helpers, the KiCad importer and the proof-of-concept plant and controller compilers, validators, picture renderers.
 - **`schemas/`**: Versioned portable interlocking model contracts.
 
 ## Aspiration
 
 Target: a playable, operationally credible model railroad subdivision.
 
-- A physical or virtual CTC machine dispatches territory through the code line
+- A physical or virtual CTC machine dispatches the subdivision through the code line
   interface.
 - Native virtual field units apply FieldUnit's interlocking logic and
   publish verified indications.
@@ -224,7 +224,7 @@ delays.
 ### Completed: Luchessa desk cutover
 
 - Hand-authored KiCad gold plant: Luchessa.
-- Compiler emits portable model v1 and FieldUnit projection (native derails/OS).
+- The plant compiler emits portable model v1 and FieldUnit projection (native derails/OS).
 - Generated Luchessa JSON (`profiles/spcoast_south/cps/generated/Luchessa.json`)
   loads in FieldUnit `PlantSerializer` / `InterlockingPlant` and drives both the
   virtual plant host and the physical desk sketch's `configureDesk()` field
@@ -241,9 +241,9 @@ delays.
 
 #### C.1 — Topology and train progression
 
-Define a profile-level topology contract for plant boundaries, corridor
+Define a profile-level topology contract for plant boundaries, subdivision
 segments, blocks, route-dependent paths, and industry branches. Start with a
-two-plant vertical slice. Extend the Gilroy-to-Watsonville corridor only after
+two-plant vertical slice. Extend the Gilroy-to-Watsonville subdivision only after
 that slice is repeatable.
 
 #### C.2 — Overhead 2D model board

@@ -1,7 +1,7 @@
 # CTC Dispatcher Panel Hardware Binding — Checkpoint
 
 Status: experimental data model proven on one station (CP Luchessa). Not yet
-generalized or consumed by any compiler/runtime code.
+generalized or consumed by any tool or runtime code.
 
 ## The gap this addresses
 
@@ -123,7 +123,7 @@ connectivity from raw `.kicad_sch` coordinates.**
 1. **This is Luchessa-only.** The other six SPCoast South stations
    (Christopher, Corporal, Sargent, Watsonville, GilroyCaltrain,
    GilroyInterchange) have no panel-binding data yet.
-2. **Nothing consumes this data yet.** No compiler script reads
+2. **Nothing consumes this data yet.** No tool reads
    `RailroadPanel` symbols to generate or validate `configureDesk()` or
    `IO-I2C.h`; today's C++ is still hand-typed and hand-synced.
 3. **FieldUnit library gap**: `cTcMachine.h`'s `PanelColumn`/`CtcStation`

@@ -5,7 +5,7 @@ first; this file adds what an agent needs that the README does not say.
 
 ## What this repo owns
 
-FieldUnit-Subdivision is the operating-territory layer (SPCoast South: 7
+FieldUnit-Subdivision is the operating-subdivision layer (SPCoast South: 7
 interlockings, one 14-column desk: the SPCoast CTC machine, US&S style). It owns:
 
 - **KiCad → data tooling**: reading plant and desk schematics and emitting the
@@ -33,7 +33,7 @@ The symbol libraries are registered globally in
 
 ```zsh
 uv sync                                        # once per checkout: .venv with Python 3.14, jbom (the PyPI release) and sexpdata
-uv run python -m unittest discover -s tests -q # 201 tests; the SPCoast gates export a fresh netlist with kicad-cli and skip without it
+uv run python -m unittest discover -s tests -q # 245 tests; the SPCoast gates export a fresh netlist with kicad-cli and skip without it
 uv run tools/run_plant_graph_smoke.sh          # Luchessa end-to-end; needs kicad-cli. Fails today: the old compiler reports 5 known diagnostics on the archived drawing (#15)
 ```
 
@@ -42,7 +42,7 @@ uv run tools/run_plant_graph_smoke.sh          # Luchessa end-to-end; needs kica
 - `kicad-cli` is not on PATH. Tools find it through `KICAD_CLI` or the app bundle
   (`/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli`). Without KiCad, pass `--netlist <file.net>`.
 - **Netlists are a cached version of the KiCad project's state.** They become invalid whenever the KiCad
-  project is modified. Agents and the FieldUnit Data Model compiler may use netlists as part of their
+  project is modified. Agents and the KiCad importer may use netlists as part of their
   activities and follow these rules (owner, 2026-10-24): (A) never use a stale cached netlist; (B) treat
   generated netlists as volatile artifacts, created in a temp location and deleted when their immediate
   use is complete (`KicadCliNetlistExporter` exports one; the old rule, prefer the `.net` and refresh it
@@ -63,7 +63,7 @@ uv run tools/run_plant_graph_smoke.sh          # Luchessa end-to-end; needs kica
   The unified `SPCoast` project is maintained by hand in KiCad since the 2026-10-07 cutover; its
   migration script is retired in `docs/archive/unify/`. Derived files (netlists, ERC reports, JSON,
   SVG) go in `<project>/production/`, never beside the schematics; a netlist kept there is a cache
-  under the netlist rule above. The old compilers are proofs of concept,
+  under the netlist rule above. The proof-of-concept compilers (plant and controller) are
   kept to check the new project against the archive, not to compile it.
 - Set `PYTHONDONTWRITEBYTECODE=1` or clean up `__pycache__`. Stale caches reference removed modules.
 - `tools/kicad_services` imports `jbom` as an installed package, the PyPI release pinned in `pyproject.toml`; the old `sys.path` reach into the jBOM checkout is gone (KiCad services survey, decision 2). To test against the live checkout, uncomment the `[tool.uv.sources]` block in `pyproject.toml` and `uv sync`; do not commit that. jBOM's own command line is a `uv tool install jbom`, separate from this venv.
@@ -71,9 +71,10 @@ uv run tools/run_plant_graph_smoke.sh          # Luchessa end-to-end; needs kica
 ## Layout
 
 - `tools/kicad_services/`: generic KiCad readers (netlist with its sheet files and a fresh-export context manager, schematic placements with wires and junctions, symbol library pin contracts and graphics, the `sym-lib-table`). Reuse these; do not write new s-expression parsers.
-- `tools/layout_compiler/`: the milestone D compiler (`seams.py` the relation table of ADR 0009; `geometry.py` the placements, runs and glyphs of ADR 0010; `emit.py` the Layout Data Model File). CLI `tools/compile_layout.py PROJECT.kicad_sch -o OUT [--geometry]`; schema in `schemas/layout-model/`.
-- `tools/plant_graph/`: plant compiler (`compiler.py`), routes, indications, portable model, FieldUnit projection, layout and picture.
-- `tools/controller_graph/`: controller compiler (columns are CPs, appliances, drive bits from IODRIVER pins, codelines with stub/empty-sheet handling, §7 diagnostics).
+- `tools/layout_compiler/`: the KiCad importer, transient (ADR 0011): it reads the drawing and writes the Layout Data Model File (`seams.py` the relation table of ADR 0009; `geometry.py` the placements, runs and glyphs of ADR 0010; `emit.py` the Layout Data Model File). CLI `tools/compile_layout.py PROJECT.kicad_sch -o OUT [--geometry]`; schema in `schemas/layout-model/`. Code Studio would also need (circuits, control point propagation, ports, links, NextCP pairing) moves to the reference derivation `tools/layout_model/derive.py`; only KiCad reading stays here.
+- `tools/layout_model/`: the Layout Data Model File's reader and canonical writer, and (planned) the reference derivation. Every entity and row holds `given`, `relations` and `derived`; readers take meaning from `derived`, then `relations`, then `given` (ADR 0011). Terms: FieldUnit `docs/GLOSSARY.md` §2.6.
+- `tools/plant_graph/`: the proof-of-concept plant compiler (`compiler.py`), routes, indications, portable model, FieldUnit projection, layout and picture.
+- `tools/controller_graph/`: the proof-of-concept controller compiler (columns are CPs, appliances, drive bits from IODRIVER pins, codelines with stub/empty-sheet handling, §7 diagnostics).
 - `tools/link/`: subdivision linker (pairing by normalized name, placeholder stations, §7a cross-checks, codeline instances, source hashes, JSON model).
 - `tools/parse_kicad_plant.py`, `tools/parse_kicad_controller.py`, `tools/link_subdivision.py`, `tools/render_plant_picture.py`: CLI front ends.
 - `tests/fixtures/kicad/`: frozen goldens (`South-cTc.net`, `Luchessa.plant-model.json`) and the hand-written `minimal_controller.net` that negative tests mutate.
@@ -83,18 +84,22 @@ uv run tools/run_plant_graph_smoke.sh          # Luchessa end-to-end; needs kica
 - `docs/archive/vocabulary-review.md` and FieldUnit `docs/GLOSSARY.md` (`~/Dropbox/Arduino/libraries/FieldUnit/docs/GLOSSARY.md`): the sources of truth for vocabulary. Use their terms in prose; code names keep their spelling.
 - `docs/review/`: design notes and handoffs. `ctc-panel-hardware-binding.md` covers desk wiring.
 
-## KiCad conventions the compiler relies on
+## KiCad conventions the proof-of-concept compilers rely on
 
-**Plant schematics (Railroad lib).** The compiler maps parts through `_PART_KIND` in
+These are the rules of `tools/plant_graph` and `tools/controller_graph`, not of the KiCad importer, which follows
+ADR 0009 (`Name` is the identity; `Value` is never read). This section is rewritten against ADR 0009 to 0011 with the
+ADR 0003 discussion.
+
+**Plant schematics (Railroad lib).** The plant compiler maps parts through `_PART_KIND` in
 `tools/plant_graph/compiler.py`; any other part raises `unknown_symbol`.
 
 - The Value is the railroad name for every named part (switch `783`, mast `784EAB`, circuit `1NA`). References (`SW1`, `S7`) are KiCad annotation artifacts. Use them only as netlist identities, never to derive or check names.
 - Switch, lock and derail Values are unique in an interlocking. Gang id = Value minus its trailing letter (A–Z); switches and locks with one gang id are one gang (`815`, `815A`). A derail whose gang id matches a gang is dependent on it, by convention `<id>D` (e.g. `795D`); the letter D is not the mechanism (ADR 0003 D8, proposed). A dependent derail takes the same position as its switch. Derail NORMAL is derailing; REVERSE is clear. The derail symbol's through pin is `R` (pin 2).
-- Mast Value matches `^\d+[NSEW][A-E]+$` in the compiler today, e.g. `784EAB`; ADR 0003 D9 allows any letter A to Z (compiler to follow). N/W normalise to LEFT, S/E to RIGHT (ADR 0003 D1).
+- Mast Value matches `^\d+[NSEW][A-E]+$` in the plant compiler today, e.g. `784EAB`; ADR 0003 D9 allows any letter A to Z. N/W normalise to LEFT, S/E to RIGHT (ADR 0003 D1).
 - Head Value is one letter, A–E. The Track Circuit marker's Value is the authoritative circuit name.
 - A switch's OS circuit defaults to `<switch>T1`; a `TC` field overrides it.
 - `CP` must equal a MAIN HOUSE Value.
-- Direction and policy markers: the symbol's Kind/Role records the rule. It replaces the `Rulebook` field. The compiler still requires `Rulebook` (it is behind; to be updated). `Direction` where applicable.
+- Direction and policy markers: the symbol's Kind/Role records the rule. It replaces the `Rulebook` field. The plant compiler still requires `Rulebook`. `Direction` where applicable.
 - Track nets need labels, except OS legs, dark track and derail nets.
 - An interlocking's trackplan is one sheet, and its placements are read for geometry only (ADR 0010 C5). What is
   on the trackplan is decided by Role: `APPLIANCE`, `TRACK`, `POLICY`, plus the house (`STRUCTURE` with Kind
@@ -130,6 +135,11 @@ generates a complete desk sketch, compiles it with arduino-cli and uploads it.
 FieldUnit `examples/spcoast_ctc` is a working placeholder and a possible
 template, not a constraint. The output form (runtime JSON, generated header, or
 full sketch) is still open. Propose options; do not pick one on your own.
+
+What lasts is the Layout Data Model File: its schema, the writer and reader policies, and the derivation rules
+with their conformance suite and reference derivation (ADR 0011). The KiCad importer is one writer of it and Studio
+will be another. Until Studio exists, the KiCad project is the one source and the flow from it is one way. Code goes
+with the data model if Studio would need it, with the importer if only reading KiCad needs it.
 
 ## Working agreements (owner, 2026-10-01 to 03)
 

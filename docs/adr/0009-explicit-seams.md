@@ -2,6 +2,10 @@
 
 Accepted by the owner 2026-10-23 (rev 2, after the owner's review). Rev 1 asked: ratify §3 and the relation table.
 
+Terms (2026-10-26, after ADR 0011): "compiler" in this record means what ADR 0011 splits into the KiCad importer,
+which reads the drawing, and the reference derivation, which computes `derived`; "seam reader" is the first piece of
+the KiCad importer. The record is not reworded. See FieldUnit `docs/GLOSSARY.md` §2.6.
+
 This records the design settled between 2026-10-21 and 2026-10-23 while the SPCoast project was redrawn so
 that every relation the compiler needs is a wire, and names the implicit fallback for each. It amends
 ADRs 0001, 0004, 0005 and 0008 where it overturns them (§6). The drawing it describes is the Railroad
