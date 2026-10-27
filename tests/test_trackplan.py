@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import shlex
 import unittest
+from dataclasses import replace
 
 from tools import layout_model
 from tools.layout_compiler import emit, seams, trackplan
@@ -544,6 +545,77 @@ SW1  | Switch_Lock     | APPLIANCE | Appliance=switch Style=lock Name=9 TC=9T1 C
         sm, ix = compile_(given, "")
         self.assertEqual(diags(sm, "switch.track"), [("switch.track", "SW1")])
         self.assertNotIn("osCircuit", ix["appliances"]["9"].get("derived", {}))
+
+
+class References(unittest.TestCase):
+    """A qualified name for another interlocking's thing is one-sided, and the thing must exist (the owner, 2026-10-27).
+    Interlocking Y is drawn on its own sheet; X's drawing names Y's things."""
+
+    Y = """
+IX2  | Interlocking     | STRUCTURE | Kind=INTERLOCKING Name=Y
+P2   | Processor        | STRUCTURE | Kind=PROCESSOR Name=Beta Board=cpNode
+H2   | House            | STRUCTURE | Kind=CONTROL_POINT CP_Name=West
+SW5  | Switch_Lock      | APPLIANCE | Appliance=switch Style=lock Name=5 TC=5T1
+SW6  | Switch_Lock      | APPLIANCE | Appliance=switch Style=derail Name=6
+TC5  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=3NAT
+J5   | IRJ              | TRACK     | Kind=IRJ
+"""
+    Y_NETS = """
+y0   | IX2.Processor P2.Processor
+y1   | SW5.C SW6.C
+y2   | SW5.N J5.A
+y3   | J5.B TC5.TC
+"""
+    X = """
+H1   | House            | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
+J1   | IRJ              | TRACK     | Kind=IRJ
+"""
+
+    def compile_(self, refs: str, ref_nets: str):
+        y = [replace(s, sheet="/Y/") for s in symbols(self.Y)]
+        sm = seams.resolve(from_symbols(symbols(SCAFFOLD + self.X + refs) + y,
+                                        nets("n0 | IX1.Processor P1.Processor\n" + self.Y_NETS + ref_nets)))
+        return sm
+
+    def test_a_reference_that_resolves_gives_no_diagnostic(self):
+        sm = self.compile_("""
+TC1  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=Y:3NAT
+SW1  | Switch_Lock      | APPLIANCE | Appliance=switch Style=lock Name=Y:5
+SW2  | Switch_Lock      | APPLIANCE | Appliance=switch Style=derail Name=Y:6
+TC2  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=Y:5T1
+""", "a | J1.A TC1.TC\nb | J1.B SW1.R SW2.R\nc | SW1.C TC2.TC\n")
+        self.assertEqual(diags(sm, "reference"), [])
+        self.assertEqual(sm.report.errors, [])
+
+    def test_a_circuit_or_switch_the_named_interlocking_does_not_have_is_an_error(self):
+        sm = self.compile_("""
+TC1  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=Y:4NAT
+SW1  | Switch_Lock      | APPLIANCE | Appliance=switch Style=lock Name=Y:7
+SW2  | Switch_Lock      | APPLIANCE | Appliance=switch Style=lock Name=Y:3NAT
+""", "a | J1.A TC1.TC\nb | J1.B SW1.R SW2.R\n")
+        self.assertEqual(diags(sm, "reference"), [("reference.unresolved", "SW1"), ("reference.unresolved", "SW2"),
+                                                  ("reference.unresolved", "TC1")])
+
+    def test_a_port_the_named_switch_does_not_have_is_an_error(self):
+        sm = self.compile_("""
+SW2  | Switch_Lock      | APPLIANCE | Appliance=switch Style=lock Name=Y:6
+""", "a | J1.A SW2.N\n")
+        self.assertEqual(diags(sm, "reference"), [("reference.unresolved", "SW2")])
+        self.assertIn("no port N", sm.report.by_code("reference.unresolved")[0].text)
+
+    def test_a_circuit_named_in_a_field_must_exist_too(self):
+        sm = self.compile_("""
+SW1  | Switch_Lock      | APPLIANCE | Appliance=switch Style=lock Name=9 TC=Y:9T1 CP=East
+TC1  | Track Circuit    | APPLIANCE | Appliance=track_circuit Style=virtual Name=1VT IndicationToken=Y:3NAT,Y:8NAT
+""", "a | J1.A SW1.C\n")
+        self.assertEqual(diags(sm, "reference"), [("reference.unresolved", "SW1"), ("reference.unresolved", "TC1")])
+
+    def test_an_interlocking_not_in_the_file_is_a_warning(self):
+        sm = self.compile_("""
+TC1  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=Z:2NAT
+""", "a | J1.A TC1.TC\n")
+        self.assertEqual(diags(sm, "reference"), [("reference.interlocking", "TC1")])
+        self.assertEqual(codes(sm, "warning"), ["reference.interlocking"])
 
 
 @unittest.skipUnless(SPCOAST_AVAILABLE, f"SPCoast project not present or kicad-cli missing: {NETLIST or PROJECT}")
