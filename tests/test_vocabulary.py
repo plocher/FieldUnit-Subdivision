@@ -25,9 +25,7 @@ QUALIFIED = {
 }
 
 # Retired terms still in use, each waiting on the owner's ruling. Remove an entry when its sweep lands.
-DEFERRED = {
-    "desk": "retired for CTC machine, yet used for the desk schematics, sketch and columns (owner, 2026-10-26)",
-}
+DEFERRED = {}
 
 # Living documents not yet swept, each waiting on the owner's ruling: archive (superseded) or reword.
 PENDING = {
