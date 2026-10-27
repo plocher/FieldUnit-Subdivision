@@ -1,8 +1,8 @@
 # 0011. Given, relations, derived: what the Layout Data Model File states, and how it is written and read
 
-- Status: **proposed** 2026-10-26, rev 3, for the owner's ruling (rev 2: incomplete is not in error; rev 3: what lasts
-  and what is transient). Nothing in ADR 0008, 0009 or 0010, the schema or the compiler changes until the decisions
-  below are ruled.
+- Status: **accepted by the owner 2026-10-26** (rev 3, with the owner's wording of decision 3; rev 2: incomplete is not
+  in error; rev 3: what lasts and what is transient). The ask was: ratify the six decisions below. ADR 0008, 0009 and
+  0010, the schema and the KiCad importer change to follow them (§9).
 - Amends: ADR 0008 §4.4 (named relations), §4.5 (`settings`), §4.6 and §4.7 (incomplete and in error), §4.8 (canonical
   form covers the stamp) and the schema; ADR 0009 §3.12 (the relation table becomes normative rules with a conformance suite); ADR 0010
   §4.10 and C2 (geometry optional).
@@ -11,7 +11,7 @@
   test, the file as a future source); the control point rulings of 2026-10-26
   (`docs/review/trackplan-piece-2026-10-25.md`), which made "stated" and "inherited" a distinction the file must keep.
 
-## Decisions requested
+## Decisions requested (all ratified 2026-10-26)
 
 Each line has a default; the sections below argue it. All six are about what lasts, the data model and its rules;
 the KiCad compiler is a transient writer of it (§1).
@@ -21,7 +21,7 @@ the KiCad compiler is a transient writer of it (§1).
 2. **Writer policy** as in §3: `given` and `relations` exactly as stated; `derived` holds everything the rules can
    derive from them, by a conforming derivation, stamped with its rules version; any edit re-derives it. Default: yes.
 3. **Reader policy** as in §4: for meaning, `derived` then `relations` then `given`, first hit wins; `derived` is effectively a
-   cache that may need to be rebuilt rebuild; unknown keys skipped and reported. Default: yes.
+   cache that may need to be rebuilt; unknown keys skipped and reported. Default: yes.
 4. **One definition of the computation**: normative rules, a conformance suite as data, a reference derivation, one
    version for the three (§5). Default: they live in this repo beside the schema and move to FieldUnit with it (view
    O15).
@@ -130,7 +130,7 @@ The three maps capture different facts, so one subject may appear in two of them
 
 1. For the meaning of a name, a reader looks in `derived`, then `relations`, then `given`; the first hit wins. A
    reader with a specific purpose (a diagnostic, an editor) may read one map directly.
-2. `derived` is a cache. Where it is stamped with rules the reader does not hold, a reader that needs meaning
+2. `derived` is effectively a cache. Where it is stamped with rules the reader does not hold, a reader that needs meaning
    rebuilds it with a conforming derivation.
 3. A file may be incomplete. Each consumer decides whether it holds enough for its own work, as a capability gate: the
    documentation views may draw a layout no code generator can yet build a sketch for. What a consumer does short of
