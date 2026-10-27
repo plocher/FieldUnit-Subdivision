@@ -2,6 +2,9 @@
 
 - Status: accepted, rev 4, 2026-10-24 (the owner: "ADR Approved"). Rewritten on ADR 0009 (explicit seams) and the owner's rulings of 2026-10-23 and 2026-10-24. The schema is a new major, `schemas/layout-model/v3.0.0.json`, and the example (§6) is the compiler's output on the SPCoast project, never typed; both are part of what is ratified.
 - Decision: **ratified** 2026-10-24, the architecture of the on-disk representation: §4 and the schema `schemas/layout-model/v3.0.0.json` it describes.
+- Amended 2026-10-27 (the owner's ruling D10 on `docs/review/three-maps-mapping-2026-10-27.md`): §4.5, a row may carry a
+  stable opaque `id` (track rows: joints, ends, policy signs), by default the KiCad per-instance UUID of its symbol. A
+  row still has no name; the id is identity, never meaning.
 - Terms (2026-10-26, after ADR 0011): "compiler" in this record means what ADR 0011 splits into the KiCad importer,
   which reads the drawing, and the reference derivation, which computes `derived`; "seam reader" is the first piece of
   the KiCad importer. The record is not reworded. See FieldUnit `docs/GLOSSARY.md` §2.6.

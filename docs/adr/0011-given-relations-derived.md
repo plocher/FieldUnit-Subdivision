@@ -3,6 +3,10 @@
 - Status: **accepted by the owner 2026-10-26** (rev 3, with the owner's wording of decision 3; rev 2: incomplete is not
   in error; rev 3: what lasts and what is transient). The ask was: ratify the six decisions below. ADR 0008, 0009 and
   0010, the schema and the KiCad importer change to follow them (§9).
+- Amended 2026-10-27 (the owner's rulings on `docs/review/three-maps-mapping-2026-10-27.md`): a track pin's wire is a
+  stated relation, `relations.<pin>`, not `derived` (D5), and so are a run's ends; membership implied only by the sheet
+  hierarchy is written by the KiCad importer as `relations.interlocking`, not resolved into `derived` (D6). §2 is read
+  with these.
 - Amends: ADR 0008 §4.4 (named relations), §4.5 (`settings`), §4.6 and §4.7 (incomplete and in error), §4.8 (canonical
   form covers the stamp) and the schema; ADR 0009 §3.12 (the relation table becomes normative rules with a conformance suite); ADR 0010
   §4.10 and C2 (geometry optional).
