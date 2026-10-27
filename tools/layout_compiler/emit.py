@@ -1,10 +1,11 @@
 """The seam and trackplan facts as the Layout Data Model File, schema ``layout-model/v3.1.0`` (ADR 0008 rev 4, ADR 0010,
 ADR 0011).
 
-Every entity and row holds three maps (ADR 0011 §2): ``given``, what the person stated as fields, as drawn;
-``relations``, what the person stated as wires, each the name it reaches; ``derived``, what the rules compute and
-nothing stated. Collections and identities stay outside the maps. Absent is absent (§4.7): an empty map is not
-written. The dictionary is written canonically by ``layout_model`` (§4.8).
+The KiCad importer writes two of the three maps (ADR 0011 §2): ``given``, what the person stated as fields, as drawn,
+and ``relations``, what the person stated as wires, each the name it reaches (``facts``). ``derived``, what the rules
+compute, is the reference derivation's (``tools/layout_model/derive.py``), which ``emit`` calls, adding its
+diagnostics to the importer's log. Collections and identities stay outside the maps. Absent is absent (§4.7): an
+empty map is not written. The dictionary is written canonically by ``layout_model`` (§4.8).
 """
 from __future__ import annotations
 
@@ -12,12 +13,15 @@ import subprocess
 from pathlib import Path
 from typing import Any, Optional
 
+from tools.layout_model import derive as derivation
+from tools.layout_model.reference import REFERENCE_DATA
+
 from .geometry import Geometry
-from .seams import REFERENCE_DATA, Seams
+from .seams import Seams
+from .seams import loc as seams_loc
 
 SCHEMA = "layout-model/v3.1.0"                    # reshaped in place to the three maps (ADR 0011 §9; no release yet)
 WRITER = {"name": "layout_compiler", "version": "0.4.0"}
-RULES = "0.1.0"                                   # the derivation's version; pre-release until rules 1.0.0 ship (ADR 0012 §7)
 
 
 def _clean(d: dict) -> dict:
@@ -57,14 +61,36 @@ def _bindings(d) -> dict[str, Any]:
 
 
 def _device(d) -> dict:
-    return _entity(d.given,
-                   {"column": d.column, "interlocking": d.interlocking, "mast": d.mast, "bindings": _bindings(d)},
-                   {"serves": d.serves, "shows": d.shows})
+    return _entity(d.given, {"column": d.column, "interlocking": d.interlocking, "mast": d.mast, "bindings": _bindings(d)})
 
 
 def emit(sm: Seams, source_path: Optional[Path] = None, geometry: Optional[Geometry] = None) -> dict[str, Any]:
-    """The Layout Data Model File. ``source_path`` is kept for callers; the project is the source. The KiCad importer
-    always passes ``geometry`` (ADR 0011 §7); a source built in memory has no sheets and passes none."""
+    """The Layout Data Model File: the drawing's facts (``facts``) with every ``derived`` map filled by the reference
+    derivation. Its diagnostics join the importer's in ``sm.report``, once however often this is called. ``source_path``
+    is kept for callers; the project is the source. The KiCad importer always passes ``geometry`` (ADR 0011 §7); a
+    source built in memory has no sheets and passes none."""
+    model, report = derivation.derive(facts(sm, geometry))
+    if not sm.derived:
+        sm.report.diags.extend(report.diags)
+        _check_folders(sm, model)
+        sm.derived = True
+    return model
+
+
+def _check_folders(sm: Seams, model: dict[str, Any]) -> None:
+    """A column whose CP Name names a house of one interlocking, drawn under another's sheet: the drawing disagrees with
+    itself, which only the importer sees (the sheet is no fact of the file)."""
+    for ou in sm.office_units.values():
+        for c in ou.columns.values():
+            ixn = model.get("officeUnits", {}).get(ou.name, {}).get("columns", {}).get(c.number, {}).get("derived", {}).get("interlocking")
+            if ixn and c.sheet_folder and c.sheet_folder != ixn:
+                sm.report.error("column.folder", f"column {c.number}: house {c.given.get('CP Name')} is in {ixn}, the column is drawn "
+                                f"under {c.sheet_folder}", seams_loc(c.sym))
+
+
+def facts(sm: Seams, geometry: Optional[Geometry] = None) -> dict[str, Any]:
+    """What the drawing states: every ``given`` and ``relations``, the collections, geometry and provenance; no
+    ``derived``."""
     layout: dict[str, Any] = {"name": sm.railroad, "given": sm.railroad_given}
     layout["transports"] = {
         t.name: _entity(t.given, {"anchors": sorted(t.anchors)},
@@ -90,14 +116,11 @@ def emit(sm: Seams, source_path: Optional[Path] = None, geometry: Optional[Geome
         for ix in sm.interlockings.values()}
     office_units = {
         ou.name: _entity(ou.given, {"processor": ou.processor},
-                         columns={c.number: _entity(c.given, {"interlocking": c.folder},
-                                                    {"house": f"{c.house[0]}:{c.house[1]}" if c.house else None,
-                                                     "interlocking": c.house[0] if c.house else None})
-                                  for c in ou.columns.values()},
+                         columns={c.number: _entity(c.given, {"interlocking": c.folder}) for c in ou.columns.values()},
                          devices=[_device(d) for d in ou.devices])
         for ou in sm.office_units.values()}
 
-    provenance: dict[str, Any] = {"sourceType": "KiCad", "writer": dict(WRITER), "rules": RULES,
+    provenance: dict[str, Any] = {"sourceType": "KiCad", "writer": dict(WRITER),
                                   "referenceData": dict(REFERENCE_DATA), "source": _source(sm.source.project)}
     if geometry is not None:
         provenance["libraries"] = dict(geometry.libraries)

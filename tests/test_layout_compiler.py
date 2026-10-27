@@ -1,7 +1,8 @@
 """Gates for the milestone D KiCad importer (ADR 0009 §3.12, ADR 0008 rev 4, ADR 0011, ADR 0012 §4).
 
 Two kinds. The rules are tested on small sources built in memory: a relation by its wire alone (the fallbacks of
-ADR 0012 §4 retired), the three maps, the macro, the head vocabulary. The relation table is tested on the SPCoast
+ADR 0012 §4 retired), the three maps, the macro. What the reference derivation computes is tested in
+``test_derive``. The relation table is tested on the SPCoast
 project when it is present (``SPCOAST_PROJECT``, default ``~/Dropbox/KiCad/Railroad/SPCoast/SPCoast.kicad_sch``)
 and kicad-cli can export its netlist fresh (the netlist rule, ``AGENTS.md``). ``SPCOAST_NETLIST`` names a saved netlist
 instead, on a machine where kicad-cli cannot run; it is read only when it is still a snapshot of the Railroad
@@ -205,32 +206,6 @@ class RuleTests(unittest.TestCase):
         self.assertEqual([x.ref for d in sm.processors["Alpha"].drivers.values() for x in d.syms], ["J2", "J3"])
 
 
-    def test_head_vocabulary(self):
-        src = plant()
-        src.symbols.update({
-            "M1": sym("M1", "Mast_Single", "/X/", "100NA", Role="APPLIANCE", Appliance="mast", Name="100NA", Style="single"),
-            "H1": sym("H1", "Signal Head - CPL", "/X/", "A", Role="APPLIANCE", Appliance="head", Name="A", Style="CPL"),
-            "DM1": sym("DM1", "Mast", "/X/", "100NA", Role="DEVICE", Appliance="mast", Name="100NA"),
-            "DH1": sym("DH1", "Device-Head-CL-Pixel", "/X/", "~", Role="DEVICE", Appliance="head", Style="CL", Head="A"),
-        })
-        src.nets += [net("h", ("H1", "M"), ("M1", "H")), net("ind", ("DH1", "IND"), ("DM1", "IND"))]
-        src = from_symbols(src.symbols.values(), src.nets)
-        sm = seams.resolve(src)
-        self.assertTrue(any("778" not in d.text and "100NA head A as CPL" in d.text for d in sm.report.by_code("head.vocabulary")))
-
-    def test_semaphore_lamp_is_allowed(self):
-        src = plant()
-        src.symbols.update({
-            "M1": sym("M1", "Mast_Dwarf", "/X/", "100SB", Role="APPLIANCE", Appliance="mast", Name="100SB", Style="dwarf"),
-            "H1": sym("H1", "Signal Head - Semaphore-UQ", "/X/", "B", Role="APPLIANCE", Appliance="head", Name="B", Style="UQ"),
-            "DM1": sym("DM1", "Mast", "/X/", "100SB", Role="DEVICE", Appliance="mast", Name="100SB"),
-            "DA": sym("DA", "Device-Head-Semaphore-UQ", "/X/", "~", Role="DEVICE", Appliance="head", Style="UQ", Head="B"),
-            "DL": sym("DL", "Device-Head-CL-RGB", "/X/", "~", Role="DEVICE", Appliance="head", Style="CL", Head="B"),
-        })
-        src.nets += [net("h", ("H1", "M"), ("M1", "H")), net("ind", ("DA", "IND"), ("DL", "IND"), ("DM1", "IND"))]
-        sm = seams.resolve(from_symbols(src.symbols.values(), src.nets))
-        self.assertEqual(sm.report.by_code("head.vocabulary"), [])
-
     def test_emitted_model_validates(self):
         sm = seams.resolve(plant())
         model = emit.emit(sm)
@@ -292,10 +267,10 @@ class SPCoastRelationTable(unittest.TestCase):
     def test_stations_derive_from_houses_and_columns(self):
         ou = self.sm.office_units["SPCoast South"]
         self.assertEqual(ou.processor, "JohnCTC")
-        self.assertEqual({c.number: c.house for c in ou.columns.values() if c.house},
-                         {"5": ("Luchessa", "Luchessa"), "6": ("Luchessa", "Gilroy"), "7": ("Luchessa", "Carnadero")})
-        self.assertEqual(len(self.sm.report.by_code("column.cp_name")), 11)
         columns = self.model["officeUnits"]["SPCoast South"]["columns"]
+        self.assertEqual({n: c["derived"]["house"] for n, c in columns.items() if "derived" in c},
+                         {"5": "Luchessa:Luchessa", "6": "Luchessa:Gilroy", "7": "Luchessa:Carnadero"})
+        self.assertEqual(len(self.sm.report.by_code("column.cp_name")), 11)
         self.assertEqual(columns["5"], {"given": {"CP Name": "Luchessa"}, "derived": {"house": "Luchessa:Luchessa", "interlocking": "Luchessa"}})
 
     def test_membership_stated_only_by_the_sheet_hierarchy_is_a_relation(self):

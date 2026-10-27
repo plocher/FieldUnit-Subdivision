@@ -15,60 +15,17 @@ is reported.
 from __future__ import annotations
 
 import re
-from collections import defaultdict
 from dataclasses import dataclass, field, replace
 from typing import Optional
+
+from tools.layout_model.reference import ENCODING_OF_IC, TRANSPORT_OF_ENCODING
+from tools.layout_model.report import Report
 
 from .source import Net, Source, Symbol, in_scope
 
 MACRO = re.compile(r"<([A-Z_]+):([A-Z_]*):([\w .]+)>")
-ERROR, WARNING, INFO, MISSING = "error", "warning", "info", "missing"
-# Reference data, general, not layout data (ADR 0008 §4.7). Versioned so provenance can name it.
-REFERENCE_DATA = {"encodingTransportPairing": "2026-10-23", "driverEncodings": "2026-10-23"}
-# An encoding's Kind pairs with its transport's Kind (ADR 0009 §3.10).
-TRANSPORT_OF_ENCODING = {"AAR": "MQTT", "USS506": "TIMECODE", "BITS": "TIMECODE", "JMRI": "MQTT", "CMRI": "CMRI"}
-# A driver whose IC is an encoding needs that I/O encoding on its processor (ADR 0009 §3.3, §3.6, §3.12 "IC native or encoded").
-ENCODING_OF_IC = {"MQTT-JMRI": "JMRI"}
 # KiCad's own housekeeping (ADR 0011 §2), and Role, which only picks the collection (three-maps D1): never in given.
 HOUSEKEEPING = frozenset({"Reference", "Value", "Footprint", "Datasheet", "Description", "Sheetname", "Sheetfile", "Role"})
-
-
-@dataclass(frozen=True)
-class Diag:
-    severity: str
-    code: str
-    text: str
-    where: str = ""
-
-    def __str__(self) -> str:
-        return f"{self.severity}: {self.code}: {self.text}" + (f"  [{self.where}]" if self.where else "")
-
-
-class Report:
-    def __init__(self) -> None:
-        self.diags: list[Diag] = []
-
-    def add(self, severity: str, code: str, text: str, where: str = "") -> None:
-        self.diags.append(Diag(severity, code, text, where))
-
-    def error(self, code, text, where=""):
-        self.add(ERROR, code, text, where)
-
-    def warning(self, code, text, where=""):
-        self.add(WARNING, code, text, where)
-
-    def info(self, code, text, where=""):
-        self.add(INFO, code, text, where)
-
-    def missing(self, code, text, where=""):
-        self.add(MISSING, code, text, where)
-
-    @property
-    def errors(self) -> list[Diag]:
-        return [d for d in self.diags if d.severity == ERROR]
-
-    def by_code(self, code: str) -> list[Diag]:
-        return [d for d in self.diags if d.code == code]
 
 
 def loc(s: Symbol) -> str:
@@ -155,9 +112,8 @@ class Column:
     number: str
     sym: Symbol
     given: dict[str, str] = field(default_factory=dict)
-    house: Optional[tuple[str, str]] = None                           # (interlocking, cp name), derived from CP Name
-    interlocking: Optional[str] = None                                # derived: the house's interlocking, else the folder's
     folder: Optional[str] = None                                      # stated by the sheet hierarchy alone (three-maps D6)
+    sheet_folder: Optional[str] = None                                # the interlocking whose sheet it is drawn under
     office_unit: Optional[str] = None
 
 
@@ -183,9 +139,6 @@ class Device:
     appliance: str
     styles: list[str]
     given: dict[str, str] = field(default_factory=dict)              # its Name included: a row has no identity
-    serves: Optional[str] = None                                      # derived: qualified railroad name
-    head: Optional[str] = None
-    shows: list[str] = field(default_factory=list)                    # derived
     column: Optional[str] = None                                      # relation: the OfficeUnit-qualified column
     interlocking: Optional[str] = None                                # relation: the folder, for a device in no column (D6)
     mast: Optional[str] = None                                        # relation: a head device's IND wire to its Mast
@@ -203,7 +156,8 @@ class Seams:
     encodings: dict[str, Encoding] = field(default_factory=dict)
     interlockings: dict[str, Interlocking] = field(default_factory=dict)
     office_units: dict[str, OfficeUnit] = field(default_factory=dict)
-    trackplan: Optional["object"] = None                              # trackplan.Trackplan: appliances, track, circuits
+    trackplan: Optional["object"] = None                              # trackplan.Trackplan: appliances and track as drawn
+    derived: bool = False                                             # the reference derivation's diagnostics are in report
 
 
 # ---------------------------------------------------------------- helpers
@@ -340,8 +294,6 @@ def resolve(source: Source) -> Seams:
     _drivers(seams)
     _columns(seams)
     _devices(seams)
-    _heads(seams)
-    _reach(seams)
     from . import trackplan                                           # it builds on the seam helpers
     seams.trackplan = trackplan.read(seams)
     return seams
@@ -656,27 +608,6 @@ def _encoded_address(sm: Seams, s: Symbol, drawn: str) -> str:
     return f"{s.kind}.{served}"
 
 
-def _reach(sm: Seams) -> None:
-    """Two checks across entities. A driver whose IC is an encoding needs that I/O encoding on its processor (ADR 0009
-    §3.6, §3.12 'IC native or encoded'). A FieldUnit reaches its code line's transport through the code line; when its
-    processor anchors no instance of that transport, the drawing relies on that derivation, reported at info (review
-    2026-10-23 finding 5; the owner decides whether the §3.12 check 'an anchor per connecting processor' stands)."""
-    for p in sm.processors.values():
-        for d in p.drivers.values():
-            kind = ENCODING_OF_IC.get(d.ic)
-            if kind and not any(e.role == "IO_ENCODING" and e.kind == kind and e.processor == p.name for e in sm.encodings.values()):
-                sm.report.error("driver.encoding", f"driver {d.ic} {d.address} on {p.name}: no {kind} I/O encoding rides a transport anchored on {p.name}", loc(d.sym))
-    for ix in sm.interlockings.values():
-        e = sm.encodings.get(ix.codeline) if ix.codeline else None
-        if e and e.transport and ix.processor and ix.processor not in sm.transports[e.transport].anchors:
-            sm.report.info("transport.reach", f"FieldUnit {ix.name} reaches {e.transport} through its code line {e.name}; its processor {ix.processor} anchors no {e.transport} instance", loc(ix.sym))
-
-
-def _house_by_cp(sm: Seams, cp: str) -> Optional[tuple[str, str]]:
-    hits = [(ix.name, h.cp_name) for ix in sm.interlockings.values() for h in ix.houses.values() if h.cp_name.casefold() == cp.casefold()]
-    return hits[0] if len(hits) == 1 else None
-
-
 def _columns(sm: Seams) -> None:
     for s in sm.source.where("COLUMN"):
         number = key_of(s, sm.report)
@@ -686,18 +617,9 @@ def _columns(sm: Seams) -> None:
             continue
         c = Column(number, s, given_of(s))
         folder = _unit_of_sheet(sm, s.sheet)
-        if s.get("CP Name"):
-            c.house = _house_by_cp(sm, s.get("CP Name"))
-            if c.house is None:
-                sm.report.error("column.house", f"column {number}: CP Name {s.get('CP Name')!r} names no house", where)
-            else:
-                c.interlocking = c.house[0]
-                if folder and folder.name != c.interlocking:
-                    sm.report.error("column.house", f"column {number}: house {c.house[1]} is in {c.interlocking}, the column is drawn under {folder.name}", where)
-        else:
-            sm.report.missing("column.cp_name", f"column {number}: no CP Name; only its sheet says it is in {folder.name if folder else '?'}", where)
-            c.folder = folder.name if folder else None                 # membership by hierarchy alone, written as a relation (D6)
-            c.interlocking = c.folder
+        c.sheet_folder = folder.name if folder else None
+        if not s.get("CP Name"):
+            c.folder = c.sheet_folder                                  # membership by hierarchy alone, written as a relation (D6)
         ou = one(list(sm.office_units.values()), "office units", where, sm.report, "column.office") if len(sm.office_units) != 1 else next(iter(sm.office_units.values()))
         if ou is None:
             continue
@@ -705,17 +627,6 @@ def _columns(sm: Seams) -> None:
         if number in ou.columns:
             sm.report.error("column.duplicate", f"OfficeUnit {ou.name}: two columns numbered {number}", where)
         ou.columns[number] = c
-    for ou in sm.office_units.values():
-        # a 506 station is a house addressed by its column; a house with two columns on a 506 line is two addresses
-        by_house = defaultdict(list)
-        for c in ou.columns.values():
-            if c.house:
-                by_house[c.house].append(c.number)
-        for (ixn, cp), nums in by_house.items():
-            ix = sm.interlockings.get(ixn)
-            enc = sm.encodings.get(ix.codeline) if ix and ix.codeline else None
-            if enc and enc.kind == "USS506" and len(nums) > 1:
-                sm.report.error("station.columns", f"house {cp} of {ixn} has columns {', '.join(nums)} on a US&S 506 line: two station addresses", loc(ix.sym))
 
 
 def _driver_route(sm: Seams, p) -> Optional[tuple[Driver, str]]:
@@ -741,7 +652,7 @@ def _devices(sm: Seams) -> None:
         name = device_name(s, sm.report)
         dev = Device(s, appliance, styles_of(s), given=given_of(s, keyed=False))
         where = loc(s)
-        scope: Optional[str] = None
+        placed = False
         if s.role == "PANEL":
             col_net = sm.source.net_of(s.ref, "Column")
             cols = [sm.source.symbols[p.ref] for p in col_net.others(s.ref)] if col_net else []
@@ -751,21 +662,15 @@ def _devices(sm: Seams) -> None:
             if col is not None and ou is not None:
                 column = ou.columns.get(key_of(col))
                 dev.column = f"{ou.name}:{column.number}" if column else None     # qualified by its OfficeUnit (D19)
-                scope = column.interlocking if column else None
+                placed = column is not None and (column.given.get("CP Name") or column.folder)
             elif s.get("Style") != "board" and col_net is None:
                 sm.report.missing("device.column", f"panel {appliance} {s.value!r} is in no column", where)
-            if scope is None:
+            if not placed:                                             # its column places it nowhere, or it has none
                 folder = _unit_of_sheet(sm, s.sheet)
-                scope = dev.interlocking = folder.name if folder else None  # membership by hierarchy alone (D6)
+                dev.interlocking = folder.name if folder else None     # membership by hierarchy alone (D6)
             if ou is None:
                 sm.report.error("device.office", f"panel device {s.value!r}: no single OfficeUnit", where)
                 continue
-            if appliance == "lamp":
-                dev.shows = [qualify(t.strip(), scope or "") for t in s.get("IndicationToken").split(",") if t.strip()]
-                if not dev.shows:
-                    sm.report.missing("lamp.token", f"panel lamp {s.value!r}: no IndicationToken", where)
-            else:
-                dev.serves = qualify(name, scope or "") if name else None
             ou.devices.append(dev)
         else:
             ix = _unit_of_sheet(sm, s.sheet)
@@ -773,24 +678,17 @@ def _devices(sm: Seams) -> None:
                 sm.report.error("device.interlocking", f"device {appliance} {s.value!r}: no Interlocking on its sheet or above", where)
                 continue
             if appliance == "head":
-                dev.head = s.get("Head") or None
                 ind = sm.source.net_of(s.ref, "IND")
                 masts = [sm.source.symbols[p.ref] for p in ind.others(s.ref)] if ind else []
                 masts = [m for m in masts if m.get("Appliance") == "mast" and m.role == "DEVICE"]
                 m = one(masts, "masts on one IND net", where, sm.report, "head.mast") if masts else None
                 if m is None:
-                    sm.report.missing("head.mast", f"head device {s.lib_id.split(':')[1]} letter {dev.head!r}: wired to no Mast", where)
+                    sm.report.missing("head.mast", f"head device {s.lib_id.split(':')[1]} letter {s.get('Head')!r}: wired to no Mast", where)
                 else:
-                    dev.mast = dev.serves = qualify(device_name(m, sm.report) or "", ix.name)
-                if not dev.head:
+                    dev.mast = qualify(device_name(m, sm.report) or "", ix.name)
+                if not s.get("Head"):
                     sm.report.missing("head.letter", "a head device has no Head letter", where)
-            elif name:
-                dev.serves = qualify(name, ix.name)                    # an appliance's device, or a Mast: one row per device (the owner, 2026-10-24)
-            else:
-                sm.report.missing("device.serves", f"device {appliance}: no appliance name", where)
             ix.devices.append(dev)
-        if dev.appliance == "lever" and "code" in dev.styles:
-            dev.serves = None                                          # the code lever serves the station, not an appliance; its Value is a label
         inverted = {x.strip() for x in s.get("Invert").split(",") if x.strip()}
         for pin, net in sorted(sm.source.pins_of(s.ref).items()):
             if pin == "Column" or (pin == "IND" and appliance != "mast"):   # a head's IND wire reaches its Mast; the Mast's IND is its own binding
@@ -802,35 +700,3 @@ def _devices(sm: Seams) -> None:
         for name in sorted(inverted - {base(pin) for pin in sm.source.pins_of(s.ref)}):
             sm.report.error("device.invert", f"Invert names {name}, not a wired pin of this device", where)
         dev.bindings.sort(key=lambda b: (b.function, b.route))
-
-
-def _heads(sm: Seams) -> None:
-    """Head device to trackplan head by mast name and letter; the vocabularies must match (ADR 0009 §3.7)."""
-    for ix in sm.interlockings.values():
-        # trackplan heads: Name is the letter, M pin to a Mast_* whose Name is the mast name (Name = ${Value}, 2026-10-24)
-        plan: dict[tuple[str, str], str] = {}
-        for h in sm.source.under(ix.sym.sheet, "APPLIANCE"):
-            if h.get("Appliance") != "head":
-                continue
-            net = sm.source.net_of(h.ref, "M")
-            masts = [sm.source.symbols[p.ref] for p in net.others(h.ref)] if net else []
-            masts = [m for m in masts if m.role == "APPLIANCE" and m.get("Appliance") == "mast"]
-            if len(masts) == 1:
-                plan[(key_of(masts[0], sm.report), key_of(h, sm.report))] = h.get("Style")   # the trackplan head's Name is its letter
-        by_head: dict[tuple[str, str], list[Device]] = defaultdict(list)
-        for d in ix.devices:
-            if d.appliance == "head" and d.serves and d.head:
-                by_head[(d.serves.split(":", 1)[1], d.head)].append(d)
-        for (mast, letter), devs in sorted(by_head.items()):
-            style = plan.get((mast, letter))
-            if style is None:
-                sm.report.error("head.plan", f"{ix.name}: head devices for {mast} head {letter}, but the trackplan draws no such head", loc(devs[0].sym))
-                continue
-            primary = [d for d in devs if style in d.styles]
-            lamps = [d for d in devs if style not in d.styles and style in ("UQ", "LQ") and (d.appliance == "lamp" or "CL" in d.styles)]
-            wrong = [d for d in devs if d not in primary and d not in lamps]
-            for d in wrong:                                            # the §3.7 error, one per device
-                sm.report.error("head.vocabulary", f"{ix.name}: the trackplan draws {mast} head {letter} as {style}, but its device is "
-                                f"{d.sym.lib_id.split(':')[1]}. Fix: change the trackplan head, or bind a {style} device", loc(d.sym))
-            if len(primary) > 1 or (not primary and not wrong):
-                sm.report.error("head.vocabulary", f"{ix.name}: {mast} head {letter} ({style}) has {len(primary)} devices of its style; one expected", loc(devs[0].sym))

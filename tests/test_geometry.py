@@ -193,7 +193,8 @@ class SPCoastGeometry(unittest.TestCase):
         self.assertEqual(g["houses"], {"Sargent": {"at": {"x": 91.44, "y": 0.0}, "glyph": "Railroad-Trackplan:House"}})
         self.assertEqual(len(g["appliances"]), 11)
         self.assertEqual(len(g["track"]), 4)
-        self.assertEqual(sorted(t["derived"]["circuit"] for t in g["track"]), ["Corporal:2NAT", "Sargent:1NAT", "Sargent:1SAT", "Sargent:2SAT"])
+        runs = self.model["interlockings"]["Sargent"]["geometry"]["track"]                   # a run's circuit is derived
+        self.assertEqual(sorted(t["derived"]["circuit"] for t in runs), ["Corporal:2NAT", "Sargent:1NAT", "Sargent:1SAT", "Sargent:2SAT"])
         self.assertEqual(len(g["markers"]), 12)
         rows = self.rows("Sargent")
         self.assertEqual(sum(1 for m in g["markers"] if rows[m["row"]]["given"]["Kind"] == "INDUSTRY"), 2)
