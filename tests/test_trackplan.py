@@ -63,6 +63,26 @@ def sorted_rows(rs) -> list[str]:
     return sorted(json.dumps(r, sort_keys=True) for r in rs)
 
 
+def at(sm, ref: str, side: str) -> str:
+    """How the model names an unnamed row's side: the row's id (its symbol's UUID) and the side (three-maps D5, D10)."""
+    return f"{sm.source.symbols[ref].uuid}.{side}"
+
+
+def track_relations(ix) -> dict[str, list[str]]:
+    """Every track side's relation in the interlocking, keyed by the side as a peer names it: ``X:835.C``, ``<id>.approach``."""
+    out: dict[str, list[str]] = {}
+    for name, a in ix.get("appliances", {}).items():
+        for side, v in a.get("relations", {}).items():
+            if isinstance(v, list):
+                out[f"X:{name}.{side}"] = v
+    for kind in ("joints", "ends", "policies"):
+        for r in ix["track"].get(kind, []):
+            for side, v in r.get("relations", {}).items():
+                if isinstance(v, list):
+                    out[f"{r.get('name') or r['id']}.{side}"] = v
+    return out
+
+
 def diags(sm, *prefixes: str) -> list[tuple[str, str]]:
     """The diagnostics as a table of (code, symbol reference): structured fields, never the message text."""
     return sorted((d.code, d.where.split(" ")[0].rsplit("/", 1)[-1]) for d in sm.report.diags if d.code.startswith(prefixes))
@@ -116,15 +136,17 @@ class Circuits(unittest.TestCase):
             ("X:836SA",  "X:835T1", "X:1SAT", ["X:835.N"]),
             ("X:836SB",  "X:835T1", "X:2SAT", ["X:835.R"]),
         ])
-        self.assertEqual(rows(ix, "ends"), [{"given": {"Kind": "NEXT_CP"}, "derived": {"circuits": {"track": "X:1NAT"}}}])
-        self.assertEqual(rows(ix, "policies"), [{"given": {"Kind": "RULE_261", "Direction": "BOTH"}, "derived": {"circuits": {"track": "X:1NAT"}}}])
+        self.assertEqual(rows(ix, "ends"), [{"given": {"Kind": "NEXT_CP"}, "derived": {"circuits": {"track": "X:1NAT"}},
+                                             "relations": {"track": sorted([at(sm, "J1", "approach"), at(sm, "R1", "track"), "X:1NAT.TC"])}}])
+        self.assertEqual(rows(ix, "policies"), [{"given": {"Kind": "RULE_261", "Direction": "BOTH"}, "derived": {"circuits": {"track": "X:1NAT"}},
+                                                 "relations": {"track": sorted([at(sm, "J1", "approach"), at(sm, "NX1", "track"), "X:1NAT.TC"])}}])
 
     def test_a_signal_joints_sides_are_approach_and_governed(self):
         """ADR 0012 §8 and the table's D15: the governed side is the symbol's A pin, where the route it protects begins;
         the approach side its B pin. Its wires and its circuits use the same names; A and B appear nowhere."""
         sm, ix = compile_(ONE_SWITCH, ONE_SWITCH_NETS)
         j = next(j for j in ix["track"]["joints"] if j["relations"]["mast"] == "X:836SA")
-        self.assertEqual(j["relations"], {"governed": ["X:835.N"], "mast": "X:836SA"})
+        self.assertEqual(j["relations"], {"governed": ["X:835.N"], "approach": ["X:1SAT.TC"], "mast": "X:836SA"})
         self.assertEqual(j["derived"], {"circuits": {"governed": "X:835T1", "approach": "X:1SAT"}, "controlPoint": "X:East"})
         self.assertEqual(j["given"], {"Kind": "IRJ_SIGNAL", "CP": "East"})
 
@@ -172,24 +194,26 @@ ir   | I2.EoT SW1.R
 """)
         self.assertEqual(sm.report.errors, [])
         self.assertEqual(sorted_rows(rows(ix, "ends")), sorted_rows([
-            {"given": {"Kind": "END_CTC"}, "derived": {"circuits": {"CTC": "X:2SAT"}}, "relations": {"DARK": ["X:1.C"]}},
+            {"given": {"Kind": "END_CTC"}, "derived": {"circuits": {"CTC": "X:2SAT"}}, "relations": {"CTC": ["X:2SAT.TC"], "DARK": ["X:1.C"]}},
             {"given": {"Kind": "INDUSTRY"}, "relations": {"EoT": ["X:1.N"]}},
             {"given": {"Kind": "INDUSTRY"}, "relations": {"EoT": ["X:1.R"]}},
         ]))
         self.assertNotIn("osCircuit", ix["appliances"]["1"].get("derived", {}))
 
-    def test_dark_track_joining_only_unnamed_rows_is_missing(self):
-        """The table's D5: two unnamed rows on dark track with no switch port or named row between them have no stated
-        connection; it is reported at missing, never guessed."""
+    def test_unnamed_rows_on_dark_track_name_each_other_by_id(self):
+        """The owner, 2026-10-27: a track pin's relations name every row or port its wire reaches, unnamed rows by id.
+        Two unnamed rows on dark track with nothing between them state their connection; nothing is reported."""
         given = """
 H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
 E1   | IRJ-END_CTC     | TRACK     | Kind=END_CTC
 B1   | Bumper          | TRACK     | Kind=BUMPER
 """
         sm, ix = compile_(given, "dark | E1.DARK B1.EoT\n")
-        self.assertEqual(diags(sm, "track.dark_unnamed"), [("track.dark_unnamed", "B1"), ("track.dark_unnamed", "E1")])
-        sm, _ = compile_(given + "I1 | Industry | TRACK | Kind=INDUSTRY Name=Cannery\n", "dark | E1.DARK B1.EoT I1.EoT\n")
-        self.assertEqual(diags(sm, "track.dark_unnamed"), [])
+        self.assertEqual(sm.report.errors, [])
+        self.assertEqual(diags(sm, "track"), [])
+        rel = track_relations(ix)
+        self.assertEqual(rel[at(sm, "E1", "DARK")], [at(sm, "B1", "EoT")])
+        self.assertEqual(rel[at(sm, "B1", "EoT")], [at(sm, "E1", "DARK")])
 
     def test_a_derail_joins_its_switchs_circuit_and_ports_that_meet_are_a_link(self):
         given = """
@@ -207,7 +231,7 @@ dc   | D1.C J1.A
         self.assertEqual(ix["track"]["joints"][0]["derived"]["circuits"], {"governed": "X:795T1"})
         self.assertEqual(ix["appliances"]["795D"], {
             "given": {"Appliance": "switch", "Style": "derail", "IndicationCeiling": "STOP/RESTRICTING", "CP": "Gilroy"},
-            "relations": {"R": ["X:795.R"]},
+            "relations": {"C": [at(sm, "J1", "governed")], "R": ["X:795.R"]},
             "derived": {"osCircuit": "X:795T1", "controlPoint": "X:Gilroy"}})
 
     def test_a_reference_to_another_interlockings_circuit_names_the_track_but_is_no_appliance(self):
@@ -219,9 +243,51 @@ TC2  | Track Circuit   | APPLIANCE | Appliance=track_circuit Name=1SAT CP=East
 """
         sm, ix = compile_(given, "a | J1.A TC1.TC\nb | J1.B TC2.TC\n")
         self.assertEqual(sm.report.errors, [])
-        self.assertEqual(rows(ix, "joints"), [{"given": {"Kind": "IRJ"}, "derived": {"circuits": {"A": "Corporal:2NAT", "B": "X:1SAT"}}}])
+        self.assertEqual(rows(ix, "joints"), [{"given": {"Kind": "IRJ"}, "derived": {"circuits": {"A": "Corporal:2NAT", "B": "X:1SAT"}},
+                                               "relations": {"A": ["Corporal:2NAT.TC"], "B": ["X:1SAT.TC"]}}])
         self.assertEqual(sorted(ix["appliances"]), ["1SAT"])
 
+
+
+class Adjacency(unittest.TestCase):
+    """The owner, 2026-10-27: a track pin's relations name every row or port its wire reaches, unnamed rows by id, so a
+    reader walks the track through ``relations`` alone, never through circuit names."""
+
+    def test_an_unnamed_approach_side_names_every_neighbour_on_its_wire(self):
+        """J1's approach wire reaches a NextCP, a Rule 261 sign and the 1NAT marker: all three, sorted, none by circuit."""
+        sm, ix = compile_(ONE_SWITCH, ONE_SWITCH_NETS)
+        rel = track_relations(ix)
+        self.assertEqual(rel[at(sm, "J1", "approach")], sorted([at(sm, "NX1", "track"), at(sm, "R1", "track"), "X:1NAT.TC"]))
+        self.assertEqual(ix["appliances"]["1NAT"]["relations"]["TC"],
+                         sorted([at(sm, "J1", "approach"), at(sm, "NX1", "track"), at(sm, "R1", "track")]))
+        self.assertEqual(ix["appliances"]["835"]["relations"], {"C": [at(sm, "J1", "governed")], "N": [at(sm, "J2", "governed")],
+                                                                "R": [at(sm, "J3", "governed")]})
+        self.assertEqual(layout_model.errors(emit.emit(sm)), [])
+
+    def test_relations_are_symmetric(self):
+        for shape, wires in ((ONE_SWITCH, ONE_SWITCH_NETS), (TWO_HOUSES, TWO_HOUSES_NETS)):
+            sm, ix = compile_(shape, wires)
+            rel = track_relations(ix)
+            self.assertEqual([(a, b) for a, bs in rel.items() for b in bs if a not in rel.get(b, [])], [])
+
+    def test_a_pin_never_names_its_own_symbol(self):
+        """A joint whose two sides share one wire is an error, and still neither side names the other."""
+        given = """
+H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
+J1   | IRJ             | TRACK     | Kind=IRJ
+TC1  | Track Circuit   | APPLIANCE | Appliance=track_circuit Name=1SAT
+"""
+        sm, ix = compile_(given, "a | J1.A J1.B TC1.TC\n")
+        self.assertIn("joint.loop", codes(sm, "error"))
+        self.assertEqual(ix["track"]["joints"][0]["relations"], {"A": ["X:1SAT.TC"], "B": ["X:1SAT.TC"]})
+
+    def test_the_relations_do_not_depend_on_the_order_of_the_drawing(self):
+        sm, ix = compile_(ONE_SWITCH, ONE_SWITCH_NETS)
+        reordered = "\n".join(reversed(ONE_SWITCH.strip().splitlines()))
+        wires = "\n".join(" | ".join((n, " ".join(reversed(m.split())))) for n, m in
+                          (line.split(" | ") for line in reversed(ONE_SWITCH_NETS.strip().splitlines())))
+        sm2, ix2 = compile_(reordered, wires)
+        self.assertEqual(json.dumps(track_relations(ix), sort_keys=True), json.dumps(track_relations(ix2), sort_keys=True))
 
 # Two houses, the Christopher shape: switches 813 and 815 (with 815A in its gang) on North, 817 on South; siding 01T
 # between 813's R and 817's R; 815's R meets 815A's R at a plain joint. Each signal states its house on the joint or on
@@ -395,8 +461,8 @@ I1   | Industry        | TRACK     | Kind=INDUSTRY Name="Gilroy Industry"
         sm, ix = compile_(given, "ctc | E1.CTC TC1.TC\ndark | E1.DARK I1.EoT\n")
         self.assertEqual(sm.report.errors, [])
         self.assertEqual(sorted_rows(rows(ix, "ends")), sorted_rows([
-            {"given": {"Kind": "END_CTC"}, "derived": {"circuits": {"CTC": "X:02T"}}, "relations": {"DARK": ["X:Gilroy Industry.EoT"]}},
-            {"name": "X:Gilroy Industry", "given": {"Kind": "INDUSTRY"}},
+            {"given": {"Kind": "END_CTC"}, "derived": {"circuits": {"CTC": "X:02T"}}, "relations": {"CTC": ["X:02T.TC"], "DARK": ["X:Gilroy Industry.EoT"]}},
+            {"name": "X:Gilroy Industry", "given": {"Kind": "INDUSTRY"}, "relations": {"EoT": [at(sm, "E1", "DARK")]}},
         ]))
         self.assertEqual(layout_model.errors(emit.emit(sm)), [])
 
@@ -519,9 +585,11 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(self.sm.report.by_code("next_cp.pair"), [])
 
     def test_luchessas_industry_is_what_end_ctcs_dark_pin_meets(self):
-        ends = rows(self.ix("Luchessa"), "ends")
-        self.assertIn({"given": {"Kind": "END_CTC"}, "derived": {"circuits": {"CTC": "Luchessa:02T"}}, "relations": {"DARK": ["Luchessa:Gilroy Industry.EoT"]}}, ends)
-        self.assertIn({"name": "Luchessa:Gilroy Industry", "given": {"Kind": "INDUSTRY"}}, ends)
+        ends = self.ix("Luchessa")["track"]["ends"]
+        end_ctc = next(e for e in ends if e["relations"].get("DARK") == ["Luchessa:Gilroy Industry.EoT"])
+        self.assertEqual((end_ctc["given"], end_ctc["derived"]), ({"Kind": "END_CTC"}, {"circuits": {"CTC": "Luchessa:02T"}}))
+        industry = next(e for e in ends if e.get("name") == "Luchessa:Gilroy Industry")
+        self.assertEqual((industry["given"], industry["relations"]), ({"Kind": "INDUSTRY"}, {"EoT": [f"{end_ctc['id']}.DARK"]}))
 
     def test_sargents_hot_box_alarm_states_its_milepost(self):
         self.assertEqual(self.ix("Sargent")["appliances"]["HBA"]["given"]["Milepost"], "83.4")
@@ -536,6 +604,20 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual({n: a[n]["derived"]["controlPoint"] for n in ("783", "795", "795D", "799")},
                          {"783": "Luchessa:Luchessa", "795": "Luchessa:Gilroy", "795D": "Luchessa:Gilroy", "799": "Luchessa:Carnadero"})
         self.assertEqual(self.ix("Luchessa")["track"]["links"], [{"derived": {"ports": ["Luchessa:795.R", "Luchessa:795D.R"], "circuit": "Luchessa:795T1"}}])
+
+    def test_every_track_relation_is_named_back_in_its_interlocking(self):
+        """The owner, 2026-10-27: symmetric adjacency on the drawing. A reference to another interlocking's thing
+        (``Corporal:2NAT.TC``) has no row here to name it back."""
+        for name, ix in self.model["interlockings"].items():
+            rel = {}
+            for n, a in ix.get("appliances", {}).items():
+                rel.update({f"{name}:{n}.{side}": v for side, v in a.get("relations", {}).items() if isinstance(v, list)})
+            for kind in ("joints", "ends", "policies"):
+                for r in ix.get("track", {}).get(kind, []):
+                    rel.update({f"{r.get('name') or r['id']}.{side}": v for side, v in r.get("relations", {}).items() if isinstance(v, list)})
+            own = [(a, b) for a, bs in rel.items() for b in bs if not (":" in b and not b.startswith(f"{name}:"))]
+            self.assertEqual([(a, b) for a, b in own if a not in rel.get(b, [])], [], name)
+            self.assertEqual([a for a, bs in rel.items() if any(b.rsplit(".", 1)[0] == a.rsplit(".", 1)[0] for b in bs)], [], name)
 
     def test_no_circuit_carries_two_names(self):
         self.assertEqual(self.sm.report.by_code("circuit.names") + self.sm.report.by_code("circuit.name.disagree"), [])

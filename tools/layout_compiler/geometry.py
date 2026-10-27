@@ -28,7 +28,7 @@ from typing import Any, Optional
 
 from .seams import Seams, key_of, loc
 from .source import Symbol
-from .trackplan import TRACKPLAN_ROLES, is_switch, port_ref, side_of, unit_of
+from .trackplan import TRACKPLAN_ROLES, is_switch, pin_ref, unit_of
 
 COORDINATE_DECIMALS = 2     # placements and runs sit on the drawing's grid (§4.2)
 GLYPH_DECIMALS = 4          # a glyph's primitives have up to four
@@ -352,17 +352,10 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         return sm.trackplan.circuit_of_net(ix.name, net) if sm.trackplan else None
 
     def end_ref(ref: str, pin: str) -> Optional[str]:
-        """What a run's end meets (three-maps D5): a switch's port by name, a named track row's pin by name, an unnamed
-        track row's pin by the row's id, each with the pin as the side the model calls it (D15)."""
+        """What a run's end meets (three-maps D5): a switch's port or a track row's side, in the one form the rows'
+        relations use (``trackplan.pin_ref``). A run's end is never a track circuit marker's TC."""
         s = symbols[ref]
-        if is_switch(s):
-            return port_ref(ix.name, key_of(s, report), pin)
-        if s.role in ("TRACK", "POLICY") and s.kind != "MILEPOST":
-            name = key_of(s) if s.role == "TRACK" else ""
-            if name:
-                return port_ref(ix.name, name, side_of(s, pin))
-            return f"{s.uuid}.{side_of(s, pin)}" if s.uuid else None
-        return None
+        return pin_ref(ix.name, s, pin) if is_switch(s) or s.role in ("TRACK", "POLICY") else None
 
     appliances: dict[str, Any] = {}
     masts: dict[str, str] = {}

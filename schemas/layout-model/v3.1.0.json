@@ -110,7 +110,7 @@
       "pattern": "^[^\\s:/.]+$"
     },
     "portRef": {
-      "description": "A switch's track port, or a pin of a named track symbol, by qualified name: the switch or symbol, a dot, and the pin as the model names it (a switch's C, N or R, a derail's C or R; an industry's EoT): Luchessa:783.R, Luchessa:Gilroy Industry.EoT.",
+      "description": "A switch's track port, a track circuit marker's TC, or a pin of a named track symbol, by qualified name: the switch, marker or symbol, a dot, and the pin as the model names it (a switch's C, N or R, a derail's C or R; a marker's TC; an industry's EoT): Luchessa:783.R, Luchessa:1SAT.TC, Luchessa:Gilroy Industry.EoT.",
       "type": "string",
       "pattern": "^[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?:[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?\\.[A-Za-z][A-Za-z0-9_]*$"
     },
@@ -120,9 +120,18 @@
       "pattern": "^[^\\s:/.]+\\.[A-Za-z][A-Za-z0-9_]*$"
     },
     "portRefs": {
+      "description": "Every other track pin a track pin's wire reaches, sorted and without repeats (three-maps D5; the owner, 2026-10-27): a switch port, a track circuit marker's TC or a named track row's side by qualified name, an unnamed track row's side by the row's id. Never a pin of the same symbol; symmetric: the pin named here names this one back.",
       "type": "array",
+      "uniqueItems": true,
       "items": {
-        "$ref": "#/$defs/portRef"
+        "oneOf": [
+          {
+            "$ref": "#/$defs/portRef"
+          },
+          {
+            "$ref": "#/$defs/rowPortRef"
+          }
+        ]
       }
     },
     "layout": {
@@ -1244,7 +1253,7 @@
               },
               "additionalProperties": {
                 "$ref": "#/$defs/portRefs",
-                "description": "What the track at this side meets with nothing between, by name: a switch port or a pin of a named track row (three-maps D5)."
+                "description": "Every other track pin this side's wire reaches: switch ports, markers' TC and named rows' sides by name, unnamed rows' sides by id (three-maps D5)."
               }
             }
           ]

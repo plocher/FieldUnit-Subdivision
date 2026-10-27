@@ -21,9 +21,13 @@ is ``track`` whatever the library calls it. The KiCad importer translates the pi
 D15); no library pin is renamed. The circuit a Rule 93 sign stands on is inside the yard limits.
 
 Every entity and row holds ``given`` (its fields as drawn), ``relations`` (its wires, by name) and ``derived`` (what
-the rules compute) (ADR 0011 §2). A track pin's wire is ``relations.<side>``: the switch ports and named track pins it
-meets (three-maps D5); a row is identified by ``id``, its symbol's KiCad UUID (D10), and an end of track may also carry
-a name (an industry).
+the rules compute) (ADR 0011 §2). A track pin's wire is ``relations.<side>``: every other track pin its net reaches
+(three-maps D5; the owner, 2026-10-27): a switch port, a track circuit marker's TC or a named row's side by qualified
+name, an unnamed row's side by the row's ``id`` (``pin_ref``, the one form a run's ends use too). A track pin is a
+switch's port, a marker's TC and every pin of a joint, an end or a policy sign but a signal joint's SIGNAL
+(``is_track_pin``); a pin never names its own symbol, so the relation is symmetric and the track can be walked
+through ``relations`` alone. A row is identified by ``id``, its symbol's KiCad UUID (D10), and an end of track may
+also carry a name (an industry).
 
 Nothing here reads a coordinate, a net name, a reference or ``Value``; every name is read through ``key_of``.
 """
@@ -79,6 +83,30 @@ def side_of(s: Symbol, pin: str) -> str:
 def port_ref(interlocking: str, name: str, port: str) -> str:
     """A switch port or a named track symbol's pin, by qualified name: ``Luchessa:783.R``, ``Luchessa:Gilroy Industry.EoT``."""
     return f"{qualify(name, interlocking)}.{port}"
+
+
+def is_track_pin(s: Symbol, pin: str) -> bool:
+    """A pin that carries track: a switch's (or derail's) port, a track circuit marker's TC, and every pin of a joint,
+    an end or a policy sign but a signal joint's SIGNAL, which carries its mast. A milepost is no row and carries none."""
+    if s.role in ("TRACK", "POLICY"):
+        return s.kind != "MILEPOST" and pin != "SIGNAL"
+    if is_switch(s):
+        return pin in ports_of(s)
+    return s.role == "APPLIANCE" and s.get("Appliance") == "track_circuit" and pin == "TC"
+
+
+def pin_ref(interlocking: str, s: Symbol, pin: str) -> Optional[str]:
+    """How the model names a track pin, the one form of a side's relations and a run's ends (three-maps D5, D10, D15): a
+    switch port, a marker's TC or a named track row's side by qualified name (``Luchessa:783.R``), an unnamed row's side
+    by the row's id (``<uuid>.approach``). None for a pin that is not track and for a thing with neither."""
+    if not is_track_pin(s, pin):
+        return None
+    name = key_of(s) if s.role != "POLICY" else ""
+    if name:
+        return port_ref(interlocking, name, side_of(s, pin))
+    if s.role in ("TRACK", "POLICY"):
+        return f"{s.uuid}.{side_of(s, pin)}" if s.uuid else None
+    return None
 
 
 @dataclass
@@ -213,23 +241,9 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
     cp_of = _control_points(sm, ix, syms, union, net, others, circuit_names={c: r for r, c in circuit_of_region.items() if c})
 
     def pin_refs(s: Symbol, pin: str) -> list[str]:
-        """What the track at this pin meets by name: a switch's port, or a pin of a named track symbol (an end)."""
-        at = {port_ref(ix.name, key_of(o), side_of(o, op)) for o, op in others(s, pin) if nameable(o, op)}
-        return sorted(at)
-
-    def nameable(o: Symbol, op: str) -> bool:
-        return bool(key_of(o)) and (op in ports_of(o) or (o.role == "TRACK" and o.kind != "MILEPOST"))
-
-    def dark_unnamed(s: Symbol, pin: str, what: str) -> None:
-        """Dark track joining only rows with no name has no stated form (three-maps D5): reported, not guessed. Where
-        one member of the net has a name, every other member's relation names it, so the connection is stated."""
-        n = net(s, pin)
-        if n is None or plan.circuit_of.get(n.name) or nameable(s, pin):
-            return
-        members = others(s, pin)
-        if members and not any(nameable(o, op) for o, op in members) and any(o.role in ("TRACK", "POLICY") for o, _ in members):
-            report.missing("track.dark_unnamed", f"{ix.name}: {what} meets dark track that reaches no switch port and no named "
-                           "track symbol; nothing names the connection", loc(s))
+        """Every other track pin this pin's net reaches, each as ``pin_ref`` names it, sorted (the owner, 2026-10-27).
+        ``others`` leaves out the symbol's own pins; a thing with no name and no id is reported where it is read."""
+        return sorted({r for o, op in others(s, pin) if (r := pin_ref(ix.name, o, op))})
 
     # ------------------------------------------------------------------ appliances
     for s in syms:
@@ -262,7 +276,6 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
                 report.missing("switch.track", f"{ix.name}: switch {name} has no track on any port", loc(s))
             for p in ports_of(s):
                 relations[p] = pin_refs(s, p)
-                dark_unnamed(s, p, f"switch {name} port {p}")
         elif appliance == "track_circuit":
             relations["TC"] = pin_refs(s, "TC")
             if s.get("Style") == "virtual":
@@ -321,7 +334,6 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
         derived["circuits"] = {side_of(s, p): circuit(s, p) for p in pins if circuit(s, p)}
         for p in pins:
             relations[side_of(s, p)] = pin_refs(s, p)
-            dark_unnamed(s, p, f"a {s.kind} on its {side_of(s, p)} side")
         if s.kind in JOINTS and region(s, "A") and region(s, "A") == region(s, "B"):
             report.error("joint.loop", f"{ix.name}: a joint has one circuit ({circuit(s, 'A') or 'dark track'}) on both sides; a joint "
                          "elsewhere is missing", loc(s))
