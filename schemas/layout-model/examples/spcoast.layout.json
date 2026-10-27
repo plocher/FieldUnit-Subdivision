@@ -1095,6 +1095,24 @@
       },
       "houses": {
         "Christopher North": {
+          "derived": {
+            "indications": [
+              "1SATK",
+              "01TK",
+              "2SATK",
+              "813NWK",
+              "813RWK",
+              "813T1K",
+              "815AT1K",
+              "815NWK",
+              "815RWK",
+              "815T1K",
+              "816NGK",
+              "816SGK",
+              "816TEK",
+              "MC1K"
+            ]
+          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "81.3"
@@ -1105,6 +1123,19 @@
           }
         },
         "Christopher South": {
+          "derived": {
+            "indications": [
+              "1NATK",
+              "2NATK",
+              "816NGK",
+              "816SGK",
+              "816TEK",
+              "817NWK",
+              "817RWK",
+              "817T1K",
+              "MC2K"
+            ]
+          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "81.6"
@@ -2483,6 +2514,28 @@
       },
       "houses": {
         "Corporal": {
+          "derived": {
+            "indications": [
+              "1NATK",
+              "1SATK",
+              "01TK",
+              "2NATK",
+              "2SATK",
+              "829NWK",
+              "829RWK",
+              "829T1K",
+              "830NGK",
+              "830SGK",
+              "830TEK",
+              "831NWK",
+              "831RWK",
+              "831T1K",
+              "832NGK",
+              "832SGK",
+              "832TEK",
+              "MC1K"
+            ]
+          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "83.0"
@@ -3805,6 +3858,27 @@
       },
       "houses": {
         "Gilroy Caltrain": {
+          "derived": {
+            "indications": [
+              "1NATK",
+              "1SATK",
+              "01TK",
+              "02TK",
+              "03TK",
+              "771NWK",
+              "771RWK",
+              "771T1K",
+              "773NWK",
+              "773RWK",
+              "773T1K",
+              "774NGK",
+              "774SGK",
+              "774TEK",
+              "775NWK",
+              "775RWK",
+              "775T1K"
+            ]
+          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "77.1"
@@ -5020,6 +5094,21 @@
       },
       "houses": {
         "Gilroy North": {
+          "derived": {
+            "indications": [
+              "1NATK",
+              "1SATK",
+              "01TK",
+              "02TK",
+              "777NWK",
+              "777RWK",
+              "777T1K",
+              "778NGK",
+              "778SGK",
+              "778TEK",
+              "MC1K"
+            ]
+          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "77.7"
@@ -5030,6 +5119,17 @@
           }
         },
         "Gilroy South": {
+          "derived": {
+            "indications": [
+              "778NGK",
+              "778SGK",
+              "778TEK",
+              "781NWK",
+              "781RWK",
+              "781T1K",
+              "MC2K"
+            ]
+          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "78.1"
@@ -6455,6 +6555,19 @@
       },
       "houses": {
         "Carnadero": {
+          "derived": {
+            "indications": [
+              "1NATK",
+              "2NATK",
+              "3NATK",
+              "784NGK",
+              "784SGK",
+              "784TEK",
+              "799NWK",
+              "799RWK",
+              "799T1K"
+            ]
+          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "79.9"
@@ -6464,6 +6577,19 @@
           }
         },
         "Gilroy": {
+          "derived": {
+            "indications": [
+              "01TK",
+              "02TK",
+              "784NGK",
+              "784SGK",
+              "784TEK",
+              "795NWK",
+              "795RWK",
+              "795T1K",
+              "MC1K"
+            ]
+          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "79.5"
@@ -6474,6 +6600,17 @@
           }
         },
         "Luchessa": {
+          "derived": {
+            "indications": [
+              "1SATK",
+              "783NWK",
+              "783RWK",
+              "783T1K",
+              "784NGK",
+              "784SGK",
+              "784TEK"
+            ]
+          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "78.3"
@@ -7432,13 +7569,6 @@
             },
             "rotation": 180
           },
-          "Corporal:2NAT": {
-            "at": {
-              "x": 16.51,
-              "y": 33.02
-            },
-            "glyph": "Railroad-Trackplan:Track Circuit"
-          },
           "HBA": {
             "at": {
               "x": 40.64,
@@ -7495,6 +7625,14 @@
             },
             "glyph": "Railroad-Trackplan:Industry",
             "row": "2ea3807f-b8b6-4bf5-9849-2404bd0b0c68"
+          },
+          {
+            "at": {
+              "x": 16.51,
+              "y": 33.02
+            },
+            "glyph": "Railroad-Trackplan:Track Circuit",
+            "row": "1f225e38-5cdb-4b01-9ab6-8bbb0d92c42a"
           },
           {
             "at": {
@@ -7611,6 +7749,20 @@
       },
       "houses": {
         "Sargent": {
+          "derived": {
+            "indications": [
+              "1NATK",
+              "1SATK",
+              "2SATK",
+              "835NWK",
+              "835RWK",
+              "835T1K",
+              "836NGK",
+              "836SGK",
+              "836TEK",
+              "MC1K"
+            ]
+          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "83.5"
@@ -7626,6 +7778,24 @@
         "processor": "Sargent"
       },
       "track": {
+        "consumers": [
+          {
+            "given": {
+              "Appliance": "track_circuit",
+              "CP": "Corporal",
+              "Name": "Corporal:2NAT"
+            },
+            "id": "1f225e38-5cdb-4b01-9ab6-8bbb0d92c42a",
+            "relations": {
+              "indication": "Corporal:2NATK",
+              "TC": [
+                "2ed485d8-9399-4b83-8285-6cf2e67c0af8.A",
+                "bf713624-211c-41d9-a4bf-fb1f8e4b8aa4.track",
+                "d9e20e6c-3e58-468f-bbb0-e91fd802a003.track"
+              ]
+            }
+          }
+        ],
         "ends": [
           {
             "derived": {
@@ -7661,8 +7831,8 @@
             "id": "bf713624-211c-41d9-a4bf-fb1f8e4b8aa4",
             "relations": {
               "track": [
+                "1f225e38-5cdb-4b01-9ab6-8bbb0d92c42a.TC",
                 "2ed485d8-9399-4b83-8285-6cf2e67c0af8.A",
-                "Corporal:2NAT.TC",
                 "d9e20e6c-3e58-468f-bbb0-e91fd802a003.track"
               ]
             }
@@ -7725,8 +7895,8 @@
             "id": "2ed485d8-9399-4b83-8285-6cf2e67c0af8",
             "relations": {
               "A": [
+                "1f225e38-5cdb-4b01-9ab6-8bbb0d92c42a.TC",
                 "bf713624-211c-41d9-a4bf-fb1f8e4b8aa4.track",
-                "Corporal:2NAT.TC",
                 "d9e20e6c-3e58-468f-bbb0-e91fd802a003.track"
               ],
               "B": [
@@ -7824,9 +7994,9 @@
             "id": "d9e20e6c-3e58-468f-bbb0-e91fd802a003",
             "relations": {
               "track": [
+                "1f225e38-5cdb-4b01-9ab6-8bbb0d92c42a.TC",
                 "2ed485d8-9399-4b83-8285-6cf2e67c0af8.A",
-                "bf713624-211c-41d9-a4bf-fb1f8e4b8aa4.track",
-                "Corporal:2NAT.TC"
+                "bf713624-211c-41d9-a4bf-fb1f8e4b8aa4.track"
               ]
             }
           },
@@ -11370,6 +11540,90 @@
       },
       "houses": {
         "Watsonville": {
+          "derived": {
+            "indications": [
+              "1BTK",
+              "1CTK",
+              "1DTK",
+              "1ETK",
+              "01TK",
+              "2ATK",
+              "2BTK",
+              "2CTK",
+              "2DTK",
+              "2ETK",
+              "02TK",
+              "3BTK",
+              "3CTK",
+              "3DTK",
+              "3ETK",
+              "3NWK",
+              "3RWK",
+              "3T1K",
+              "03TK",
+              "4BTK",
+              "4CTK",
+              "4DTK",
+              "4ETK",
+              "5BTK",
+              "5CTK",
+              "5DTK",
+              "5ETK",
+              "5NWK",
+              "5RWK",
+              "5T1K",
+              "6BTK",
+              "6CTK",
+              "6DTK",
+              "6ETK",
+              "7BTK",
+              "7CTK",
+              "7DTK",
+              "7ETK",
+              "7NWK",
+              "7RWK",
+              "7T1K",
+              "9NWK",
+              "9RWK",
+              "9T1K",
+              "11NWK",
+              "11RWK",
+              "11T1K",
+              "13NWK",
+              "13RWK",
+              "13T1K",
+              "15NWK",
+              "15RWK",
+              "15T1K",
+              "17NWK",
+              "17RWK",
+              "17T1K",
+              "19NWK",
+              "19RWK",
+              "19T1K",
+              "21NWK",
+              "21RWK",
+              "21T1K",
+              "23NWK",
+              "23RWK",
+              "23T1K",
+              "25NWK",
+              "25RWK",
+              "25T1K",
+              "837NWK",
+              "837RWK",
+              "837T1K",
+              "838NGK",
+              "838SGK",
+              "838TEK",
+              "840NGK",
+              "840SGK",
+              "840TEK",
+              "842NGK",
+              "842SGK",
+              "842TEK"
+            ]
+          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "83.7"
@@ -16029,7 +16283,8 @@
     },
     "referenceData": {
       "driverEncodings": "2026-10-23",
-      "encodingTransportPairing": "2026-10-23"
+      "encodingTransportPairing": "2026-10-23",
+      "indicationTokens": "2026-10-27"
     },
     "rules": "0.1.0",
     "source": {
