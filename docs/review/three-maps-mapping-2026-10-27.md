@@ -484,6 +484,15 @@ One line each: the question, the default, the reason, and the owner's ruling of 
     writes every library field on every instance; `key_of` already reads `~` as none.
     **Ruling: accepted** (group B).
 
+## After the ruling on cross-interlocking references (2026-10-27)
+
+The rows above write a reference to another interlocking's marker as a pin, `Corporal:2NAT.TC` in its neighbours'
+`relations` (7.4, 8.1). The owner's later ruling (ADR 0011 amendment) makes such a reference a one-sided consumer of
+the named station's codeline indication. As implemented: the marker is a row of `track.consumers` with its `id`, its
+`given` (its `Name` included), `relations.TC` and `relations.indication` (`Corporal:2NATK`, the `K` added at ingest),
+and its neighbours name it `<id>.TC`; each house gains `derived.indications`, what its station sends, which the
+reference resolves against. The migration note (`schemas/layout-model/v3.1.0-migration.md`) has the rows.
+
 ## ADR amendments implied
 
 Not edited here; each waits for its own change to the ADR.
