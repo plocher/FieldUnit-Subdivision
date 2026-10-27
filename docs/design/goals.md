@@ -18,7 +18,7 @@ rather than written by hand:
 4. **An emulation**: the appliances represented and introspectable, so that test vectors, debugging and
    replay of dynamic operations are possible (`spcoast_virtual_plant` is the simple version).
 5. **A documentation set**: printable packets, web pages and review views of each interlocking and of the
-   territory, generated from the model so they are never stale (issue #31; an incomplete first attempt is archived
+   subdivision, generated from the model so they are never stale (issue #31; an incomplete first attempt is archived
    in `docs/archive/part-c-ontology/`).
 6. **The CTC machine application** for the dispatcher's desk, generated from the desk sheets.
 
@@ -29,7 +29,7 @@ rather than written by hand:
   high-quality drawing. (Done for the six legacy stations; the drawings are now the source and the XML is
   evidence only.)
 - Identify and create the data concepts the model still lacks: the CTC machine itself, the structure of a
-  field unit sketch, the scope of a dispatcher's territory, the operating topology for train progression.
+  field unit sketch, the scope of a dispatcher's subdivision, the operating topology for train progression.
   Method: list every datum a consumer needs and map it to the model, or flag it as missing.
 - Reorganize the documentation into a consumable, user-focused set. The repositories have accumulated
   in-progress notes, reviews and handoffs; those are records and belong in `docs/archive/`, while the
@@ -41,7 +41,8 @@ rather than written by hand:
    Railroad tag `split-projects-final`).
 2. Define how plant appliances bind to hardware and to operator interfaces (FieldUnit ADR 0003) and clean the
    symbol libraries and the Sargent sandbox to it.
-3. Rebuild the compiler's model layer to the ADRs: one `(Role, Kind)` table, library defaults by `lib_id`,
+3. Rebuild the model layer of the KiCad tooling to the ADRs (since ADR 0011, the KiCad importer and the reference
+   derivation): one `(Role, Kind)` table, library defaults by `lib_id`,
    END_CTC and dead-end caps, control points from the IRJ-Signal, the gates (issue #30 step 3).
 4. The generator: emit the interlocking application for one interlocking (Sargent first) and compile it
    against FieldUnit; then the CTC machine application; then AAR tokens over MQTT to the physical desk.
@@ -51,7 +52,7 @@ rather than written by hand:
 
 - Each fact has one source; when a fact exists both in a drawing and in code, the code is generated or
   validated from the drawing.
-- The compiler emits one complete model; generators consume parts of it. Fragments are not an interface.
+- The Layout Data Model File is one complete model; generators consume parts of it. Fragments are not an interface.
 - Vital logic lives in FieldUnit only. Nothing in the drawings or the generators reimplements an
   interlocking rule.
 - Hardware never enters the interlocking model; the generator emits a separate hardware binding for the

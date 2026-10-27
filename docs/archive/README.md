@@ -10,9 +10,12 @@ old path `docs/review/`.
 | `vocabulary-sources.md` | What the review could and could not source | the glossary's Sources section |
 | `spike-cp-membership.md` | Spike: the interlocking limits derive from signals; control points are declared | ADR 0001 D3 and ontology rev 5 |
 | `legacy-xml-kicad-bootstrap.md` | How the six legacy stations were bootstrapped from the ArduinoPoint XML | `tools/legacy_import/README.md`, issues #13, #14 |
-| `ctc-subdivision-design-layer.md` | Early design of the subdivision layer | `docs/design/layout-model.md` |
+| `ctc-subdivision-design-layer.md` | Early design of the subdivision layer | `layout-model.md` (archived in turn) |
 | `HANDOFF-part-c-kicad-transition.md`, `HANDOFF-rail-layout-model-board.md`, `SPIKE_HANDOFF_kicad-plant-graph.md` | Session handoffs | the code and tests they led to |
 | `TBD-shared-kicad-python-api.md` | A note on sharing the KiCad readers | `tools/kicad_services/` |
 | `part-c-ontology/` | The 2026-09-16 ontology checkpoint (five authority domains, evidence ledger, track-diagram contract, the first documentation packet generator) and the 2026-09-24 goals note, from two unmerged branches now kept as `archive/*` tags | glossary and ADRs for the vocabulary; `docs/design/goals.md` for the goals; its README lists what carried forward and what has no home yet |
 | `handoff-field-io-cleanup/` | The 2026-10-06 field I/O handoff and the scripts of the library passes 1–3 and the owner's review | ADR 0004, the InterlockingPlant libraries, the unified project |
+| `ontology.md` | Rev 5 of 2026-10-01: the model by facet (function, mechanism, extent, addressing, logic, enclosure); never reviewed. Archived 2026-10-26 | the glossary; ADR 0009 for entities and relations |
+| `layout-model.md`, `layout-model-plan.md` | Rev 8 and rev 3 of 2026-10-02: the linked model shape and the spike-first plan to build it. Archived 2026-10-26 | ADR 0008 (the Layout Data Model File), 0009, 0010 and 0011; `tools/layout_compiler`, `tools/layout_model` |
+| `desk-codeline-kicad-pattern.md` | Draft of 2026-09-28 to 10-02: the desk and code line drawing pattern. Archived 2026-10-26 | ADR 0009 (the OfficeUnit, columns, code lines as encodings on transports) and ADR 0004 (the field hardware sheet) |
 | `unify/` | `build_spcoast.py`, which generated the unified SPCoast project from `Railroad/Archive/SPCoast` (retired at the owner's cutover, 2026-10-07; refuses to write into the live project) | `Railroad/SPCoast`, hand-maintained |

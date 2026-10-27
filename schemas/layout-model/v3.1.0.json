@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://spcoast.com/schemas/layout-model/v3.1.0.json",
   "title": "Layout Data Model File",
-  "description": "ADR 0008 rev 4 on ADR 0009. One file holds one layout: what a person states, nested by scope, every relation a name. Transports, code lines, I/O encodings, processors and CMRInet Nodes are entities; a binding is a route on a bus owner. Stations are derived and absent. Absent is absent. Nothing here names a sheet, a net, a reference or a KiCad symbol unit. Draft of 3.1.0 (ADR 0010 C1, 2026-10-25): geometry and glyphs landed as 0010/geometry.schema.json states them; appliances and track stay open until the trackplan semantics piece fixes them in this same version, and 3.1.0 ships once, with its migration note, when both are in.",
+  "description": "ADR 0008 rev 4 on ADR 0009. One file holds one layout: what a person states, nested by scope, every relation a name. Transports, code lines, I/O encodings, processors and CMRInet Nodes are entities; a binding is a route on a bus owner. Stations are derived and absent. Absent is absent. Nothing here names a sheet, a net, a reference or a KiCad symbol unit. Version 3.1.0 (2026-10-25) adds each interlocking's appliances and track (the trackplan piece) and geometry, and the layout's glyphs (ADR 0010); a 3.0.0 file migrates to 3.1.0 by its schema string alone (v3.1.0-migration.md).",
   "type": "object",
   "required": [
     "schema",
@@ -323,12 +323,14 @@
           }
         },
         "appliances": {
-          "type": "object",
-          "description": "The trackplan; open in v3.0.0 until the compiler reads it."
+          "description": "The trackplan's named things by name (ADR 0010 §4.1).",
+          "$ref": "#/$defs/namedMap",
+          "additionalProperties": {
+            "$ref": "#/$defs/appliance"
+          }
         },
         "track": {
-          "type": "object",
-          "description": "Track circuits, joints and policies; open in v3.0.0."
+          "$ref": "#/$defs/trackplan"
         },
         "devices": {
           "type": "array",
@@ -668,7 +670,7 @@
       }
     },
     "marker": {
-      "description": "A track symbol with no railroad name of its own (a joint, END CTC, NextCP, an industry, a policy sign): its kind as the libraries spell it, its placement and glyph, and the circuit at each of its track pins, so a reader joins it to track by name.",
+      "description": "A track symbol's placement (a joint, END CTC, NextCP, an industry, a policy sign): its kind as the libraries spell it, its placement and glyph, and the circuit at each of its track pins. It joins its track row by name where the symbol has one, else by kind, circuits and ports.",
       "type": "object",
       "required": [
         "kind",
@@ -708,6 +710,20 @@
           "additionalProperties": {
             "type": "string",
             "pattern": "^[^:/\\s][^:/]*:[^:/\\s][^:/]*$"
+          }
+        },
+        "name": {
+          "$ref": "#/$defs/qualifiedName",
+          "description": "The track row's name, where the symbol has one: the marker joins its row by it."
+        },
+        "ports": {
+          "description": "The track row's ports, where the symbol has no name: the marker joins its row by kind, circuits and ports.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/portRef"
+            }
           }
         }
       }
@@ -983,6 +999,193 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/marker"
+          }
+        }
+      }
+    },
+    "portRef": {
+      "description": "A switch's track port, or a pin of a named track symbol, by qualified name: the switch or symbol, a dot, and the pin (a switch's C, N or R, a derail's C or R; an industry's EoT): Luchessa:783.R, Luchessa:Gilroy Industry.EoT.",
+      "type": "string",
+      "pattern": "^[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?:[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?\\.[A-Za-z][A-Za-z0-9_]*$"
+    },
+    "appliance": {
+      "description": "A named thing on the trackplan (ADR 0010 §4.1, by Role APPLIANCE): a switch or derail, a mast with its heads, a track circuit, a lamp or a contact. Keyed by its Name; geometry's appliances{} uses the same keys. A reference to another interlocking's appliance (a qualified name drawn here) is not an appliance of this one. Derived things stay out: a switch's gang and a derail's dependence follow from the names (ADR 0003 D8); signals, routes and limits are the evaluator's.",
+      "type": "object",
+      "required": [
+        "appliance"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "appliance": {
+          "type": "string",
+          "enum": [
+            "switch",
+            "mast",
+            "track_circuit",
+            "lamp",
+            "contact"
+          ]
+        },
+        "style": {
+          "type": "string",
+          "description": "The symbol's Style: a switch's powered, lock, dual, manual, manual_sensed or derail; a mast's single, double or dwarf; a lamp's maintainer_call or non_vital; a circuit's virtual."
+        },
+        "milepost": {
+          "type": "number",
+          "description": "The milepost the symbol states, optional geographic context (a hot box alarm's location, for the timetable)."
+        },
+        "controlPoint": {
+          "$ref": "#/$defs/qualifiedName",
+          "description": "The house (control point) the appliance belongs to: its own CP field where it states one; else the one house of its interlocking; else, with two or more houses, the house its chain of relations reaches (a gang's switch without a letter to its other switches and derails, a switch to its OS circuit, a mast and its signal joint, a signal joint to the circuits beside it that hold no switch, a circuit across a plain joint, a virtual circuit's members to it, a maintainer call by its MC wire)."
+        },
+        "osCircuit": {
+          "$ref": "#/$defs/qualifiedName",
+          "description": "The circuit a switch's or derail's track carries: its OS circuit (the circuit's marker, or else the switch's TC, whose library default is the switch's name and T1, ADR 0003 D3). Absent on dark track."
+        },
+        "indicationCeiling": {
+          "type": "string",
+          "description": "The best indication over the switch, as drawn (STOP/RESTRICTING)."
+        },
+        "heads": {
+          "description": "A mast's heads by letter, each with the Style the trackplan draws (ADR 0009 §3.7).",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[A-Z]$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "style": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "members": {
+          "description": "A virtual track circuit's member circuits, as its IndicationToken lists them.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/qualifiedName"
+          }
+        },
+        "settings": {
+          "$ref": "#/$defs/settings"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "trackSymbol": {
+      "description": "A track symbol (a joint, an end, a policy sign) as a row: its Kind as the libraries spell it, and the circuits and named pins at its pins. An end may have a name (an industry); a signal joint adds the mast standing on it and its control point; a NextCP the interlocking it leads to; a policy sign its Direction.",
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "name": {
+          "$ref": "#/$defs/qualifiedName",
+          "description": "The symbol's name where it has one (an industry); geometry's marker carries the same."
+        },
+        "circuits": {
+          "description": "The circuit at each track pin, by pin name (A, B; CTC, DARK; To; Track; EoT); a pin on dark track is absent. The same map geometry's markers[] carries, so a marker joins its row here by kind and circuits (ADR 0010 C6).",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/qualifiedName"
+          }
+        },
+        "ports": {
+          "description": "Where a pin's track meets, with nothing between, a switch port or a pin of a named track symbol: by pin name. This is the only record of track that has no circuit (dark track).",
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/portRef"
+            }
+          }
+        },
+        "mast": {
+          "$ref": "#/$defs/qualifiedName"
+        },
+        "controlPoint": {
+          "description": "A signal joint's control point: its CP field, or its mast's, or the interlocking's one house.",
+          "$ref": "#/$defs/qualifiedName"
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "LEFT",
+            "RIGHT",
+            "BOTH"
+          ]
+        },
+        "interlocking": {
+          "type": "string",
+          "description": "A NextCP's destination: the interlocking its track leads to, which may lie beyond the layout (Lick, Hollister)."
+        }
+      }
+    },
+    "trackplan": {
+      "description": "The interlocking's track as the netlist states it, by circuit and port name, never by coordinate (ADR 0010 C6). A circuit is the track between joints and ends, joined through a switch's or derail's ports; dark track has no circuit.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "joints": {
+          "description": "IRJ and IRJ_SIGNAL: insulated joints, each between the circuits on its A and B pins; a signal joint's A pin is where the route it protects begins, inside the interlocking.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/trackSymbol"
+          }
+        },
+        "ends": {
+          "description": "END_CTC, NEXT_CP, BUMPER, INDUSTRY: where the drawn track ends, and what lies beyond.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/trackSymbol"
+          }
+        },
+        "policies": {
+          "description": "The policy signs (RULE_105, RULE_251, RULE_261, RULE_93) with their Direction, on the circuit at their pin.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/trackSymbol"
+          }
+        },
+        "links": {
+          "description": "Switch ports that meet with no joint or end between them (Luchessa:795.R and Luchessa:795D.R), with the circuit there.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "ports"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "ports": {
+                "type": "array",
+                "minItems": 2,
+                "items": {
+                  "$ref": "#/$defs/portRef"
+                }
+              },
+              "circuit": {
+                "$ref": "#/$defs/qualifiedName"
+              }
+            }
+          }
+        },
+        "mileposts": {
+          "description": "The milepost anchors drawn on the trackplan, by name (their milepost); geometry places them.",
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         }
       }

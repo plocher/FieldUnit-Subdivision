@@ -106,30 +106,32 @@ class RuleTests(unittest.TestCase):
 
     def test_macro_expands_in_scope(self):
         src = plant()
-        src.symbols["E1"] = sym("E1", "Encoding-AAR", "/", "AAR", Role="CODELINE_ENCODING", Kind="AAR", Topic="ctc/<STRUCTURE:RAILROAD:Name>/codeline/")
+        src.symbols["E1"] = sym("E1", "Encoding-AAR", "/", "AAR", Role="CODELINE_ENCODING", Kind="AAR", Name="AAR", Topic="ctc/<STRUCTURE:RAILROAD:Name>/codeline/")
         sm = seams.resolve(src)
         self.assertEqual(sm.encodings["AAR"].settings["Topic"], "ctc/SPCoast/codeline/")
 
     def test_macro_with_two_in_scope_is_an_error(self):
         src = plant()
         src.symbols["RR2"] = sym("RR2", "Railroad", "/", "Other", Role="STRUCTURE", Kind="RAILROAD", Name="Other")
-        src.symbols["E1"] = sym("E1", "Encoding-AAR", "/", "AAR", Role="CODELINE_ENCODING", Kind="AAR", Topic="ctc/<STRUCTURE:RAILROAD:Name>/codeline/")
+        src.symbols["E1"] = sym("E1", "Encoding-AAR", "/", "AAR", Role="CODELINE_ENCODING", Kind="AAR", Name="AAR", Topic="ctc/<STRUCTURE:RAILROAD:Name>/codeline/")
         sm = seams.resolve(src)
         self.assertTrue(sm.report.by_code("macro.scope"))
         self.assertTrue(all(d.severity == "error" for d in sm.report.by_code("macro.scope")))
 
     def test_macro_names_a_missing_field(self):
         src = plant()
-        src.symbols["E1"] = sym("E1", "Encoding-AAR", "/", "AAR", Role="CODELINE_ENCODING", Kind="AAR", Topic="<STRUCTURE:RAILROAD:Nope>")
+        src.symbols["E1"] = sym("E1", "Encoding-AAR", "/", "AAR", Role="CODELINE_ENCODING", Kind="AAR", Name="AAR", Topic="<STRUCTURE:RAILROAD:Nope>")
         sm = seams.resolve(src)
         self.assertTrue(sm.report.by_code("macro.field"))
 
-    def test_a_symbol_without_name_uses_value_and_says_so(self):
+    def test_a_symbol_without_name_is_unnamed_never_its_value(self):
+        """The owner (2026-10-25): the Value fallback is gone; a symbol without its key is reported and not written."""
         src = plant()
         src.symbols["OU1"] = sym("OU1", "OfficeUnit", "/", "Desk", Role="OFFICE_UNIT", Style="US&S")
         sm = seams.resolve(src)
-        self.assertIn("Desk", sm.office_units)
-        self.assertTrue(sm.report.by_code("identity.value"))
+        self.assertEqual(sm.office_units, {})
+        self.assertTrue(sm.report.by_code("identity.name"))
+        self.assertTrue(sm.report.by_code("entity.name"))
 
     def test_jmri_driver_is_keyed_by_kind_and_served_device(self):
         """ADR 0005 S4, R11 and the owner (2026-10-24): an encoded driver carries no address; its key is Kind.name of the
@@ -145,7 +147,7 @@ class RuleTests(unittest.TestCase):
         self.assertEqual((rows["X:784EAB"].appliance, [(b.function, b.route) for b in rows["X:784EAB"].bindings]),
                          ("mast", [("IND", "Alpha/SIGNALMAST.784EAB/IND")]))
         self.assertFalse(sm.report.by_code("driver.address"))
-        self.assertFalse(sm.report.by_code("identity.value"))
+        self.assertFalse(sm.report.by_code("identity.name"))
         model = emit.emit(sm)
         self.assertEqual(model["layout"]["processors"]["Alpha"]["drivers"]["TURNOUT.777"], {"ic": "MQTT-JMRI", "kind": "TURNOUT"})
         self.assertEqual(layout_model.errors(model), [])
@@ -171,9 +173,9 @@ class RuleTests(unittest.TestCase):
     def test_head_vocabulary(self):
         src = plant()
         src.symbols.update({
-            "M1": sym("M1", "Mast_Single", "/X/", "100NA", Role="APPLIANCE", Appliance="mast", Style="single"),
-            "H1": sym("H1", "Signal Head - CPL", "/X/", "A", Role="APPLIANCE", Appliance="head", Style="CPL"),
-            "DM1": sym("DM1", "Mast", "/X/", "100NA", Role="DEVICE", Appliance="mast"),
+            "M1": sym("M1", "Mast_Single", "/X/", "100NA", Role="APPLIANCE", Appliance="mast", Name="100NA", Style="single"),
+            "H1": sym("H1", "Signal Head - CPL", "/X/", "A", Role="APPLIANCE", Appliance="head", Name="A", Style="CPL"),
+            "DM1": sym("DM1", "Mast", "/X/", "100NA", Role="DEVICE", Appliance="mast", Name="100NA"),
             "DH1": sym("DH1", "Device-Head-CL-Pixel", "/X/", "~", Role="DEVICE", Appliance="head", Style="CL", Head="A"),
         })
         src.nets += [net("h", ("H1", "M"), ("M1", "H")), net("ind", ("DH1", "IND"), ("DM1", "IND"))]
@@ -184,9 +186,9 @@ class RuleTests(unittest.TestCase):
     def test_semaphore_lamp_is_allowed(self):
         src = plant()
         src.symbols.update({
-            "M1": sym("M1", "Mast_Dwarf", "/X/", "100SB", Role="APPLIANCE", Appliance="mast", Style="dwarf"),
-            "H1": sym("H1", "Signal Head - Semaphore-UQ", "/X/", "B", Role="APPLIANCE", Appliance="head", Style="UQ"),
-            "DM1": sym("DM1", "Mast", "/X/", "100SB", Role="DEVICE", Appliance="mast"),
+            "M1": sym("M1", "Mast_Dwarf", "/X/", "100SB", Role="APPLIANCE", Appliance="mast", Name="100SB", Style="dwarf"),
+            "H1": sym("H1", "Signal Head - Semaphore-UQ", "/X/", "B", Role="APPLIANCE", Appliance="head", Name="B", Style="UQ"),
+            "DM1": sym("DM1", "Mast", "/X/", "100SB", Role="DEVICE", Appliance="mast", Name="100SB"),
             "DA": sym("DA", "Device-Head-Semaphore-UQ", "/X/", "~", Role="DEVICE", Appliance="head", Style="UQ", Head="B"),
             "DL": sym("DL", "Device-Head-CL-RGB", "/X/", "~", Role="DEVICE", Appliance="head", Style="CL", Head="B"),
         })
@@ -254,7 +256,7 @@ class SPCoastRelationTable(unittest.TestCase):
 
     def test_every_key_is_a_name_never_a_value(self):
         """The owner (2026-10-24): every symbol the compiler names carries Name = ${Value}; Value is never read."""
-        self.assertEqual(self.sm.report.by_code("identity.value"), [])
+        self.assertEqual(self.sm.report.by_code("identity.name"), [])
 
     def test_jmri_drivers_keyed_by_object_and_device_and_masts_are_rows(self):
         gilroy = self.sm.processors["Gilroy"].drivers

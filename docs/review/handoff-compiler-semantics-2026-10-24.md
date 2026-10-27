@@ -75,6 +75,106 @@ and view items continue here as C1, C2 and C3 of ADR 0010, interleaved with the 
 - **Reviews**: `docs/review/adr-0008-rev4-review-2026-10-23.md` (27 findings, all dispositioned);
   `docs/review/naming-audit-2026-10-22.md`; `docs/review/glossary-delta-2026-10-23.md` (applied).
 
+## Status after the session of 2026-10-25 (items 1 and 2)
+
+Branch `feat/trackplan-semantics` off `main` (`18640e8`), not pushed; the owner merges. Railroad `27496ce` on
+`feat/deployment-cases`, not pushed (the owner's 838NCD rename `7ecb9d9` and RIO1 IC `CMRI` `27496ce`, baselined as
+owner edits).
+
+- **Item 1, ADR 0009 rev 3, is proposed and partly ruled** (`docs/review/adr-0009-rev3-amendments-2026-10-25.md`,
+  with its adversarial review beside it: 15 findings, one blocker, all applied or made decisions). The owner's
+  rulings:
+  - the CMRInet IC token is `CMRI`, and RIO1 is changed;
+  - the Value fallback is gone (`0ecd994`), with ADR 0008 §4.5's sentence struck and an ADR 0008 §8 entry (this
+    session's last commit);
+  - the key list per symbol is "good enough for now".
+
+  Decisions 4 to 8 are open, and so is the rev as a whole: the head device's name join, two stale §3.2 entries,
+  the cross-references including §4's, three unenforced checks, and the glossary's MAIN HOUSE line. **ADR 0009 is
+  not yet edited.**
+- **Item 2, the trackplan piece, is implemented** (`6239d91`, the rulings in `bf8364a`, the review's fixes in
+  `c9c3a5d` and `e53f236`). `tools/layout_compiler/trackplan.py` writes `appliances{}` and `track{}` (joints,
+  ends, policies, links, mileposts). One `circuit_of_net` names every circuit for both pieces, so finding (b) of
+  item 4 is closed. The owner's rulings:
+  - signals protect routes through an interlocking: a switch or circuit has a control point only where its signals
+    protect it, and yard, dark and industry track is outside by definition;
+  - approach blocks and the track between interlockings wait for ABS/APB;
+  - a signal joint's `A` pin is where the protected route begins;
+  - HBA is not on 1SAT (it belongs with a milepost and the timetable), so its `MC` pin touching the track is a
+    drawing slip for the owner;
+  - `interlocking:token` names a code line indication token from that interlocking, a placeholder for ABS/APB.
+
+  Protection crosses plain joints between switch circuits (Christopher's 815, Watsonville's ladder). Nine points
+  are open in `docs/review/trackplan-piece-2026-10-25.md` ("Still open"), beside its adversarial review (17
+  findings). Two of them are blockers for the views:
+  - a **NextCP's destination is stated only in `Value`** (all 18), so the library needs a key attribute. Christopher's
+    two NextCPs both say `Sargent`;
+  - **geometry markers need `ports`** to join `track` rows: two `INDUSTRY` rows collide at Corporal and at Sargent.
+    That is an ADR 0010 amendment.
+
+  **Item 6 (`CP` field retirement)** is now scoped by the rulings: the field is not written on unprotected track (60
+  of them) and agrees everywhere the signals speak. It still decides for the six shared cases and for lamps, so it
+  can retire only after open decision 4 and a relation for lamps.
+- **Schema 3.1.0 has shipped** (`46c6460`; the example `c9d99c0`, regenerated after the rulings in `91a1a0b`). The
+  writer names `layout-model/v3.1.0` (compiler 0.3.0). The migration note is
+  `schemas/layout-model/v3.1.0-migration.md`. The example carries geometry. What item 3 still owes is ADR text, for
+  the owner:
+  - ADR 0008 §4.1 amended for glyphs;
+  - ADR 0008 §4.3 and C4 (the open objects closed);
+  - ADR 0008 §6's counts, read off the example;
+  - ADR 0010 C1 marked done;
+  - DoD4.
+- **kicad-cli hangs on this machine** since this session (even `kicad-cli version`, sandboxed or not, with KiCad
+  open). The owner exported the netlists by hand, and the gates ran with `SPCOAST_NETLIST` after a staleness check.
+  Without either, the SPCoast gates skip and the run reads OK: check that 232 ran.
+- Tests: 232, all green against the export of 22:30 (Railroad `27496ce`).
+
+Next session: items 3 (the ADR text, after the owner rules on the open points) and 5 (the first view, which needs
+the two blockers above settled).
+
+## Status after the session of 2026-10-26 (the owner's review of item 2)
+
+The owner reviewed item 2 point by point; the rulings are in `docs/review/trackplan-piece-2026-10-25.md` ("The
+owner's rulings (2026-10-26)"). They **supersede the control point rulings of 2026-10-25 above**: a control point is
+the house whose field unit wires an appliance, not the routes its signals protect. Implemented in `a9bd3ed`, the
+example in `f50aa9f`; Railroad `96c6b4e` baselines the owner's edits (NextCP `Interlocking`, Industry `Name`, HBA off
+the track with `Milepost`, a Rule 93 sign moved).
+
+- **Control point by propagation from the houses.** One house gives every appliance its house; with two or more the
+  stated `CP` fields are roots and the rest inherit along their relations. Every SPCoast appliance has one (141);
+  the signal protection groups are gone, and so is the 60 dropped in the item above.
+- **`key_of`** is the one place identity is read (`KEYS` by Role and Kind).
+- **Both view blockers are closed.** NextCPs state their destination (all 18 pair up; Christopher's say Corporal and
+  Luchessa now). Ends may carry names, a pin reference names a named end's pin, and a marker joins its row by name or
+  ports; Luchessa's END CTC to Gilroy Industry is recorded.
+- **An appliance's milepost** is written; a field nothing consumes passes through as a setting.
+- **Protection and authority limits** (signal joints, END CTC, Rule 93: the circuit a Rule 93 sign is on is inside
+  the yard limits) are the views' to derive, item 5.
+- **Item 6 (`CP` field retirement) is withdrawn**: the field is the sparse root of the propagation and stays.
+- Open from the 2026-10-25 list: rule 8 crossovers, detection blocks in `TC`, `AGENTS.md`'s OS default sentence,
+  and ADR text (0008, 0009, 0010) for all of the above, which waits for the owner.
+- Tests: 240, all green against the owner's export of 2026-10-26 12:37, no gate skipped.
+
+### Later the same session: ADR 0011 proposed, and the work reframed
+
+The owner's discussion of where drawn fields land ended in **ADR 0011 (proposed, rev 3, `docs/adr/0011-given-relations-derived.md`)**:
+every entity and row holds `given`, `relations` and `derived`; a writer policy and a reader policy; one definition of
+the computation (normative rules, a conformance suite as data, a reference derivation in `tools/layout_model`);
+incomplete is not in error, and saving a file in error is each writer's policy; geometry always. Six decisions wait for
+the owner.
+
+**The compiler is transient** (the owner, 2026-10-26). It is needed while KiCad is the source and not once Studio
+exists. What lasts is the schema, the policies and the derivation. So the remaining work is reframed:
+
+- Most of what this branch built in `tools/layout_compiler` is derivation (the relation table's resolution, circuits,
+  control point propagation, ports, links, named ends, NextCP pairing, a run's circuit). If ADR 0011 is ruled, it
+  moves to the reference derivation, and the compiler shrinks to a KiCad importer that writes `given` and `relations`.
+- Item 3 (ADR text) now includes ADR 0011's rulings and the ADR 0009 text that makes the relation table and the
+  propagation normative rules. Item 5 (the first view) reads `derived` under the reader policy.
+- `AGENTS.md`'s "Direction" and its compiler sections describe the compiler as the destination; they change only with
+  the owner's agreement, after the ruling on 0011.
+- ADR 0003 rule 8 crossovers and detection blocks in `TC` are held for a separate discussion (the owner).
+
 ## The work, in order
 
 The seven semantics items (the owner's list of 2026-10-25) and ADR 0010's C1, C2 and C3 are one sequence. The
@@ -86,14 +186,14 @@ can run beside 2 if the session prefers, but 3.1.0 ships once.
    exports into a temp directory and deletes it; `layout_compiler.source.from_project` reads through it;
    `compile_layout.py` takes the root `.kicad_sch`; the SPCoast test class and `make_spcoast_layout.py` export fresh,
    with `SPCOAST_NETLIST` and the positional argument as the caller's cache on a machine without KiCad.
-1. **ADR 0009 amendments** (0008 C11 lists them; the owner said amendments, not a new decision): §3.10 gains Kind
+1. **ADR 0009 amendments.** Proposed 2026-10-25, waiting on eight owner decisions (status above). (0008 C11 lists them; the owner said amendments, not a new decision): §3.10 gains Kind
    `RAILROAD`, the macro rule, model board lamps as PANEL devices of Style `board` without a `Column` pin, `Name` on
    every keyed symbol and `Value` never read, `Kind` on an encoded driver and `Kind.name` as its key, a Mast as a
    device with a row, `anchors` as drawn instances with §3.12's check redefined; §3.5 the bit numbering base (1)
    and direction from pin type; §3.12's head row "`IND` wire to a Mast device"; §3.2 IC `CMRI` versus `CMRInet`.
    `INDUSTRY` is already in §3.10. One rev of 0009, record entry, no new ask beyond "amend as C11 says". Propose;
    the owner approves; then edit.
-2. **The trackplan piece: `appliances` and `track`.** Read first: the view
+2. **The trackplan piece: `appliances` and `track`.** Done 2026-10-25 (status above); four decisions pending. Read first: the view
    (`docs/review/layout-model-view-2026-10-16.md`) §3.1, §4.2 and §6; ADR 0003 (D1 direction normalisation, D8
    dependent derails, D9 mast letters); ADR 0009 §3.10 (Roles APPLIANCE, TRACK, POLICY, STRUCTURE and their Kinds)
    and §3.7; ADR 0010 §4.1 (membership by Role; the wire rule), §4.5, §4.6 and C6; `AGENTS.md` "Plant schematics";
@@ -120,7 +220,7 @@ can run beside 2 if the session prefers, but 3.1.0 ships once.
    Gates: the relation table grows rows for each trackplan relation (wire, fallback, check), tested on the SPCoast
    project; the example regenerated and byte-stable; `test_drawing_has_no_errors` stays green; the counts in 0008 §6
    updated by reading them off the Layout Data Model File.
-3. **ADR 0010 C1, schema `layout-model/v3.1.0`**: `schemas/layout-model/v3.1.0.json` exists since 2026-10-25 as a
+3. **ADR 0010 C1, schema `layout-model/v3.1.0`**: the schema, example and migration note shipped 2026-10-25; the ADR text remains (status above). `schemas/layout-model/v3.1.0.json` exists since 2026-10-25 as a
    **draft**, v3.0.0 plus the 0010 fragment's `$defs` lifted by script (geometry, glyphs, `provenance.libraries`
    written), marked so in its description; item 2 adds the `appliances` and `track` shapes to it, and 3.1.0 ships once,
    with the example regenerated and one migration note (ADR 0008 C8), ADR 0008 §4.1's "named by key and version,

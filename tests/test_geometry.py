@@ -144,7 +144,7 @@ class SPCoastGeometry(unittest.TestCase):
         self.assertEqual([str(d) for d in self.sm.report.errors], [])
         self.assertEqual(sorted(self.geo.interlockings), sorted(self.sm.interlockings))
 
-    def test_model_validates_against_the_draft_3_1_0_and_round_trips(self):
+    def test_model_validates_against_3_1_0_and_round_trips(self):
         self.assertEqual(self.model["schema"], emit.SCHEMA_WITH_GEOMETRY)
         self.assertEqual(layout_model.errors(self.model), [])
         text = layout_model.dumps(self.model)

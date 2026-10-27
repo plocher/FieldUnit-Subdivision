@@ -2,7 +2,7 @@
 ## Status
 Candidate C.0 contract. This document defines what is portable, static, and editor-neutral. It is not yet a declaration that the first schema version is sufficient for runtime train progression or every FieldUnit execution feature.
 ## Purpose
-An Interlocking Plant is designed in KiCad today, but must be consumed by FieldUnit, cTc realization, documentation, model-board rendering, territory binding, simulation, and a future Studio implementation without each consumer parsing KiCad files.
+An Interlocking Plant is designed in KiCad today, but must be consumed by FieldUnit, CTC realization, documentation, model-board rendering, subdivision binding, simulation, and a future Studio implementation without each consumer parsing KiCad files.
 
 The portable model is an interchange contract. It is not:
 - a replacement KiCad editor format;
@@ -12,7 +12,7 @@ The portable model is an interchange contract. It is not:
 - an SVG/model-board layout file.
 ## Contract Layers
 ### KiCad Source Evidence
-The KiCad adapter retains references, library IDs, raw nets, pins, placement, symbol fields, and source diagnostics. These facts support traceability and compiler diagnostics. They do not form public semantic identity.
+The KiCad adapter retains references, library IDs, raw nets, pins, placement, symbol fields, and source diagnostics. These facts support traceability and plant compiler diagnostics. They do not form public semantic identity.
 ### InterlockingPlantDefinition
 The portable, versioned definition contains:
 - plant identity;
@@ -24,7 +24,7 @@ The portable, versioned definition contains:
 - structural route equations;
 - switch alignments, route circuit roles, clear circuits, and static indication ceilings.
 
-The current JSON schema is `schemas/interlocking-plant/v1.json`. The compiler emits it through:
+The current JSON schema is `schemas/interlocking-plant/v1.json`. The proof-of-concept plant compiler emits it through:
 
 ```zsh path=null start=null
 python3 tools/parse_kicad_plant.py \
@@ -47,23 +47,23 @@ Independent switches: 783 ─── segment ─── 785
 Ganged crossover:     783 ─── segment ─── 783B
 ```
 
-The compiler derives `783` + `783B` into one `crossover` control group with
+The plant compiler derives `783` + `783B` into one `crossover` control group with
 ganged commands and all-members correspondence proof. A pair named `783` and
 `785` remains independently controlled. An orphan `783B` without `783` is a
 semantic validation error.
 ### Realization Bindings
 Separate artifacts reference definition identifiers but must not repeat plant topology or route equations:
-- Controlled Point / Panel Column / CODE-group mapping;
+- control point / Panel Column / CODE-group mapping;
 - office control-regime profile and MQTT station address;
 - field device, GPIO, sensor, and motor mapping;
 - model-board physical geometry and lamp-hole realization;
 - Studio canvas coordinates and annotations.
 ### Projections and Diagnostics
-Renderer primitives, route-combinatoric proof, aliases, compiler diagnostics, and source provenance are downstream products. They are not required fields in the portable definition.
+Renderer primitives, route-combinatoric proof, aliases, plant compiler diagnostics, and source provenance are downstream products. They are not required fields in the portable definition.
 ## Functional Model Overlay
 A JSON definition alone is not the complete data model. The system has definition, state, commands, events, and views.
 ### Runtime Attributes
-`PlantRuntimeState` is evaluated by the FieldUnit vital engine and includes:
+`PlantRuntimeState` is evaluated by the FieldUnit interlocking logic and includes:
 
 | Appliance / Aggregate | Runtime attributes |
 | --- | --- |
@@ -97,22 +97,22 @@ Event names must describe authoritative state transitions so consumers do not re
 - signal authority, indication, or aspect changed;
 - plant indication vector changed.
 
-The overhead display, diagnostics, model board, cTc console, train simulation, and future crew applications subscribe to state snapshots or these events. They do not derive safety state from topology independently.
+The overhead display, diagnostics, model board, CTC machine, train simulation, and future crew applications subscribe to state snapshots or these events. They do not derive safety state from topology independently.
 ## Current V1 Invariants
 - Appliance, terminal, switch, track-circuit, and topology endpoint references resolve within one definition.
 - Static routes reference existing switches, circuits, and terminals.
 - Derived switch OS circuits are distinct from human-authored Track Circuit markers.
 - Operating track designations such as `MT`, `MT1`, and `MT2` are not automatically treated as Track Circuit identities.
-- Unnamed IRJ and bumper nodes receive opaque compiler-generated IDs; their KiCad references remain source provenance only.
-- Plant identity is compiler input (`--plant-name`, `--plant-id`), never inferred from `MAIN HOUSE` board sections.
+- Unnamed IRJ and bumper nodes receive opaque plant-compiler-generated IDs; their KiCad references remain source provenance only.
+- Plant identity is plant compiler input (`--plant-name`, `--plant-id`), never inferred from `MAIN HOUSE` board sections.
 ## FieldUnit projection notes
 - FieldUnit plant JSON is the public PlantSerializer contract: `switches[]` / `derails[]` with optional `os`, then routes. Dependence is the `*D` name; route `aligns` name the master switch only.
 - Derail polarity follows the prototype and FieldUnit: NORMAL = derailing (on the rail); REVERSE = clear. The derail's through port is `R`.
-- Portable derail control-mode facts remain available under projection deferred metadata for tooling that is not the vital engine.
+- Portable derail control-mode facts remain available under projection deferred metadata for tooling that is not the interlocking logic.
 ## Known Gaps
 - FieldUnit `PlantSerializer` cannot yet express all definition facts, especially route end kinds, circuit roles, topology segments, and terminal semantics. Projection remains intentionally lossy for those.
-- cTc Panel Column, Controlled Point, and CODE-group bindings are not yet a portable realization artifact.
-- Territory links between `cp_limit` terminals are not yet defined.
+- CTC Panel Column, control point, and CODE-group bindings are not yet a portable realization artifact.
+- Subdivision links between `cp_limit` terminals are not yet defined.
 - Runtime event serialization and state snapshots are not yet formalized.
 - Existing model-board layout facts need a separate realization projection rather than inclusion in V1 core.
 ## Historical Office Systems

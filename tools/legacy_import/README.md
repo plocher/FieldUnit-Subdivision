@@ -2,13 +2,13 @@
 
 Turns the historical ArduinoPoint XML definitions
 (`~/Dropbox/workspace/ArduinoPoint/definitions/`) into drawn KiCad sources, so
-the compiler has more than one interlocking to work on. The output is
+the plant compiler has more than one interlocking to work on. The output is
 **scaffolding, not truth**: it encodes legacy assumptions and every fact the
 sources do not record is written as `FIXME`. Only the hand-finished result is
 truth, at the fidelity of the hand-drawn Luchessa.
 
 These scripts are expected to be deleted once the six interlockings are
-finished. They are not part of the compiler.
+finished. They are not part of the plant compiler or the KiCad importer.
 
 ```zsh
 # close KiCad first: both scripts write .kicad_sch
@@ -33,7 +33,7 @@ function pin to a driver bit, the bit map matches the hand-written
 
 `import_plant_projects.py` creates a plant project per interlocking holding
 only the parts whose identity the legacy sources fix: one `MAIN HOUSE` per
-desk column (a column IS a controlled point), every switch and lock AAR-named
+desk column (a column IS a control point), every switch and lock AAR-named
 from its desk lever and allocated to its column's house, every track circuit
 that is not a switch's derived OS circuit, and the maintainer calls. It does
 **not** invent the trackplan: topology, masts and heads are left to the
@@ -48,13 +48,13 @@ zero` without them. That is expected.
 
 | Marker | Meaning |
 |---|---|
-| `CP Name` = `FIXME` on a desk column | the controlled point's geographic name, recorded nowhere in the legacy sources |
+| `CP Name` = `FIXME` on a desk column | the control point's geographic name, recorded nowhere in the legacy sources |
 | `MAIN HOUSE` Value = `FIXME CP <n>` | the same name, plant side; each switch's `CP` field already points here, so renaming the house is enough |
 | `IndicationToken` = `FIXME <n>T1` | the OS circuit of a switch with no desk lever (a crossover slave) |
 | `IndicationToken` = `FIXME TL` / `TR` | traffic lamps, not track circuits; expect `PanelAuxiliary` or a new indication kind |
-| `IndicationToken` = `FIXME CP_Other:token` | the lamp shows another interlocking's indication; needs a model and compiler addition |
+| `IndicationToken` = `FIXME CP_Other:token` | the lamp shows another interlocking's indication; needs a model and KiCad importer addition |
 | Switch Value = `FIXME <local>` | a slaved crossover switch with no lever, so no AAR number |
-| Track circuit `CP` = `FIXME` | the legacy sources do not say which controlled point owns a circuit |
+| Track circuit `CP` = `FIXME` | the legacy sources do not say which control point owns a circuit |
 
 ## Things the import turned up
 
@@ -63,7 +63,7 @@ zero` without them. That is expected.
 - **Lever kinds in the legacy XML are suggestions.** It called Luchessa's 795
   a switch when it is a lock.
 - **A swapped symbol keeps its old field values.** The drawn Luchessa desk
-  sheet has `Kind=SWITCH_LEVER` on a `PanelLock` (795), which the compiler
+  sheet has `Kind=SWITCH_LEVER` on a `PanelLock` (795), which the plant compiler
   reads. Run Update Symbols from Library on that sheet. Both scripts take
   `Role` and `Kind` from the library, never from the template instance.
 - **The legacy head list spans several masts.** Head names encode signal,

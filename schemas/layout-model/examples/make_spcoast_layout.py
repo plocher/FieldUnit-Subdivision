@@ -1,4 +1,6 @@
-"""Writes spcoast.layout.json, the ADR 0008 rev 4 §6 example: the compiler's output on the SPCoast project, never typed.
+"""Writes spcoast.layout.json, the ADR 0008 rev 4 §6 example: the compiler's output on the SPCoast project, never typed,
+with its geometry and glyphs (schema 3.1.0, ADR 0010), so the views of ADR 0010 read it as they read any Layout
+Data Model File.
 
     uv run python schemas/layout-model/examples/make_spcoast_layout.py [PROJECT.kicad_sch | NETLIST.net]
 
@@ -16,4 +18,4 @@ PROJECT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path.home() / "Dropbox/KiC
 
 if __name__ == "__main__":
     out = Path(__file__).with_name("spcoast.layout.json")
-    sys.exit(subprocess.run([sys.executable, str(ROOT / "tools/compile_layout.py"), str(PROJECT), "-o", str(out), "--quiet"]).returncode)
+    sys.exit(subprocess.run([sys.executable, str(ROOT / "tools/compile_layout.py"), str(PROJECT), "-o", str(out), "--geometry", "--quiet"]).returncode)

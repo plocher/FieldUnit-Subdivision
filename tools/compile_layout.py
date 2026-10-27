@@ -7,10 +7,10 @@
 Given the project's root sheet, the compiler exports a netlist with kicad-cli into a temporary location, reads it
 and deletes it (the netlist rule, ``AGENTS.md``: a netlist is a cache of the project's state, never used stale).
 Given a saved ``kicadsexpr`` netlist instead (a machine without KiCad), the caller answers for its freshness.
-With ``--geometry`` the placement and glyph readers run too (ADR 0010 C2): the sheets and the symbol libraries
-are read beside the netlist, every interlocking gains its ``geometry`` and the layout its ``glyphs``, and the
-Layout Data Model File names schema 3.1.0; without it the readers are off and nothing is computed from a
-coordinate (DoD3), schema 3.0.0. Diagnostics go to the log (stderr by default): errors, then warnings, infos and the missing facts. An error means
+Every interlocking carries its ``appliances`` and ``track`` (the trackplan piece), and the Layout Data Model File
+names schema 3.1.0. With ``--geometry`` the placement and glyph readers run too (ADR 0010 C2): the sheets and the
+symbol libraries are read beside the netlist, and every interlocking gains its ``geometry`` and the layout its
+``glyphs``; without it the readers are off and nothing is computed from a coordinate (DoD3). Diagnostics go to the log (stderr by default): errors, then warnings, infos and the missing facts. An error means
 no Layout Data Model File is written (ADR 0008 §4.6). Exit 0 when one is written, 1 on errors, 2 on a bad invocation.
 """
 from __future__ import annotations
@@ -34,7 +34,7 @@ def main(argv=None) -> int:
     ap.add_argument("-o", "--output", type=Path, required=True)
     ap.add_argument("--log", type=Path, help="write diagnostics here instead of stderr")
     ap.add_argument("--quiet", action="store_true", help="errors only on stderr")
-    ap.add_argument("--geometry", action="store_true", help="read placements and glyphs too (ADR 0010); schema 3.1.0")
+    ap.add_argument("--geometry", action="store_true", help="read placements and glyphs too (ADR 0010)")
     a = ap.parse_args(argv)
     if not a.project.is_file():
         print(f"no such project or netlist: {a.project}", file=sys.stderr)

@@ -9,10 +9,10 @@ membership or a name (R2; DoD3): switch the reader off and the Layout Data Model
 ``geometry`` and ``layout.glyphs``.
 
 What is on the trackplan is decided by Role (§4.1): ``APPLIANCE``, ``TRACK``, ``POLICY``, plus the house, never by
-library, symbol name or position. A wire is track when it ends on a pin of a trackplan symbol or is chained onto
-one that does; which circuit it carries comes from the netlist. The circuit names are the trackplan semantics
-piece's to define (§4.10): until it lands, a net's circuit is the track circuit marker drawn on it, and a net
-with none (a switch's OS legs) carries no circuit.
+library, symbol name or position (``trackplan.TRACKPLAN_ROLES``). A wire is track when it ends on a pin of a
+trackplan symbol or is chained onto one that does; which circuit it carries comes from the netlist through the
+trackplan piece's ``circuit_of_net``, the one place a circuit is named (§4.10): a switch's OS legs carry its OS
+circuit, dark track none.
 """
 from __future__ import annotations
 
@@ -22,10 +22,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
 
-from .seams import Seams, loc, name_of
+from .seams import Seams, key_of, loc
 from .source import Symbol
+from .trackplan import TRACKPLAN_ROLES, is_switch, port_ref, unit_of
 
-TRACKPLAN_ROLES = frozenset({"APPLIANCE", "TRACK", "POLICY"})
 COORDINATE_DECIMALS = 2     # placements and runs sit on the drawing's grid (§4.2)
 GLYPH_DECIMALS = 4          # a glyph's primitives have up to four
 
@@ -235,21 +235,6 @@ class _Project:
             return None
 
 
-def circuit_of_net(net, symbols: dict[str, Symbol], interlocking: str, report) -> Optional[str]:
-    """The circuit a track net carries, as the drawing states it: the track circuit marker on it, by its Name
-    (qualified by the interlocking unless already qualified: ``Corporal:2NAT`` is a reference). The OS circuit of a
-    switch and every other derived circuit name belong to the trackplan semantics piece (§4.10), which replaces
-    this function; a net it does not name carries no circuit here."""
-    if net is None:
-        return None
-    for p in net.pins:
-        s = symbols.get(p.ref)
-        if s and s.role == "APPLIANCE" and s.get("Appliance") == "track_circuit":
-            name = name_of(s, report)
-            return name if ":" in name else f"{interlocking}:{name}"
-    return None
-
-
 def read(sm: Seams, project_dir: Optional[Path] = None, libraries: Optional[dict[str, Path]] = None) -> Geometry:
     """Every interlocking's geometry and the glyphs they name. ``project_dir`` is where the sheets are (the project's
     own directory unless a test points at a copy); ``libraries`` maps library names to files (KiCad's tables unless
@@ -264,7 +249,7 @@ def read(sm: Seams, project_dir: Optional[Path] = None, libraries: Optional[dict
     project = _Project(Path(project_dir), libraries)
 
     for ix in sm.interlockings.values():
-        trackplan = [s for s in src.symbols.values() if s.role in TRACKPLAN_ROLES and s.sheet.startswith(ix.sym.sheet)]
+        trackplan = [s for s in src.symbols.values() if s.role in TRACKPLAN_ROLES and unit_of(sm, s) == ix.name]
         sheets = sorted({s.sheet for s in trackplan})
         if not sheets:
             continue                                                     # nothing drawn: absent is absent
@@ -325,7 +310,7 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         if symbols[ref].role in TRACKPLAN_ROLES:
             for pin, xy in pins.items():
                 port_at[xy] = (ref, pin)
-    through = {xy for xy, (ref, _) in port_at.items() if symbols[ref].role == "TRACK" or symbols[ref].get("Appliance") == "switch"}
+    through = {xy for xy, (ref, _) in port_at.items() if symbols[ref].role == "TRACK" or is_switch(symbols[ref])}
     track_wires = [w for w in model.wires if any(p in port_at for p in (w[0], w[-1]))]
     grown = True
     while grown:                                                          # chained end to end onto track is track (§4.1)
@@ -360,14 +345,14 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         return src.net_of(ref, pin)
 
     def circuit(net) -> Optional[str]:
-        return circuit_of_net(net, symbols, ix.name, report)
+        return sm.trackplan.circuit_of_net(ix.name, net) if sm.trackplan else None
 
     appliances: dict[str, Any] = {}
     masts: dict[str, str] = {}
     for s in trackplan:
         if s.role != "APPLIANCE" or s.get("Appliance") == "head" or s.ref not in placed:
             continue
-        name = name_of(s, report)
+        name = key_of(s, report)
         if not name:
             report.missing("geometry.name", f"{ix.name}: an {s.lib_id} has no Name; its placement is not written", loc(s))
             continue
@@ -382,7 +367,7 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         if owner is None:
             report.missing("geometry.head", f"{ix.name}: head {s.ref} is on no mast's M pin; its placement is not written", loc(s))
             continue
-        appliances[masts[owner]].setdefault("heads", {})[name_of(s, report)] = placement(s.ref)
+        appliances[masts[owner]].setdefault("heads", {})[key_of(s, report)] = placement(s.ref)
 
     house_rows = {h.cp_name: placement(h.sym.ref) for h in houses if h.sym.ref in placed}
 
@@ -398,8 +383,8 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         if c:
             row["circuit"] = c
         for key, e in zip(("from", "to"), ends):
-            if e and symbols[e[0]].role == "APPLIANCE" and symbols[e[0]].get("Appliance") == "switch":
-                row[key] = f"{ix.name}:{name_of(symbols[e[0]], report)}.{e[1]}"
+            if e and is_switch(symbols[e[0]]):
+                row[key] = port_ref(ix.name, key_of(symbols[e[0]], report), e[1])
         track.append(row)
 
     markers: list[dict[str, Any]] = []
@@ -408,13 +393,19 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         if s.role == "APPLIANCE" or s.ref not in placed:
             continue
         if s.role == "TRACK" and s.kind == "MILEPOST":
-            mileposts[name_of(s, report)] = placement(s.ref)
+            mileposts[key_of(s, report)] = placement(s.ref)
             continue
         row = {"kind": s.kind, **placement(s.ref)}
         circuits = {pin: circuit(net_of(s.ref, pin)) for pin in placed[s.ref][2]}
         circuits = {pin: c for pin, c in circuits.items() if c}
         if circuits:
             row["circuits"] = circuits
+        # the marker joins its track row by name where the symbol has one, else by kind, circuits and ports (ADR 0010 C6)
+        drawn = sm.trackplan.row_of(ix.name, s.ref) if sm.trackplan else {}
+        if drawn.get("name"):
+            row["name"] = drawn["name"]
+        elif drawn.get("ports"):
+            row["ports"] = drawn["ports"]
         markers.append(row)
 
     if len(report.errors) > errors_before:
