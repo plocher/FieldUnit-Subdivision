@@ -441,6 +441,14 @@
                   "items": {
                     "$ref": "#/$defs/name"
                   }
+                },
+                "controls": {
+                  "description": "The controls this house's station receives on its code line, as tokens, sorted: each desk lever that serves an appliance (or a signal lever) whose control point it is, its name and each binding that ends in S (783NWS, 784HS, 795WLS, MC1S; the owner, 2026-10-27).",
+                  "type": "array",
+                  "uniqueItems": true,
+                  "items": {
+                    "$ref": "#/$defs/name"
+                  }
                 }
               }
             }
@@ -517,9 +525,23 @@
                 "shows": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/$defs/qualifiedName"
+                    "$ref": "#/$defs/indicationRef"
                   },
-                  "description": "The indications a lamp shows, OR'd: its IndicationToken resolved in its scope."
+                  "description": "The indications a lamp shows, OR'd, as tokens: its IndicationToken resolved in its scope, each circuit with the K of an indication added (2NAT shows Corporal:2NATK); each must be one its station sends."
+                },
+                "controls": {
+                  "description": "A lever's controls: its name and each binding that ends in S, qualified by its station's interlocking (Luchessa:783NWS).",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/qualifiedName"
+                  }
+                },
+                "indications": {
+                  "description": "The indications a lever consumes: its name and each binding that ends in K (Christopher:813WLK); each must be one its station sends.",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/indicationRef"
+                  }
                 }
               }
             }

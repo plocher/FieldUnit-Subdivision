@@ -121,6 +121,13 @@
       "feature": null,
       "replacedBy": null
     },
+    "lever.house": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
     "mast.grammar": {
       "level": "info",
       "lifecycle": "active",

@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Optional
 
 # Versioned so provenance can name it.
-REFERENCE_DATA = {"encodingTransportPairing": "2026-10-23", "driverEncodings": "2026-10-23", "indicationTokens": "2026-10-27"}
+REFERENCE_DATA = {"encodingTransportPairing": "2026-10-23", "driverEncodings": "2026-10-23", "indicationTokens": "2026-10-27.2"}
 # An encoding's Kind pairs with its transport's Kind (ADR 0009 §3.10).
 TRANSPORT_OF_ENCODING = {"AAR": "MQTT", "USS506": "TIMECODE", "BITS": "TIMECODE", "JMRI": "MQTT", "CMRI": "CMRI"}
 # A driver whose IC is an encoding needs that I/O encoding on its processor (ADR 0009 §3.3, §3.6, §3.12 "IC native or encoded").
@@ -17,15 +17,20 @@ ENCODING_OF_IC = {"MQTT-JMRI": "JMRI"}
 # templates by appliance class. By the AAR nomenclature behind every code line, controls end in S and indications in K
 # (the owner, 2026-10-27; ADR 0011 amendment), so every encoding shares the default until a railroad or an encoding
 # says otherwise. The forms are FieldUnit's (docs/GLOSSARY.md §10.3, "FieldUnit tokens by appliance"; WireCodec.h's
-# AarTextCodec): a track circuit `<name>K`; a switch `<name>NWK`, `<name>RWK`; a signal lever `<lever>NGK`, `<lever>SGK`,
-# `<lever>TEK`; a maintainer call `<name>K`. ``{name}`` is the appliance's or circuit's name, ``{lever}`` a signal's
-# lever number.
+# AarTextCodec): a track circuit `<name>K`; a switch `<name>NWK`, `<name>RWK`; an electric lock `<name>WLK`,
+# `<name>WLQK`, not NWK/RWK (the owner, 2026-10-27); a signal lever `<lever>NGK`, `<lever>SGK`, `<lever>TEK`; a
+# maintainer call `<name>K`. A virtual track circuit and a non-vital lamp appliance (`NFLK`, `HBA`) send `<name>K`, the
+# form the desk's lamps consume (settled by the desk, 2026-10-27). A name that ends in K is the token already
+# (``indication_of``). ``{name}`` is the appliance's or circuit's name, ``{lever}`` a signal's lever number.
+# A station's controls are not here: they are the desk levers' bindings that end in S (the owner, 2026-10-27).
 INDICATION_TOKENS: dict[str, dict[str, tuple[str, ...]]] = {
     "default": {
         "track_circuit": ("{name}K",),
         "switch": ("{name}NWK", "{name}RWK"),
+        "lock": ("{name}WLK", "{name}WLQK"),
         "signal": ("{lever}NGK", "{lever}SGK", "{lever}TEK"),
         "maintainer_call": ("{name}K",),
+        "lamp": ("{name}K",),                     # a non-vital lamp (a flasher, a hot box alarm): the desk's form (2026-10-27)
     },
 }
 
@@ -39,3 +44,9 @@ def indication_tokens(encoding: Optional[str], user: Optional[dict[str, dict[str
         if encoding:
             out.update(table.get(encoding, {}))
     return out
+
+
+def indication_of(name: str, template: str = "{name}K") -> str:
+    """The token a desk lamp's or a drawn reference's circuit names: the template applied, unless the name is a token
+    already (it ends in K, as ``MC1K`` does; FieldUnit's AarTextCodec adds K only when it is absent)."""
+    return name if name[-1:] in ("K", "k") else template.format(name=name)

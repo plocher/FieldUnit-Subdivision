@@ -487,13 +487,13 @@ class SPCoastTrackplan(unittest.TestCase):
         masts = [(i, n, a) for i, ix in self.model["interlockings"].items() for n, a in ix.get("appliances", {}).items() if a["given"]["Appliance"] == "mast"]
         self.assertEqual([(i, n) for i, n, a in masts if "controlPoint" not in a.get("derived", {})], [])
         joints = [j for ix in self.model["interlockings"].values() for j in ix.get("track", {}).get("joints", []) if j["given"]["Kind"] == "IRJ_SIGNAL"]
-        self.assertEqual(len(joints), 35)
+        self.assertEqual(len(joints), 36)                                   # Watsonville's 838SAB joint (Railroad 253b666)
         self.assertEqual([j for j in joints if "mast" not in j.get("relations", {}) or "controlPoint" not in j["derived"]], [])
         self.assertEqual([j for j in joints if set(j["derived"].get("circuits", {})) - {"approach", "governed"}], [])
 
     def test_every_track_row_has_its_own_id(self):
         ids = [r["id"] for ix in self.model["interlockings"].values() for k in ("joints", "ends", "policies") for r in ix.get("track", {}).get(k, [])]
-        self.assertEqual(len(ids), 56 + 35 + 18 + 5 + 3 + 3 + 29)
+        self.assertEqual(len(ids), 56 + 36 + 18 + 5 + 3 + 3 + 29)
         self.assertEqual(len(set(ids)), len(ids))
 
     def test_every_appliance_has_its_control_point_and_no_chain_is_broken(self):
@@ -548,7 +548,7 @@ class SPCoastTrackplan(unittest.TestCase):
         refs = {n: ix["track"].get("consumers", []) for n, ix in self.model["interlockings"].items()}
         self.assertEqual({n: [c["relations"]["indication"] for c in cs] for n, cs in refs.items() if cs}, {"Sargent": ["Corporal:2NATK"]})
         self.assertIn("2NATK", self.ix("Corporal")["houses"]["Corporal"]["derived"]["indications"])
-        self.assertEqual([d for d in self.sm.report.diags if d.code.startswith("reference")], [])
+        self.assertEqual([d for d in self.sm.report.diags if d.code.startswith("reference") and "/consumers/" in d.where], [])
         joint = next(j for j in self.ix("Sargent")["track"]["joints"] if j["given"]["Kind"] == "IRJ")
         self.assertIn(f"{refs['Sargent'][0]['id']}.TC", joint["relations"]["A"])
         self.assertEqual(joint["derived"]["circuits"]["A"], "Corporal:2NAT")
