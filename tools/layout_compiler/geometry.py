@@ -1,12 +1,16 @@
-"""Geometry: the drawing as a design fact (ADR 0010, accepted 2026-10-24; consequence C2).
+"""Geometry: the drawing as a design fact (ADR 0010, accepted 2026-10-24; ADR 0011 §7: always written).
 
 Per interlocking, where every named trackplan thing sits, each run of track the designer drew, and every track
 symbol with no railroad name, in the interlocking's own frame (millimetres from the top-left of its drawn extent,
 x right, y down); and the glyphs those placements name, each stated once with its ports and its shape. Read from
 the ``.kicad_sch`` files and the symbol libraries through ``kicad_services``, joined to the seam facts by
 reference (a netlist identity) and to circuits through the netlist only. Nothing here is read for connectivity,
-membership or a name (R2; DoD3): switch the reader off and the Layout Data Model File is byte-identical outside
-``geometry`` and ``layout.glyphs``.
+membership or a name (R2; DoD3): the rest of the Layout Data Model File is the same whether or not this runs.
+
+Geometry's one contract with the semantic sections is identity (three-maps D10, ruled 2026-10-27): a placement is
+keyed by its thing's railroad name, a marker names its track row by the row's ``id``, and a run's ends name the switch
+port or the track row pin they meet (``relations.from``, ``.to``; D5). The importer finds those ends by where a run's
+end lies on the page, and records the connection, never a coordinate fact. No semantic fact is copied here.
 
 What is on the trackplan is decided by Role (§4.1): ``APPLIANCE``, ``TRACK``, ``POLICY``, plus the house, never by
 library, symbol name or position (``trackplan.TRACKPLAN_ROLES``). A wire is track when it ends on a pin of a
@@ -24,7 +28,7 @@ from typing import Any, Optional
 
 from .seams import Seams, key_of, loc
 from .source import Symbol
-from .trackplan import TRACKPLAN_ROLES, is_switch, port_ref, unit_of
+from .trackplan import TRACKPLAN_ROLES, is_switch, port_ref, side_of, unit_of
 
 COORDINATE_DECIMALS = 2     # placements and runs sit on the drawing's grid (§4.2)
 GLYPH_DECIMALS = 4          # a glyph's primitives have up to four
@@ -34,7 +38,7 @@ Point = tuple[float, float]
 
 @dataclass
 class Geometry:
-    """The compiler piece's output: one ``geometry`` object per interlocking, the glyphs they name, the libraries read."""
+    """The geometry piece's output: one ``geometry`` object per interlocking, the glyphs they name, the libraries read."""
 
     interlockings: dict[str, dict[str, Any]] = field(default_factory=dict)
     glyphs: dict[str, dict[str, Any]] = field(default_factory=dict)
@@ -347,6 +351,19 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
     def circuit(net) -> Optional[str]:
         return sm.trackplan.circuit_of_net(ix.name, net) if sm.trackplan else None
 
+    def end_ref(ref: str, pin: str) -> Optional[str]:
+        """What a run's end meets (three-maps D5): a switch's port by name, a named track row's pin by name, an unnamed
+        track row's pin by the row's id, each with the pin as the side the model calls it (D15)."""
+        s = symbols[ref]
+        if is_switch(s):
+            return port_ref(ix.name, key_of(s, report), pin)
+        if s.role in ("TRACK", "POLICY") and s.kind != "MILEPOST":
+            name = key_of(s) if s.role == "TRACK" else ""
+            if name:
+                return port_ref(ix.name, name, side_of(s, pin))
+            return f"{s.uuid}.{side_of(s, pin)}" if s.uuid else None
+        return None
+
     appliances: dict[str, Any] = {}
     masts: dict[str, str] = {}
     for s in trackplan:
@@ -381,10 +398,10 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         net = next((net_of(*e) for e in ends if e and net_of(*e)), None)
         c = circuit(net)
         if c:
-            row["circuit"] = c
-        for key, e in zip(("from", "to"), ends):
-            if e and is_switch(symbols[e[0]]):
-                row[key] = port_ref(ix.name, key_of(symbols[e[0]], report), e[1])
+            row["derived"] = {"circuit": c}
+        relations = {key: end_ref(*e) for key, e in zip(("from", "to"), ends) if e and end_ref(*e)}
+        if relations:
+            row["relations"] = relations
         track.append(row)
 
     markers: list[dict[str, Any]] = []
@@ -395,18 +412,10 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         if s.role == "TRACK" and s.kind == "MILEPOST":
             mileposts[key_of(s, report)] = placement(s.ref)
             continue
-        row = {"kind": s.kind, **placement(s.ref)}
-        circuits = {pin: circuit(net_of(s.ref, pin)) for pin in placed[s.ref][2]}
-        circuits = {pin: c for pin, c in circuits.items() if c}
-        if circuits:
-            row["circuits"] = circuits
-        # the marker joins its track row by name where the symbol has one, else by kind, circuits and ports (ADR 0010 C6)
-        drawn = sm.trackplan.row_of(ix.name, s.ref) if sm.trackplan else {}
-        if drawn.get("name"):
-            row["name"] = drawn["name"]
-        elif drawn.get("ports"):
-            row["ports"] = drawn["ports"]
-        markers.append(row)
+        if not s.uuid:
+            report.missing("geometry.marker", f"{ix.name}: a {s.kind} has no KiCad UUID, so its marker names no row; not written", loc(s))
+            continue
+        markers.append({"row": s.uuid, **placement(s.ref)})            # the marker joins its track row by id (D10)
 
     if len(report.errors) > errors_before:
         return None
