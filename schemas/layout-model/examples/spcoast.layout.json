@@ -9,6 +9,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Christopher South"
+          },
+          "relations": {
+            "TC": [
+              "56fd1057-c834-4e85-8d19-58c52142a94f.track",
+              "50484897-801f-4038-8eff-f57b4a449b83.track",
+              "a2e8602c-de0a-45b1-a380-358d49c0ab54.approach"
+            ]
           }
         },
         "1SAT": {
@@ -18,6 +25,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Christopher North"
+          },
+          "relations": {
+            "TC": [
+              "3a0ea897-79d8-43b6-902d-a12292c46006.track",
+              "06dfa718-4ab0-4e3d-8823-d3748ec83c8b.track",
+              "80308d0f-f2c8-4ac0-b5db-842ea84e779f.approach"
+            ]
           }
         },
         "01T": {
@@ -27,6 +41,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Christopher North"
+          },
+          "relations": {
+            "TC": [
+              "3debc472-fd18-4dd4-a5a1-f86aecd987ad.track",
+              "b8ebf271-4787-4053-b0fb-66bc9e3a15d1.A",
+              "c0db73c7-64fc-4210-998c-4a2b389ef11c.B"
+            ]
           }
         },
         "2NAT": {
@@ -36,6 +57,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Christopher South"
+          },
+          "relations": {
+            "TC": [
+              "4cdd4b1b-c6f2-4def-b845-a59bfa431d38.track",
+              "37bafa86-889e-4b37-9ae3-00b8cee5ace7.approach",
+              "fb70db2c-9caf-4a09-9169-4188cb5c1c2b.track"
+            ]
           }
         },
         "2SAT": {
@@ -45,6 +73,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Christopher North"
+          },
+          "relations": {
+            "TC": [
+              "51dc0b81-3000-475d-9a0e-465bcf77b816.approach",
+              "ffb4dff7-f8b1-4878-90ca-9b06478b1748.track",
+              "fffcdaf7-87f9-4635-839d-92d2d1377cc6.track"
+            ]
           }
         },
         "813": {
@@ -57,6 +92,17 @@
             "CP": "Christopher North",
             "Style": "lock",
             "TC": "813T1"
+          },
+          "relations": {
+            "C": [
+              "80308d0f-f2c8-4ac0-b5db-842ea84e779f.governed"
+            ],
+            "N": [
+              "6b1be755-d3ef-49a6-8d83-e51c1128f04d.A"
+            ],
+            "R": [
+              "c0db73c7-64fc-4210-998c-4a2b389ef11c.A"
+            ]
           }
         },
         "815": {
@@ -69,6 +115,17 @@
             "CP": "Christopher North",
             "Style": "powered",
             "TC": "815T1"
+          },
+          "relations": {
+            "C": [
+              "6b1be755-d3ef-49a6-8d83-e51c1128f04d.B"
+            ],
+            "N": [
+              "6bb3342e-675c-4782-b2d5-bed5df2ce467.A"
+            ],
+            "R": [
+              "0bb37034-0167-4ea7-9075-dad84dc3cc9d.A"
+            ]
           }
         },
         "815A": {
@@ -81,6 +138,17 @@
             "CP": "Christopher North",
             "Style": "powered",
             "TC": "815AT1"
+          },
+          "relations": {
+            "C": [
+              "37bafa86-889e-4b37-9ae3-00b8cee5ace7.governed"
+            ],
+            "N": [
+              "51dc0b81-3000-475d-9a0e-465bcf77b816.governed"
+            ],
+            "R": [
+              "0bb37034-0167-4ea7-9075-dad84dc3cc9d.B"
+            ]
           }
         },
         "816NAB": {
@@ -173,6 +241,17 @@
             "CP": "Christopher South",
             "Style": "lock",
             "TC": "817T1"
+          },
+          "relations": {
+            "C": [
+              "a2e8602c-de0a-45b1-a380-358d49c0ab54.governed"
+            ],
+            "N": [
+              "6bb3342e-675c-4782-b2d5-bed5df2ce467.B"
+            ],
+            "R": [
+              "b8ebf271-4787-4053-b0fb-66bc9e3a15d1.B"
+            ]
           }
         },
         "MC1": {
@@ -1052,7 +1131,14 @@
               "Interlocking": "Corporal",
               "Kind": "NEXT_CP"
             },
-            "id": "50484897-801f-4038-8eff-f57b4a449b83"
+            "id": "50484897-801f-4038-8eff-f57b4a449b83",
+            "relations": {
+              "track": [
+                "56fd1057-c834-4e85-8d19-58c52142a94f.track",
+                "a2e8602c-de0a-45b1-a380-358d49c0ab54.approach",
+                "Christopher:1NAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -1064,7 +1150,14 @@
               "Interlocking": "Luchessa",
               "Kind": "NEXT_CP"
             },
-            "id": "3a0ea897-79d8-43b6-902d-a12292c46006"
+            "id": "3a0ea897-79d8-43b6-902d-a12292c46006",
+            "relations": {
+              "track": [
+                "06dfa718-4ab0-4e3d-8823-d3748ec83c8b.track",
+                "80308d0f-f2c8-4ac0-b5db-842ea84e779f.approach",
+                "Christopher:1SAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -1076,7 +1169,14 @@
               "Interlocking": "Corporal",
               "Kind": "NEXT_CP"
             },
-            "id": "fb70db2c-9caf-4a09-9169-4188cb5c1c2b"
+            "id": "fb70db2c-9caf-4a09-9169-4188cb5c1c2b",
+            "relations": {
+              "track": [
+                "4cdd4b1b-c6f2-4def-b845-a59bfa431d38.track",
+                "37bafa86-889e-4b37-9ae3-00b8cee5ace7.approach",
+                "Christopher:2NAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -1088,7 +1188,14 @@
               "Interlocking": "Luchessa",
               "Kind": "NEXT_CP"
             },
-            "id": "fffcdaf7-87f9-4635-839d-92d2d1377cc6"
+            "id": "fffcdaf7-87f9-4635-839d-92d2d1377cc6",
+            "relations": {
+              "track": [
+                "51dc0b81-3000-475d-9a0e-465bcf77b816.approach",
+                "Christopher:2SAT.TC",
+                "ffb4dff7-f8b1-4878-90ca-9b06478b1748.track"
+              ]
+            }
           }
         ],
         "joints": [
@@ -1104,6 +1211,11 @@
             },
             "id": "b8ebf271-4787-4053-b0fb-66bc9e3a15d1",
             "relations": {
+              "A": [
+                "3debc472-fd18-4dd4-a5a1-f86aecd987ad.track",
+                "c0db73c7-64fc-4210-998c-4a2b389ef11c.B",
+                "Christopher:01T.TC"
+              ],
               "B": [
                 "Christopher:817.R"
               ]
@@ -1123,6 +1235,11 @@
             "relations": {
               "A": [
                 "Christopher:813.R"
+              ],
+              "B": [
+                "3debc472-fd18-4dd4-a5a1-f86aecd987ad.track",
+                "b8ebf271-4787-4053-b0fb-66bc9e3a15d1.A",
+                "Christopher:01T.TC"
               ]
             }
           },
@@ -1200,6 +1317,11 @@
             },
             "id": "a2e8602c-de0a-45b1-a380-358d49c0ab54",
             "relations": {
+              "approach": [
+                "56fd1057-c834-4e85-8d19-58c52142a94f.track",
+                "50484897-801f-4038-8eff-f57b4a449b83.track",
+                "Christopher:1NAT.TC"
+              ],
               "governed": [
                 "Christopher:817.C"
               ],
@@ -1220,6 +1342,11 @@
             },
             "id": "80308d0f-f2c8-4ac0-b5db-842ea84e779f",
             "relations": {
+              "approach": [
+                "3a0ea897-79d8-43b6-902d-a12292c46006.track",
+                "06dfa718-4ab0-4e3d-8823-d3748ec83c8b.track",
+                "Christopher:1SAT.TC"
+              ],
               "governed": [
                 "Christopher:813.C"
               ],
@@ -1240,6 +1367,11 @@
             },
             "id": "37bafa86-889e-4b37-9ae3-00b8cee5ace7",
             "relations": {
+              "approach": [
+                "4cdd4b1b-c6f2-4def-b845-a59bfa431d38.track",
+                "Christopher:2NAT.TC",
+                "fb70db2c-9caf-4a09-9169-4188cb5c1c2b.track"
+              ],
               "governed": [
                 "Christopher:815A.C"
               ],
@@ -1260,6 +1392,11 @@
             },
             "id": "51dc0b81-3000-475d-9a0e-465bcf77b816",
             "relations": {
+              "approach": [
+                "Christopher:2SAT.TC",
+                "ffb4dff7-f8b1-4878-90ca-9b06478b1748.track",
+                "fffcdaf7-87f9-4635-839d-92d2d1377cc6.track"
+              ],
               "governed": [
                 "Christopher:815A.N"
               ],
@@ -1278,7 +1415,14 @@
               "Direction": "RIGHT",
               "Kind": "RULE_251"
             },
-            "id": "56fd1057-c834-4e85-8d19-58c52142a94f"
+            "id": "56fd1057-c834-4e85-8d19-58c52142a94f",
+            "relations": {
+              "track": [
+                "50484897-801f-4038-8eff-f57b4a449b83.track",
+                "a2e8602c-de0a-45b1-a380-358d49c0ab54.approach",
+                "Christopher:1NAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -1290,7 +1434,14 @@
               "Direction": "RIGHT",
               "Kind": "RULE_251"
             },
-            "id": "06dfa718-4ab0-4e3d-8823-d3748ec83c8b"
+            "id": "06dfa718-4ab0-4e3d-8823-d3748ec83c8b",
+            "relations": {
+              "track": [
+                "3a0ea897-79d8-43b6-902d-a12292c46006.track",
+                "80308d0f-f2c8-4ac0-b5db-842ea84e779f.approach",
+                "Christopher:1SAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -1302,7 +1453,14 @@
               "Direction": "BOTH",
               "Kind": "RULE_105"
             },
-            "id": "3debc472-fd18-4dd4-a5a1-f86aecd987ad"
+            "id": "3debc472-fd18-4dd4-a5a1-f86aecd987ad",
+            "relations": {
+              "track": [
+                "b8ebf271-4787-4053-b0fb-66bc9e3a15d1.A",
+                "c0db73c7-64fc-4210-998c-4a2b389ef11c.B",
+                "Christopher:01T.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -1314,7 +1472,14 @@
               "Direction": "LEFT",
               "Kind": "RULE_251"
             },
-            "id": "4cdd4b1b-c6f2-4def-b845-a59bfa431d38"
+            "id": "4cdd4b1b-c6f2-4def-b845-a59bfa431d38",
+            "relations": {
+              "track": [
+                "37bafa86-889e-4b37-9ae3-00b8cee5ace7.approach",
+                "Christopher:2NAT.TC",
+                "fb70db2c-9caf-4a09-9169-4188cb5c1c2b.track"
+              ]
+            }
           },
           {
             "derived": {
@@ -1326,7 +1491,14 @@
               "Direction": "LEFT",
               "Kind": "RULE_251"
             },
-            "id": "ffb4dff7-f8b1-4878-90ca-9b06478b1748"
+            "id": "ffb4dff7-f8b1-4878-90ca-9b06478b1748",
+            "relations": {
+              "track": [
+                "51dc0b81-3000-475d-9a0e-465bcf77b816.approach",
+                "Christopher:2SAT.TC",
+                "fffcdaf7-87f9-4635-839d-92d2d1377cc6.track"
+              ]
+            }
           }
         ]
       }
@@ -1344,6 +1516,9 @@
             "Style": "manual_sensed"
           },
           "relations": {
+            "C": [
+              "19fa32d3-a9c3-4a4c-a3ea-20c63680f896.DARK"
+            ],
             "N": [
               "Corporal:Beet Loader 2.EoT"
             ],
@@ -1359,6 +1534,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Corporal"
+          },
+          "relations": {
+            "TC": [
+              "89d46d4f-a3c1-4b2c-a64f-c3c0bb576e64.approach",
+              "ddd56695-5907-4c47-9faa-18723057031a.A"
+            ]
           }
         },
         "1SAT": {
@@ -1368,6 +1549,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Corporal"
+          },
+          "relations": {
+            "TC": [
+              "4a4a8a59-1f6a-4701-9675-e1f591439b8d.approach",
+              "1249c134-4620-40e4-9d44-016a33836a0d.track",
+              "b654ee68-d6ee-44f3-998b-9b0d055435df.track"
+            ]
           }
         },
         "01T": {
@@ -1377,6 +1565,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Corporal"
+          },
+          "relations": {
+            "TC": [
+              "2d2a9ef0-9b47-40e3-b3ba-013a10286b2a.approach",
+              "19fa32d3-a9c3-4a4c-a3ea-20c63680f896.CTC"
+            ]
           }
         },
         "2NAT": {
@@ -1386,6 +1580,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Corporal"
+          },
+          "relations": {
+            "TC": [
+              "d75ebcfa-92df-4ee6-b8e7-0b656fd40f1b.track",
+              "ddd56695-5907-4c47-9faa-18723057031a.B",
+              "f8985365-28b1-449d-b06d-02d5d3a00b10.track"
+            ]
           }
         },
         "2SAT": {
@@ -1395,6 +1596,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Corporal"
+          },
+          "relations": {
+            "TC": [
+              "48c00702-a00e-4db6-aa21-1664705b08b0.track",
+              "903e6628-4d4c-4198-810d-2e454dfab397.approach",
+              "f253c3b0-fd0e-4c21-94e6-094d82fe6fcb.track"
+            ]
           }
         },
         "829": {
@@ -1409,6 +1617,12 @@
             "TC": "829T1"
           },
           "relations": {
+            "C": [
+              "903e6628-4d4c-4198-810d-2e454dfab397.governed"
+            ],
+            "N": [
+              "cf821b6b-21f6-4c04-a11b-83cd2de333b2.A"
+            ],
             "R": [
               "Corporal:829D.R"
             ]
@@ -1426,6 +1640,10 @@
             "Style": "derail"
           },
           "relations": {
+            "C": [
+              "2d2a9ef0-9b47-40e3-b3ba-013a10286b2a.governed",
+              "31c609a5-fe13-4a8c-a17c-b91fcce56c6b.track"
+            ],
             "R": [
               "Corporal:829.R"
             ]
@@ -1487,6 +1705,17 @@
             "CP": "Corporal",
             "Style": "powered",
             "TC": "831T1"
+          },
+          "relations": {
+            "C": [
+              "89d46d4f-a3c1-4b2c-a64f-c3c0bb576e64.governed"
+            ],
+            "N": [
+              "cf821b6b-21f6-4c04-a11b-83cd2de333b2.B"
+            ],
+            "R": [
+              "4a4a8a59-1f6a-4701-9675-e1f591439b8d.governed"
+            ]
           }
         },
         "832NA": {
@@ -2281,6 +2510,10 @@
             },
             "id": "19fa32d3-a9c3-4a4c-a3ea-20c63680f896",
             "relations": {
+              "CTC": [
+                "2d2a9ef0-9b47-40e3-b3ba-013a10286b2a.approach",
+                "Corporal:01T.TC"
+              ],
               "DARK": [
                 "Corporal:1.C"
               ]
@@ -2296,7 +2529,14 @@
               "Interlocking": "Christopher",
               "Kind": "NEXT_CP"
             },
-            "id": "1249c134-4620-40e4-9d44-016a33836a0d"
+            "id": "1249c134-4620-40e4-9d44-016a33836a0d",
+            "relations": {
+              "track": [
+                "4a4a8a59-1f6a-4701-9675-e1f591439b8d.approach",
+                "b654ee68-d6ee-44f3-998b-9b0d055435df.track",
+                "Corporal:1SAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -2308,7 +2548,14 @@
               "Interlocking": "Sargent",
               "Kind": "NEXT_CP"
             },
-            "id": "d75ebcfa-92df-4ee6-b8e7-0b656fd40f1b"
+            "id": "d75ebcfa-92df-4ee6-b8e7-0b656fd40f1b",
+            "relations": {
+              "track": [
+                "Corporal:2NAT.TC",
+                "ddd56695-5907-4c47-9faa-18723057031a.B",
+                "f8985365-28b1-449d-b06d-02d5d3a00b10.track"
+              ]
+            }
           },
           {
             "derived": {
@@ -2320,7 +2567,14 @@
               "Interlocking": "Christopher",
               "Kind": "NEXT_CP"
             },
-            "id": "f253c3b0-fd0e-4c21-94e6-094d82fe6fcb"
+            "id": "f253c3b0-fd0e-4c21-94e6-094d82fe6fcb",
+            "relations": {
+              "track": [
+                "48c00702-a00e-4db6-aa21-1664705b08b0.track",
+                "903e6628-4d4c-4198-810d-2e454dfab397.approach",
+                "Corporal:2SAT.TC"
+              ]
+            }
           },
           {
             "given": {
@@ -2358,7 +2612,18 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "ddd56695-5907-4c47-9faa-18723057031a"
+            "id": "ddd56695-5907-4c47-9faa-18723057031a",
+            "relations": {
+              "A": [
+                "89d46d4f-a3c1-4b2c-a64f-c3c0bb576e64.approach",
+                "Corporal:1NAT.TC"
+              ],
+              "B": [
+                "Corporal:2NAT.TC",
+                "d75ebcfa-92df-4ee6-b8e7-0b656fd40f1b.track",
+                "f8985365-28b1-449d-b06d-02d5d3a00b10.track"
+              ]
+            }
           },
           {
             "derived": {
@@ -2394,6 +2659,10 @@
             },
             "id": "89d46d4f-a3c1-4b2c-a64f-c3c0bb576e64",
             "relations": {
+              "approach": [
+                "Corporal:1NAT.TC",
+                "ddd56695-5907-4c47-9faa-18723057031a.A"
+              ],
               "governed": [
                 "Corporal:831.C"
               ],
@@ -2414,6 +2683,11 @@
             },
             "id": "4a4a8a59-1f6a-4701-9675-e1f591439b8d",
             "relations": {
+              "approach": [
+                "1249c134-4620-40e4-9d44-016a33836a0d.track",
+                "b654ee68-d6ee-44f3-998b-9b0d055435df.track",
+                "Corporal:1SAT.TC"
+              ],
               "governed": [
                 "Corporal:831.R"
               ],
@@ -2434,7 +2708,12 @@
             },
             "id": "2d2a9ef0-9b47-40e3-b3ba-013a10286b2a",
             "relations": {
+              "approach": [
+                "19fa32d3-a9c3-4a4c-a3ea-20c63680f896.CTC",
+                "Corporal:01T.TC"
+              ],
               "governed": [
+                "31c609a5-fe13-4a8c-a17c-b91fcce56c6b.track",
                 "Corporal:829D.C"
               ],
               "mast": "Corporal:832NA"
@@ -2454,6 +2733,11 @@
             },
             "id": "903e6628-4d4c-4198-810d-2e454dfab397",
             "relations": {
+              "approach": [
+                "48c00702-a00e-4db6-aa21-1664705b08b0.track",
+                "Corporal:2SAT.TC",
+                "f253c3b0-fd0e-4c21-94e6-094d82fe6fcb.track"
+              ],
               "governed": [
                 "Corporal:829.C"
               ],
@@ -2483,7 +2767,14 @@
               "Direction": "RIGHT",
               "Kind": "RULE_251"
             },
-            "id": "b654ee68-d6ee-44f3-998b-9b0d055435df"
+            "id": "b654ee68-d6ee-44f3-998b-9b0d055435df",
+            "relations": {
+              "track": [
+                "4a4a8a59-1f6a-4701-9675-e1f591439b8d.approach",
+                "1249c134-4620-40e4-9d44-016a33836a0d.track",
+                "Corporal:1SAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -2495,7 +2786,14 @@
               "Direction": "BOTH",
               "Kind": "RULE_261"
             },
-            "id": "f8985365-28b1-449d-b06d-02d5d3a00b10"
+            "id": "f8985365-28b1-449d-b06d-02d5d3a00b10",
+            "relations": {
+              "track": [
+                "Corporal:2NAT.TC",
+                "d75ebcfa-92df-4ee6-b8e7-0b656fd40f1b.track",
+                "ddd56695-5907-4c47-9faa-18723057031a.B"
+              ]
+            }
           },
           {
             "derived": {
@@ -2507,7 +2805,14 @@
               "Direction": "LEFT",
               "Kind": "RULE_251"
             },
-            "id": "48c00702-a00e-4db6-aa21-1664705b08b0"
+            "id": "48c00702-a00e-4db6-aa21-1664705b08b0",
+            "relations": {
+              "track": [
+                "903e6628-4d4c-4198-810d-2e454dfab397.approach",
+                "Corporal:2SAT.TC",
+                "f253c3b0-fd0e-4c21-94e6-094d82fe6fcb.track"
+              ]
+            }
           },
           {
             "derived": {
@@ -2522,6 +2827,7 @@
             "id": "31c609a5-fe13-4a8c-a17c-b91fcce56c6b",
             "relations": {
               "track": [
+                "2d2a9ef0-9b47-40e3-b3ba-013a10286b2a.governed",
                 "Corporal:829D.C"
               ]
             }
@@ -2538,6 +2844,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Gilroy Caltrain"
+          },
+          "relations": {
+            "TC": [
+              "3cc417e7-1bc4-41da-b94e-57e5f30a189d.track",
+              "946ad0dc-88dc-44cb-a260-02b893893ce5.track",
+              "d5ab4695-dde4-44bd-a42b-83dffd322517.approach"
+            ]
           }
         },
         "1SAT": {
@@ -2547,6 +2860,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Gilroy Caltrain"
+          },
+          "relations": {
+            "TC": [
+              "54cdb686-7b86-4869-aff4-74c66a26d8a8.track",
+              "0181f7d5-f132-4376-a96f-1f31ec01f1a2.approach",
+              "d4ac0b2e-148c-49a1-a54a-9de437a417ac.track"
+            ]
           }
         },
         "01T": {
@@ -2556,6 +2876,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Gilroy Caltrain"
+          },
+          "relations": {
+            "TC": [
+              "00a0aac7-9dc5-481c-9a54-4b8b1c1c7667.EoT",
+              "37df07ea-ec58-47c2-b85d-9e8ebbf6d84a.approach",
+              "40e4c2ff-067c-49e8-8e36-7955aa2ca5a8.track"
+            ]
           }
         },
         "02T": {
@@ -2565,6 +2892,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Gilroy Caltrain"
+          },
+          "relations": {
+            "TC": [
+              "5c92a95e-63ba-402a-9085-3443c8a4607d.approach",
+              "59b77b14-8ecf-40c6-ae4a-91f87789d6d0.track",
+              "930a119b-3f7e-4e76-98ef-6582a7af706e.EoT"
+            ]
           }
         },
         "03T": {
@@ -2574,6 +2908,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Gilroy Caltrain"
+          },
+          "relations": {
+            "TC": [
+              "73922a59-4f81-4d5c-9f30-e00035472018.approach",
+              "82044d38-084d-4c9f-8f2a-e2ddc7f28735.track",
+              "abf604d8-e63c-4d03-b737-ead2ff401e5b.EoT"
+            ]
           }
         },
         "771": {
@@ -2586,6 +2927,17 @@
             "CP": "Gilroy Caltrain",
             "Style": "powered",
             "TC": "771T1"
+          },
+          "relations": {
+            "C": [
+              "0181f7d5-f132-4376-a96f-1f31ec01f1a2.governed"
+            ],
+            "N": [
+              "d5ab4695-dde4-44bd-a42b-83dffd322517.governed"
+            ],
+            "R": [
+              "cf49749f-23ad-4177-a884-0289ca315847.A"
+            ]
           }
         },
         "773": {
@@ -2598,6 +2950,17 @@
             "CP": "Gilroy Caltrain",
             "Style": "powered",
             "TC": "773T1"
+          },
+          "relations": {
+            "C": [
+              "cf49749f-23ad-4177-a884-0289ca315847.B"
+            ],
+            "N": [
+              "7823ab17-00ea-45ea-ab58-7a776e76b03c.A"
+            ],
+            "R": [
+              "37df07ea-ec58-47c2-b85d-9e8ebbf6d84a.governed"
+            ]
           }
         },
         "774NAB": {
@@ -2707,6 +3070,17 @@
             "CP": "Gilroy Caltrain",
             "Style": "powered",
             "TC": "775T1"
+          },
+          "relations": {
+            "C": [
+              "7823ab17-00ea-45ea-ab58-7a776e76b03c.B"
+            ],
+            "N": [
+              "5c92a95e-63ba-402a-9085-3443c8a4607d.governed"
+            ],
+            "R": [
+              "73922a59-4f81-4d5c-9f30-e00035472018.governed"
+            ]
           }
         }
       },
@@ -3455,7 +3829,14 @@
             "given": {
               "Kind": "BUMPER"
             },
-            "id": "00a0aac7-9dc5-481c-9a54-4b8b1c1c7667"
+            "id": "00a0aac7-9dc5-481c-9a54-4b8b1c1c7667",
+            "relations": {
+              "EoT": [
+                "37df07ea-ec58-47c2-b85d-9e8ebbf6d84a.approach",
+                "40e4c2ff-067c-49e8-8e36-7955aa2ca5a8.track",
+                "Gilroy Caltrain:01T.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -3466,7 +3847,14 @@
             "given": {
               "Kind": "BUMPER"
             },
-            "id": "930a119b-3f7e-4e76-98ef-6582a7af706e"
+            "id": "930a119b-3f7e-4e76-98ef-6582a7af706e",
+            "relations": {
+              "EoT": [
+                "5c92a95e-63ba-402a-9085-3443c8a4607d.approach",
+                "59b77b14-8ecf-40c6-ae4a-91f87789d6d0.track",
+                "Gilroy Caltrain:02T.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -3477,7 +3865,14 @@
             "given": {
               "Kind": "BUMPER"
             },
-            "id": "abf604d8-e63c-4d03-b737-ead2ff401e5b"
+            "id": "abf604d8-e63c-4d03-b737-ead2ff401e5b",
+            "relations": {
+              "EoT": [
+                "73922a59-4f81-4d5c-9f30-e00035472018.approach",
+                "82044d38-084d-4c9f-8f2a-e2ddc7f28735.track",
+                "Gilroy Caltrain:03T.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -3489,7 +3884,14 @@
               "Interlocking": "Gilroy Interchange",
               "Kind": "NEXT_CP"
             },
-            "id": "946ad0dc-88dc-44cb-a260-02b893893ce5"
+            "id": "946ad0dc-88dc-44cb-a260-02b893893ce5",
+            "relations": {
+              "track": [
+                "3cc417e7-1bc4-41da-b94e-57e5f30a189d.track",
+                "d5ab4695-dde4-44bd-a42b-83dffd322517.approach",
+                "Gilroy Caltrain:1NAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -3501,7 +3903,14 @@
               "Interlocking": "Lick",
               "Kind": "NEXT_CP"
             },
-            "id": "54cdb686-7b86-4869-aff4-74c66a26d8a8"
+            "id": "54cdb686-7b86-4869-aff4-74c66a26d8a8",
+            "relations": {
+              "track": [
+                "0181f7d5-f132-4376-a96f-1f31ec01f1a2.approach",
+                "d4ac0b2e-148c-49a1-a54a-9de437a417ac.track",
+                "Gilroy Caltrain:1SAT.TC"
+              ]
+            }
           }
         ],
         "joints": [
@@ -3559,6 +3968,11 @@
             },
             "id": "d5ab4695-dde4-44bd-a42b-83dffd322517",
             "relations": {
+              "approach": [
+                "3cc417e7-1bc4-41da-b94e-57e5f30a189d.track",
+                "946ad0dc-88dc-44cb-a260-02b893893ce5.track",
+                "Gilroy Caltrain:1NAT.TC"
+              ],
               "governed": [
                 "Gilroy Caltrain:771.N"
               ],
@@ -3579,6 +3993,11 @@
             },
             "id": "0181f7d5-f132-4376-a96f-1f31ec01f1a2",
             "relations": {
+              "approach": [
+                "54cdb686-7b86-4869-aff4-74c66a26d8a8.track",
+                "d4ac0b2e-148c-49a1-a54a-9de437a417ac.track",
+                "Gilroy Caltrain:1SAT.TC"
+              ],
               "governed": [
                 "Gilroy Caltrain:771.C"
               ],
@@ -3599,6 +4018,11 @@
             },
             "id": "37df07ea-ec58-47c2-b85d-9e8ebbf6d84a",
             "relations": {
+              "approach": [
+                "00a0aac7-9dc5-481c-9a54-4b8b1c1c7667.EoT",
+                "40e4c2ff-067c-49e8-8e36-7955aa2ca5a8.track",
+                "Gilroy Caltrain:01T.TC"
+              ],
               "governed": [
                 "Gilroy Caltrain:773.R"
               ],
@@ -3619,6 +4043,11 @@
             },
             "id": "5c92a95e-63ba-402a-9085-3443c8a4607d",
             "relations": {
+              "approach": [
+                "59b77b14-8ecf-40c6-ae4a-91f87789d6d0.track",
+                "930a119b-3f7e-4e76-98ef-6582a7af706e.EoT",
+                "Gilroy Caltrain:02T.TC"
+              ],
               "governed": [
                 "Gilroy Caltrain:775.N"
               ],
@@ -3639,6 +4068,11 @@
             },
             "id": "73922a59-4f81-4d5c-9f30-e00035472018",
             "relations": {
+              "approach": [
+                "82044d38-084d-4c9f-8f2a-e2ddc7f28735.track",
+                "abf604d8-e63c-4d03-b737-ead2ff401e5b.EoT",
+                "Gilroy Caltrain:03T.TC"
+              ],
               "governed": [
                 "Gilroy Caltrain:775.R"
               ],
@@ -3657,7 +4091,14 @@
               "Direction": "BOTH",
               "Kind": "RULE_261"
             },
-            "id": "3cc417e7-1bc4-41da-b94e-57e5f30a189d"
+            "id": "3cc417e7-1bc4-41da-b94e-57e5f30a189d",
+            "relations": {
+              "track": [
+                "946ad0dc-88dc-44cb-a260-02b893893ce5.track",
+                "d5ab4695-dde4-44bd-a42b-83dffd322517.approach",
+                "Gilroy Caltrain:1NAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -3669,7 +4110,14 @@
               "Direction": "BOTH",
               "Kind": "RULE_261"
             },
-            "id": "d4ac0b2e-148c-49a1-a54a-9de437a417ac"
+            "id": "d4ac0b2e-148c-49a1-a54a-9de437a417ac",
+            "relations": {
+              "track": [
+                "54cdb686-7b86-4869-aff4-74c66a26d8a8.track",
+                "0181f7d5-f132-4376-a96f-1f31ec01f1a2.approach",
+                "Gilroy Caltrain:1SAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -3681,7 +4129,14 @@
               "Direction": "BOTH",
               "Kind": "RULE_93"
             },
-            "id": "40e4c2ff-067c-49e8-8e36-7955aa2ca5a8"
+            "id": "40e4c2ff-067c-49e8-8e36-7955aa2ca5a8",
+            "relations": {
+              "track": [
+                "00a0aac7-9dc5-481c-9a54-4b8b1c1c7667.EoT",
+                "37df07ea-ec58-47c2-b85d-9e8ebbf6d84a.approach",
+                "Gilroy Caltrain:01T.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -3693,7 +4148,14 @@
               "Direction": "BOTH",
               "Kind": "RULE_93"
             },
-            "id": "59b77b14-8ecf-40c6-ae4a-91f87789d6d0"
+            "id": "59b77b14-8ecf-40c6-ae4a-91f87789d6d0",
+            "relations": {
+              "track": [
+                "5c92a95e-63ba-402a-9085-3443c8a4607d.approach",
+                "930a119b-3f7e-4e76-98ef-6582a7af706e.EoT",
+                "Gilroy Caltrain:02T.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -3705,7 +4167,14 @@
               "Direction": "BOTH",
               "Kind": "RULE_93"
             },
-            "id": "82044d38-084d-4c9f-8f2a-e2ddc7f28735"
+            "id": "82044d38-084d-4c9f-8f2a-e2ddc7f28735",
+            "relations": {
+              "track": [
+                "73922a59-4f81-4d5c-9f30-e00035472018.approach",
+                "abf604d8-e63c-4d03-b737-ead2ff401e5b.EoT",
+                "Gilroy Caltrain:03T.TC"
+              ]
+            }
           }
         ]
       }
@@ -3719,6 +4188,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Gilroy North"
+          },
+          "relations": {
+            "TC": [
+              "72f8e310-52ab-4aff-bbca-2616e18ede56.track",
+              "80312d76-4212-441b-8f6c-e68bc04d67f9.approach",
+              "f3925ced-b75d-49d3-a0df-6e939bf00ded.track"
+            ]
           }
         },
         "1SAT": {
@@ -3728,6 +4204,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Gilroy North"
+          },
+          "relations": {
+            "TC": [
+              "8df20930-74d7-4da1-b515-79aa607fb2e1.track",
+              "9cdbf8a5-965f-4bb0-80ac-128c2624047f.track",
+              "0249d114-5932-4beb-90a3-c46d0bf4b9a5.approach"
+            ]
           }
         },
         "01T": {
@@ -3737,6 +4220,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Gilroy North"
+          },
+          "relations": {
+            "TC": [
+              "2a6c2ffa-9cd3-4151-a9f5-c7de5891a06a.track",
+              "04db8699-b4ad-46b8-8fcd-64608fde1ed0.approach",
+              "abde960c-453c-4d28-81ac-0a4634488adf.approach"
+            ]
           }
         },
         "02T": {
@@ -3746,6 +4236,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Gilroy North"
+          },
+          "relations": {
+            "TC": [
+              "3f4ee916-b216-4aa9-9e4e-40f6741fcab9.B",
+              "c3295ac0-3355-4bdd-a2c3-a2cbefe38c42.A"
+            ]
           }
         },
         "777": {
@@ -3758,6 +4254,17 @@
             "CP": "Gilroy North",
             "Style": "lock",
             "TC": "777T1"
+          },
+          "relations": {
+            "C": [
+              "0249d114-5932-4beb-90a3-c46d0bf4b9a5.governed"
+            ],
+            "N": [
+              "3f4ee916-b216-4aa9-9e4e-40f6741fcab9.A"
+            ],
+            "R": [
+              "04db8699-b4ad-46b8-8fcd-64608fde1ed0.governed"
+            ]
           }
         },
         "778NAB": {
@@ -3850,6 +4357,17 @@
             "CP": "Gilroy South",
             "Style": "lock",
             "TC": "781T1"
+          },
+          "relations": {
+            "C": [
+              "80312d76-4212-441b-8f6c-e68bc04d67f9.governed"
+            ],
+            "N": [
+              "c3295ac0-3355-4bdd-a2c3-a2cbefe38c42.B"
+            ],
+            "R": [
+              "abde960c-453c-4d28-81ac-0a4634488adf.governed"
+            ]
           }
         },
         "MC1": {
@@ -4538,7 +5056,14 @@
               "Interlocking": "Luchessa",
               "Kind": "NEXT_CP"
             },
-            "id": "72f8e310-52ab-4aff-bbca-2616e18ede56"
+            "id": "72f8e310-52ab-4aff-bbca-2616e18ede56",
+            "relations": {
+              "track": [
+                "80312d76-4212-441b-8f6c-e68bc04d67f9.approach",
+                "f3925ced-b75d-49d3-a0df-6e939bf00ded.track",
+                "Gilroy Interchange:1NAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -4550,7 +5075,14 @@
               "Interlocking": "Gilroy Caltrain",
               "Kind": "NEXT_CP"
             },
-            "id": "8df20930-74d7-4da1-b515-79aa607fb2e1"
+            "id": "8df20930-74d7-4da1-b515-79aa607fb2e1",
+            "relations": {
+              "track": [
+                "9cdbf8a5-965f-4bb0-80ac-128c2624047f.track",
+                "0249d114-5932-4beb-90a3-c46d0bf4b9a5.approach",
+                "Gilroy Interchange:1SAT.TC"
+              ]
+            }
           }
         ],
         "joints": [
@@ -4566,6 +5098,10 @@
             },
             "id": "c3295ac0-3355-4bdd-a2c3-a2cbefe38c42",
             "relations": {
+              "A": [
+                "3f4ee916-b216-4aa9-9e4e-40f6741fcab9.B",
+                "Gilroy Interchange:02T.TC"
+              ],
               "B": [
                 "Gilroy Interchange:781.N"
               ]
@@ -4585,6 +5121,10 @@
             "relations": {
               "A": [
                 "Gilroy Interchange:777.N"
+              ],
+              "B": [
+                "c3295ac0-3355-4bdd-a2c3-a2cbefe38c42.A",
+                "Gilroy Interchange:02T.TC"
               ]
             }
           },
@@ -4602,6 +5142,11 @@
             },
             "id": "80312d76-4212-441b-8f6c-e68bc04d67f9",
             "relations": {
+              "approach": [
+                "72f8e310-52ab-4aff-bbca-2616e18ede56.track",
+                "f3925ced-b75d-49d3-a0df-6e939bf00ded.track",
+                "Gilroy Interchange:1NAT.TC"
+              ],
               "governed": [
                 "Gilroy Interchange:781.C"
               ],
@@ -4622,6 +5167,11 @@
             },
             "id": "0249d114-5932-4beb-90a3-c46d0bf4b9a5",
             "relations": {
+              "approach": [
+                "8df20930-74d7-4da1-b515-79aa607fb2e1.track",
+                "9cdbf8a5-965f-4bb0-80ac-128c2624047f.track",
+                "Gilroy Interchange:1SAT.TC"
+              ],
               "governed": [
                 "Gilroy Interchange:777.C"
               ],
@@ -4642,6 +5192,11 @@
             },
             "id": "04db8699-b4ad-46b8-8fcd-64608fde1ed0",
             "relations": {
+              "approach": [
+                "2a6c2ffa-9cd3-4151-a9f5-c7de5891a06a.track",
+                "abde960c-453c-4d28-81ac-0a4634488adf.approach",
+                "Gilroy Interchange:01T.TC"
+              ],
               "governed": [
                 "Gilroy Interchange:777.R"
               ],
@@ -4662,6 +5217,11 @@
             },
             "id": "abde960c-453c-4d28-81ac-0a4634488adf",
             "relations": {
+              "approach": [
+                "2a6c2ffa-9cd3-4151-a9f5-c7de5891a06a.track",
+                "04db8699-b4ad-46b8-8fcd-64608fde1ed0.approach",
+                "Gilroy Interchange:01T.TC"
+              ],
               "governed": [
                 "Gilroy Interchange:781.R"
               ],
@@ -4680,7 +5240,14 @@
               "Direction": "BOTH",
               "Kind": "RULE_261"
             },
-            "id": "f3925ced-b75d-49d3-a0df-6e939bf00ded"
+            "id": "f3925ced-b75d-49d3-a0df-6e939bf00ded",
+            "relations": {
+              "track": [
+                "72f8e310-52ab-4aff-bbca-2616e18ede56.track",
+                "80312d76-4212-441b-8f6c-e68bc04d67f9.approach",
+                "Gilroy Interchange:1NAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -4692,7 +5259,14 @@
               "Direction": "BOTH",
               "Kind": "RULE_261"
             },
-            "id": "9cdbf8a5-965f-4bb0-80ac-128c2624047f"
+            "id": "9cdbf8a5-965f-4bb0-80ac-128c2624047f",
+            "relations": {
+              "track": [
+                "8df20930-74d7-4da1-b515-79aa607fb2e1.track",
+                "0249d114-5932-4beb-90a3-c46d0bf4b9a5.approach",
+                "Gilroy Interchange:1SAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -4704,7 +5278,14 @@
               "Direction": "BOTH",
               "Kind": "RULE_105"
             },
-            "id": "2a6c2ffa-9cd3-4151-a9f5-c7de5891a06a"
+            "id": "2a6c2ffa-9cd3-4151-a9f5-c7de5891a06a",
+            "relations": {
+              "track": [
+                "04db8699-b4ad-46b8-8fcd-64608fde1ed0.approach",
+                "abde960c-453c-4d28-81ac-0a4634488adf.approach",
+                "Gilroy Interchange:01T.TC"
+              ]
+            }
           }
         ]
       }
@@ -4718,6 +5299,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Carnadero"
+          },
+          "relations": {
+            "TC": [
+              "539168b6-fc96-4232-9d09-b9d628ca8894.track",
+              "552574d4-abc0-4dd6-9502-dc1cc89e7b5d.track",
+              "cecdcc5b-72f0-4088-bd8c-d8923a6541ea.approach"
+            ]
           }
         },
         "1SAT": {
@@ -4727,6 +5315,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Luchessa"
+          },
+          "relations": {
+            "TC": [
+              "a9e48b9d-7fc5-4040-a218-7a55b8340d84.track",
+              "cd861a0b-1933-4346-957b-e6e72a3469af.approach",
+              "e6b22427-20b5-467d-9a20-baee55bc577d.track"
+            ]
           }
         },
         "01T": {
@@ -4736,6 +5331,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Gilroy"
+          },
+          "relations": {
+            "TC": [
+              "75b7e5b2-f04b-468c-810c-f067630cbed1.B",
+              "f533292c-3f78-4418-9c96-7c298d5d122d.A"
+            ]
           }
         },
         "2NAT": {
@@ -4745,6 +5346,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Carnadero"
+          },
+          "relations": {
+            "TC": [
+              "0c90cb2d-c2e9-4191-9ccd-2368ed3033ab.track",
+              "c35e8a7a-e9e8-447d-8058-8cf109209602.approach",
+              "d634bff1-5c9c-44a1-87ee-d531375d1943.track"
+            ]
           }
         },
         "02T": {
@@ -4754,6 +5362,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Gilroy"
+          },
+          "relations": {
+            "TC": [
+              "17c5a311-d65e-4609-956b-0172ec9c98a1.approach",
+              "45265a33-23dd-4bb7-a638-5cdd2d7792f4.track",
+              "a8e310cd-0b7a-4d3a-b8a5-761efbfd26e6.CTC"
+            ]
           }
         },
         "3NAT": {
@@ -4763,6 +5378,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Carnadero"
+          },
+          "relations": {
+            "TC": [
+              "bfefc599-5ed0-4eba-b8f4-3de20df94399.track",
+              "cb046a4f-2e58-425f-9c49-990eefbebe82.approach",
+              "e357578d-2a68-400f-a47d-cd3318b74070.track"
+            ]
           }
         },
         "783": {
@@ -4775,6 +5397,17 @@
             "CP": "Luchessa",
             "Style": "powered",
             "TC": "783T1"
+          },
+          "relations": {
+            "C": [
+              "cd861a0b-1933-4346-957b-e6e72a3469af.governed"
+            ],
+            "N": [
+              "ff74880c-bb95-40c3-845f-3ab94dee7156.A"
+            ],
+            "R": [
+              "cecdcc5b-72f0-4088-bd8c-d8923a6541ea.governed"
+            ]
           }
         },
         "784EAB": {
@@ -4886,6 +5519,12 @@
             "TC": "795T1"
           },
           "relations": {
+            "C": [
+              "75b7e5b2-f04b-468c-810c-f067630cbed1.A"
+            ],
+            "N": [
+              "ff74880c-bb95-40c3-845f-3ab94dee7156.B"
+            ],
             "R": [
               "Luchessa:795D.R"
             ]
@@ -4903,6 +5542,9 @@
             "Style": "derail"
           },
           "relations": {
+            "C": [
+              "17c5a311-d65e-4609-956b-0172ec9c98a1.governed"
+            ],
             "R": [
               "Luchessa:795.R"
             ]
@@ -4918,6 +5560,17 @@
             "CP": "Carnadero",
             "Style": "powered",
             "TC": "799T1"
+          },
+          "relations": {
+            "C": [
+              "f533292c-3f78-4418-9c96-7c298d5d122d.B"
+            ],
+            "N": [
+              "c35e8a7a-e9e8-447d-8058-8cf109209602.governed"
+            ],
+            "R": [
+              "cb046a4f-2e58-425f-9c49-990eefbebe82.governed"
+            ]
           }
         },
         "MC1": {
@@ -5847,6 +6500,11 @@
             },
             "id": "a8e310cd-0b7a-4d3a-b8a5-761efbfd26e6",
             "relations": {
+              "CTC": [
+                "17c5a311-d65e-4609-956b-0172ec9c98a1.approach",
+                "45265a33-23dd-4bb7-a638-5cdd2d7792f4.track",
+                "Luchessa:02T.TC"
+              ],
               "DARK": [
                 "Luchessa:Gilroy Industry.EoT"
               ]
@@ -5862,7 +6520,14 @@
               "Interlocking": "Christopher",
               "Kind": "NEXT_CP"
             },
-            "id": "539168b6-fc96-4232-9d09-b9d628ca8894"
+            "id": "539168b6-fc96-4232-9d09-b9d628ca8894",
+            "relations": {
+              "track": [
+                "552574d4-abc0-4dd6-9502-dc1cc89e7b5d.track",
+                "cecdcc5b-72f0-4088-bd8c-d8923a6541ea.approach",
+                "Luchessa:1NAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -5874,7 +6539,14 @@
               "Interlocking": "Gilroy Interchange",
               "Kind": "NEXT_CP"
             },
-            "id": "e6b22427-20b5-467d-9a20-baee55bc577d"
+            "id": "e6b22427-20b5-467d-9a20-baee55bc577d",
+            "relations": {
+              "track": [
+                "a9e48b9d-7fc5-4040-a218-7a55b8340d84.track",
+                "cd861a0b-1933-4346-957b-e6e72a3469af.approach",
+                "Luchessa:1SAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -5886,7 +6558,14 @@
               "Interlocking": "Christopher",
               "Kind": "NEXT_CP"
             },
-            "id": "d634bff1-5c9c-44a1-87ee-d531375d1943"
+            "id": "d634bff1-5c9c-44a1-87ee-d531375d1943",
+            "relations": {
+              "track": [
+                "0c90cb2d-c2e9-4191-9ccd-2368ed3033ab.track",
+                "c35e8a7a-e9e8-447d-8058-8cf109209602.approach",
+                "Luchessa:2NAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -5898,14 +6577,26 @@
               "Interlocking": "Hollister",
               "Kind": "NEXT_CP"
             },
-            "id": "e357578d-2a68-400f-a47d-cd3318b74070"
+            "id": "e357578d-2a68-400f-a47d-cd3318b74070",
+            "relations": {
+              "track": [
+                "bfefc599-5ed0-4eba-b8f4-3de20df94399.track",
+                "cb046a4f-2e58-425f-9c49-990eefbebe82.approach",
+                "Luchessa:3NAT.TC"
+              ]
+            }
           },
           {
             "given": {
               "Kind": "INDUSTRY"
             },
             "id": "8b620dce-b7bd-433b-8c7f-e0c9be14d6d0",
-            "name": "Luchessa:Gilroy Industry"
+            "name": "Luchessa:Gilroy Industry",
+            "relations": {
+              "EoT": [
+                "a8e310cd-0b7a-4d3a-b8a5-761efbfd26e6.DARK"
+              ]
+            }
           }
         ],
         "joints": [
@@ -5921,6 +6612,10 @@
             },
             "id": "f533292c-3f78-4418-9c96-7c298d5d122d",
             "relations": {
+              "A": [
+                "75b7e5b2-f04b-468c-810c-f067630cbed1.B",
+                "Luchessa:01T.TC"
+              ],
               "B": [
                 "Luchessa:799.C"
               ]
@@ -5960,6 +6655,10 @@
             "relations": {
               "A": [
                 "Luchessa:795.C"
+              ],
+              "B": [
+                "f533292c-3f78-4418-9c96-7c298d5d122d.A",
+                "Luchessa:01T.TC"
               ]
             }
           },
@@ -5977,6 +6676,11 @@
             },
             "id": "cecdcc5b-72f0-4088-bd8c-d8923a6541ea",
             "relations": {
+              "approach": [
+                "539168b6-fc96-4232-9d09-b9d628ca8894.track",
+                "552574d4-abc0-4dd6-9502-dc1cc89e7b5d.track",
+                "Luchessa:1NAT.TC"
+              ],
               "governed": [
                 "Luchessa:783.R"
               ],
@@ -5997,6 +6701,11 @@
             },
             "id": "cd861a0b-1933-4346-957b-e6e72a3469af",
             "relations": {
+              "approach": [
+                "a9e48b9d-7fc5-4040-a218-7a55b8340d84.track",
+                "e6b22427-20b5-467d-9a20-baee55bc577d.track",
+                "Luchessa:1SAT.TC"
+              ],
               "governed": [
                 "Luchessa:783.C"
               ],
@@ -6017,6 +6726,11 @@
             },
             "id": "c35e8a7a-e9e8-447d-8058-8cf109209602",
             "relations": {
+              "approach": [
+                "0c90cb2d-c2e9-4191-9ccd-2368ed3033ab.track",
+                "d634bff1-5c9c-44a1-87ee-d531375d1943.track",
+                "Luchessa:2NAT.TC"
+              ],
               "governed": [
                 "Luchessa:799.N"
               ],
@@ -6037,6 +6751,11 @@
             },
             "id": "17c5a311-d65e-4609-956b-0172ec9c98a1",
             "relations": {
+              "approach": [
+                "45265a33-23dd-4bb7-a638-5cdd2d7792f4.track",
+                "a8e310cd-0b7a-4d3a-b8a5-761efbfd26e6.CTC",
+                "Luchessa:02T.TC"
+              ],
               "governed": [
                 "Luchessa:795D.C"
               ],
@@ -6057,6 +6776,11 @@
             },
             "id": "cb046a4f-2e58-425f-9c49-990eefbebe82",
             "relations": {
+              "approach": [
+                "bfefc599-5ed0-4eba-b8f4-3de20df94399.track",
+                "e357578d-2a68-400f-a47d-cd3318b74070.track",
+                "Luchessa:3NAT.TC"
+              ],
               "governed": [
                 "Luchessa:799.R"
               ],
@@ -6086,7 +6810,14 @@
               "Direction": "RIGHT",
               "Kind": "RULE_251"
             },
-            "id": "552574d4-abc0-4dd6-9502-dc1cc89e7b5d"
+            "id": "552574d4-abc0-4dd6-9502-dc1cc89e7b5d",
+            "relations": {
+              "track": [
+                "539168b6-fc96-4232-9d09-b9d628ca8894.track",
+                "cecdcc5b-72f0-4088-bd8c-d8923a6541ea.approach",
+                "Luchessa:1NAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -6098,7 +6829,14 @@
               "Direction": "BOTH",
               "Kind": "RULE_261"
             },
-            "id": "a9e48b9d-7fc5-4040-a218-7a55b8340d84"
+            "id": "a9e48b9d-7fc5-4040-a218-7a55b8340d84",
+            "relations": {
+              "track": [
+                "cd861a0b-1933-4346-957b-e6e72a3469af.approach",
+                "e6b22427-20b5-467d-9a20-baee55bc577d.track",
+                "Luchessa:1SAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -6110,7 +6848,14 @@
               "Direction": "LEFT",
               "Kind": "RULE_251"
             },
-            "id": "0c90cb2d-c2e9-4191-9ccd-2368ed3033ab"
+            "id": "0c90cb2d-c2e9-4191-9ccd-2368ed3033ab",
+            "relations": {
+              "track": [
+                "c35e8a7a-e9e8-447d-8058-8cf109209602.approach",
+                "d634bff1-5c9c-44a1-87ee-d531375d1943.track",
+                "Luchessa:2NAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -6122,7 +6867,14 @@
               "Direction": "BOTH",
               "Kind": "RULE_105"
             },
-            "id": "45265a33-23dd-4bb7-a638-5cdd2d7792f4"
+            "id": "45265a33-23dd-4bb7-a638-5cdd2d7792f4",
+            "relations": {
+              "track": [
+                "17c5a311-d65e-4609-956b-0172ec9c98a1.approach",
+                "a8e310cd-0b7a-4d3a-b8a5-761efbfd26e6.CTC",
+                "Luchessa:02T.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -6134,7 +6886,14 @@
               "Direction": "BOTH",
               "Kind": "RULE_261"
             },
-            "id": "bfefc599-5ed0-4eba-b8f4-3de20df94399"
+            "id": "bfefc599-5ed0-4eba-b8f4-3de20df94399",
+            "relations": {
+              "track": [
+                "cb046a4f-2e58-425f-9c49-990eefbebe82.approach",
+                "e357578d-2a68-400f-a47d-cd3318b74070.track",
+                "Luchessa:3NAT.TC"
+              ]
+            }
           }
         ]
       }
@@ -6152,6 +6911,9 @@
             "Style": "manual_sensed"
           },
           "relations": {
+            "C": [
+              "de274dbe-41d8-4795-9866-fbb0950c5f2c.DARK"
+            ],
             "N": [
               "Sargent:Beet Loader 2.EoT"
             ],
@@ -6167,6 +6929,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Sargent"
+          },
+          "relations": {
+            "TC": [
+              "2c47f3de-619c-47c1-9a14-67eedbf2a085.approach",
+              "290c1958-fb66-4f1a-90eb-13e1a5cce1e5.track",
+              "2163767a-737a-439c-b63b-60546168da26.track"
+            ]
           }
         },
         "1SAT": {
@@ -6176,6 +6945,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Sargent"
+          },
+          "relations": {
+            "TC": [
+              "2ed485d8-9399-4b83-8285-6cf2e67c0af8.B",
+              "57f8967a-3010-441d-bea9-0eb783a0fa60.approach"
+            ]
           }
         },
         "2SAT": {
@@ -6185,6 +6960,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Sargent"
+          },
+          "relations": {
+            "TC": [
+              "2a82da74-a0dc-4b87-942c-1e472793994b.track",
+              "78a1df40-a370-4f05-8c58-e8cee9c8b009.approach",
+              "de274dbe-41d8-4795-9866-fbb0950c5f2c.CTC"
+            ]
           }
         },
         "835": {
@@ -6197,6 +6979,17 @@
             "CP": "Sargent",
             "Style": "lock",
             "TC": "835T1"
+          },
+          "relations": {
+            "C": [
+              "2c47f3de-619c-47c1-9a14-67eedbf2a085.governed"
+            ],
+            "N": [
+              "57f8967a-3010-441d-bea9-0eb783a0fa60.governed"
+            ],
+            "R": [
+              "78a1df40-a370-4f05-8c58-e8cee9c8b009.governed"
+            ]
           }
         },
         "836NAB": {
@@ -6845,6 +7638,11 @@
             },
             "id": "de274dbe-41d8-4795-9866-fbb0950c5f2c",
             "relations": {
+              "CTC": [
+                "2a82da74-a0dc-4b87-942c-1e472793994b.track",
+                "78a1df40-a370-4f05-8c58-e8cee9c8b009.approach",
+                "Sargent:2SAT.TC"
+              ],
               "DARK": [
                 "Sargent:1.C"
               ]
@@ -6860,7 +7658,14 @@
               "Interlocking": "Corporal",
               "Kind": "NEXT_CP"
             },
-            "id": "bf713624-211c-41d9-a4bf-fb1f8e4b8aa4"
+            "id": "bf713624-211c-41d9-a4bf-fb1f8e4b8aa4",
+            "relations": {
+              "track": [
+                "2ed485d8-9399-4b83-8285-6cf2e67c0af8.A",
+                "Corporal:2NAT.TC",
+                "d9e20e6c-3e58-468f-bbb0-e91fd802a003.track"
+              ]
+            }
           },
           {
             "derived": {
@@ -6872,7 +7677,14 @@
               "Interlocking": "Watsonville",
               "Kind": "NEXT_CP"
             },
-            "id": "290c1958-fb66-4f1a-90eb-13e1a5cce1e5"
+            "id": "290c1958-fb66-4f1a-90eb-13e1a5cce1e5",
+            "relations": {
+              "track": [
+                "2c47f3de-619c-47c1-9a14-67eedbf2a085.approach",
+                "2163767a-737a-439c-b63b-60546168da26.track",
+                "Sargent:1NAT.TC"
+              ]
+            }
           },
           {
             "given": {
@@ -6910,7 +7722,18 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "2ed485d8-9399-4b83-8285-6cf2e67c0af8"
+            "id": "2ed485d8-9399-4b83-8285-6cf2e67c0af8",
+            "relations": {
+              "A": [
+                "bf713624-211c-41d9-a4bf-fb1f8e4b8aa4.track",
+                "Corporal:2NAT.TC",
+                "d9e20e6c-3e58-468f-bbb0-e91fd802a003.track"
+              ],
+              "B": [
+                "57f8967a-3010-441d-bea9-0eb783a0fa60.approach",
+                "Sargent:1SAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -6926,6 +7749,11 @@
             },
             "id": "2c47f3de-619c-47c1-9a14-67eedbf2a085",
             "relations": {
+              "approach": [
+                "290c1958-fb66-4f1a-90eb-13e1a5cce1e5.track",
+                "2163767a-737a-439c-b63b-60546168da26.track",
+                "Sargent:1NAT.TC"
+              ],
               "governed": [
                 "Sargent:835.C"
               ],
@@ -6946,6 +7774,10 @@
             },
             "id": "57f8967a-3010-441d-bea9-0eb783a0fa60",
             "relations": {
+              "approach": [
+                "2ed485d8-9399-4b83-8285-6cf2e67c0af8.B",
+                "Sargent:1SAT.TC"
+              ],
               "governed": [
                 "Sargent:835.N"
               ],
@@ -6966,6 +7798,11 @@
             },
             "id": "78a1df40-a370-4f05-8c58-e8cee9c8b009",
             "relations": {
+              "approach": [
+                "2a82da74-a0dc-4b87-942c-1e472793994b.track",
+                "de274dbe-41d8-4795-9866-fbb0950c5f2c.CTC",
+                "Sargent:2SAT.TC"
+              ],
               "governed": [
                 "Sargent:835.R"
               ],
@@ -6984,7 +7821,14 @@
               "Direction": "BOTH",
               "Kind": "RULE_261"
             },
-            "id": "d9e20e6c-3e58-468f-bbb0-e91fd802a003"
+            "id": "d9e20e6c-3e58-468f-bbb0-e91fd802a003",
+            "relations": {
+              "track": [
+                "2ed485d8-9399-4b83-8285-6cf2e67c0af8.A",
+                "bf713624-211c-41d9-a4bf-fb1f8e4b8aa4.track",
+                "Corporal:2NAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -6996,7 +7840,14 @@
               "Direction": "BOTH",
               "Kind": "RULE_261"
             },
-            "id": "2163767a-737a-439c-b63b-60546168da26"
+            "id": "2163767a-737a-439c-b63b-60546168da26",
+            "relations": {
+              "track": [
+                "2c47f3de-619c-47c1-9a14-67eedbf2a085.approach",
+                "290c1958-fb66-4f1a-90eb-13e1a5cce1e5.track",
+                "Sargent:1NAT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -7008,7 +7859,14 @@
               "Direction": "BOTH",
               "Kind": "RULE_105"
             },
-            "id": "2a82da74-a0dc-4b87-942c-1e472793994b"
+            "id": "2a82da74-a0dc-4b87-942c-1e472793994b",
+            "relations": {
+              "track": [
+                "78a1df40-a370-4f05-8c58-e8cee9c8b009.approach",
+                "de274dbe-41d8-4795-9866-fbb0950c5f2c.CTC",
+                "Sargent:2SAT.TC"
+              ]
+            }
           }
         ]
       }
@@ -7022,6 +7880,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "9dab8882-d710-4792-a368-e1172a63c349.A",
+              "95cf20c8-c0c4-4eb0-9e11-b416e37726f9.B"
+            ]
           }
         },
         "1CT": {
@@ -7031,6 +7895,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "95cf20c8-c0c4-4eb0-9e11-b416e37726f9.A",
+              "6568cf06-3839-4d5c-ab64-201f106efbc3.B"
+            ]
           }
         },
         "1DT": {
@@ -7040,6 +7910,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "3e200808-3280-4616-88fb-dda9b8280ace.B",
+              "6568cf06-3839-4d5c-ab64-201f106efbc3.A"
+            ]
           }
         },
         "1ET": {
@@ -7049,6 +7925,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "3e200808-3280-4616-88fb-dda9b8280ace.A",
+              "a68352d0-96a1-4423-9b0b-87c21e4b044c.approach"
+            ]
           }
         },
         "01T": {
@@ -7058,6 +7940,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "4ff0a280-f62c-4928-afcb-b3114c00e7b5.B",
+              "623dbaf7-6a99-4c76-9cd4-ed14f750b23d.approach"
+            ]
           }
         },
         "2AT": {
@@ -7067,6 +7955,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "77fdeaf8-4b06-442a-9da5-96da05361350.B",
+              "cc756de4-608c-4963-b1ae-0ac549200d12.A"
+            ]
           }
         },
         "2BT": {
@@ -7076,6 +7970,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "3493c95f-075b-48ce-9dfc-fbd16de5eb7a.B",
+              "b4e79e42-3e0b-4ec3-a43f-1bf238392547.A"
+            ]
           }
         },
         "2CT": {
@@ -7085,6 +7985,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "43d702ac-d4df-4128-941b-452290b04d21.B",
+              "3493c95f-075b-48ce-9dfc-fbd16de5eb7a.A"
+            ]
           }
         },
         "2DT": {
@@ -7094,6 +8000,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "43d702ac-d4df-4128-941b-452290b04d21.A",
+              "d148e342-30a3-4771-a1c4-e10ec1ac385d.B"
+            ]
           }
         },
         "2ET": {
@@ -7103,6 +8015,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "d5c58279-b96e-4f47-82d4-7b4ba58012ad.approach",
+              "d148e342-30a3-4771-a1c4-e10ec1ac385d.A"
+            ]
           }
         },
         "02T": {
@@ -7112,6 +8030,14 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "4ff0a280-f62c-4928-afcb-b3114c00e7b5.A",
+              "14dfa959-b581-4e8a-956a-1356ba4cee8d.track",
+              "3478e3b9-eb36-424c-bb66-b3db1669812d.approach",
+              "ead0e363-bdf9-41ae-a5a4-0242233bfca2.track"
+            ]
           }
         },
         "3": {
@@ -7124,6 +8050,18 @@
             "CP": "Watsonville",
             "Style": "powered",
             "TC": "3T1"
+          },
+          "relations": {
+            "C": [
+              "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.B",
+              "1571e3d9-1977-4757-90d3-e601309c2460.track"
+            ],
+            "N": [
+              "a68352d0-96a1-4423-9b0b-87c21e4b044c.governed"
+            ],
+            "R": [
+              "5f276ffe-c689-4585-a8c3-0ff4d86823bc.A"
+            ]
           }
         },
         "3BT": {
@@ -7133,6 +8071,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "32d0914a-6cc5-4bb4-b1e5-efaa17503738.B",
+              "e7c0fc59-c176-4268-ba19-dd327eb73662.A"
+            ]
           }
         },
         "3CT": {
@@ -7142,6 +8086,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "32d0914a-6cc5-4bb4-b1e5-efaa17503738.A",
+              "272c39c1-fad7-4056-8f98-bd01cb13bb96.B"
+            ]
           }
         },
         "3DT": {
@@ -7151,6 +8101,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "272c39c1-fad7-4056-8f98-bd01cb13bb96.A",
+              "500918d5-2a29-4f86-a7ce-118211e3a875.B"
+            ]
           }
         },
         "3ET": {
@@ -7160,6 +8116,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "515cb1a5-ad1f-4cdb-9040-7dc42819b984.approach",
+              "500918d5-2a29-4f86-a7ce-118211e3a875.A"
+            ]
           }
         },
         "03T": {
@@ -7169,6 +8131,13 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "07f6d3a8-9813-41bb-8931-a7fd64646ece.track",
+              "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
+              "293515f7-9155-4100-a639-23f6d051ab4e.approach"
+            ]
           }
         },
         "4BT": {
@@ -7178,6 +8147,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "95f9e1f9-ea74-450c-a6fd-d38f4a25b6e5.A",
+              "793f0198-f601-462f-aad2-4b09f2152b59.B"
+            ]
           }
         },
         "4CT": {
@@ -7187,6 +8162,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "793f0198-f601-462f-aad2-4b09f2152b59.A",
+              "fb71d98b-27d1-4f90-8738-725015092571.B"
+            ]
           }
         },
         "4DT": {
@@ -7196,6 +8177,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "e2315edb-74a9-4293-b3d5-80426d14b2c2.B",
+              "fb71d98b-27d1-4f90-8738-725015092571.A"
+            ]
           }
         },
         "4ET": {
@@ -7205,6 +8192,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "45d85c6d-f7a5-4d7d-b7a5-5e9907b4f0af.approach",
+              "e2315edb-74a9-4293-b3d5-80426d14b2c2.A"
+            ]
           }
         },
         "5": {
@@ -7217,6 +8210,17 @@
             "CP": "Watsonville",
             "Style": "powered",
             "TC": "5T1"
+          },
+          "relations": {
+            "C": [
+              "5f276ffe-c689-4585-a8c3-0ff4d86823bc.B"
+            ],
+            "N": [
+              "b7884720-ce7a-4598-9662-09e70242a75a.A"
+            ],
+            "R": [
+              "d5c58279-b96e-4f47-82d4-7b4ba58012ad.governed"
+            ]
           }
         },
         "5BT": {
@@ -7226,6 +8230,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "4c41471a-a4b9-4668-afcc-c166ba44818f.A",
+              "d5a18f20-f129-4945-b9e2-9f3d864f9b36.B"
+            ]
           }
         },
         "5CT": {
@@ -7235,6 +8245,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "c7969a55-9fc3-4993-aa7d-3fb91cdafbb2.B",
+              "d5a18f20-f129-4945-b9e2-9f3d864f9b36.A"
+            ]
           }
         },
         "5DT": {
@@ -7244,6 +8260,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "02ce8ed1-b8fb-49b4-b75c-18debfaac7d0.B",
+              "c7969a55-9fc3-4993-aa7d-3fb91cdafbb2.A"
+            ]
           }
         },
         "5ET": {
@@ -7253,6 +8275,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "02ce8ed1-b8fb-49b4-b75c-18debfaac7d0.A",
+              "29dc489d-a8e9-4359-adb5-95899e4e99aa.approach"
+            ]
           }
         },
         "6BT": {
@@ -7262,6 +8290,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "96f07de7-860e-496e-bb6a-40c7171ba222.A",
+              "c06095b3-8f8a-4812-8dd9-41b08a1d0f3c.B"
+            ]
           }
         },
         "6CT": {
@@ -7271,6 +8305,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "36620c76-421c-44a0-aebd-6045758b5a12.B",
+              "c06095b3-8f8a-4812-8dd9-41b08a1d0f3c.A"
+            ]
           }
         },
         "6DT": {
@@ -7280,6 +8320,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "4e268fa6-4e87-402c-94c8-571d7ad17b00.B",
+              "36620c76-421c-44a0-aebd-6045758b5a12.A"
+            ]
           }
         },
         "6ET": {
@@ -7289,6 +8335,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "4e268fa6-4e87-402c-94c8-571d7ad17b00.A",
+              "f2263aa1-aa98-4fd6-8f13-a39ebfe78ac1.approach"
+            ]
           }
         },
         "7": {
@@ -7301,6 +8353,17 @@
             "CP": "Watsonville",
             "Style": "powered",
             "TC": "7T1"
+          },
+          "relations": {
+            "C": [
+              "b7884720-ce7a-4598-9662-09e70242a75a.B"
+            ],
+            "N": [
+              "cc7d8257-24fb-4b80-8be5-430952765082.A"
+            ],
+            "R": [
+              "515cb1a5-ad1f-4cdb-9040-7dc42819b984.governed"
+            ]
           }
         },
         "7BT": {
@@ -7310,6 +8373,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "055b30ce-2e51-401c-95f9-2f5128602125.B",
+              "c25da741-efe1-482c-aa07-70a7c30dea96.A"
+            ]
           }
         },
         "7CT": {
@@ -7319,6 +8388,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "2fba876d-65ba-40bd-8539-10ac1bfd5ab3.B",
+              "055b30ce-2e51-401c-95f9-2f5128602125.A"
+            ]
           }
         },
         "7DT": {
@@ -7328,6 +8403,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "2fba876d-65ba-40bd-8539-10ac1bfd5ab3.A",
+              "a67e66c2-6007-40e5-95ae-4a600857e6a9.B"
+            ]
           }
         },
         "7ET": {
@@ -7337,6 +8418,12 @@
           "given": {
             "Appliance": "track_circuit",
             "CP": "Watsonville"
+          },
+          "relations": {
+            "TC": [
+              "a67e66c2-6007-40e5-95ae-4a600857e6a9.A",
+              "be95c00a-9e6d-4b80-9014-98920c40141e.approach"
+            ]
           }
         },
         "9": {
@@ -7349,6 +8436,17 @@
             "CP": "Watsonville",
             "Style": "powered",
             "TC": "9T1"
+          },
+          "relations": {
+            "C": [
+              "cc7d8257-24fb-4b80-8be5-430952765082.B"
+            ],
+            "N": [
+              "745b5ac7-b6b4-4f7f-9b19-edc6003d829b.A"
+            ],
+            "R": [
+              "45d85c6d-f7a5-4d7d-b7a5-5e9907b4f0af.governed"
+            ]
           }
         },
         "11": {
@@ -7361,6 +8459,17 @@
             "CP": "Watsonville",
             "Style": "powered",
             "TC": "11T1"
+          },
+          "relations": {
+            "C": [
+              "745b5ac7-b6b4-4f7f-9b19-edc6003d829b.B"
+            ],
+            "N": [
+              "7230c21c-200c-47e3-8462-61dd6db29a60.A"
+            ],
+            "R": [
+              "29dc489d-a8e9-4359-adb5-95899e4e99aa.governed"
+            ]
           }
         },
         "13": {
@@ -7373,6 +8482,17 @@
             "CP": "Watsonville",
             "Style": "powered",
             "TC": "13T1"
+          },
+          "relations": {
+            "C": [
+              "7230c21c-200c-47e3-8462-61dd6db29a60.B"
+            ],
+            "N": [
+              "be95c00a-9e6d-4b80-9014-98920c40141e.governed"
+            ],
+            "R": [
+              "f2263aa1-aa98-4fd6-8f13-a39ebfe78ac1.governed"
+            ]
           }
         },
         "15": {
@@ -7385,6 +8505,17 @@
             "CP": "Watsonville",
             "Style": "powered",
             "TC": "15T1"
+          },
+          "relations": {
+            "C": [
+              "623dbaf7-6a99-4c76-9cd4-ed14f750b23d.governed"
+            ],
+            "N": [
+              "e61c90d1-e074-4ea7-a662-bb59f5b2877c.B"
+            ],
+            "R": [
+              "c25da741-efe1-482c-aa07-70a7c30dea96.B"
+            ]
           }
         },
         "17": {
@@ -7397,6 +8528,17 @@
             "CP": "Watsonville",
             "Style": "powered",
             "TC": "17T1"
+          },
+          "relations": {
+            "C": [
+              "e61c90d1-e074-4ea7-a662-bb59f5b2877c.A"
+            ],
+            "N": [
+              "7ad1261f-95aa-4c26-80e3-a656991b037e.B"
+            ],
+            "R": [
+              "96f07de7-860e-496e-bb6a-40c7171ba222.B"
+            ]
           }
         },
         "19": {
@@ -7409,6 +8551,17 @@
             "CP": "Watsonville",
             "Style": "powered",
             "TC": "19T1"
+          },
+          "relations": {
+            "C": [
+              "7ad1261f-95aa-4c26-80e3-a656991b037e.A"
+            ],
+            "N": [
+              "96078e5d-263c-40c1-8485-db7e9daaa444.B"
+            ],
+            "R": [
+              "4c41471a-a4b9-4668-afcc-c166ba44818f.B"
+            ]
           }
         },
         "21": {
@@ -7421,6 +8574,17 @@
             "CP": "Watsonville",
             "Style": "powered",
             "TC": "21T1"
+          },
+          "relations": {
+            "C": [
+              "96078e5d-263c-40c1-8485-db7e9daaa444.A"
+            ],
+            "N": [
+              "4ed0d121-850e-463b-ac95-42abecf48b10.B"
+            ],
+            "R": [
+              "95f9e1f9-ea74-450c-a6fd-d38f4a25b6e5.B"
+            ]
           }
         },
         "23": {
@@ -7433,6 +8597,17 @@
             "CP": "Watsonville",
             "Style": "powered",
             "TC": "23T1"
+          },
+          "relations": {
+            "C": [
+              "4ed0d121-850e-463b-ac95-42abecf48b10.A"
+            ],
+            "N": [
+              "cc756de4-608c-4963-b1ae-0ac549200d12.B"
+            ],
+            "R": [
+              "e7c0fc59-c176-4268-ba19-dd327eb73662.B"
+            ]
           }
         },
         "25": {
@@ -7445,6 +8620,17 @@
             "CP": "Watsonville",
             "Style": "powered",
             "TC": "25T1"
+          },
+          "relations": {
+            "C": [
+              "77fdeaf8-4b06-442a-9da5-96da05361350.A"
+            ],
+            "N": [
+              "b4e79e42-3e0b-4ec3-a43f-1bf238392547.B"
+            ],
+            "R": [
+              "9dab8882-d710-4792-a368-e1172a63c349.B"
+            ]
           }
         },
         "0100T": {
@@ -7498,6 +8684,17 @@
             "CP": "Watsonville",
             "Style": "powered",
             "TC": "837T1"
+          },
+          "relations": {
+            "C": [
+              "fde36151-9fb9-48ab-a0b9-0baa29c776a5.track"
+            ],
+            "N": [
+              "293515f7-9155-4100-a639-23f6d051ab4e.governed"
+            ],
+            "R": [
+              "3478e3b9-eb36-424c-bb66-b3db1669812d.governed"
+            ]
           }
         },
         "838NAB": {
@@ -10219,6 +11416,10 @@
             },
             "id": "9dab8882-d710-4792-a368-e1172a63c349",
             "relations": {
+              "A": [
+                "95cf20c8-c0c4-4eb0-9e11-b416e37726f9.B",
+                "Watsonville:1BT.TC"
+              ],
               "B": [
                 "Watsonville:25.R"
               ]
@@ -10234,7 +11435,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "95cf20c8-c0c4-4eb0-9e11-b416e37726f9"
+            "id": "95cf20c8-c0c4-4eb0-9e11-b416e37726f9",
+            "relations": {
+              "A": [
+                "6568cf06-3839-4d5c-ab64-201f106efbc3.B",
+                "Watsonville:1CT.TC"
+              ],
+              "B": [
+                "9dab8882-d710-4792-a368-e1172a63c349.A",
+                "Watsonville:1BT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10246,7 +11457,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "6568cf06-3839-4d5c-ab64-201f106efbc3"
+            "id": "6568cf06-3839-4d5c-ab64-201f106efbc3",
+            "relations": {
+              "A": [
+                "3e200808-3280-4616-88fb-dda9b8280ace.B",
+                "Watsonville:1DT.TC"
+              ],
+              "B": [
+                "95cf20c8-c0c4-4eb0-9e11-b416e37726f9.A",
+                "Watsonville:1CT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10258,7 +11479,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "3e200808-3280-4616-88fb-dda9b8280ace"
+            "id": "3e200808-3280-4616-88fb-dda9b8280ace",
+            "relations": {
+              "A": [
+                "a68352d0-96a1-4423-9b0b-87c21e4b044c.approach",
+                "Watsonville:1ET.TC"
+              ],
+              "B": [
+                "6568cf06-3839-4d5c-ab64-201f106efbc3.A",
+                "Watsonville:1DT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10272,6 +11503,10 @@
             },
             "id": "cc756de4-608c-4963-b1ae-0ac549200d12",
             "relations": {
+              "A": [
+                "77fdeaf8-4b06-442a-9da5-96da05361350.B",
+                "Watsonville:2AT.TC"
+              ],
               "B": [
                 "Watsonville:23.N"
               ]
@@ -10289,6 +11524,10 @@
             },
             "id": "b4e79e42-3e0b-4ec3-a43f-1bf238392547",
             "relations": {
+              "A": [
+                "3493c95f-075b-48ce-9dfc-fbd16de5eb7a.B",
+                "Watsonville:2BT.TC"
+              ],
               "B": [
                 "Watsonville:25.N"
               ]
@@ -10304,7 +11543,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "3493c95f-075b-48ce-9dfc-fbd16de5eb7a"
+            "id": "3493c95f-075b-48ce-9dfc-fbd16de5eb7a",
+            "relations": {
+              "A": [
+                "43d702ac-d4df-4128-941b-452290b04d21.B",
+                "Watsonville:2CT.TC"
+              ],
+              "B": [
+                "b4e79e42-3e0b-4ec3-a43f-1bf238392547.A",
+                "Watsonville:2BT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10316,7 +11565,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "43d702ac-d4df-4128-941b-452290b04d21"
+            "id": "43d702ac-d4df-4128-941b-452290b04d21",
+            "relations": {
+              "A": [
+                "d148e342-30a3-4771-a1c4-e10ec1ac385d.B",
+                "Watsonville:2DT.TC"
+              ],
+              "B": [
+                "3493c95f-075b-48ce-9dfc-fbd16de5eb7a.A",
+                "Watsonville:2CT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10328,7 +11587,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "d148e342-30a3-4771-a1c4-e10ec1ac385d"
+            "id": "d148e342-30a3-4771-a1c4-e10ec1ac385d",
+            "relations": {
+              "A": [
+                "d5c58279-b96e-4f47-82d4-7b4ba58012ad.approach",
+                "Watsonville:2ET.TC"
+              ],
+              "B": [
+                "43d702ac-d4df-4128-941b-452290b04d21.A",
+                "Watsonville:2DT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10340,7 +11609,19 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "4ff0a280-f62c-4928-afcb-b3114c00e7b5"
+            "id": "4ff0a280-f62c-4928-afcb-b3114c00e7b5",
+            "relations": {
+              "A": [
+                "14dfa959-b581-4e8a-956a-1356ba4cee8d.track",
+                "3478e3b9-eb36-424c-bb66-b3db1669812d.approach",
+                "ead0e363-bdf9-41ae-a5a4-0242233bfca2.track",
+                "Watsonville:02T.TC"
+              ],
+              "B": [
+                "623dbaf7-6a99-4c76-9cd4-ed14f750b23d.approach",
+                "Watsonville:01T.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10354,6 +11635,10 @@
             },
             "id": "e7c0fc59-c176-4268-ba19-dd327eb73662",
             "relations": {
+              "A": [
+                "32d0914a-6cc5-4bb4-b1e5-efaa17503738.B",
+                "Watsonville:3BT.TC"
+              ],
               "B": [
                 "Watsonville:23.R"
               ]
@@ -10369,7 +11654,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "32d0914a-6cc5-4bb4-b1e5-efaa17503738"
+            "id": "32d0914a-6cc5-4bb4-b1e5-efaa17503738",
+            "relations": {
+              "A": [
+                "272c39c1-fad7-4056-8f98-bd01cb13bb96.B",
+                "Watsonville:3CT.TC"
+              ],
+              "B": [
+                "e7c0fc59-c176-4268-ba19-dd327eb73662.A",
+                "Watsonville:3BT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10381,7 +11676,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "272c39c1-fad7-4056-8f98-bd01cb13bb96"
+            "id": "272c39c1-fad7-4056-8f98-bd01cb13bb96",
+            "relations": {
+              "A": [
+                "500918d5-2a29-4f86-a7ce-118211e3a875.B",
+                "Watsonville:3DT.TC"
+              ],
+              "B": [
+                "32d0914a-6cc5-4bb4-b1e5-efaa17503738.A",
+                "Watsonville:3CT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10393,7 +11698,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "500918d5-2a29-4f86-a7ce-118211e3a875"
+            "id": "500918d5-2a29-4f86-a7ce-118211e3a875",
+            "relations": {
+              "A": [
+                "515cb1a5-ad1f-4cdb-9040-7dc42819b984.approach",
+                "Watsonville:3ET.TC"
+              ],
+              "B": [
+                "272c39c1-fad7-4056-8f98-bd01cb13bb96.A",
+                "Watsonville:3DT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10427,7 +11742,13 @@
             },
             "id": "78d813b1-144a-4e54-8d3d-0a64f49eb2d6",
             "relations": {
+              "A": [
+                "07f6d3a8-9813-41bb-8931-a7fd64646ece.track",
+                "293515f7-9155-4100-a639-23f6d051ab4e.approach",
+                "Watsonville:03T.TC"
+              ],
               "B": [
+                "1571e3d9-1977-4757-90d3-e601309c2460.track",
                 "Watsonville:3.C"
               ]
             }
@@ -10444,6 +11765,10 @@
             },
             "id": "95f9e1f9-ea74-450c-a6fd-d38f4a25b6e5",
             "relations": {
+              "A": [
+                "793f0198-f601-462f-aad2-4b09f2152b59.B",
+                "Watsonville:4BT.TC"
+              ],
               "B": [
                 "Watsonville:21.R"
               ]
@@ -10459,7 +11784,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "793f0198-f601-462f-aad2-4b09f2152b59"
+            "id": "793f0198-f601-462f-aad2-4b09f2152b59",
+            "relations": {
+              "A": [
+                "fb71d98b-27d1-4f90-8738-725015092571.B",
+                "Watsonville:4CT.TC"
+              ],
+              "B": [
+                "95f9e1f9-ea74-450c-a6fd-d38f4a25b6e5.A",
+                "Watsonville:4BT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10471,7 +11806,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "fb71d98b-27d1-4f90-8738-725015092571"
+            "id": "fb71d98b-27d1-4f90-8738-725015092571",
+            "relations": {
+              "A": [
+                "e2315edb-74a9-4293-b3d5-80426d14b2c2.B",
+                "Watsonville:4DT.TC"
+              ],
+              "B": [
+                "793f0198-f601-462f-aad2-4b09f2152b59.A",
+                "Watsonville:4CT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10483,7 +11828,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "e2315edb-74a9-4293-b3d5-80426d14b2c2"
+            "id": "e2315edb-74a9-4293-b3d5-80426d14b2c2",
+            "relations": {
+              "A": [
+                "45d85c6d-f7a5-4d7d-b7a5-5e9907b4f0af.approach",
+                "Watsonville:4ET.TC"
+              ],
+              "B": [
+                "fb71d98b-27d1-4f90-8738-725015092571.A",
+                "Watsonville:4DT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10497,6 +11852,10 @@
             },
             "id": "4c41471a-a4b9-4668-afcc-c166ba44818f",
             "relations": {
+              "A": [
+                "d5a18f20-f129-4945-b9e2-9f3d864f9b36.B",
+                "Watsonville:5BT.TC"
+              ],
               "B": [
                 "Watsonville:19.R"
               ]
@@ -10512,7 +11871,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "d5a18f20-f129-4945-b9e2-9f3d864f9b36"
+            "id": "d5a18f20-f129-4945-b9e2-9f3d864f9b36",
+            "relations": {
+              "A": [
+                "c7969a55-9fc3-4993-aa7d-3fb91cdafbb2.B",
+                "Watsonville:5CT.TC"
+              ],
+              "B": [
+                "4c41471a-a4b9-4668-afcc-c166ba44818f.A",
+                "Watsonville:5BT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10524,7 +11893,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "c7969a55-9fc3-4993-aa7d-3fb91cdafbb2"
+            "id": "c7969a55-9fc3-4993-aa7d-3fb91cdafbb2",
+            "relations": {
+              "A": [
+                "02ce8ed1-b8fb-49b4-b75c-18debfaac7d0.B",
+                "Watsonville:5DT.TC"
+              ],
+              "B": [
+                "d5a18f20-f129-4945-b9e2-9f3d864f9b36.A",
+                "Watsonville:5CT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10536,7 +11915,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "02ce8ed1-b8fb-49b4-b75c-18debfaac7d0"
+            "id": "02ce8ed1-b8fb-49b4-b75c-18debfaac7d0",
+            "relations": {
+              "A": [
+                "29dc489d-a8e9-4359-adb5-95899e4e99aa.approach",
+                "Watsonville:5ET.TC"
+              ],
+              "B": [
+                "c7969a55-9fc3-4993-aa7d-3fb91cdafbb2.A",
+                "Watsonville:5DT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10570,6 +11959,10 @@
             },
             "id": "96f07de7-860e-496e-bb6a-40c7171ba222",
             "relations": {
+              "A": [
+                "c06095b3-8f8a-4812-8dd9-41b08a1d0f3c.B",
+                "Watsonville:6BT.TC"
+              ],
               "B": [
                 "Watsonville:17.R"
               ]
@@ -10585,7 +11978,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "c06095b3-8f8a-4812-8dd9-41b08a1d0f3c"
+            "id": "c06095b3-8f8a-4812-8dd9-41b08a1d0f3c",
+            "relations": {
+              "A": [
+                "36620c76-421c-44a0-aebd-6045758b5a12.B",
+                "Watsonville:6CT.TC"
+              ],
+              "B": [
+                "96f07de7-860e-496e-bb6a-40c7171ba222.A",
+                "Watsonville:6BT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10597,7 +12000,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "36620c76-421c-44a0-aebd-6045758b5a12"
+            "id": "36620c76-421c-44a0-aebd-6045758b5a12",
+            "relations": {
+              "A": [
+                "4e268fa6-4e87-402c-94c8-571d7ad17b00.B",
+                "Watsonville:6DT.TC"
+              ],
+              "B": [
+                "c06095b3-8f8a-4812-8dd9-41b08a1d0f3c.A",
+                "Watsonville:6CT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10609,7 +12022,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "4e268fa6-4e87-402c-94c8-571d7ad17b00"
+            "id": "4e268fa6-4e87-402c-94c8-571d7ad17b00",
+            "relations": {
+              "A": [
+                "f2263aa1-aa98-4fd6-8f13-a39ebfe78ac1.approach",
+                "Watsonville:6ET.TC"
+              ],
+              "B": [
+                "36620c76-421c-44a0-aebd-6045758b5a12.A",
+                "Watsonville:6DT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10623,6 +12046,10 @@
             },
             "id": "c25da741-efe1-482c-aa07-70a7c30dea96",
             "relations": {
+              "A": [
+                "055b30ce-2e51-401c-95f9-2f5128602125.B",
+                "Watsonville:7BT.TC"
+              ],
               "B": [
                 "Watsonville:15.R"
               ]
@@ -10638,7 +12065,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "055b30ce-2e51-401c-95f9-2f5128602125"
+            "id": "055b30ce-2e51-401c-95f9-2f5128602125",
+            "relations": {
+              "A": [
+                "2fba876d-65ba-40bd-8539-10ac1bfd5ab3.B",
+                "Watsonville:7CT.TC"
+              ],
+              "B": [
+                "c25da741-efe1-482c-aa07-70a7c30dea96.A",
+                "Watsonville:7BT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10650,7 +12087,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "2fba876d-65ba-40bd-8539-10ac1bfd5ab3"
+            "id": "2fba876d-65ba-40bd-8539-10ac1bfd5ab3",
+            "relations": {
+              "A": [
+                "a67e66c2-6007-40e5-95ae-4a600857e6a9.B",
+                "Watsonville:7DT.TC"
+              ],
+              "B": [
+                "055b30ce-2e51-401c-95f9-2f5128602125.A",
+                "Watsonville:7CT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10662,7 +12109,17 @@
             "given": {
               "Kind": "IRJ"
             },
-            "id": "a67e66c2-6007-40e5-95ae-4a600857e6a9"
+            "id": "a67e66c2-6007-40e5-95ae-4a600857e6a9",
+            "relations": {
+              "A": [
+                "be95c00a-9e6d-4b80-9014-98920c40141e.approach",
+                "Watsonville:7ET.TC"
+              ],
+              "B": [
+                "2fba876d-65ba-40bd-8539-10ac1bfd5ab3.A",
+                "Watsonville:7DT.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -10818,6 +12275,10 @@
             "relations": {
               "A": [
                 "Watsonville:25.C"
+              ],
+              "B": [
+                "cc756de4-608c-4963-b1ae-0ac549200d12.A",
+                "Watsonville:2AT.TC"
               ]
             }
           },
@@ -10835,6 +12296,10 @@
             },
             "id": "a68352d0-96a1-4423-9b0b-87c21e4b044c",
             "relations": {
+              "approach": [
+                "3e200808-3280-4616-88fb-dda9b8280ace.A",
+                "Watsonville:1ET.TC"
+              ],
               "governed": [
                 "Watsonville:3.N"
               ],
@@ -10855,6 +12320,10 @@
             },
             "id": "623dbaf7-6a99-4c76-9cd4-ed14f750b23d",
             "relations": {
+              "approach": [
+                "4ff0a280-f62c-4928-afcb-b3114c00e7b5.B",
+                "Watsonville:01T.TC"
+              ],
               "governed": [
                 "Watsonville:15.C"
               ],
@@ -10875,6 +12344,10 @@
             },
             "id": "d5c58279-b96e-4f47-82d4-7b4ba58012ad",
             "relations": {
+              "approach": [
+                "d148e342-30a3-4771-a1c4-e10ec1ac385d.A",
+                "Watsonville:2ET.TC"
+              ],
               "governed": [
                 "Watsonville:5.R"
               ],
@@ -10895,6 +12368,12 @@
             },
             "id": "3478e3b9-eb36-424c-bb66-b3db1669812d",
             "relations": {
+              "approach": [
+                "4ff0a280-f62c-4928-afcb-b3114c00e7b5.A",
+                "14dfa959-b581-4e8a-956a-1356ba4cee8d.track",
+                "ead0e363-bdf9-41ae-a5a4-0242233bfca2.track",
+                "Watsonville:02T.TC"
+              ],
               "governed": [
                 "Watsonville:837.R"
               ],
@@ -10915,6 +12394,10 @@
             },
             "id": "515cb1a5-ad1f-4cdb-9040-7dc42819b984",
             "relations": {
+              "approach": [
+                "500918d5-2a29-4f86-a7ce-118211e3a875.A",
+                "Watsonville:3ET.TC"
+              ],
               "governed": [
                 "Watsonville:7.R"
               ],
@@ -10935,6 +12418,11 @@
             },
             "id": "293515f7-9155-4100-a639-23f6d051ab4e",
             "relations": {
+              "approach": [
+                "07f6d3a8-9813-41bb-8931-a7fd64646ece.track",
+                "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
+                "Watsonville:03T.TC"
+              ],
               "governed": [
                 "Watsonville:837.N"
               ],
@@ -10955,6 +12443,10 @@
             },
             "id": "45d85c6d-f7a5-4d7d-b7a5-5e9907b4f0af",
             "relations": {
+              "approach": [
+                "e2315edb-74a9-4293-b3d5-80426d14b2c2.A",
+                "Watsonville:4ET.TC"
+              ],
               "governed": [
                 "Watsonville:9.R"
               ],
@@ -10975,6 +12467,10 @@
             },
             "id": "29dc489d-a8e9-4359-adb5-95899e4e99aa",
             "relations": {
+              "approach": [
+                "02ce8ed1-b8fb-49b4-b75c-18debfaac7d0.A",
+                "Watsonville:5ET.TC"
+              ],
               "governed": [
                 "Watsonville:11.R"
               ],
@@ -10995,6 +12491,10 @@
             },
             "id": "f2263aa1-aa98-4fd6-8f13-a39ebfe78ac1",
             "relations": {
+              "approach": [
+                "4e268fa6-4e87-402c-94c8-571d7ad17b00.A",
+                "Watsonville:6ET.TC"
+              ],
               "governed": [
                 "Watsonville:13.R"
               ],
@@ -11015,6 +12515,10 @@
             },
             "id": "be95c00a-9e6d-4b80-9014-98920c40141e",
             "relations": {
+              "approach": [
+                "a67e66c2-6007-40e5-95ae-4a600857e6a9.A",
+                "Watsonville:7ET.TC"
+              ],
               "governed": [
                 "Watsonville:13.N"
               ],
@@ -11033,7 +12537,15 @@
               "Direction": "BOTH",
               "Kind": "RULE_93"
             },
-            "id": "14dfa959-b581-4e8a-956a-1356ba4cee8d"
+            "id": "14dfa959-b581-4e8a-956a-1356ba4cee8d",
+            "relations": {
+              "track": [
+                "4ff0a280-f62c-4928-afcb-b3114c00e7b5.A",
+                "3478e3b9-eb36-424c-bb66-b3db1669812d.approach",
+                "ead0e363-bdf9-41ae-a5a4-0242233bfca2.track",
+                "Watsonville:02T.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -11045,7 +12557,15 @@
               "Direction": "RIGHT",
               "Kind": "RULE_251"
             },
-            "id": "ead0e363-bdf9-41ae-a5a4-0242233bfca2"
+            "id": "ead0e363-bdf9-41ae-a5a4-0242233bfca2",
+            "relations": {
+              "track": [
+                "4ff0a280-f62c-4928-afcb-b3114c00e7b5.A",
+                "14dfa959-b581-4e8a-956a-1356ba4cee8d.track",
+                "3478e3b9-eb36-424c-bb66-b3db1669812d.approach",
+                "Watsonville:02T.TC"
+              ]
+            }
           },
           {
             "derived": {
@@ -11060,6 +12580,7 @@
             "id": "1571e3d9-1977-4757-90d3-e601309c2460",
             "relations": {
               "track": [
+                "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.B",
                 "Watsonville:3.C"
               ]
             }
@@ -11074,7 +12595,14 @@
               "Direction": "LEFT",
               "Kind": "RULE_251"
             },
-            "id": "07f6d3a8-9813-41bb-8931-a7fd64646ece"
+            "id": "07f6d3a8-9813-41bb-8931-a7fd64646ece",
+            "relations": {
+              "track": [
+                "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
+                "293515f7-9155-4100-a639-23f6d051ab4e.approach",
+                "Watsonville:03T.TC"
+              ]
+            }
           }
         ]
       }
