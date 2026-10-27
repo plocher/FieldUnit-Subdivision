@@ -65,6 +65,13 @@
       "feature": null,
       "replacedBy": null
     },
+    "desk.station": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
     "device.serves": {
       "level": "missing",
       "lifecycle": "active",
@@ -115,13 +122,6 @@
       "replacedBy": null
     },
     "lamp.token": {
-      "level": "missing",
-      "lifecycle": "active",
-      "since": "0.1.0",
-      "feature": null,
-      "replacedBy": null
-    },
-    "lever.house": {
       "level": "missing",
       "lifecycle": "active",
       "since": "0.1.0",

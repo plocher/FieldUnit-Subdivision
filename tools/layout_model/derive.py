@@ -18,9 +18,11 @@ names every other track pin its wire reaches, so the relation is symmetric):
   switch's ``osCircuit``, a run's ``derived.circuit`` (geometry's ends name the pins), and ``track.links``: switch
   ports that meet with no joint or end between.
 - **Control points** by propagation from the houses (the owner, 2026-10-26; ADR 0012 §4).
-- **Indications.** Each house's ``derived.indications``: the office indication tokens its station sends on its code
-  line, named by the code line's encoding through the reference data (``reference.indication_tokens``). A house sends
-  the tokens of the appliances and circuits whose control point it is.
+- **Stations.** ``derived.indications`` and ``derived.controls`` on each station as its code line's encoding defines
+  it (``reference.station_of``): each house on a US&S 506 line, the interlocking on an AAR token line. Indications are
+  the tokens of the appliances and circuits whose control point the house is, named by the encoding through the
+  reference data (``reference.indication_tokens``); controls are the desk levers' bindings that end in S, sent to the
+  station of the column the lever sits in.
 - **Consumers of another station's indications** (the owner, 2026-10-27): a ``track.consumers`` row is a one-sided
   reference, ``relations.indication`` the token it consumes (``Corporal:2NATK``). It resolves against the indications
   the named station sends; a track circuit's token names the circuit the row stands on.
@@ -162,6 +164,7 @@ class _Plan:
         self.rows: dict[str, tuple[str, dict[str, Any]]] = {}        # pin prefix (name or id) -> (list, row)
         self.name_of: dict[str, Optional[str]] = {}                   # component root -> circuit, None for dark track
         self.namer: dict[str, dict[str, Any]] = {}                    # component root -> the marker or switch that names it
+        self.by_house: dict[str, set[str]] = {}                       # house -> the tokens of what its control point is
         self.cp: dict[int, Optional[str]] = {}                        # id(appliance or row) -> house
 
     def where(self, *parts: str) -> str:
@@ -289,19 +292,8 @@ class _Plan:
                 send(house, "lamp", name=name)
             elif g.get("Appliance") == "track_circuit" and g.get("Style") == "virtual":
                 send(house, "track_circuit", qualify(name, self.name), name=name)
-        for h, house in self.houses.items():
-            _set_derived(house, {"indications": sorted(by_house.get(h, ()))})
+        self.by_house = {h: by_house.get(h, set()) for h in self.houses}
         return sent
-
-    def house_of(self, name: str) -> Optional[str]:
-        """The house whose control point a lever's served name is: the appliance's, or for a signal lever (a number, no
-        appliance) the one house of every mast of that lever."""
-        a = self.appliances.get(name)
-        if a is not None:
-            return self.cp.get(id(a))
-        houses = {self.cp.get(id(m)) for n, m in self.appliances.items()
-                  if m.get("given", {}).get("Appliance") == "mast" and MAST_NAME.match(n) and LEVER.match(n).group(0) == name}
-        return houses.pop() if len(houses) == 1 else None
 
     def consumers(self) -> list[dict[str, Any]]:
         return self.track.get("consumers", [])
@@ -633,6 +625,8 @@ class _Derivation:
         self.report = self.r.report
         self.plans: dict[str, _Plan] = {}
         self.sent: dict[str, Optional[dict[str, Optional[str]]]] = {}   # interlocking -> token -> circuit; None: no code line
+        self.scope: dict[str, Optional[str]] = {}                       # interlocking -> "house" or "interlocking"; None: no code line
+        self.controls: dict[tuple[str, Optional[str]], set[str]] = defaultdict(set)   # (interlocking, house or None) -> controls
 
     # ------------------------------------------------------------------------------------------ indications
 
@@ -646,6 +640,28 @@ class _Derivation:
                 continue
             kind = self.m.get("layout", {}).get("codelines", {}).get(line, {}).get("given", {}).get("Kind")
             self.sent[name] = plan.indications(reference.indication_tokens(kind, self.ref.get("indicationTokens")))
+            self.scope[name] = reference.station_of(kind)
+
+    def station_sends(self, b: str, house: Optional[str]) -> set[str]:
+        """What one station of interlocking ``b`` sends: one house's tokens on a line whose station is a house, every
+        house's on a line whose station is the interlocking."""
+        plan = self.plans[b]
+        if self.scope.get(b) == "house":
+            return plan.by_house.get(house or "", set())
+        return set().union(*plan.by_house.values()) if plan.by_house else set()
+
+    def stations(self) -> None:
+        """``derived.controls`` and ``derived.indications`` on each station as its code line's encoding defines it
+        (the owner, 2026-10-27): on a US&S 506 line each house, on an AAR token line the interlocking."""
+        for b, plan in self.plans.items():
+            scope = self.scope.get(b)
+            if scope is None:
+                continue
+            if scope == "house":
+                for h, house in plan.houses.items():
+                    _set_derived(house, {"indications": sorted(plan.by_house.get(h, ())), "controls": sorted(self.controls.get((b, h), ()))})
+            else:
+                _set_derived(plan.ix, {"indications": sorted(self.station_sends(b, None)), "controls": sorted(self.controls.get((b, None), ()))})
 
     def consumed(self, plan: _Plan) -> dict[str, str]:
         """Each consumer row's TC pin to the circuit its indication stands for, where the token resolves to one."""
@@ -696,6 +712,7 @@ class _Derivation:
         self.columns()
         self.devices()
         self.desk()
+        self.stations()
         self.heads()
         self.reach()
         if "provenance" in self.m:
@@ -840,49 +857,62 @@ class _Derivation:
 
     def desk(self) -> None:
         """The office's side of each code line (the owner, 2026-10-27). A lever's controls are its name and each binding
-        that ends in S (``783NWS``, ``784HS``, ``795WLS``, ``MC1S``); they are its station's controls, on the house that is
-        the served appliance's control point (``derived.controls``). A lever's bindings that end in K and a lamp's
-        ``shows`` are the indications the desk consumes: each must be one the served station sends. ``UNUSED`` and the
-        code lever bind nothing of a station."""
-        controls: dict[tuple[str, str], set[str]] = defaultdict(set)
+        that ends in S (``783NWS``, ``784HS``, ``795WLS``, ``MC1S``); a lever's bindings that end in K and a lamp's
+        ``shows`` are the indications the desk consumes. Both belong to the station of the desk column the device sits
+        in, whatever it serves: on a US&S 506 line the house its column names (``CP Name``), on an AAR token line the
+        column's interlocking. Each consumed indication must be one that station sends. ``UNUSED`` and the code lever bind
+        nothing of a station."""
         for ou_name, ou in self.m.get("officeUnits", {}).items():
             for i, dev in enumerate(ou.get("devices", [])):
                 g, d = dev.get("given", {}), dev.get("derived", {})
                 where = f"officeUnits/{ou_name}/devices/{i}"
                 if g.get("Appliance") == "lamp":
-                    for token in d.get("shows", []):
-                        self.consume(f"the lamp {g.get('Name', '')}", token, where)
+                    tokens, mine, what = d.get("shows", []), [], f"the lamp {g.get('Name', '')}"
+                elif g.get("Appliance") == "lever" and d.get("serves"):
+                    b, _, n = d["serves"].partition(":")
+                    keys = sorted(dev.get("relations", {}).get("bindings", {}))
+                    mine = [f"{n}{k}" for k in keys if k.endswith("S")]
+                    tokens = [f"{b}:{n}{k}" for k in keys if k.endswith("K")]
+                    what = f"lever {n}"
+                    _set_derived(dev, {**d, "controls": [f"{b}:{t}" for t in mine], "indications": tokens})
+                else:
                     continue
-                if g.get("Appliance") != "lever" or not d.get("serves"):
+                if not tokens and not mine:
                     continue
-                b, _, n = d["serves"].partition(":")
-                keys = sorted(dev.get("relations", {}).get("bindings", {}))
-                mine = [f"{n}{k}" for k in keys if k.endswith("S")]
-                wants = [f"{n}{k}" for k in keys if k.endswith("K")]
-                _set_derived(dev, {**d, "controls": [f"{b}:{t}" for t in mine], "indications": [f"{b}:{t}" for t in wants]})
-                for t in wants:
-                    self.consume(f"lever {n}", f"{b}:{t}", where)
-                house = self.plans[b].house_of(n) if b in self.plans else None
-                if house is None:
-                    if b in self.plans and mine:
-                        self.r.add("lever.house", f"lever {n} serves {d['serves']}, which has no one control point, so its controls "
-                                   f"({', '.join(mine)}) belong to no house", where)
+                b = (tokens[0] if tokens else d["serves"]).partition(":")[0]
+                found, house = self.station_of(ou_name, dev, b)
+                if not found:
+                    self.r.add("desk.station", f"{what} sits in no column that names a house, and {b}'s code line makes each house a "
+                               f"station, so which station its {', '.join(mine + tokens)} belong to is not stated", where)
                     continue
-                controls[(b, house)].update(mine)
-        for (b, h), tokens in controls.items():
-            house = self.m["interlockings"][b]["houses"][h]
-            _set_derived(house, {**house.get("derived", {}), "controls": sorted(tokens)})
+                self.controls[(b, house)].update(mine)
+                for token in tokens:
+                    self.consume(what, token, where, house)
 
-    def consume(self, what: str, token: str, where: str) -> None:
+    def station_of(self, ou_name: str, dev: dict[str, Any], b: str) -> tuple[bool, Optional[str]]:
+        """The station of a desk device: (stated, its house, or None for the interlocking). On a line whose station is a
+        house it is the house its column's ``CP Name`` names; elsewhere the interlocking."""
+        if self.scope.get(b) != "house":
+            return True, None
+        col = dev.get("relations", {}).get("column", "")
+        ou_of, _, number = col.partition(":")
+        c = self.m.get("officeUnits", {}).get(ou_of or ou_name, {}).get("columns", {}).get(number, {})
+        house = c.get("derived", {}).get("house", "")
+        hb, _, h = house.partition(":")
+        return (True, h) if house and hb == b else (False, None)
+
+    def consume(self, what: str, token: str, where: str, house: Optional[str] = None) -> None:
         """One indication a consumer expects, checked against what the named station sends: the error, warning and
-        missing of ``resolve_consumers``."""
+        missing of ``resolve_consumers``. ``house`` names the station on a line whose station is a house; without it the
+        interlocking's houses together are checked (a consumer row names only the interlocking)."""
         b, _, t = token.partition(":")
         if b not in self.plans:
             self.r.add("reference.interlocking", f"{what} consumes {token}, but {b} is no interlocking in this file", where)
         elif self.sent.get(b) is None:
             self.r.add("reference.codeline", f"{what} consumes {token}, but {b} is on no code line, so what it sends is unknown", where)
-        elif t not in self.sent[b]:
-            self.r.add("reference.unresolved", f"{what} consumes {token}, but {b} sends no indication {t}", where)
+        elif t not in (self.station_sends(b, house) if house else self.sent[b]):
+            station = f"{b}'s station {house}" if house else b
+            self.r.add("reference.unresolved", f"{what} consumes {token}, but {station} sends no indication {t}", where)
 
     @staticmethod
     def _code_lever(g: dict[str, str]) -> bool:

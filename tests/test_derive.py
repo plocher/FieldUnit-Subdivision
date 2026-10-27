@@ -355,7 +355,7 @@ class Indications(unittest.TestCase):
         """An electric lock (835, Style lock) sends WLK and WLQK, not NWK and RWK (the owner, 2026-10-27)."""
         things = ONE_SWITCH + "MC1 | appliance | Appliance=lamp Style=maintainer_call\n"
         out, _ = run(on_line(layout(X=interlocking(things, ONE_SWITCH_WIRES, "East")), "X"))
-        self.assertEqual(out["interlockings"]["X"]["houses"]["East"]["derived"]["indications"], sorted([
+        self.assertEqual(out["interlockings"]["X"]["derived"]["indications"], sorted([
             "1NATK", "1SATK", "2SATK", "835T1K", "835WLK", "835WLQK", "836NGK", "836SGK", "836TEK", "MC1K"]))
 
     def test_each_house_sends_what_its_control_point_is(self):
@@ -372,23 +372,34 @@ class Indications(unittest.TestCase):
         things = "795 | appliance | Appliance=switch Style=lock TC=795T1\n795D | appliance | Appliance=switch Style=derail\n" \
                  "1 | appliance | Appliance=switch Style=manual\n"
         out, _ = run(on_line(layout(X=interlocking(things, "rr | 795.R 795D.R\n", "East")), "X"))
-        self.assertEqual(out["interlockings"]["X"]["houses"]["East"]["derived"]["indications"], ["795T1K", "795WLK", "795WLQK"])
+        self.assertEqual(out["interlockings"]["X"]["derived"]["indications"], ["795T1K", "795WLK", "795WLQK"])
 
     def test_a_lamp_and_a_virtual_circuit_send_their_name_with_k_unless_it_ends_in_k(self):
         """The desk's form (2026-10-27): Sargent's HBA lamp sends HBAK, Watsonville's NFLK sends NFLK, 0100T sends 0100TK."""
         things = "HBA | appliance | Appliance=lamp Style=non_vital\nNFLK | appliance | Appliance=lamp Style=non_vital\n" \
                  "0100T | appliance | Appliance=track_circuit Style=virtual IndicationToken=1T\n"
         out, _ = run(on_line(layout(X=interlocking(things, "", "East")), "X"))
-        self.assertEqual(out["interlockings"]["X"]["houses"]["East"]["derived"]["indications"], ["0100TK", "HBAK", "NFLK"])
+        self.assertEqual(out["interlockings"]["X"]["derived"]["indications"], ["0100TK", "HBAK", "NFLK"])
 
-    def test_on_no_code_line_a_house_sends_nothing_and_says_so_by_absence(self):
+    def test_on_no_code_line_a_station_sends_nothing_and_says_so_by_absence(self):
         out, _ = run(layout(X=interlocking(ONE_SWITCH, ONE_SWITCH_WIRES, "East")))
         self.assertNotIn("derived", out["interlockings"]["X"]["houses"]["East"])
+        self.assertNotIn("derived", out["interlockings"]["X"])
+
+    def test_the_station_is_the_house_on_a_506_line_and_the_interlocking_on_an_aar_line(self):
+        """The owner, 2026-10-27: what a station is depends on the code line's encoding."""
+        out, _ = run(on_line(layout(X=interlocking(TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH)), "X", kind="USS506"))
+        self.assertNotIn("derived", out["interlockings"]["X"])
+        self.assertTrue(all("indications" in h["derived"] for h in out["interlockings"]["X"]["houses"].values()))
+        out, _ = run(on_line(layout(X=interlocking(TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH)), "X", kind="AAR"))
+        self.assertEqual([h.get("derived") for h in out["interlockings"]["X"]["houses"].values()], [None, None])
+        self.assertIn("815NWK", out["interlockings"]["X"]["derived"]["indications"])
+        self.assertIn("817NWK", out["interlockings"]["X"]["derived"]["indications"])
 
     def test_the_users_reference_data_overrides_the_default(self):
         m = on_line(layout(X=interlocking("9T | appliance | Appliance=track_circuit\nJ1 | joints | Kind=IRJ\n", "a | J1.A 9T.TC\n", "East")), "X")
         out, _ = derive.derive(m, {"indicationTokens": {"AAR": {"track_circuit": ("{name}KK",)}}})
-        self.assertEqual(out["interlockings"]["X"]["houses"]["East"]["derived"]["indications"], ["9TKK"])
+        self.assertEqual(out["interlockings"]["X"]["derived"]["indications"], ["9TKK"])
 
 
 class References(unittest.TestCase):
@@ -488,11 +499,11 @@ class Desk(unittest.TestCase):
     def lever(name: str, *functions: str) -> dict:
         return {"given": {"Appliance": "lever", "Name": name}, "relations": {"bindings": {f: f"P/0x20/A{i}" for i, f in enumerate(functions)}}}
 
-    def test_controls_are_the_levers_s_bindings_on_the_house_and_indications_resolve(self):
+    def test_controls_are_the_levers_s_bindings_on_the_station_and_indications_resolve(self):
         out, diags = run(self.model([self.lever("835", "WLS", "WLK", "WLQK", "UNUSED"), self.lever("836", "NGS", "SGS", "HS", "NGK", "SGK", "TEK"),
                                      self.lever("MC1", "S"), {"given": {"Appliance": "lamp", "IndicationToken": "1NAT, MC1K"}}]))
         self.assertEqual(only(diags, "reference", "lever"), [])
-        self.assertEqual(out["interlockings"]["X"]["houses"]["East"]["derived"]["controls"],
+        self.assertEqual(out["interlockings"]["X"]["derived"]["controls"],
                          sorted(["835WLS", "836HS", "836NGS", "836SGS", "MC1S"]))
         devs = out["officeUnits"]["Desk"]["devices"]
         self.assertEqual(devs[0]["derived"], {"serves": "X:835", "controls": ["X:835WLS"], "indications": ["X:835WLK", "X:835WLQK"]})
@@ -508,12 +519,26 @@ class Desk(unittest.TestCase):
         m["officeUnits"]["Desk"]["devices"] = [{"given": {"Appliance": "lamp", "IndicationToken": "1T"}, "relations": {"interlocking": "Z"}}]
         self.assertEqual(only(run(m)[1], "reference"), [("reference.interlocking", "0")])
 
-    def test_a_signal_lever_whose_masts_are_on_two_houses_has_no_one_house(self):
-        m = on_line(layout(X=interlocking(TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH)), "X")
-        m["interlockings"]["X"]["appliances"]["816SA"] = {"given": {"Appliance": "mast", "Style": "single", "CP": "North"}}
-        m["officeUnits"] = {"Desk": {"columns": {"1": {"given": {"CP Name": "North"}}},
-                                     "devices": [{**self.lever("816", "HS"), "relations": {**self.lever("816", "HS")["relations"], "column": "Desk:1"}}]}}
-        self.assertEqual(only(run(m)[1], "lever"), [("lever.house", "0")])
+    def test_on_a_506_line_a_levers_controls_go_to_the_station_of_its_column(self):
+        """The owner, 2026-10-27: lever 816's masts stand in North and South, but the lever sits in North's column, so
+        816HS goes to station North. 816NGK is South's (its mast 816NA is), so North does not send it; 2NATK is South's, 01TK
+        North's."""
+        m = on_line(layout(X=interlocking(TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH)), "X", kind="USS506")
+        m["officeUnits"] = {"Desk": {"columns": {"1": {"given": {"CP Name": "North"}}, "2": {"given": {"CP Name": "South"}}}, "devices": [
+            {**self.lever("816", "HS", "NGK"), "relations": {**self.lever("816", "HS", "NGK")["relations"], "column": "Desk:1"}},
+            {"given": {"Appliance": "lamp", "IndicationToken": "2NAT"}, "relations": {"column": "Desk:2"}},
+            {"given": {"Appliance": "lamp", "IndicationToken": "01T"}, "relations": {"column": "Desk:2"}}]}}
+        out, diags = run(m)
+        houses = out["interlockings"]["X"]["houses"]
+        self.assertEqual(houses["North"]["derived"]["controls"], ["816HS"])
+        self.assertNotIn("controls", houses["South"]["derived"])
+        self.assertEqual(only(diags, "reference", "desk"), [("reference.unresolved", "0"), ("reference.unresolved", "2")])
+
+    def test_on_a_506_line_a_device_in_no_column_that_names_a_house_has_no_stated_station(self):
+        m = on_line(layout(X=interlocking(TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH)), "X", kind="USS506")
+        m["officeUnits"] = {"Desk": {"devices": [{"given": {"Appliance": "lamp", "Style": "board", "IndicationToken": "1NAT"},
+                                                  "relations": {"interlocking": "X"}}]}}
+        self.assertEqual(only(run(m)[1], "reference", "desk"), [("desk.station", "0")])
 
 
 class Heads(unittest.TestCase):

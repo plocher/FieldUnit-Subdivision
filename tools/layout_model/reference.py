@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Optional
 
 # Versioned so provenance can name it.
-REFERENCE_DATA = {"encodingTransportPairing": "2026-10-23", "driverEncodings": "2026-10-23", "indicationTokens": "2026-10-27.2"}
+REFERENCE_DATA = {"encodingTransportPairing": "2026-10-23", "driverEncodings": "2026-10-23", "indicationTokens": "2026-10-27.2", "stations": "2026-10-27"}
 # An encoding's Kind pairs with its transport's Kind (ADR 0009 §3.10).
 TRANSPORT_OF_ENCODING = {"AAR": "MQTT", "USS506": "TIMECODE", "BITS": "TIMECODE", "JMRI": "MQTT", "CMRI": "CMRI"}
 # A driver whose IC is an encoding needs that I/O encoding on its processor (ADR 0009 §3.3, §3.6, §3.12 "IC native or encoded").
@@ -50,3 +50,14 @@ def indication_of(name: str, template: str = "{name}K") -> str:
     """The token a desk lamp's or a drawn reference's circuit names: the template applied, unless the name is a token
     already (it ends in K, as ``MC1K`` does; FieldUnit's AarTextCodec adds K only when it is absent)."""
     return name if name[-1:] in ("K", "k") else template.format(name=name)
+
+
+# What one station on a code line is, by the code line's encoding Kind (the owner, 2026-10-27): on a US&S 506 line each
+# house answers at its own address; on an AAR token line, which has no vocabulary limit, the interlocking is one station.
+# An encoding not listed takes the default.
+STATION = {"default": "interlocking", "USS506": "house", "AAR": "interlocking"}
+
+
+def station_of(encoding: Optional[str], user: Optional[dict[str, str]] = None) -> str:
+    table = {**STATION, **(user or {})}
+    return table.get(encoding or "", table["default"])

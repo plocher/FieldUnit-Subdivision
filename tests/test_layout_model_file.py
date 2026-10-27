@@ -119,13 +119,13 @@ class LayoutModelFileTests(unittest.TestCase):
         """The owner, 2026-10-27: a reference to another interlocking's circuit is a consumer of its indication."""
         consumer = self.model["interlockings"]["Sargent"]["track"]["consumers"][0]
         self.assertEqual(consumer["relations"]["indication"], "Corporal:2NATK")
-        self.assertIn("2NATK", self.model["interlockings"]["Corporal"]["houses"]["Corporal"]["derived"]["indications"])
+        self.assertIn("2NATK", self.model["interlockings"]["Corporal"]["derived"]["indications"])
         for key, value in (("indication", "Corporal:2NAT"), ("indication", "2NATK"), ("mast", "Sargent:836NAB")):
             bad = copy.deepcopy(self.model)
             bad["interlockings"]["Sargent"]["track"]["consumers"][0]["relations"][key] = value
             self.assertTrue(layout_model.errors(bad), (key, value))
         bad = copy.deepcopy(self.model)
-        bad["interlockings"]["Corporal"]["houses"]["Corporal"]["derived"]["indications"].append("Sargent:2NATK")
+        bad["interlockings"]["Corporal"]["derived"]["indications"].append("Sargent:2NATK")
         self.assertTrue(layout_model.errors(bad))
 
     def test_provenance_names_its_writer_and_rules(self):

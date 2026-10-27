@@ -384,11 +384,39 @@
         },
         "geometry": {
           "$ref": "#/$defs/geometry"
+        },
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "indications": {
+                  "description": "On a code line whose station is the interlocking (AAR tokens), the office indications its station sends: every house's, as tokens, sorted (see house derived.indications).",
+                  "type": "array",
+                  "uniqueItems": true,
+                  "items": {
+                    "$ref": "#/$defs/name"
+                  }
+                },
+                "controls": {
+                  "description": "On a code line whose station is the interlocking, the controls its station receives: the bindings ending in S of every desk lever in a column of this interlocking, each with the lever's name.",
+                  "type": "array",
+                  "uniqueItems": true,
+                  "items": {
+                    "$ref": "#/$defs/name"
+                  }
+                }
+              }
+            }
+          ]
         }
       }
     },
     "house": {
-      "description": "An instrument house at a control point, keyed by its CP Name; on a US&S 506 line it is a field station, addressed by its column (derived, not written); derived.indications is what its station sends.",
+      "description": "An instrument house at a control point, keyed by its CP Name; on a US&S 506 line it is a field station, addressed by its column (derived, not written); on a line whose station is a house, derived.indications and derived.controls are its station's.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -435,7 +463,7 @@
               "additionalProperties": false,
               "properties": {
                 "indications": {
-                  "description": "The office indications this house's station sends on its code line, as tokens, sorted: those of the appliances and circuits whose control point it is, named by the code line's encoding through the reference data (a track circuit 2NATK, a switch 835NWK and 835RWK, a signal lever 836NGK, 836SGK and 836TEK, a maintainer call MC1K). Absent when the interlocking is on no code line.",
+                  "description": "On a code line whose station is a house (US&S 506), the office indications this house's station sends, as tokens, sorted: those of the appliances and circuits whose control point it is, named by the code line's encoding through the reference data (a track circuit 2NATK, a switch 783NWK and 783RWK, an electric lock 795WLK and 795WLQK, a signal lever 784NGK, 784SGK and 784TEK, a maintainer call MC1K). On an AAR token line the station is the interlocking, which holds them.",
                   "type": "array",
                   "uniqueItems": true,
                   "items": {
@@ -443,7 +471,7 @@
                   }
                 },
                 "controls": {
-                  "description": "The controls this house's station receives on its code line, as tokens, sorted: each desk lever that serves an appliance (or a signal lever) whose control point it is, its name and each binding that ends in S (783NWS, 784HS, 795WLS, MC1S; the owner, 2026-10-27).",
+                  "description": "On a code line whose station is a house, the controls this station receives, as tokens, sorted: the bindings ending in S of every desk lever in a column whose CP Name names this house, each with the lever's name (783NWS, 784HS, 795WLS, MC1S; the owner, 2026-10-27).",
                   "type": "array",
                   "uniqueItems": true,
                   "items": {

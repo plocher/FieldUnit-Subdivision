@@ -547,7 +547,7 @@ class SPCoastTrackplan(unittest.TestCase):
     def test_sargents_consumer_of_corporals_2natk_is_the_only_reference_and_resolves(self):
         refs = {n: ix["track"].get("consumers", []) for n, ix in self.model["interlockings"].items()}
         self.assertEqual({n: [c["relations"]["indication"] for c in cs] for n, cs in refs.items() if cs}, {"Sargent": ["Corporal:2NATK"]})
-        self.assertIn("2NATK", self.ix("Corporal")["houses"]["Corporal"]["derived"]["indications"])
+        self.assertIn("2NATK", self.ix("Corporal")["derived"]["indications"])
         self.assertEqual([d for d in self.sm.report.diags if d.code.startswith("reference") and "/consumers/" in d.where], [])
         joint = next(j for j in self.ix("Sargent")["track"]["joints"] if j["given"]["Kind"] == "IRJ")
         self.assertIn(f"{refs['Sargent'][0]['id']}.TC", joint["relations"]["A"])
