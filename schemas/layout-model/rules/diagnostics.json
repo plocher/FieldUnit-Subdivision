@@ -1,0 +1,223 @@
+{
+  "version": "0.1.0",
+  "description": "The diagnostic registry of the reference derivation (ADR 0012 §3.3): every code tools/layout_model/derive.py raises, its level and lifecycle. Pre-release with the rules (0.1.0); a code's feature is named when the features exist. Codes the KiCad importer raises about the drawing as drawn are the importer's own and are not listed.",
+  "codes": {
+    "circuit.name.disagree": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "circuit.names": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "column.cp_name": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "column.house": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "control_point.chains": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "control_point.disagree": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "control_point.gang": {
+      "level": "warning",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "control_point.house": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "control_point.unreached": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "device.serves": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "driver.encoding": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "end_ctc.sides": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "head.plan": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "head.vocabulary": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "joint.loop": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "joint.reversed": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "lamp.token": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "mast.grammar": {
+      "level": "info",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "mast.heads": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "mast.joint": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "mast.joints": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "mast.letters": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "next_cp.interlocking": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "next_cp.off_layout": {
+      "level": "info",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "next_cp.pair": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "reference.interlocking": {
+      "level": "warning",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "reference.unresolved": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "station.columns": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "switch.tc_block": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "switch.track": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "transport.reach": {
+      "level": "info",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    }
+  }
+}
