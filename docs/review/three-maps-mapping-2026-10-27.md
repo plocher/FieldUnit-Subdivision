@@ -191,7 +191,7 @@ Same shape in `codelines{}` (`AAR Tokens`, `US&S 506`) and `ioEncodings{}` (`CMR
 | `osCircuit` | derived | `derived.osCircuit` | the circuit at its ports (`_plan`) | `Luchessa:783T1` |
 | `indicationCeiling` | given | `given.IndicationCeiling` | field | `RESTRICTING/RESTRICTING`; typed copy dropped |
 | — | given | `given.TC` | field | library default `${VALUE}T1` (D16); a comma list is still the held `switch.tc_block` question |
-| — | relations | `relations.C`, `.N`, `.R` (a derail `.C`, `.R`) | the wire at each port | D5 |
+| — | relations | `relations.C`, `.N`, `.R` (a derail `.C`, `.R`) | the wire at each port | D5: every other track pin it reaches, unnamed rows by id |
 
 ### 7.3 Mast, e.g. `Luchessa:784EAB`
 
@@ -208,7 +208,7 @@ Same shape in `codelines{}` (`AAR Tokens`, `US&S 506`) and `ioEncodings{}` (`CMR
 | `members` | derived | `derived.members` | `IndicationToken` split and qualified (`_plan`) | virtual circuits only; a resolution, not a copy |
 | `settings.Display` | given | `given.Display` | field | `0100T: [15T1,...]` |
 | — | given | `given.IndicationToken` | field | |
-| — | relations | `relations.TC` | the wire at its `TC` pin | D5 |
+| — | relations | `relations.TC` | the wire at its `TC` pin | D5: every other track pin it reaches, unnamed rows by id |
 
 ### 7.5 Lamp and maintainer call (`appliance: lamp`), contact
 
@@ -232,7 +232,7 @@ renamed.
 | `kind` | given | `given.Kind` | field | D1 |
 | `circuits.A`, `.B` (signal joint) | derived | `derived.circuits.governed`, `.approach` | union of nets (`_plan`) | ADR 0012 §8: A is governed, B is approach. `Luchessa:784EAB`'s joint: governed `783T1`, approach `1SAT` |
 | `circuits.A`, `.B` (plain joint) | derived | `derived.circuits.A`, `.B` | union of nets | neutral sides kept (ADR 0012 §8) |
-| `ports` | relations | `relations.approach`, `.governed` (signal joint); `relations.A`, `.B` (plain joint) | the pin's own net (`pin_refs`) | D5; the importer translates `B` to approach and `A` to governed (D15, ADR 0012 §8) |
+| `ports` | relations | `relations.approach`, `.governed` (signal joint); `relations.A`, `.B` (plain joint) | the pin's own net (`pin_refs`) | D5: every other track pin on it, unnamed rows by id (`784EAB`'s approach: a NextCP's and a Rule 261 sign's `track` by id, and `Luchessa:1SAT.TC`); the importer translates `B` to approach and `A` to governed (D15, ADR 0012 §8) |
 | `mast` | relations | `relations.mast` | `SIGNAL` wire | `Luchessa:784EAB` |
 | `controlPoint` | derived | `derived.controlPoint` | propagation | `given.CP` stays |
 | — | given | `given.CP` | field on `IRJ-Signal` | |
@@ -244,7 +244,7 @@ renamed.
 | `kind` | given | `given.Kind` | field | D1 |
 | `name` | structure | `name` | `Name`, qualified (`_plan`) | an industry only; D20 |
 | `circuits.To`, `.CTC`, `.EoT` | derived | `derived.circuits.<side>` | union of nets | NextCP `To` becomes `track`; `END_CTC` `CTC`/`DARK` and `EoT` stay; D15 |
-| `ports` | relations | `relations.<side>` | the pin's own net | `END_CTC` `DARK` → `Corporal:1.C`; NextCP `track`; D5 |
+| `ports` | relations | `relations.<side>` | the pin's own net | `END_CTC` `DARK` → `Corporal:1.C`; NextCP `track`; D5: every other track pin on it, unnamed rows by id |
 | `interlocking` | given | `given.Interlocking` | field | `Corporal`; may name an interlocking beyond the layout (`Lick`), so it is no resolved relation; typed copy dropped |
 | — | derived | (none today) | NextCP pairing (`_pair_next_cps`) | checked, never written; adding it is a MINOR change (ADR 0012 §7) |
 
@@ -255,7 +255,7 @@ renamed.
 | `kind` | given | `given.Kind` | field | D1 |
 | `direction` | given | `given.Direction` | field | `RIGHT`; typed copy dropped; library default `BOTH` (D16) |
 | `circuits.To`, `.Track` | derived | `derived.circuits.track` | union of nets | one meaning, two pin names: `Track` on `RULE_261`, `To` on the rest, both translated to `track` by the importer; D15 |
-| `ports` | relations | `relations.track` | the pin's own net | D5, D15 |
+| `ports` | relations | `relations.track` | the pin's own net | D5 (every other track pin on it, unnamed rows by id), D15 |
 
 ### 8.4 Links and mileposts
 
@@ -412,6 +412,9 @@ One line each: the question, the default, the reason, and the owner's ruling of 
    computed. A run's ends are relations too: `from`/`to` name the switch port or the track row they meet. The importer
    may use KiCad grid positions at ingest to find them, but records the connection, never a position-derived fact. A
    signal joint's relations use `approach` and `governed`, like its circuits.
+   **Extended 2026-10-27:** a track pin's relations name every row or port its wire reaches, unnamed rows by id
+   (`<id>.<side>`, the form a run's ends use); the relation is symmetric and never names the pin's own symbol. The
+   `missing` report for dark track between unnamed rows is gone: that connection is now stated.
 6. **Membership implied only by the sheet hierarchy.** Default: where no container states it, the KiCad importer
    writes it as `relations.interlocking` (11 columns; the 34 board lamps whose `shows` scope is their folder), and
    "the one OfficeUnit of the layout" becomes the container. Reason: a fact only the importer can see must be input
