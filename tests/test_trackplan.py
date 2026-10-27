@@ -230,7 +230,9 @@ dc   | D1.C J1.A
             "relations": {"C": [at(sm, "J1", "governed")], "R": ["X:795.R"]},
             "derived": {"osCircuit": "X:795T1", "controlPoint": "X:Gilroy"}})
 
-    def test_a_reference_to_another_interlockings_circuit_names_the_track_but_is_no_appliance(self):
+    def test_a_marker_named_for_another_interlockings_circuit_is_a_consumer_row_its_neighbours_name_by_id(self):
+        """The owner, 2026-10-27: Sargent's Corporal:2NAT consumes Corporal's indication 2NATK; the K is added at ingest
+        and the drawing is not edited. Its neighbours name it like any local row, by its id."""
         given = """
 H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
 J1   | IRJ             | TRACK     | Kind=IRJ
@@ -239,9 +241,13 @@ TC2  | Track Circuit   | APPLIANCE | Appliance=track_circuit Name=1SAT CP=East
 """
         sm, ix = compile_(given, "a | J1.A TC1.TC\nb | J1.B TC2.TC\n")
         self.assertEqual(sm.report.errors, [])
-        self.assertEqual(rows(ix, "joints"), [{"given": {"Kind": "IRJ"}, "derived": {"circuits": {"A": "Corporal:2NAT", "B": "X:1SAT"}},
-                                               "relations": {"A": ["Corporal:2NAT.TC"], "B": ["X:1SAT.TC"]}}])
+        self.assertEqual(rows(ix, "joints"), [{"given": {"Kind": "IRJ"}, "derived": {"circuits": {"B": "X:1SAT"}},
+                                               "relations": {"A": [at(sm, "TC1", "TC")], "B": ["X:1SAT.TC"]}}])
+        self.assertEqual(rows(ix, "consumers"), [{"given": {"Appliance": "track_circuit", "Name": "Corporal:2NAT", "CP": "Corporal"},
+                                                  "relations": {"TC": [at(sm, "J1", "A")], "indication": "Corporal:2NATK"}}])
         self.assertEqual(sorted(ix["appliances"]), ["1SAT"])
+        self.assertEqual(diags(sm, "reference"), [("reference.interlocking", "{}".format(sm.source.symbols["TC1"].uuid))])
+        self.assertEqual(layout_model.errors(emit.emit(sm)), [])
 
 
 
@@ -449,17 +455,18 @@ class Checks(unittest.TestCase):
 
 class References(unittest.TestCase):
     """A qualified name for another interlocking's thing is one-sided (the owner, 2026-10-27): the importer writes no
-    appliance for it, and the neighbours' relations name it; ``test_derive`` checks that it resolves."""
+    appliance for it. A marker is a consumer row (``Circuits``); a switch is named by its port. ``test_derive`` checks
+    that each resolves."""
 
-    def test_a_reference_is_named_by_its_neighbours_and_an_unwired_one_is_reported(self):
+    def test_a_switch_reference_is_named_by_its_port_and_an_unwired_one_is_reported(self):
         given = """
 H1   | House            | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
 J1   | IRJ              | TRACK     | Kind=IRJ
-TC1  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=Y:3NAT
+SW1  | Switch_Lock      | APPLIANCE | Appliance=switch Style=lock Name=Y:5
 L1   | AUXILIARY        | APPLIANCE | Appliance=lamp Style=non_vital Name=Y:SFLK
 """
-        sm, ix = compile_(given, "a | J1.A TC1.TC\n")
-        self.assertEqual(ix["track"]["joints"][0]["relations"], {"A": ["Y:3NAT.TC"]})
+        sm, ix = compile_(given, "a | J1.A SW1.R\n")
+        self.assertEqual(ix["track"]["joints"][0]["relations"], {"A": ["Y:5.R"]})
         self.assertNotIn("appliances", ix)
         self.assertEqual(diags(sm, "reference"), [("reference.interlocking", "X"), ("reference.unwritten", "L1")])
 
@@ -524,18 +531,31 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(self.ix("Luchessa")["track"]["links"], [{"derived": {"ports": ["Luchessa:795.R", "Luchessa:795D.R"], "circuit": "Luchessa:795T1"}}])
 
     def test_every_track_relation_is_named_back_in_its_interlocking(self):
-        """The owner, 2026-10-27: symmetric adjacency on the drawing. A reference to another interlocking's thing
-        (``Corporal:2NAT.TC``) has no row here to name it back."""
+        """The owner, 2026-10-27: symmetric adjacency on the drawing, a consumer row (Sargent's of Corporal:2NATK)
+        included. A reference to another interlocking's switch (``Y:5.R``) would have no row here to name it back."""
         for name, ix in self.model["interlockings"].items():
             rel = {}
             for n, a in ix.get("appliances", {}).items():
                 rel.update({f"{name}:{n}.{side}": v for side, v in a.get("relations", {}).items() if isinstance(v, list)})
-            for kind in ("joints", "ends", "policies"):
+            for kind in ("joints", "ends", "policies", "consumers"):
                 for r in ix.get("track", {}).get(kind, []):
                     rel.update({f"{r.get('name') or r['id']}.{side}": v for side, v in r.get("relations", {}).items() if isinstance(v, list)})
             own = [(a, b) for a, bs in rel.items() for b in bs if not (":" in b and not b.startswith(f"{name}:"))]
             self.assertEqual([(a, b) for a, b in own if a not in rel.get(b, [])], [], name)
             self.assertEqual([a for a, bs in rel.items() if any(b.rsplit(".", 1)[0] == a.rsplit(".", 1)[0] for b in bs)], [], name)
+
+    def test_sargents_consumer_of_corporals_2natk_is_the_only_reference_and_resolves(self):
+        refs = {n: ix["track"].get("consumers", []) for n, ix in self.model["interlockings"].items()}
+        self.assertEqual({n: [c["relations"]["indication"] for c in cs] for n, cs in refs.items() if cs}, {"Sargent": ["Corporal:2NATK"]})
+        self.assertIn("2NATK", self.ix("Corporal")["houses"]["Corporal"]["derived"]["indications"])
+        self.assertEqual([d for d in self.sm.report.diags if d.code.startswith("reference")], [])
+        joint = next(j for j in self.ix("Sargent")["track"]["joints"] if j["given"]["Kind"] == "IRJ")
+        self.assertIn(f"{refs['Sargent'][0]['id']}.TC", joint["relations"]["A"])
+        self.assertEqual(joint["derived"]["circuits"]["A"], "Corporal:2NAT")
+        foreign = [b for ix in self.model["interlockings"].values() for k in ("joints", "ends", "policies")
+                   for r in ix["track"].get(k, []) for v in r.get("relations", {}).values() if isinstance(v, list) for b in v
+                   if ":" in b and not b.startswith(tuple(f"{n}:" for n in self.model["interlockings"]))]
+        self.assertEqual(foreign, [])
 
     def test_no_circuit_carries_two_names(self):
         self.assertEqual(self.sm.report.by_code("circuit.names") + self.sm.report.by_code("circuit.name.disagree"), [])

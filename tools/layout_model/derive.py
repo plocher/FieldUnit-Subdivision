@@ -18,6 +18,12 @@ names every other track pin its wire reaches, so the relation is symmetric):
   switch's ``osCircuit``, a run's ``derived.circuit`` (geometry's ends name the pins), and ``track.links``: switch
   ports that meet with no joint or end between.
 - **Control points** by propagation from the houses (the owner, 2026-10-26; ADR 0012 §4).
+- **Indications.** Each house's ``derived.indications``: the office indication tokens its station sends on its code
+  line, named by the code line's encoding through the reference data (``reference.indication_tokens``). A house sends
+  the tokens of the appliances and circuits whose control point it is.
+- **Consumers of another station's indications** (the owner, 2026-10-27): a ``track.consumers`` row is a one-sided
+  reference, ``relations.indication`` the token it consumes (``Corporal:2NATK``). It resolves against the indications
+  the named station sends; a track circuit's token names the circuit the row stands on.
 - **NextCP pairing** and the **cross-interlocking reference** check.
 - An OfficeUnit's columns (``house``, ``interlocking``) and every device's ``serves`` and ``shows``.
 
@@ -43,6 +49,9 @@ REGISTRY = Path(__file__).resolve().parents[2] / "schemas" / "layout-model" / "r
 SWITCH_PORTS = ("C", "N", "R")
 DERAIL_PORTS = ("C", "R")
 TRACK_LISTS = ("joints", "ends", "policies")
+ROW_LISTS = TRACK_LISTS + ("consumers",)          # every row with an id; a consumer has track but no circuits of its own
+POWERED = frozenset({"powered", "lock", "dual"})   # switch Styles with a lever and NWK/RWK (GLOSSARY: powered switch, electric lock)
+LEVER = re.compile(r"^\d+")
 JOINTS = frozenset({"IRJ", "IRJ_SIGNAL"})
 # ADR 0003: a mast is its signal (lever and side) plus its heads' letters, ascending (rules 6 and 7).
 MAST_NAME = re.compile(r"^(0?[1-9]\d{0,3}[LRNSEW])([A-Z]+)$")
@@ -105,10 +114,12 @@ def strip(model: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-def derive(model: dict[str, Any]) -> tuple[dict[str, Any], Report]:
-    """``model`` with every ``derived`` map rebuilt from its ``given`` and ``relations``, and the diagnostics."""
+def derive(model: dict[str, Any], reference_data: Optional[dict[str, Any]] = None) -> tuple[dict[str, Any], Report]:
+    """``model`` with every ``derived`` map rebuilt from its ``given`` and ``relations``, and the diagnostics.
+    ``reference_data`` is the user's own, layered over the shipped defaults (ADR 0012 §6): today
+    ``{"indicationTokens": {<encoding Kind or "default">: {<class>: (<template>, ...)}}}``."""
     m = strip(model)
-    d = _Derivation(m)
+    d = _Derivation(m, reference_data or {})
     d.run()
     return m, d.report
 
@@ -149,6 +160,7 @@ class _Plan:
         self.union = _Union()
         self.rows: dict[str, tuple[str, dict[str, Any]]] = {}        # pin prefix (name or id) -> (list, row)
         self.name_of: dict[str, Optional[str]] = {}                   # component root -> circuit, None for dark track
+        self.namer: dict[str, dict[str, Any]] = {}                    # component root -> the marker or switch that names it
         self.cp: dict[int, Optional[str]] = {}                        # id(appliance or row) -> house
 
     def where(self, *parts: str) -> str:
@@ -173,7 +185,7 @@ class _Plan:
             ported = [self.pin(name, p) for p in ports_of(a) if p in pins]
             for p in ported[1:]:
                 self.union.join(ported[0], p)
-        for kind in TRACK_LISTS:
+        for kind in ROW_LISTS:
             for row in self.track.get(kind, []):
                 prefix = self.row_prefix(row)
                 self.rows[prefix] = (kind, row)
@@ -190,52 +202,90 @@ class _Plan:
         r = self.region(node)
         return self.name_of.get(r) if r else None
 
-    def name_circuits(self, marker_names: dict[str, str]) -> None:
-        """Each component's name: the marker on it, or a switch's TC (its OS circuit). ``marker_names`` maps a pin that
-        is a marker's TC but no appliance of this interlocking (another's, by reference) to the circuit it names."""
+    def name_circuits(self, consumed: dict[str, str], report: bool = True) -> None:
+        """Each component's name: the marker on it, or a switch's TC (its OS circuit). ``consumed`` maps a consumer row's
+        TC pin to the circuit whose indication it consumes, which names its component as a marker would."""
+        add = self.r.add if report else (lambda *a, **k: None)
         named: dict[str, dict[str, set[str]]] = defaultdict(lambda: {"marker": set(), "os": set()})
+        namer: dict[str, dict[str, Any]] = {}
         for name, a in self.appliances.items():
             g = a.get("given", {})
             pins = track_pins(a.get("relations", {}))
             if g.get("Appliance") == "track_circuit" and "TC" in pins:
-                named[self.union.find(self.pin(name, "TC"))]["marker"].add(qualify(name, self.name))
+                root = self.union.find(self.pin(name, "TC"))
+                named[root]["marker"].add(qualify(name, self.name))
+                namer[root] = a
             elif g.get("Appliance") == "switch" and g.get("TC"):
                 port = next((p for p in ports_of(a) if p in pins), None)
                 if port is None:
                     continue
                 if "," in g["TC"]:
-                    self.r.add("switch.tc_block", f"{self.name}: switch {name} lists several circuits in TC ({g['TC']}); a "
-                               "detection block has no form in the model", self.where("appliances", name))
+                    add("switch.tc_block", f"{self.name}: switch {name} lists several circuits in TC ({g['TC']}); a detection "
+                        "block has no form in the model", self.where("appliances", name))
                     continue
-                named[self.union.find(self.pin(name, port))]["os"].add(qualify(g["TC"], self.name))
-        for node, circuit in marker_names.items():
+                root = self.union.find(self.pin(name, port))
+                named[root]["os"].add(qualify(g["TC"], self.name))
+                namer.setdefault(root, a)
+        for node, circuit in consumed.items():
             if node in self.union:
                 named[self.union.find(node)]["marker"].add(circuit)
-        for root in {self.union.find(n) for n in self.union.parent}:
-            self.name_of[root] = None
+        self.name_of = {self.union.find(n): None for n in self.union.parent}
+        self.namer = {}
         for root, names in named.items():
             markers, os_ = sorted(names["marker"]), sorted(names["os"])
             if len(markers) > 1 or len(os_) > 1:
-                self.r.add("circuit.names", f"{self.name}: one circuit carries the names {', '.join(markers + os_)}; a joint is "
-                           "missing or a TC is wrong", self.where())
+                add("circuit.names", f"{self.name}: one circuit carries the names {', '.join(markers + os_)}; a joint is "
+                    "missing or a TC is wrong", self.where())
                 continue
             marker, os_name = (markers or [None])[0], (os_ or [None])[0]
             if marker and os_name and marker != os_name:
-                self.r.add("circuit.name.disagree", f"{self.name}: the circuit {marker}: its marker says {marker!r}, a switch's "
-                           f"TC says {os_name!r}", self.where())
+                add("circuit.name.disagree", f"{self.name}: the circuit {marker}: its marker says {marker!r}, a switch's "
+                    f"TC says {os_name!r}", self.where())
                 continue
             self.name_of[root] = marker or os_name
+            if root in namer:
+                self.namer[root] = namer[root]
 
-    def foreign_marker_pins(self) -> dict[str, str]:
-        """Pins this interlocking's relations name as another interlocking's track circuit marker (``Corporal:2NAT.TC``):
-        the drawn name is the circuit it stands for."""
-        out: dict[str, str] = {}
-        for refs in self._all_refs():
-            for ref in refs:
-                thing, _, side = ref.rpartition(".")
-                if side == "TC" and foreign(thing, self.name) and thing not in self.rows:
-                    out[ref] = thing
-        return out
+    # ------------------------------------------------------------------------------------------- indications
+
+    def indications(self, templates: dict[str, tuple[str, ...]]) -> dict[str, Optional[str]]:
+        """Each house's office indications (``derived.indications``), and every token this interlocking's station sends,
+        mapped to the circuit it indicates (None for a token of an appliance). A house sends the tokens of what its
+        control point is: its own circuits (a marker's or, with none, the switch whose TC names it), its powered
+        switches that lead their gang, its signal levers and its maintainer calls. A dependent derail has no tokens of
+        its own (GLOSSARY: dependent derail); the rest is pending (manual and independent switches, gang followers, a
+        mast's own token, an electric lock's WLK)."""
+        by_house: dict[str, set[str]] = defaultdict(set)
+        sent: dict[str, Optional[str]] = {}
+
+        def send(house: Optional[str], cls: str, circuit: Optional[str] = None, **names: str) -> None:
+            if not house or cls not in templates:
+                return
+            for t in templates[cls]:
+                token = t.format(**names)
+                by_house[house].add(token)
+                sent[token] = circuit
+
+        for root, circuit in self.name_of.items():
+            if circuit and not foreign(circuit, self.name) and root in self.namer:
+                bare = circuit.partition(":")[2]
+                send(self.cp.get(id(self.namer[root])), "track_circuit", circuit, name=bare)
+        switches = {n for n, a in self.appliances.items() if a.get("given", {}).get("Appliance") == "switch"}
+        for name, a in self.appliances.items():
+            g = a.get("given", {})
+            house = self.cp.get(id(a))
+            if g.get("Appliance") == "switch" and POWERED & set(styles(g)) and (GANG.sub("", name) == name or GANG.sub("", name) not in switches):
+                send(house, "switch", name=name)
+            elif g.get("Appliance") == "mast" and MAST_NAME.match(name):
+                send(house, "signal", lever=LEVER.match(name).group(0))
+            elif g.get("Appliance") == "lamp" and g.get("Style") == "maintainer_call":
+                send(house, "maintainer_call", name=name)
+        for h, house in self.houses.items():
+            _set_derived(house, {"indications": sorted(by_house.get(h, ()))})
+        return sent
+
+    def consumers(self) -> list[dict[str, Any]]:
+        return self.track.get("consumers", [])
 
     def _all_refs(self):
         for a in self.appliances.values():
@@ -508,9 +558,8 @@ class _Plan:
                 if foreign(thing, self.name) and thing not in self.rows:
                     by_thing[thing].add(side)
         for thing, sides in sorted(by_thing.items()):
-            kind = "track_circuit" if sides == {"TC"} else "switch"
-            what = "the track circuit marker" if kind == "track_circuit" else "the switch"
-            out.append((kind, thing, frozenset(sides), what, self.where()))
+            kind = "marker" if "TC" in sides else "switch"
+            out.append((kind, thing, frozenset(sides), "the track circuit marker" if kind == "marker" else "the switch", self.where()))
         for prefix, (kind, row) in sorted(self.rows.items()):
             if row.get("name") and foreign(row["name"], self.name):
                 out.append(("track", row["name"], frozenset(track_pins(row.get("relations", {}))),
@@ -558,23 +607,73 @@ class _Reporter:
 
 
 class _Derivation:
-    def __init__(self, model: dict[str, Any]) -> None:
+    def __init__(self, model: dict[str, Any], reference_data: dict[str, Any]) -> None:
         self.m = model
+        self.ref = reference_data
         self.r = _Reporter()
         self.report = self.r.report
         self.plans: dict[str, _Plan] = {}
+        self.sent: dict[str, Optional[dict[str, Optional[str]]]] = {}   # interlocking -> token -> circuit; None: no code line
+
+    # ------------------------------------------------------------------------------------------ indications
+
+    def indications(self) -> None:
+        """Every station's office indications, named by its code line's encoding (reference data). An interlocking on
+        no code line sends none: its indications are absent, not empty."""
+        for name, plan in self.plans.items():
+            line = plan.ix.get("relations", {}).get("codeline")
+            if not line:
+                self.sent[name] = None
+                continue
+            kind = self.m.get("layout", {}).get("codelines", {}).get(line, {}).get("given", {}).get("Kind")
+            self.sent[name] = plan.indications(reference.indication_tokens(kind, self.ref.get("indicationTokens")))
+
+    def consumed(self, plan: _Plan) -> dict[str, str]:
+        """Each consumer row's TC pin to the circuit its indication stands for, where the token resolves to one."""
+        out = {}
+        for row in plan.consumers():
+            token = row.get("relations", {}).get("indication", "")
+            b, _, t = token.partition(":")
+            circuit = (self.sent.get(b) or {}).get(t)
+            if circuit and "TC" in track_pins(row.get("relations", {})):
+                out[f"{row.get('id', '')}.TC"] = circuit
+        return out
+
+    def resolve_consumers(self) -> None:
+        """A consumer's indication is one the named station sends (the owner, 2026-10-27): an error when the station is in
+        the file and does not send it; a warning when the station is not in the file; missing when the station states no
+        code line, so what it sends is unknown."""
+        for a, plan in self.plans.items():
+            for row in plan.consumers():
+                where = plan.where("track", "consumers", row.get("id", ""))
+                token = row.get("relations", {}).get("indication")
+                if not token:
+                    self.r.add("reference.indication", f"{a}: a consumer row states no indication", where)
+                    continue
+                b, _, t = token.partition(":")
+                if b not in self.plans:
+                    self.r.add("reference.interlocking", f"{a}: the consumer of {token} names {b}, which is no interlocking in this file", where)
+                elif self.sent.get(b) is None:
+                    self.r.add("reference.codeline", f"{a}: the consumer of {token} names {b}, which is on no code line, so what it "
+                               "sends is unknown", where)
+                elif t not in self.sent[b]:
+                    self.r.add("reference.unresolved", f"{a}: the consumer of {token} names {b}, which sends no indication {t}", where)
 
     def run(self) -> None:
         for name, ix in self.m.get("interlockings", {}).items():
             plan = _Plan(name, ix, self.r)
             plan.components()
-            plan.name_circuits(plan.foreign_marker_pins())
+            plan.name_circuits({}, report=False)
             plan.control_points()
+            self.plans[name] = plan
+        self.indications()
+        for plan in self.plans.values():
+            plan.name_circuits(self.consumed(plan))
             plan.write()
             plan.checks()
-            self.plans[name] = plan
         self.next_cps()
         self.resolve_references()
+        self.resolve_consumers()
         self.columns()
         self.devices()
         self.heads()
@@ -610,6 +709,10 @@ class _Derivation:
         for a, plan in self.plans.items():
             for kind, name, ports, what, where in plan.references():
                 b, _, n = name.partition(":")
+                if kind == "marker":
+                    self.r.add("reference.marker", f"{a}: a track pin names {name}.TC, another interlocking's marker; a reference to it "
+                               "is a consumer row of its indication (relations.indication)", where)
+                    continue
                 if b not in self.plans:
                     self.r.add("reference.interlocking", f"{a}: {what} {name} names {b}, which is no interlocking in this file", where)
                     continue
@@ -622,12 +725,10 @@ class _Derivation:
                     found, have = name in circuits, None
                 elif kind == "track":
                     found, have = n in sides and row is None, sides.get(n)
-                elif kind == "track_circuit" and row is None:
-                    found, have = name in circuits, None                   # a circuit named by a switch's TC, with no marker
                 else:
                     found, have = row is not None and row.get("given", {}).get("Appliance") == kind, sides.get(n, frozenset())
                 if not found:
-                    thing = "circuit" if kind in ("circuit", "track_circuit") else "track symbol" if kind == "track" else kind
+                    thing = "circuit" if kind == "circuit" else "track symbol" if kind == "track" else kind
                     self.r.add("reference.unresolved", f"{a}: {what} {name} names {b}, which has no {thing} {n}", where)
                     continue
                 lost = sorted(set(ports) - have) if have is not None else []

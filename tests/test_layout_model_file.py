@@ -95,7 +95,7 @@ class LayoutModelFileTests(unittest.TestCase):
 
     def test_a_marker_names_its_row_by_id_and_copies_nothing(self):
         g = self.model["interlockings"]["Sargent"]["geometry"]
-        ids = {r["id"] for k in ("joints", "ends", "policies") for r in self.model["interlockings"]["Sargent"]["track"][k]}
+        ids = {r["id"] for k in ("joints", "ends", "policies", "consumers") for r in self.model["interlockings"]["Sargent"]["track"][k]}
         self.assertEqual({m["row"] for m in g["markers"]}, ids)
         for key, value in (("kind", "IRJ"), ("circuits", {"A": "Sargent:1NAT"}), ("name", "Sargent:Cannery")):
             bad = copy.deepcopy(self.model)
@@ -113,6 +113,19 @@ class LayoutModelFileTests(unittest.TestCase):
         self.assertTrue(layout_model.errors(bad))
         bad = copy.deepcopy(self.model)
         bad["interlockings"]["Luchessa"]["geometry"]["track"][0]["relations"]["to"] = "somewhere"
+        self.assertTrue(layout_model.errors(bad))
+
+    def test_a_consumer_row_consumes_an_indication_and_a_house_sends_its_own(self):
+        """The owner, 2026-10-27: a reference to another interlocking's circuit is a consumer of its indication."""
+        consumer = self.model["interlockings"]["Sargent"]["track"]["consumers"][0]
+        self.assertEqual(consumer["relations"]["indication"], "Corporal:2NATK")
+        self.assertIn("2NATK", self.model["interlockings"]["Corporal"]["houses"]["Corporal"]["derived"]["indications"])
+        for key, value in (("indication", "Corporal:2NAT"), ("indication", "2NATK"), ("mast", "Sargent:836NAB")):
+            bad = copy.deepcopy(self.model)
+            bad["interlockings"]["Sargent"]["track"]["consumers"][0]["relations"][key] = value
+            self.assertTrue(layout_model.errors(bad), (key, value))
+        bad = copy.deepcopy(self.model)
+        bad["interlockings"]["Corporal"]["houses"]["Corporal"]["derived"]["indications"].append("Sargent:2NATK")
         self.assertTrue(layout_model.errors(bad))
 
     def test_provenance_names_its_writer_and_rules(self):

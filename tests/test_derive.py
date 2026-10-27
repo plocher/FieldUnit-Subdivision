@@ -17,7 +17,7 @@ from tools import layout_model
 from tools.layout_model import derive
 
 EXAMPLE = Path(__file__).resolve().parents[1] / "schemas" / "layout-model" / "examples" / "spcoast.layout.json"
-LISTS = ("joints", "ends", "policies")
+LISTS = ("joints", "ends", "policies", "consumers")
 
 
 def _fields(text: str) -> tuple[dict[str, str], dict[str, str]]:
@@ -339,8 +339,54 @@ class NextCPs(unittest.TestCase):
         self.assertEqual(diags, [("next_cp.off_layout", "X")])
 
 
+def on_line(m: dict, *names: str, kind: str = "AAR") -> dict:
+    """The interlockings ``names`` on one code line of encoding ``kind``."""
+    m["layout"]["codelines"] = {"Line": {"given": {"Kind": kind}}}
+    for n in names:
+        m["interlockings"][n].setdefault("relations", {})["codeline"] = "Line"
+    return m
+
+
+class Indications(unittest.TestCase):
+    """Each house's station sends the office indications of what its control point is, named by its code line's
+    encoding (FieldUnit GLOSSARY §10.3; reference data)."""
+
+    def test_a_house_sends_its_circuits_switches_signals_and_maintainer_calls(self):
+        things = ONE_SWITCH + "MC1 | appliance | Appliance=lamp Style=maintainer_call\n"
+        out, _ = run(on_line(layout(X=interlocking(things, ONE_SWITCH_WIRES, "East")), "X"))
+        self.assertEqual(out["interlockings"]["X"]["houses"]["East"]["derived"]["indications"], sorted([
+            "1NATK", "1SATK", "2SATK", "835T1K", "835NWK", "835RWK", "836NGK", "836SGK", "836TEK", "MC1K"]))
+
+    def test_each_house_sends_what_its_control_point_is(self):
+        out, _ = run(on_line(layout(X=interlocking(TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH)), "X", kind="USS506"))
+        houses = out["interlockings"]["X"]["houses"]
+        self.assertIn("815NWK", houses["North"]["derived"]["indications"])
+        self.assertNotIn("815ANWK", houses["North"]["derived"]["indications"])          # a gang follower: pending
+        self.assertIn("817NWK", houses["South"]["derived"]["indications"])
+        self.assertIn("2NATK", houses["South"]["derived"]["indications"])
+        self.assertEqual({t for h in houses.values() for t in h["derived"]["indications"] if t.endswith("T1K")},
+                         {"813T1K", "815T1K", "815AT1K", "817T1K"})
+
+    def test_a_dependent_derail_and_a_manual_switch_send_nothing_of_their_own(self):
+        things = "795 | appliance | Appliance=switch Style=lock TC=795T1\n795D | appliance | Appliance=switch Style=derail\n" \
+                 "1 | appliance | Appliance=switch Style=manual\n"
+        out, _ = run(on_line(layout(X=interlocking(things, "rr | 795.R 795D.R\n", "East")), "X"))
+        self.assertEqual(out["interlockings"]["X"]["houses"]["East"]["derived"]["indications"], ["795NWK", "795RWK", "795T1K"])
+
+    def test_on_no_code_line_a_house_sends_nothing_and_says_so_by_absence(self):
+        out, _ = run(layout(X=interlocking(ONE_SWITCH, ONE_SWITCH_WIRES, "East")))
+        self.assertNotIn("derived", out["interlockings"]["X"]["houses"]["East"])
+
+    def test_the_users_reference_data_overrides_the_default(self):
+        m = on_line(layout(X=interlocking("9T | appliance | Appliance=track_circuit\nJ1 | joints | Kind=IRJ\n", "a | J1.A 9T.TC\n", "East")), "X")
+        out, _ = derive.derive(m, {"indicationTokens": {"AAR": {"track_circuit": ("{name}KK",)}}})
+        self.assertEqual(out["interlockings"]["X"]["houses"]["East"]["derived"]["indications"], ["9TKK"])
+
+
 class References(unittest.TestCase):
-    """A qualified name for another interlocking's thing is one-sided, and the thing must exist (the owner, 2026-10-27)."""
+    """A reference to another interlocking's thing is one-sided (the owner, 2026-10-27). A marker so named is a consumer
+    of the named station's indication: it resolves against what that station sends. A switch or a named row so named
+    is still checked as a thing, with its ports."""
 
     Y = interlocking("""
 5    | appliance | Appliance=switch Style=lock TC=5T1
@@ -349,32 +395,44 @@ class References(unittest.TestCase):
 J5   | joints    | Kind=IRJ
 """, "y1 | 5.C 6.C\ny2 | 5.N J5.A\ny3 | J5.B 3NAT.TC\n", "West", "Y")
 
-    def check(self, things: str, wires: str) -> list[tuple[str, str]]:
-        x = interlocking("J1 | joints | Kind=IRJ\n" + things, wires, "East")
-        return only(run(layout(X=x, Y=copy.deepcopy(self.Y)))[1], "reference")
+    def model(self, things: str, wires: str, line: bool = True) -> dict:
+        x = interlocking("J1 | joints | Kind=IRJ\n1SAT | appliance | Appliance=track_circuit\n" + things, "b | J1.B 1SAT.TC\n" + wires, "East")
+        m = layout(X=x, Y=copy.deepcopy(self.Y))
+        return on_line(m, "X", "Y") if line else on_line(m, "X")
 
-    def test_a_reference_that_resolves_gives_no_diagnostic(self):
-        self.assertEqual(self.check("", "a | J1.A Y:3NAT.TC\nb | J1.B Y:5.R Y:6.R\n"), [])
+    def consumer(self, token: str) -> str:
+        return f"K1 | consumers | Appliance=track_circuit rel.indication={token}\n"
 
-    def test_a_circuit_or_switch_the_named_interlocking_does_not_have_is_an_error(self):
-        self.assertEqual(self.check("", "a | J1.A Y:4NAT.TC\nb | J1.B Y:7.R\n"), [("reference.unresolved", "X"), ("reference.unresolved", "X")])
+    def check(self, things: str, wires: str, line: bool = True) -> list[tuple[str, str]]:
+        return only(run(self.model(things, wires, line))[1], "reference")
 
-    def test_a_port_the_named_switch_does_not_have_is_an_error(self):
-        out, report = derive.derive(layout(X=interlocking("J1 | joints | Kind=IRJ\n", "a | J1.A Y:6.N\n", "East"), Y=copy.deepcopy(self.Y)))
+    def test_a_consumer_resolves_against_what_the_station_sends_and_names_the_circuit(self):
+        out, diags = run(self.model(self.consumer("Y:3NATK"), "a | J1.A K1.TC\n"))
+        self.assertEqual(only(diags, "reference"), [])
+        self.assertEqual(row(out["interlockings"]["X"], "J1")["derived"]["circuits"], {"A": "Y:3NAT", "B": "X:1SAT"})
+        self.assertNotIn("derived", row(out["interlockings"]["X"], "K1"))
+        self.assertEqual(layout_model.errors(out), [])
+
+    def test_an_indication_the_station_does_not_send_is_an_error(self):
+        self.assertEqual(self.check(self.consumer("Y:4NATK"), "a | J1.A K1.TC\n"), [("reference.unresolved", "K1")])
+
+    def test_a_station_not_in_the_file_is_a_warning_and_one_on_no_code_line_is_missing(self):
+        self.assertEqual(self.check(self.consumer("Z:2NATK"), "a | J1.A K1.TC\n"), [("reference.interlocking", "K1")])
+        self.assertEqual(self.check(self.consumer("Y:3NATK"), "a | J1.A K1.TC\n", line=False), [("reference.codeline", "K1")])
+
+    def test_a_pin_of_another_interlockings_marker_is_no_form(self):
+        self.assertEqual(self.check("", "a | J1.A Y:3NAT.TC\n"), [("reference.marker", "X")])
+
+    def test_a_switch_reference_is_checked_as_a_thing_with_its_ports(self):
+        self.assertEqual(self.check("", "a | J1.A Y:5.R Y:6.R\n"), [])
+        self.assertEqual(self.check("", "a | J1.A Y:7.R\n"), [("reference.unresolved", "X")])
+        out, report = derive.derive(self.model("", "a | J1.A Y:6.N\n"))
         self.assertEqual([d.code for d in report.diags if d.code.startswith("reference")], ["reference.unresolved"])
         self.assertIn("no port N", report.by_code("reference.unresolved")[0].text)
 
     def test_a_circuit_named_in_a_field_must_exist_too(self):
         things = "9 | appliance | Appliance=switch Style=lock TC=Y:9T1\n1VT | appliance | Appliance=track_circuit Style=virtual IndicationToken=Y:3NAT,Y:8NAT\n"
         self.assertEqual(self.check(things, "a | J1.A 9.C\n"), [("reference.unresolved", "1VT"), ("reference.unresolved", "9")])
-
-    def test_an_interlocking_not_in_the_file_is_a_warning(self):
-        self.assertEqual(self.check("", "a | J1.A Z:2NAT.TC\n"), [("reference.interlocking", "X")])
-
-    def test_the_named_circuit_names_the_track_it_is_wired_to(self):
-        x = interlocking("J1 | joints | Kind=IRJ\n1SAT | appliance | Appliance=track_circuit\n", "a | J1.A Y:3NAT.TC\nb | J1.B 1SAT.TC\n", "East")
-        out, _ = run(layout(X=x, Y=copy.deepcopy(self.Y)))
-        self.assertEqual(row(out["interlockings"]["X"], "J1")["derived"]["circuits"], {"A": "Y:3NAT", "B": "X:1SAT"})
 
 
 class OfficeUnits(unittest.TestCase):

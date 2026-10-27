@@ -16,9 +16,13 @@ translates pin names into sides here (``side_of``, three-maps D15; ADR 0012 §8)
 ``governed`` and its ``B`` ``approach``; a policy sign's and a NextCP's one pin is ``track``. A row is identified by
 ``id``, its symbol's KiCad UUID (D10), and an end of track may also carry a name (an industry).
 
-A name qualified with another interlocking's scope (Sargent's marker ``Corporal:2NAT``) is a one-sided reference: it is
-no appliance here, and nothing is written back to the thing it names (the owner, 2026-10-27). The neighbours' relations
-name it; the reference derivation checks it.
+A name qualified with another interlocking's scope is a one-sided reference: it is no appliance here, and nothing is
+written back to the thing it names (the owner, 2026-10-27). A track circuit marker so named (Sargent's ``Corporal:2NAT``)
+is a consumer of that station's indication: a row of ``track.consumers`` with its symbol's UUID as ``id``, its fields
+in ``given`` (its ``Name`` included, since a row has no name), and ``relations.indication``, the token it consumes,
+the drawn name with the indications' ``K`` added at ingest (``Corporal:2NATK``; reference data). The neighbours name
+its TC by the id, like any local row. A switch so named (``Corporal:1``) is still named by its port
+(``Corporal:1.C``): what it consumes has no stated token form yet. The reference derivation checks both.
 
 Diagnostics here are about the drawing as drawn: a symbol with no name or no UUID, two symbols with one name, two masts
 on one signal joint (the file has one ``relations.mast``). Nothing here reads a coordinate, a net name, a reference or
@@ -28,6 +32,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any, Optional
+
+from tools.layout_model.reference import indication_tokens
 
 from .seams import Seams, check_milepost, given_of, key_of, loc, qualify
 from .source import Net, Symbol
@@ -82,12 +88,21 @@ def is_track_pin(s: Symbol, pin: str) -> bool:
     return s.role == "APPLIANCE" and s.get("Appliance") == "track_circuit" and pin == "TC"
 
 
+def is_consumer(interlocking: str, s: Symbol) -> bool:
+    """A track circuit marker named for another interlocking's circuit (Sargent's ``Corporal:2NAT``): a consumer of that
+    station's indication, a row of this interlocking with an id (the owner, 2026-10-27)."""
+    return s.role == "APPLIANCE" and s.get("Appliance") == "track_circuit" and _foreign(key_of(s), interlocking)
+
+
 def pin_ref(interlocking: str, s: Symbol, pin: str) -> Optional[str]:
     """How the model names a track pin, the one form of a side's relations and a run's ends (three-maps D5, D10, D15): a
     switch port, a marker's TC or a named track row's side by qualified name (``Luchessa:783.R``), an unnamed row's side
-    by the row's id (``<uuid>.approach``). None for a pin that is not track and for a thing with neither."""
+    by the row's id (``<uuid>.approach``), a consumer's TC by its id as well (``<uuid>.TC``). None for a pin that is not
+    track and for a thing with neither."""
     if not is_track_pin(s, pin):
         return None
+    if is_consumer(interlocking, s):
+        return f"{s.uuid}.TC" if s.uuid else None
     name = key_of(s) if s.role != "POLICY" else ""
     if name:
         return port_ref(interlocking, name, side_of(s, pin))
@@ -144,6 +159,7 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
         return sorted({r for o, op in others(s, pin) if (r := pin_ref(ix.name, o, op))})
 
     track_nets = {n.name for s in syms for pin, n in src.pins_of(s.ref).items() if is_track_pin(s, pin)}
+    consumers: list[dict[str, Any]] = []
 
     # ------------------------------------------------------------------ appliances
     for s in syms:
@@ -159,6 +175,11 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
             if _foreign(name, ix.name) and not wired:
                 report.info("reference.unwritten", f"{ix.name}: the {appliance or s.lib_id} {name} names another interlocking's "
                             "thing, but no track wire reaches it, so the file has nothing to state it by; not written", loc(s))
+            elif is_consumer(ix.name, s):
+                if not s.uuid:
+                    report.missing("track.id", f"{ix.name}: the marker {name} has no KiCad UUID in the export, so its row has no id", loc(s))
+                consumers.append(_maps({"id": s.uuid or None, "given": given_of(s, keyed=False),
+                                        "relations": {"TC": pin_refs(s, "TC"), "indication": _indication(name)}}))
             continue
         if name in plan.appliances:
             report.error("appliance.duplicate", f"{ix.name}: two appliances named {name!r} (ADR 0003 D8: names are unique in an interlocking)", loc(s))
@@ -208,8 +229,16 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
         (policies if s.role == "POLICY" else joints if s.kind in JOINTS else ends).append(row)
         if s.role == "TRACK" and s.kind not in JOINTS | ENDS:
             report.info("track.kind", f"{ix.name}: TRACK Kind {s.kind!r} is not one the KiCad importer reads; written with the ends", loc(s))
-    plan.track = {k: v for k, v in {"joints": joints, "ends": ends, "policies": policies}.items() if v}
+    plan.track = {k: v for k, v in {"joints": joints, "ends": ends, "policies": policies, "consumers": consumers}.items() if v}
     return plan
+
+
+def _indication(name: str) -> str:
+    """The indication token a drawn reference to a track circuit names: by the AAR nomenclature behind every code line,
+    the circuit's name with the indications' K added (``Corporal:2NAT`` is ``Corporal:2NATK``; the owner, 2026-10-27).
+    The template is the reference data's default, the one form every encoding shares."""
+    scope, _, circuit = name.partition(":")
+    return f"{scope}:" + indication_tokens(None)["track_circuit"][0].format(name=circuit)
 
 
 def _foreign(name: str, interlocking: str) -> bool:

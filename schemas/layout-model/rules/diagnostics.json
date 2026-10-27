@@ -177,8 +177,29 @@
       "feature": null,
       "replacedBy": null
     },
+    "reference.codeline": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "reference.indication": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
     "reference.interlocking": {
       "level": "warning",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "reference.marker": {
+      "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
       "feature": null,

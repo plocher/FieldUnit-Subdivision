@@ -115,7 +115,7 @@
       "pattern": "^[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?:[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?\\.[A-Za-z][A-Za-z0-9_]*$"
     },
     "rowPortRef": {
-      "description": "A pin of an unnamed track row, by the row's id, a dot and its side (approach, governed, A, B, track, CTC, DARK, EoT).",
+      "description": "A pin of an unnamed track row, by the row's id, a dot and its side (approach, governed, A, B, track, CTC, DARK, EoT; a consumer's TC).",
       "type": "string",
       "pattern": "^[^\\s:/.]+\\.[A-Za-z][A-Za-z0-9_]*$"
     },
@@ -388,7 +388,7 @@
       }
     },
     "house": {
-      "description": "An instrument house at a control point, keyed by its CP Name; on a US&S 506 line it is a field station, addressed by its column (derived, not written).",
+      "description": "An instrument house at a control point, keyed by its CP Name; on a US&S 506 line it is a field station, addressed by its column (derived, not written); derived.indications is what its station sends.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -421,6 +421,26 @@
                 "codeline": {
                   "$ref": "#/$defs/layoutName",
                   "description": "The code line on its Codeline wire, where drawn."
+                }
+              }
+            }
+          ]
+        },
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "indications": {
+                  "description": "The office indications this house's station sends on its code line, as tokens, sorted: those of the appliances and circuits whose control point it is, named by the code line's encoding through the reference data (a track circuit 2NATK, a switch 835NWK and 835RWK, a signal lever 836NGK, 836SGK and 836TEK, a maintainer call MC1K). Absent when the interlocking is on no code line.",
+                  "type": "array",
+                  "uniqueItems": true,
+                  "items": {
+                    "$ref": "#/$defs/name"
+                  }
                 }
               }
             }
@@ -780,7 +800,7 @@
       }
     },
     "marker": {
-      "description": "A track row's placement (a joint, END CTC, NextCP, an industry, a policy sign): the row it places, by id (three-maps D10), and its placement and glyph. It copies no fact of the row.",
+      "description": "A track row's placement (a joint, END CTC, NextCP, an industry, a policy sign, a consumer): the row it places, by id (three-maps D10), and its placement and glyph. It copies no fact of the row.",
       "type": "object",
       "required": [
         "row",
@@ -1323,6 +1343,13 @@
           "items": {
             "$ref": "#/$defs/link"
           }
+        },
+        "consumers": {
+          "description": "Consumers of another station's indications, drawn on this trackplan.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/consumer"
+          }
         }
       }
     },
@@ -1368,6 +1395,56 @@
                 },
                 "circuit": {
                   "$ref": "#/$defs/qualifiedName"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "indicationRef": {
+      "description": "An office indication token another interlocking's station sends, qualified by that interlocking: Corporal:2NATK. By the AAR nomenclature behind every code line, an indication ends in K (the owner, 2026-10-27).",
+      "allOf": [
+        {
+          "$ref": "#/$defs/qualifiedName"
+        },
+        {
+          "pattern": "K$"
+        }
+      ]
+    },
+    "consumer": {
+      "description": "A one-sided consumer of another station's office indication, drawn on this trackplan (the owner, 2026-10-27): a track circuit marker named for another interlocking's circuit (Sargent's Corporal:2NAT). It is a row, identified by id; its fields as drawn in given, its Name included; relations.TC its wire, which its neighbours name as <id>.TC; relations.indication the token it consumes (Corporal:2NATK). The circuit it stands on is the one that token indicates.",
+      "type": "object",
+      "required": [
+        "id",
+        "given"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/rowId"
+        },
+        "given": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/given"
+            }
+          ]
+        },
+        "relations": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/relations"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "TC": {
+                  "$ref": "#/$defs/portRefs"
+                },
+                "indication": {
+                  "$ref": "#/$defs/indicationRef"
                 }
               }
             }

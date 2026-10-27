@@ -27,7 +27,7 @@ from typing import Any, Optional
 
 from .seams import Seams, key_of, loc
 from .source import Symbol
-from .trackplan import TRACKPLAN_ROLES, is_switch, pin_ref, unit_of
+from .trackplan import TRACKPLAN_ROLES, is_consumer, is_switch, pin_ref, unit_of
 
 COORDINATE_DECIMALS = 2     # placements and runs sit on the drawing's grid (§4.2)
 GLYPH_DECIMALS = 4          # a glyph's primitives have up to four
@@ -355,12 +355,16 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
 
     appliances: dict[str, Any] = {}
     masts: dict[str, str] = {}
+    consumer_markers: list[dict[str, Any]] = []
     for s in trackplan:
         if s.role != "APPLIANCE" or s.get("Appliance") == "head" or s.ref not in placed:
             continue
         name = key_of(s, report)
         if not name:
             report.missing("geometry.name", f"{ix.name}: an {s.lib_id} has no Name; its placement is not written", loc(s))
+            continue
+        if is_consumer(ix.name, s) and s.uuid and src.net_of(s.ref, "TC"):
+            consumer_markers.append({"row": s.uuid, **placement(s.ref)})   # a consumer is a row: its marker names it by id (D10)
             continue
         appliances[name] = placement(s.ref)
         if s.get("Appliance") == "mast":
@@ -389,7 +393,7 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
             row["relations"] = relations
         track.append(row)
 
-    markers: list[dict[str, Any]] = []
+    markers: list[dict[str, Any]] = list(consumer_markers)
     mileposts: dict[str, Any] = {}
     for s in trackplan:
         if s.role == "APPLIANCE" or s.ref not in placed:
