@@ -1,14 +1,16 @@
-"""The compiler's one input: placed symbols with their fields, and nets as sets of named pins.
+"""The KiCad importer's one input: placed symbols with their fields, and nets as sets of named pins.
 
 Nothing else of KiCad crosses this seam. A symbol's ``sheet`` is its hierarchical path (``/South-cTc/Sargent/``) and
-is the compiler's only notion of scope (ADR 0009 §3.9): a sheet is in scope of every sheet under it. Pin names are
-the relation names of ADR 0009 §3.1; the kicad-cli export carries them as ``pinfunction`` ``<name>_<number>``.
+is the importer's only notion of scope (ADR 0009 §3.9): a sheet is in scope of every sheet under it. Pin names are
+the relation names of ADR 0009 §3.1; the kicad-cli export carries them as ``pinfunction`` ``<name>_<number>``. A
+symbol's ``uuid`` is its per-instance KiCad UUID, the stable opaque identity of a track row (three-maps D10).
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import uuid as _uuid
+from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Sequence
 
 
 @dataclass(frozen=True)
@@ -18,6 +20,7 @@ class Symbol:
     value: str
     fields: dict[str, str]
     sheet: str
+    uuid: str = ""                                                    # the instance's own KiCad UUID
 
     @property
     def role(self) -> str:
@@ -50,7 +53,7 @@ class Net:
 
 @dataclass
 class Source:
-    """The drawing as the compiler sees it."""
+    """The drawing as the KiCad importer sees it."""
 
     path: Path
     symbols: dict[str, Symbol]
@@ -109,11 +112,19 @@ def from_netlist(path: Path) -> Source:
     A saved netlist is a cache of the project's state (the netlist rule, ``AGENTS.md``): a caller that passes one
     answers for its freshness. ``from_project`` is the form that cannot be stale."""
     model = _services().NetlistReader().read(Path(path))
-    symbols = {ref: Symbol(ref, c.lib_id, c.value, dict(c.fields), c.sheetpath or "/") for ref, c in model.components.items()}
+    symbols = {ref: Symbol(ref, c.lib_id, c.value, dict(c.fields), c.sheetpath or "/", c.uuid) for ref, c in model.components.items()}
     nets = [Net(n.name, tuple(PinRef(p.reference, pin_name(p.pinfunction, p.pin), p.pintype) for p in n.nodes)) for n in model.nets]
     root = Path(model.source) if model.source else None               # the export names the root schematic
     project = root.with_suffix(".kicad_pro") if root and root.with_suffix(".kicad_pro").is_file() else root
     return Source(Path(path), symbols, nets, list(model.sheets), project, dict(model.sheet_files))
+
+
+def from_snapshot(netlist: Path, repo: Path, paths: Sequence[str]) -> Source:
+    """A saved netlist, read only when it is still a snapshot of ``paths`` in the git repository ``repo``
+    (``kicad_services.snapshot``); a stale one raises ``StaleNetlist`` naming what is stale."""
+    _services()
+    from kicad_services import snapshot
+    return from_netlist(snapshot.require_fresh(Path(netlist), Path(repo), paths))
 
 
 def from_project(schematic: Path) -> Source:
@@ -133,6 +144,7 @@ def from_path(path: Path) -> Source:
 
 
 def from_symbols(symbols: Iterable[Symbol], nets: Iterable[Net], path: Path = Path("<memory>")) -> Source:
-    """A source built in memory, for tests of the rules."""
-    syms = list(symbols)
+    """A source built in memory, for tests of the rules. A symbol without a UUID is given one derived from its
+    reference, so a scenario's rows have a stable identity as a drawing's do."""
+    syms = [s if s.uuid else replace(s, uuid=str(_uuid.uuid5(_uuid.NAMESPACE_URL, f"memory:{s.ref}"))) for s in symbols]
     return Source(path, {s.ref: s for s in syms}, list(nets), sorted({s.sheet for s in syms}))
