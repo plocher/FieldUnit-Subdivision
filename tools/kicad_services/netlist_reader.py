@@ -141,6 +141,7 @@ class NetlistReader:
         lib = ""
         part = ""
         sheetpath = ""
+        tstamps: tuple[str, ...] = ()
         fields: dict[str, str] = {}
 
         for item in node[1:]:
@@ -169,6 +170,9 @@ class NetlistReader:
                         and isinstance(sub[1], str)
                     ):
                         sheetpath = sub[1]
+            elif tag == Symbol("tstamps"):
+                # the symbol's own UUID, one per unit of a multi-unit symbol (the .kicad_sch symbol uuid)
+                tstamps = tuple(s for s in item[1:] if isinstance(s, str))
             elif tag == Symbol("fields"):
                 for field_node in item[1:]:
                     parsed = self._parse_field(field_node)
@@ -199,6 +203,7 @@ class NetlistReader:
             part=part,
             fields=fields,
             sheetpath=sheetpath,
+            tstamps=tstamps,
         )
 
     def _parse_field(self, node: Any) -> Optional[tuple[str, str]]:

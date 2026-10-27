@@ -76,6 +76,12 @@ class NetlistComponent:
     part: str
     fields: dict[str, str] = field(default_factory=dict)
     sheetpath: str = ""
+    tstamps: tuple[str, ...] = ()       # the symbol's UUID, one per unit; stable across annotation and moves
+
+    @property
+    def uuid(self) -> str:
+        """The instance's own UUID: its first unit's, or empty when the export carries none."""
+        return self.tstamps[0] if self.tstamps else ""
 
     @property
     def lib_id(self) -> str:

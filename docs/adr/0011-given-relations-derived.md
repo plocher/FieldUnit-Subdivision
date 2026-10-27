@@ -3,6 +3,18 @@
 - Status: **accepted by the owner 2026-10-26** (rev 3, with the owner's wording of decision 3; rev 2: incomplete is not
   in error; rev 3: what lasts and what is transient). The ask was: ratify the six decisions below. ADR 0008, 0009 and
   0010, the schema and the KiCad importer change to follow them (§9).
+- Amended 2026-10-27 (the owner's rulings on `docs/review/three-maps-mapping-2026-10-27.md`): a track pin's wire is a
+  stated relation, `relations.<pin>`, not `derived` (D5), and so are a run's ends; membership implied only by the sheet
+  hierarchy is written by the KiCad importer as `relations.interlocking`, not resolved into `derived` (D6). §2 is read
+  with these.
+- Amended 2026-10-27 (the owner, on cross-interlocking references): a reference to another interlocking's thing is a
+  one-sided consumer of a codeline indication, never a general link to the thing. The only real-time state one
+  FieldUnit or OfficeUnit has of another station is what that station sends over its codeline as indications. By the
+  AAR nomenclature behind every codeline, controls end in `S` and indications in `K`. So a drawn `Corporal:2NAT` names
+  the indication token `Corporal:2NATK`; the drawing is not edited, and a writer may add the `K` at ingest. The
+  reference is a typed relation to that token (`relations.indication`). It resolves against the indications the named
+  station sends: an error when the station is in the file but sends no such indication, a warning when the station is
+  not in the file. The same rule applies to an OfficeUnit's `IndicationToken`.
 - Amends: ADR 0008 §4.4 (named relations), §4.5 (`settings`), §4.6 and §4.7 (incomplete and in error), §4.8 (canonical
   form covers the stamp) and the schema; ADR 0009 §3.12 (the relation table becomes normative rules with a conformance suite); ADR 0010
   §4.10 and C2 (geometry optional).

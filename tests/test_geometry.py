@@ -1,16 +1,17 @@
-"""Gates for the geometry piece of the compiler (ADR 0010 C2; DoD2, DoD3, the §4.3 transform, §4.9 glyphs).
+"""Gates for the geometry piece of the KiCad importer (ADR 0010; ADR 0011 §7; DoD2, DoD3, the §4.3 transform, §4.9 glyphs).
 
 The rules are tested on symbols and placements built in memory: the anchor, the style rule, the glyph frame, the
 transform for every orientation KiCad can write (the direction of a 90-degree turn was asked of kicad-cli by
 ``tests/fixtures/kicad/rotation_probe.py``, 2026-10-25: counter-clockwise as seen on the page), the chaining of
-wires into runs. The project gates run on the SPCoast drawing when it is present and kicad-cli can export its
-netlist fresh (``SPCOAST_PROJECT``; a saved ``SPCOAST_NETLIST`` is the caller's cache), never faked when absent.
+wires into runs. The project gates run on the SPCoast drawing as ``tests.test_layout_compiler.spcoast_source`` reads
+it (a fresh export, or a saved ``SPCOAST_NETLIST`` checked as a snapshot first), never faked when absent. Geometry
+joins the rest of the file by identity only (three-maps D10): markers name their track row by id, runs name what
+their ends meet.
 """
 from __future__ import annotations
 
 import copy
 import math
-import os
 import re
 import shutil
 import tempfile
@@ -21,11 +22,7 @@ from tools import layout_model
 from tools.kicad_services import sch_text
 from tools.kicad_services.types import LibrarySymbol, SchematicPlacement, SymbolGraphic, SymbolPin
 from tools.layout_compiler import emit, geometry, seams
-from tools.layout_compiler.source import from_netlist, from_project, kicad_cli_available
-
-PROJECT = Path(os.environ.get("SPCOAST_PROJECT", Path.home() / "Dropbox/KiCad/Railroad/SPCoast/SPCoast.kicad_sch"))
-NETLIST = Path(os.environ["SPCOAST_NETLIST"]) if os.environ.get("SPCOAST_NETLIST") else None
-SPCOAST_AVAILABLE = (NETLIST is not None and NETLIST.is_file()) or (PROJECT.is_file() and kicad_cli_available())
+from tests.test_layout_compiler import NETLIST, PROJECT, SPCOAST_AVAILABLE, spcoast_source
 
 
 def pin(name, x, y, rotation=0.0, length=0.0, hidden=False, number=None):
@@ -39,6 +36,11 @@ def switch_like():
                                    SymbolGraphic("polyline", ((0.0, 0.0), (17.78, 16.51)), stroke_width=0, stroke_type="default", fill_type="none"),
                                    SymbolGraphic("circle", ((2.54, -5.08),), radius=1.27, stroke_width=0, stroke_type="default", fill_type="color", fill_color=(255.0, 255.0, 0.0, 1.0)),
                                    SymbolGraphic("text", ((5.08, 2.54),), text="H", size=1.27, justify="left bottom")))
+
+
+# The sides of each track row as the model names them (ADR 0012 §8; three-maps D15); a policy sign's is track.
+SIDES = {"IRJ_SIGNAL": {"approach", "governed"}, "IRJ": {"A", "B"}, "NEXT_CP": {"track"}, "END_CTC": {"CTC", "DARK"},
+         "INDUSTRY": {"EoT"}, "BUMPER": {"EoT"}}
 
 
 class GlyphRules(unittest.TestCase):
@@ -136,7 +138,7 @@ class SPCoastGeometry(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.sm = seams.resolve(from_netlist(NETLIST) if NETLIST else from_project(PROJECT))
+        cls.sm = seams.resolve(spcoast_source())
         cls.geo = geometry.read(cls.sm)
         cls.model = emit.emit(cls.sm, geometry=cls.geo)
 
@@ -145,7 +147,7 @@ class SPCoastGeometry(unittest.TestCase):
         self.assertEqual(sorted(self.geo.interlockings), sorted(self.sm.interlockings))
 
     def test_model_validates_against_3_1_0_and_round_trips(self):
-        self.assertEqual(self.model["schema"], emit.SCHEMA_WITH_GEOMETRY)
+        self.assertEqual(self.model["schema"], emit.SCHEMA)
         self.assertEqual(layout_model.errors(self.model), [])
         text = layout_model.dumps(self.model)
         self.assertEqual(layout_model.dumps(layout_model.loads(text)), text)
@@ -191,20 +193,50 @@ class SPCoastGeometry(unittest.TestCase):
         self.assertEqual(g["houses"], {"Sargent": {"at": {"x": 91.44, "y": 0.0}, "glyph": "Railroad-Trackplan:House"}})
         self.assertEqual(len(g["appliances"]), 11)
         self.assertEqual(len(g["track"]), 4)
-        self.assertEqual(sorted(t["circuit"] for t in g["track"]), ["Corporal:2NAT", "Sargent:1NAT", "Sargent:1SAT", "Sargent:2SAT"])
+        self.assertEqual(sorted(t["derived"]["circuit"] for t in g["track"]), ["Corporal:2NAT", "Sargent:1NAT", "Sargent:1SAT", "Sargent:2SAT"])
         self.assertEqual(len(g["markers"]), 12)
-        self.assertEqual(sum(1 for m in g["markers"] if m["kind"] == "INDUSTRY"), 2)
+        rows = self.rows("Sargent")
+        self.assertEqual(sum(1 for m in g["markers"] if rows[m["row"]]["given"]["Kind"] == "INDUSTRY"), 2)
         self.assertNotIn("mileposts", g)
         sw = self.geo.glyphs["Railroad-Trackplan:Switch_Lock"]
         self.assertEqual(sw["ports"], {"C": {"x": 0.0, "y": 0.0}, "N": {"x": 29.21, "y": 0.0}, "R": {"x": 29.21, "y": -16.51}})
         widths = [p["stroke"]["width"] for g_ in self.geo.glyphs.values() for p in g_["shape"] if "width" in p.get("stroke", {})]
         self.assertTrue(widths and all(w > 0 for w in widths))                         # KiCad's 0 is never written
 
+    def rows(self, ix: str) -> dict[str, dict]:
+        track = self.model["interlockings"][ix]["track"]
+        return {r["id"]: r for k in ("joints", "ends", "policies") for r in track.get(k, [])}
+
     def test_luchessa_mileposts_and_the_runs_that_meet_a_switch_port(self):
         g = self.geo.interlockings["Luchessa"]
         self.assertEqual(sorted(g["mileposts"]), ["78.3", "79.3"])
-        ports = sorted(t.get("from") or t.get("to") for t in g["track"] if t.get("from") or t.get("to"))
+        ports = sorted(v for t in g["track"] for v in t.get("relations", {}).values() if ":" in v)
         self.assertEqual(ports, ["Luchessa:783.R", "Luchessa:799.N", "Luchessa:799.R"])
+
+    def test_every_marker_names_one_track_row_by_id_and_copies_none_of_its_facts(self):
+        """Three-maps D10: a marker's one join key is its row's id; each row has exactly one marker."""
+        for name, ix in self.model["interlockings"].items():
+            rows = self.rows(name)
+            markers = ix["geometry"]["markers"]
+            self.assertEqual(sorted(m["row"] for m in markers), sorted(rows), name)
+            self.assertEqual([m for m in markers if set(m) - {"row", "at", "glyph", "rotation", "mirror"}], [], name)
+
+    def test_a_runs_ends_are_relations_to_a_switch_port_or_a_track_row_side(self):
+        """Three-maps D5 extended: from and to name the switch port or the track row pin a run meets, by name or by the row's
+        id and its side as the model names it; never a coordinate."""
+        for name, ix in self.model["interlockings"].items():
+            rows = self.rows(name)
+            for t in ix["geometry"]["track"]:
+                for end in t.get("relations", {}).values():
+                    if ":" in end:
+                        continue                                                   # a switch port or a named row's pin, by name
+                    row, side = end.rsplit(".", 1)
+                    self.assertIn(row, rows, (name, end))
+                    kind = rows[row]["given"]["Kind"]
+                    self.assertIn(side, SIDES.get(kind, {"track"}), (name, end, kind))
+        lu = [t for t in self.model["interlockings"]["Luchessa"]["geometry"]["track"] if t.get("derived", {}).get("circuit") == "Luchessa:1NAT"]
+        sides = sorted(e.rsplit(".", 1)[1] for t in lu for e in t["relations"].values())
+        self.assertEqual(sides, ["approach", "track"])                           # from the signal joint's approach side to the NextCP
 
     def test_every_glyph_named_is_written_and_nothing_else(self):
         named = {row["glyph"] for g in self.geo.interlockings.values() for row in geometry._every_placement(g)}

@@ -33,14 +33,17 @@ The symbol libraries are registered globally in
 
 ```zsh
 uv sync                                        # once per checkout: .venv with Python 3.14, jbom (the PyPI release) and sexpdata
-uv run python -m unittest discover -s tests -q # 245 tests; the SPCoast gates export a fresh netlist with kicad-cli and skip without it
+uv run python -m unittest discover -s tests -q # 272 tests; the SPCoast gates export a fresh netlist with kicad-cli and skip without it
 uv run tools/run_plant_graph_smoke.sh          # Luchessa end-to-end; needs kicad-cli. Fails today: the old compiler reports 5 known diagnostics on the archived drawing (#15)
 ```
 
 - Python is managed per repo with `uv` (`pyproject.toml`, `.python-version`, `uv.lock`; `.venv` is gitignored). Never rely on the system `python3`: a Homebrew or macOS update replaced it with 3.15 without the dependencies (2026-10-16). Run every script as `uv run python <script>`, or `uv run --project ~/Dropbox/workspace/FieldUnit-Subdivision python <script>` from another repo (the Railroad `edits/` scripts import `tools/kicad_services` this way).
 
 - `kicad-cli` is not on PATH. Tools find it through `KICAD_CLI` or the app bundle
-  (`/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli`). Without KiCad, pass `--netlist <file.net>`.
+  (`/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli`); it exports the SPCoast netlist in about 2 s (2026-10-27).
+  Without KiCad, pass a saved netlist; `tools/kicad_services/snapshot.py` then refuses it when the Railroad repo has
+  uncommitted drawing or library changes, or a commit to them newer than the netlist file (the importer reads the
+  sheets and libraries live, so the netlist must be the same snapshot).
 - **Netlists are a cached version of the KiCad project's state.** They become invalid whenever the KiCad
   project is modified. Agents and the KiCad importer may use netlists as part of their
   activities and follow these rules (owner, 2026-10-24): (A) never use a stale cached netlist; (B) treat
@@ -71,7 +74,7 @@ uv run tools/run_plant_graph_smoke.sh          # Luchessa end-to-end; needs kica
 ## Layout
 
 - `tools/kicad_services/`: generic KiCad readers (netlist with its sheet files and a fresh-export context manager, schematic placements with wires and junctions, symbol library pin contracts and graphics, the `sym-lib-table`). Reuse these; do not write new s-expression parsers.
-- `tools/layout_compiler/`: the KiCad importer, transient (ADR 0011): it reads the drawing and writes the Layout Data Model File (`seams.py` the relation table of ADR 0009; `geometry.py` the placements, runs and glyphs of ADR 0010; `emit.py` the Layout Data Model File). CLI `tools/compile_layout.py PROJECT.kicad_sch -o OUT [--geometry]`; schema in `schemas/layout-model/`. Code Studio would also need (circuits, control point propagation, ports, links, NextCP pairing) moves to the reference derivation `tools/layout_model/derive.py`; only KiCad reading stays here.
+- `tools/layout_compiler/`: the KiCad importer, transient (ADR 0011): it reads the drawing and writes the Layout Data Model File (`seams.py` the relation table of ADR 0009; `geometry.py` the placements, runs and glyphs of ADR 0010; `emit.py` the Layout Data Model File). CLI `tools/compile_layout.py PROJECT.kicad_sch -o OUT` (geometry always, ADR 0011 §7); schema in `schemas/layout-model/`. Code Studio would also need (circuits, control point propagation, ports, links, NextCP pairing) moves to the reference derivation `tools/layout_model/derive.py`; only KiCad reading stays here.
 - `tools/layout_model/`: the Layout Data Model File's reader and canonical writer, and (planned) the reference derivation. Every entity and row holds `given`, `relations` and `derived`; readers take meaning from `derived`, then `relations`, then `given` (ADR 0011). Terms: FieldUnit `docs/GLOSSARY.md` §2.6.
 - `tools/plant_graph/`: the proof-of-concept plant compiler (`compiler.py`), routes, indications, portable model, FieldUnit projection, layout and picture.
 - `tools/controller_graph/`: the proof-of-concept controller compiler (columns are CPs, appliances, drive bits from IODRIVER pins, codelines with stub/empty-sheet handling, §7 diagnostics).

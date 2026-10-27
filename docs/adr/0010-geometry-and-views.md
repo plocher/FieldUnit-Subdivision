@@ -1,6 +1,9 @@
 # 0010. Geometry: the drawing as a design fact, and the four views that read it
 
 - Status: **accepted by the owner 2026-10-24** (rev 4 with the §4.1 membership sentence; rev 1 the same day; rev 2 after the owner's Industry symbol; rev 3 after the owner's review of §3; rev 4 after the owner's review of §4.1, §4.3 and §4.9, which inverted §4.9: the glyphs are written; §7). The ask was: ratify §4 and the schema fragment `0010/geometry.schema.json` as the `geometry` object of each interlocking and the `layout.glyphs` map of the Layout Data Model File, schema `layout-model/v3.1.0`.
+- Amended 2026-10-27 (the owner's ruling D10 on `docs/review/three-maps-mapping-2026-10-27.md`): geometry stays an
+  independent section, free to evolve; its only contract with the semantic sections is identity. C6: a marker joins its
+  track row by the row's `id` (`row`), not by kind, circuits, name or ports. ADR 0011 §7 makes geometry always written.
 - Terms (2026-10-26, after ADR 0011): "compiler" in this record means what ADR 0011 splits into the KiCad importer,
   which reads the drawing, and the reference derivation, which computes `derived`; "seam reader" is the first piece of
   the KiCad importer. The record is not reworded. See FieldUnit `docs/GLOSSARY.md` §2.6.

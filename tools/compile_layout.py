@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-"""Compile a KiCad project to the Layout Data Model File (milestone D; ADR 0008 rev 4, ADR 0009).
+"""Import a KiCad project into the Layout Data Model File (milestone D; ADR 0008 rev 4, ADR 0009, ADR 0011).
 
-    uv run python tools/compile_layout.py PROJECT.kicad_sch -o layout.json [--geometry] [--log LOG] [--quiet]
-    uv run python tools/compile_layout.py NETLIST.net      -o layout.json [--geometry] [--log LOG] [--quiet]
+    uv run python tools/compile_layout.py PROJECT.kicad_sch -o layout.json [--log LOG] [--quiet]
+    uv run python tools/compile_layout.py NETLIST.net      -o layout.json [--log LOG] [--quiet]
 
-Given the project's root sheet, the compiler exports a netlist with kicad-cli into a temporary location, reads it
-and deletes it (the netlist rule, ``AGENTS.md``: a netlist is a cache of the project's state, never used stale).
+Given the project's root sheet, the KiCad importer exports a netlist with kicad-cli into a temporary location, reads
+it and deletes it (the netlist rule, ``AGENTS.md``: a netlist is a cache of the project's state, never used stale).
 Given a saved ``kicadsexpr`` netlist instead (a machine without KiCad), the caller answers for its freshness.
-Every interlocking carries its ``appliances`` and ``track`` (the trackplan piece), and the Layout Data Model File
-names schema 3.1.0. With ``--geometry`` the placement and glyph readers run too (ADR 0010 C2): the sheets and the
-symbol libraries are read beside the netlist, and every interlocking gains its ``geometry`` and the layout its
-``glyphs``; without it the readers are off and nothing is computed from a coordinate (DoD3). Diagnostics go to the log (stderr by default): errors, then warnings, infos and the missing facts. An error means
-no Layout Data Model File is written (ADR 0008 §4.6). Exit 0 when one is written, 1 on errors, 2 on a bad invocation.
+Every entity and row holds ``given``, ``relations`` and ``derived`` (ADR 0011 §2), and every file carries geometry
+(ADR 0011 §7): the sheets and the symbol libraries are always read beside the netlist. Diagnostics go to the log
+(stderr by default): errors, then warnings, infos and the missing facts. An error means no Layout Data Model File is
+written (ADR 0008 §4.6). Exit 0 when one is written, 1 on errors, 2 on a bad invocation.
 """
 from __future__ import annotations
 
@@ -34,13 +33,12 @@ def main(argv=None) -> int:
     ap.add_argument("-o", "--output", type=Path, required=True)
     ap.add_argument("--log", type=Path, help="write diagnostics here instead of stderr")
     ap.add_argument("--quiet", action="store_true", help="errors only on stderr")
-    ap.add_argument("--geometry", action="store_true", help="read placements and glyphs too (ADR 0010)")
     a = ap.parse_args(argv)
     if not a.project.is_file():
         print(f"no such project or netlist: {a.project}", file=sys.stderr)
         return 2
     sm = seams.resolve(source.from_path(a.project))
-    geo = geometry.read(sm) if a.geometry else None
+    geo = geometry.read(sm)
     diags = sorted(sm.report.diags, key=lambda d: (ORDER.get(d.severity, 9), d.code, d.where))
     lines = [str(d) for d in diags if not (a.quiet and d.severity != "error")]
     if a.log:
