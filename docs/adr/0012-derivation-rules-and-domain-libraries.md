@@ -1,7 +1,7 @@
 # 0012. Derivation rules and domain libraries: what the model states, how the rules are written, and what consumers share
 
-- Status: **proposed** 2026-10-26, rev 1, for the owner's ruling. Nothing in ADR 0009 or 0011, the schema or the code
-  changes until the decisions below are ruled.
+- Status: **accepted by the owner 2026-10-26** (rev 2: §4 says what "no fallbacks" retires and what it keeps, after the
+  owner's question). The ask was: ratify the eight decisions below.
 - Amends: ADR 0009 §3.12 (the relation table's implicit fallbacks retire; its rows become features, §4); ADR 0011 §5
   (the conformance suite is a set of features, not data files; the version is semantic, not a date, §3 and §7).
 - Builds on: ADR 0011 (given, relations, derived; what lasts and what is transient); the owner's discussion of
@@ -9,7 +9,7 @@
   FieldUnit `docs/CTC_SUBDIVISION_AND_PLANT_DESIGN.md` §2 and §6.1 (structural routes and the indication ceiling
   heuristics, worked out earlier).
 
-## Decisions requested
+## Decisions requested (all ratified 2026-10-26)
 
 Each line has a default; the sections below argue it. Everything defined here is version 1.0 and is expected to
 evolve (§7).
@@ -22,8 +22,8 @@ evolve (§7).
    here.
 3. **A registry of diagnostic codes**, as data: syntax, level, lifecycle, the rule that raises each (§3.3). Default:
    yes, `schemas/layout-model/rules/diagnostics.json`.
-4. **No fallbacks.** A relationship is stated or it is missing; ADR 0009 §3.12's implicit forms retire (§4). Default:
-   yes.
+4. **No fallbacks.** Where a relationship has an explicit form, it is stated or it is missing: the implicit
+   alternatives of ADR 0009 §3.12 retire. Every derivation stays (§4). Default: yes.
 5. **Domain libraries**: routes, blocks between interlockings and indication ceilings first, each with its own semantic
    version, its own features, and a sufficiency gate over SPCoast; a fact a library needs and does not find is
    reported at `missing` (§5). Default: yes, in `tools/railroad/`, moving to FieldUnit with the schema (view O15).
@@ -130,10 +130,29 @@ The scenarios name the codes; the registry says what each code is:
 
 ## 4. No fallbacks
 
-A relationship is stated, as a relation inside a namespace or a qualified reference across namespaces, or it is
-missing. The implicit forms of ADR 0009 §3.12 ("the one Processor on the sheet", "an encoding instance in the unit's
-folder; by layout when one line exists", "the machine's processor for a code line transport", "the one CMRInet Node on
-the sheet") retire. They stay in ADR 0009 as a record.
+What retires is narrow: a second, implicit way to state a relationship that the drawing now states explicitly. Where
+ADR 0009 §3.12 gives a relation both an explicit form and an implicit fallback, the explicit form is the only one, and
+without it the relationship is missing. The fallbacks that retire:
+
+- a FieldUnit's processor: "the one Processor on the sheet";
+- an OfficeUnit's processor: "the one Processor on its sheet";
+- a unit's code line: "an encoding instance in the unit's folder; by layout when one line exists";
+- a driver's bus: "the one Processor on the sheet; `Processor` field when two";
+- a transport's anchor: "the `Processor` field; the machine's processor for a code line transport";
+- an encoding's transport: "the `Transport` field; by layout when one transport of its kind exists";
+- a CMRInet bit's node: "the one CMRInet Node on the sheet".
+
+They stay in ADR 0009 as a record.
+
+What stays is everything derived: facts computed from stated facts, which have no explicit form to compete with.
+
+- Control point by propagation (the rulings of 2026-10-26): one house on a sheet, gangs, switch to OS circuit, mast
+  and signal joint, plain IRJs, virtual circuits, maintainer calls; a stated `CP` still wins.
+- Circuits and their names, a switch's OS circuit and its `TC` override, ports, links, named ends, NextCP pairing, a
+  mast's heads.
+- The §3.12 rows whose only form is derived: the 506 station address from the column number, an OfficeUnit's columns
+  from its interlockings, a head device to its head by name, a panel column to its house by `CP Name`.
+- Identity by name (§2): a thing placed several times is one entity.
 
 Evidence: the KiCad importer over SPCoast resolves every relation by wire and none by fallback alone, with no
 disagreement: 48 drivers on a bus, 7 interlockings on a code line, 2 on a processor, 2 transport anchors, 1 encoding on
@@ -280,7 +299,7 @@ All move to FieldUnit with the schema (view O15).
 
 ## 12. Consequences
 
-- ADR 0009 §3.12: the implicit fallbacks retire; the relation rows become features in the `relations` family.
+- ADR 0009 §3.12: the implicit fallbacks listed in §4 retire; the relation rows, and the derived rows, become features.
 - ADR 0011 §5: the conformance suite is the features; the version is semantic.
 - The implementation step (after this ADR and ADR 0011's reshape): the features and registry, `derive.py` with the
   importer calling it, the fallbacks removed, the joint sides renamed, then the routes, blocks and ceilings libraries
