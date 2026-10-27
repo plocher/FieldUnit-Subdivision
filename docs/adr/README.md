@@ -31,9 +31,6 @@ One list of what is decided and what waits for the owner. Each proposed ADR open
 | Document | What changed |
 |---|---|
 | FieldUnit `docs/GLOSSARY.md` | Rewritten. Source of truth for terms. |
-| `docs/design/ontology.md` (rev 5) | Rewritten by facet. |
-| `docs/design/layout-model.md` (rev 8), `layout-model-plan.md` (rev 3) | Aligned with ADR 0001. Key names `controlPoints`, `fieldStations` are proposals. |
-| `docs/design/desk-codeline-kicad-pattern.md` | Aligned with ADR 0001. |
 
 ## Records (not for decision)
 

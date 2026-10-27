@@ -28,12 +28,7 @@ QUALIFIED = {
 DEFERRED = {}
 
 # Living documents not yet swept, each waiting on the owner's ruling: archive (superseded) or reword.
-PENDING = {
-    "docs/design/layout-model.md": "rev 8 draft of 2026-10-02, overtaken by ADR 0008 to 0011",
-    "docs/design/layout-model-plan.md": "rev 3 draft of 2026-10-02, overtaken by ADR 0008 to 0011",
-    "docs/design/ontology.md": "rev 5 draft of 2026-10-01, awaiting review since",
-    "docs/design/desk-codeline-kicad-pattern.md": "draft of 2026-10-02, overtaken in part by ADR 0009",
-}
+PENDING = {}
 
 
 def retired_terms(text):
