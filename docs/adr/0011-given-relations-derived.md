@@ -20,8 +20,8 @@ the KiCad compiler is a transient writer of it (§1).
    as connections) and `derived` (what the rules compute). Default: yes (§2).
 2. **Writer policy** as in §3: `given` and `relations` exactly as stated; `derived` holds everything the rules can
    derive from them, by a conforming derivation, stamped with its rules version; any edit re-derives it. Default: yes.
-3. **Reader policy** as in §4: for meaning, `derived` then `relations` then `given`, first hit wins; `derived` is a
-   cache a reader may rebuild; unknown keys skipped and reported. Default: yes.
+3. **Reader policy** as in §4: for meaning, `derived` then `relations` then `given`, first hit wins; `derived` is effectively a
+   cache that may need to be rebuilt rebuild; unknown keys skipped and reported. Default: yes.
 4. **One definition of the computation**: normative rules, a conformance suite as data, a reference derivation, one
    version for the three (§5). Default: they live in this repo beside the schema and move to FieldUnit with it (view
    O15).
