@@ -80,7 +80,7 @@ importer's. Nothing lasting may live only in the importer.
 
 ```json
 "HBA": {
-  "given":     {"Appliance": "lamp", "Style": "non_vital", "CP": "Sargent", "Milepost": "83.4"},
+  "given":     {"Appliance": "lamp", "Style": "non_vital", "CP Name": "Sargent", "Milepost": "83.4"},
   "derived":   {"controlPoint": "Sargent:Sargent"}
 },
 "815A": {

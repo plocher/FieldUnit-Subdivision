@@ -70,7 +70,7 @@ ALWAYS_SHOWN = {"Library", "Symbol", "Extends", "Role", "Appliance", "Style", "G
 # Column groups of the Columns control, in display order. Core is ALWAYS_SHOWN; Pin.* is every Pin.<base>
 # field; Settings is every lower_snake_case field; Other is whatever is left (Kind, ki_* excluded by Settings).
 KICAD_FIELDS = ("Reference", "Value", "Footprint", "Datasheet")
-CONTRACT_FIELDS = ("IC", "Address", "Invert", "Color", "IndicationToken", "IndicationCeiling", "CP", "TC",
+CONTRACT_FIELDS = ("IC", "Address", "Invert", "Color", "IndicationToken", "IndicationCeiling", "CP Name", "TC",
                    "Processor", "Display", "Milepost")
 GROUPS = ("Core", "KiCad fields", "Contract", "Pin.*", "Settings", "Other")
 DEFAULT_CLOSED_GROUPS = ("Pin.*", "Settings")

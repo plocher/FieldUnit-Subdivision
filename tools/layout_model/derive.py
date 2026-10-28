@@ -345,7 +345,7 @@ class _Plan:
         stated: dict[str, str] = {}
         origin: dict[str, str] = {}
         for node, e, label, what, where in things:
-            cp = e.get("given", {}).get("CP")
+            cp = e.get("given", {}).get("CP Name")
             if not cp:
                 continue
             h = houses.get(cp.casefold())
@@ -431,9 +431,9 @@ class _Plan:
                 continue                                                  # its mast reports for it
             if len(found) > 1:
                 self.r.add("control_point.chains", f"{self.name}: {what} is reached from "
-                           f"{' and '.join(f'{h} (by {via})' for h, via in sorted(found.items()))}; a CP field on it settles which", where)
+                           f"{' and '.join(f'{h} (by {via})' for h, via in sorted(found.items()))}; a CP Name on it settles which", where)
             elif not found:
-                self.r.add("control_point.unreached", f"{self.name}: no house reaches {what}: no CP field on it and no chain to one", where)
+                self.r.add("control_point.unreached", f"{self.name}: no house reaches {what}: no CP Name on it and no chain to one", where)
         for n, a in switches.items():
             lead = GANG.sub("", n)
             if lead in switches and lead != n:

@@ -229,20 +229,20 @@ class Checks(unittest.TestCase):
 # between 813's R and 817's R; 815's R meets 815A's R at a plain joint. Each signal states its house on the joint or on
 # the mast; approach circuit 1NAT states North though South's signal bounds it.
 TWO_HOUSES = """
-813   | appliance | Appliance=switch Style=powered TC=813T1 CP=North
-815   | appliance | Appliance=switch Style=powered TC=815T1 CP=North
+813   | appliance | Appliance=switch Style=powered TC=813T1 CP_Name=North
+815   | appliance | Appliance=switch Style=powered TC=815T1 CP_Name=North
 815A  | appliance | Appliance=switch Style=powered TC=815AT1
-817   | appliance | Appliance=switch Style=powered TC=817T1 CP=South
+817   | appliance | Appliance=switch Style=powered TC=817T1 CP_Name=South
 814SA | appliance | Appliance=mast Style=single
-816NA | appliance | Appliance=mast Style=single CP=South
+816NA | appliance | Appliance=mast Style=single CP_Name=South
 818NA | appliance | Appliance=mast Style=single
 1SAT  | appliance | Appliance=track_circuit
-01T   | appliance | Appliance=track_circuit CP=North
+01T   | appliance | Appliance=track_circuit CP_Name=North
 2NAT  | appliance | Appliance=track_circuit
-1NAT  | appliance | Appliance=track_circuit CP=North
-J1    | joints    | Kind=IRJ_SIGNAL CP=North rel.mast=X:814SA
+1NAT  | appliance | Appliance=track_circuit CP_Name=North
+J1    | joints    | Kind=IRJ_SIGNAL CP_Name=North rel.mast=X:814SA
 J2    | joints    | Kind=IRJ_SIGNAL rel.mast=X:816NA
-J3    | joints    | Kind=IRJ_SIGNAL CP=South rel.mast=X:818NA
+J3    | joints    | Kind=IRJ_SIGNAL CP_Name=South rel.mast=X:818NA
 Q1    | joints    | Kind=IRJ
 Q2    | joints    | Kind=IRJ
 Q3    | joints    | Kind=IRJ
@@ -278,7 +278,7 @@ class ControlPoints(unittest.TestCase):
         self.assertEqual(only(diags, "control_point"), [])
         self.assertEqual(set(control_points(out).values()), {"East"})
         self.assertEqual({row(out["interlockings"]["X"], j)["derived"]["controlPoint"] for j in ("J1", "J2", "J3")}, {"X:East"})
-        self.assertNotIn("CP", out["interlockings"]["X"]["appliances"]["835"]["given"])
+        self.assertNotIn("CP Name", out["interlockings"]["X"]["appliances"]["835"]["given"])
 
     def test_two_houses_chain_from_the_stated_fields(self):
         """815A follows its gang's 815; 1SAT follows its signal joint, 2NAT the mast of its joint; 1NAT's own field wins
@@ -291,7 +291,7 @@ class ControlPoints(unittest.TestCase):
             "1SAT": "North", "01T": "North", "2NAT": "South", "1NAT": "North"})
 
     def test_a_circuit_two_houses_reach_states_which(self):
-        _, diags = run(layout(X=interlocking(TWO_HOUSES.replace("Appliance=track_circuit CP=North\n2NAT", "Appliance=track_circuit\n2NAT"),
+        _, diags = run(layout(X=interlocking(TWO_HOUSES.replace("Appliance=track_circuit CP_Name=North\n2NAT", "Appliance=track_circuit\n2NAT"),
                                              TWO_HOUSES_WIRES, NORTH_SOUTH)))
         self.assertEqual(only(diags, "control_point"), [("control_point.chains", "01T")])
 
@@ -300,12 +300,12 @@ class ControlPoints(unittest.TestCase):
         self.assertEqual(only(diags, "control_point"), [("control_point.unreached", "NFLK")])
 
     def test_a_gang_split_across_houses_is_a_warning(self):
-        out, diags = run(layout(X=interlocking(TWO_HOUSES.replace("TC=815AT1", "TC=815AT1 CP=South"), TWO_HOUSES_WIRES, NORTH_SOUTH)))
+        out, diags = run(layout(X=interlocking(TWO_HOUSES.replace("TC=815AT1", "TC=815AT1 CP_Name=South"), TWO_HOUSES_WIRES, NORTH_SOUTH)))
         self.assertEqual(only(diags, "control_point"), [("control_point.gang", "815A")])
         self.assertEqual(control_points(out)["815A"], "South")
 
     def test_a_control_point_that_is_no_house_is_an_error(self):
-        _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("Kind=IRJ_SIGNAL rel.mast=X:836NAB", "Kind=IRJ_SIGNAL CP=Nowhere rel.mast=X:836NAB"),
+        _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("Kind=IRJ_SIGNAL rel.mast=X:836NAB", "Kind=IRJ_SIGNAL CP_Name=Nowhere rel.mast=X:836NAB"),
                                              ONE_SWITCH_WIRES, "East")))
         self.assertEqual(only(diags, "control_point"), [("control_point.house", "J1")])
 
@@ -313,7 +313,7 @@ class ControlPoints(unittest.TestCase):
         things = "MC1 | appliance | Appliance=lamp Style=maintainer_call rel.house=X:West\n"
         out, diags = run(layout(X=interlocking(things, "", "East\nWest rel.maintainerCall=X:MC1")))
         self.assertEqual(control_points(out), {"MC1": "West"})
-        _, diags = run(layout(X=interlocking(things.replace("maintainer_call", "maintainer_call CP=East"), "", "East\nWest rel.maintainerCall=X:MC1")))
+        _, diags = run(layout(X=interlocking(things.replace("maintainer_call", "maintainer_call CP_Name=East"), "", "East\nWest rel.maintainerCall=X:MC1")))
         self.assertEqual(only(diags, "control_point"), [("control_point.disagree", "MC1")])
 
     def test_a_virtual_circuit_lists_its_members_and_follows_them(self):

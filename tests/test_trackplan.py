@@ -95,10 +95,10 @@ def diags(sm, *prefixes: str) -> list[tuple[str, str]]:
 # One switch inside three signal joints of house East: the Sargent shape.
 ONE_SWITCH = """
 H1   | House            | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
-SW1  | Switch_Lock      | APPLIANCE | Appliance=switch Style=lock Name=835 TC=835T1 CP=East
-J1   | IRJ-Signal       | TRACK     | Kind=IRJ_SIGNAL CP=East
-J2   | IRJ-Signal       | TRACK     | Kind=IRJ_SIGNAL CP=East
-J3   | IRJ-Signal       | TRACK     | Kind=IRJ_SIGNAL CP=East
+SW1  | Switch_Lock      | APPLIANCE | Appliance=switch Style=lock Name=835 TC=835T1 CP_Name=East
+J1   | IRJ-Signal       | TRACK     | Kind=IRJ_SIGNAL CP_Name=East
+J2   | IRJ-Signal       | TRACK     | Kind=IRJ_SIGNAL CP_Name=East
+J3   | IRJ-Signal       | TRACK     | Kind=IRJ_SIGNAL CP_Name=East
 M1   | Mast_Double      | APPLIANCE | Appliance=mast Style=double Name=836NAB
 M2   | Mast_Single      | APPLIANCE | Appliance=mast Style=single Name=836SA
 M3   | Mast_Dwarf       | APPLIANCE | Appliance=mast Style=dwarf Name=836SB
@@ -106,9 +106,9 @@ HA   | Signal Head - CPL | APPLIANCE | Appliance=head Style=CPL Name=A
 HB   | Signal Head - CPL | APPLIANCE | Appliance=head Style=CPL Name=B
 HC   | Signal Head - CL  | APPLIANCE | Appliance=head Style=CL Name=A
 HD   | Signal Head - Semaphore-UQ | APPLIANCE | Appliance=head Style=UQ Name=B
-TC1  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=1NAT CP=East
-TC2  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=1SAT CP=East
-TC3  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=2SAT CP=East
+TC1  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=1NAT CP_Name=East
+TC2  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=1SAT CP_Name=East
+TC3  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=2SAT CP_Name=East
 NX1  | NextCP           | TRACK     | Kind=NEXT_CP
 R1   | Rule261-DoT-BiDirectional | POLICY | Kind=RULE_261 Direction=BOTH
 """
@@ -152,7 +152,7 @@ class Circuits(unittest.TestCase):
         j = next(j for j in ix["track"]["joints"] if j["relations"]["mast"] == "X:836SA")
         self.assertEqual(j["relations"], {"governed": ["X:835.N"], "approach": ["X:1SAT.TC"], "mast": "X:836SA"})
         self.assertEqual(j["derived"], {"circuits": {"governed": "X:835T1", "approach": "X:1SAT"}, "controlPoint": "X:East"})
-        self.assertEqual(j["given"], {"Kind": "IRJ_SIGNAL", "CP": "East"})
+        self.assertEqual(j["given"], {"Kind": "IRJ_SIGNAL", "CP Name": "East"})
 
     def test_a_policy_signs_and_a_next_cps_pin_is_the_track_side_whatever_the_library_calls_it(self):
         """RULE_261 draws its pin as Track, the others as To: one meaning, one side name (D15)."""
@@ -214,9 +214,9 @@ B1   | Bumper          | TRACK     | Kind=BUMPER
     def test_a_derail_joins_its_switchs_circuit_and_ports_that_meet_are_a_link(self):
         given = """
 H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=Gilroy
-SW1  | Switch_Lock     | APPLIANCE | Appliance=switch Style=lock Name=795 TC=795T1 CP=Gilroy
-D1   | Derail          | APPLIANCE | Appliance=switch Style=derail Name=795D IndicationCeiling=STOP/RESTRICTING CP=Gilroy
-J1   | IRJ-Signal      | TRACK     | Kind=IRJ_SIGNAL CP=Gilroy
+SW1  | Switch_Lock     | APPLIANCE | Appliance=switch Style=lock Name=795 TC=795T1 CP_Name=Gilroy
+D1   | Derail          | APPLIANCE | Appliance=switch Style=derail Name=795D IndicationCeiling=STOP/RESTRICTING CP_Name=Gilroy
+J1   | IRJ-Signal      | TRACK     | Kind=IRJ_SIGNAL CP_Name=Gilroy
 """
         sm, ix = compile_(given, """
 rr   | SW1.R D1.R
@@ -226,7 +226,7 @@ dc   | D1.C J1.A
         self.assertEqual(ix["track"]["links"], [{"derived": {"ports": ["X:795.R", "X:795D.R"], "circuit": "X:795T1"}}])
         self.assertEqual(ix["track"]["joints"][0]["derived"]["circuits"], {"governed": "X:795T1"})
         self.assertEqual(ix["appliances"]["795D"], {
-            "given": {"Appliance": "switch", "Style": "derail", "IndicationCeiling": "STOP/RESTRICTING", "CP": "Gilroy"},
+            "given": {"Appliance": "switch", "Style": "derail", "IndicationCeiling": "STOP/RESTRICTING", "CP Name": "Gilroy"},
             "relations": {"C": [at(sm, "J1", "governed")], "R": ["X:795.R"]},
             "derived": {"osCircuit": "X:795T1", "controlPoint": "X:Gilroy"}})
 
@@ -236,14 +236,14 @@ dc   | D1.C J1.A
         given = """
 H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
 J1   | IRJ             | TRACK     | Kind=IRJ
-TC1  | Track Circuit   | APPLIANCE | Appliance=track_circuit Name=Corporal:2NAT CP=Corporal
-TC2  | Track Circuit   | APPLIANCE | Appliance=track_circuit Name=1SAT CP=East
+TC1  | Track Circuit   | APPLIANCE | Appliance=track_circuit Name=Corporal:2NAT CP_Name=Corporal
+TC2  | Track Circuit   | APPLIANCE | Appliance=track_circuit Name=1SAT CP_Name=East
 """
         sm, ix = compile_(given, "a | J1.A TC1.TC\nb | J1.B TC2.TC\n")
         self.assertEqual(sm.report.errors, [])
         self.assertEqual(rows(ix, "joints"), [{"given": {"Kind": "IRJ"}, "derived": {"circuits": {"B": "X:1SAT"}},
                                                "relations": {"A": [at(sm, "TC1", "TC")], "B": ["X:1SAT.TC"]}}])
-        self.assertEqual(rows(ix, "consumers"), [{"given": {"Appliance": "track_circuit", "Name": "Corporal:2NAT", "CP": "Corporal"},
+        self.assertEqual(rows(ix, "consumers"), [{"given": {"Appliance": "track_circuit", "Name": "Corporal:2NAT", "CP Name": "Corporal"},
                                                   "relations": {"TC": [at(sm, "J1", "A")], "indication": "Corporal:2NATK"}}])
         self.assertEqual(sorted(ix["appliances"]), ["1SAT"])
         self.assertEqual(diags(sm, "reference"), [("reference.interlocking", "{}".format(sm.source.symbols["TC1"].uuid))])
@@ -297,24 +297,24 @@ TC1  | Track Circuit   | APPLIANCE | Appliance=track_circuit Name=1SAT
 TWO_HOUSES = """
 H1   | House            | STRUCTURE | Kind=CONTROL_POINT CP_Name=North
 H2   | House            | STRUCTURE | Kind=CONTROL_POINT CP_Name=South
-SW1  | Switch_Powered   | APPLIANCE | Appliance=switch Style=powered Name=813 TC=813T1 CP=North
-SW2  | Switch_Powered   | APPLIANCE | Appliance=switch Style=powered Name=815 TC=815T1 CP=North
+SW1  | Switch_Powered   | APPLIANCE | Appliance=switch Style=powered Name=813 TC=813T1 CP_Name=North
+SW2  | Switch_Powered   | APPLIANCE | Appliance=switch Style=powered Name=815 TC=815T1 CP_Name=North
 SW3  | Switch_Powered   | APPLIANCE | Appliance=switch Style=powered Name=815A TC=815AT1
-SW4  | Switch_Powered   | APPLIANCE | Appliance=switch Style=powered Name=817 TC=817T1 CP=South
-J1   | IRJ-Signal       | TRACK     | Kind=IRJ_SIGNAL CP=North
+SW4  | Switch_Powered   | APPLIANCE | Appliance=switch Style=powered Name=817 TC=817T1 CP_Name=South
+J1   | IRJ-Signal       | TRACK     | Kind=IRJ_SIGNAL CP_Name=North
 J2   | IRJ-Signal       | TRACK     | Kind=IRJ_SIGNAL
-J3   | IRJ-Signal       | TRACK     | Kind=IRJ_SIGNAL CP=South
+J3   | IRJ-Signal       | TRACK     | Kind=IRJ_SIGNAL CP_Name=South
 M1   | Mast_Single      | APPLIANCE | Appliance=mast Style=single Name=814SA
-M2   | Mast_Single      | APPLIANCE | Appliance=mast Style=single Name=816NA CP=South
+M2   | Mast_Single      | APPLIANCE | Appliance=mast Style=single Name=816NA CP_Name=South
 M3   | Mast_Single      | APPLIANCE | Appliance=mast Style=single Name=818NA
 Q1   | IRJ              | TRACK     | Kind=IRJ
 Q2   | IRJ              | TRACK     | Kind=IRJ
 Q3   | IRJ              | TRACK     | Kind=IRJ
 Q4   | IRJ              | TRACK     | Kind=IRJ
 TC1  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=1SAT
-TC2  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=01T CP=North
+TC2  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=01T CP_Name=North
 TC3  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=2NAT
-TC4  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=1NAT CP=North
+TC4  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=1NAT CP_Name=North
 """
 TWO_HOUSES_NETS = """
 a    | J1.A SW1.C
@@ -346,14 +346,14 @@ class Membership(unittest.TestCase):
     def test_the_one_house_is_every_appliances_control_point(self):
         """Approach circuits included: a control point is the house whose field unit wires the appliance, not the
         routes its signals protect."""
-        sm, ix = compile_(ONE_SWITCH.replace(" CP=East", ""), ONE_SWITCH_NETS)
+        sm, ix = compile_("\n".join(l if "| House" in l else l.replace(" CP_Name=East", "") for l in ONE_SWITCH.split("\n")), ONE_SWITCH_NETS)
         self.assertEqual(sm.report.errors, [])
         self.assertEqual(control_points(ix), {n: "East" for n in ("835", "836NAB", "836SA", "836SB", "1NAT", "1SAT", "2SAT")})
         self.assertEqual({j["derived"]["controlPoint"] for j in ix["track"]["joints"]}, {"X:East"})
         self.assertEqual(ix["appliances"]["836NAB"]["heads"], {"A": {"given": {"Appliance": "head", "Style": "CPL"}},
                                                                "B": {"given": {"Appliance": "head", "Style": "CPL"}}})
         self.assertEqual(ix["appliances"]["836SB"]["heads"], {"B": {"given": {"Appliance": "head", "Style": "UQ"}}})
-        self.assertNotIn("CP", ix["appliances"]["835"]["given"])          # stated nowhere: derived, never written as given
+        self.assertNotIn("CP Name", ix["appliances"]["835"]["given"])          # stated nowhere: derived, never written as given
 
     def test_two_appliances_with_one_name_are_an_error(self):
         sm, _ = compile_(ONE_SWITCH.replace("Name=836SA", "Name=836NAB"), ONE_SWITCH_NETS)
