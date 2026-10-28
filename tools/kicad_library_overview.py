@@ -46,22 +46,42 @@ A second tab, Conventions (also reached as #conventions), audits whether the lib
 field conventions consistently. One group of rows per kind: the Role, Appliance, Kind, Style and IC
 a symbol carries (fields, never the symbol name), one row per symbol that draws the kind
 (library:name). Its columns are the conventions: the raw Name, Control and Indication fields (the
-`${...}` macros as written; absent is shown as a dash), the pins as base=Pin.* drive (seam pins such
-as Column left out; a Pin.* naming no pin is listed and flagged), the unit structure (each unit with
-pins: its drive words and its pin bases, membership pins included), the other fields, and the
-symbol-field lint's messages (`lint_symbol`, the same messages as the lint's command line). A cell
-is flagged, with its reasons inline and in its tooltip, when:
-- the symbols of one kind disagree in that column (Pins and Units compare as sets per unit; Other
-  fields compares the field names, not their values);
-- Name, Control or Indication is absent while some kind of the same Role carries it, or (Control
-  and Indication only) while a symbol sharing a Style word carries it, so a lever and its lamp drawn
-  in different libraries are compared (PanelMCall and MaintainerCall share maintainer_call);
-- an other field is absent while a symbol of the same family carries it (family: Role and
+`${...}` macros as written; absent is shown as a dash), the per-pin tokens (every `Control.<pin>` and
+`Indication.<pin>` field, and on a PANEL lever each function pin's expected one), the pins as
+base=Pin.* drive (seam pins such as Column left out; a Pin.* naming no pin is listed and flagged),
+the unit structure (each unit with pins: its drive words and its pin bases, membership pins
+included), the other fields, and the symbol-field lint's messages (`lint_symbol`, the same messages
+as the lint's command line). A token's value is never checked, only its presence. A cell is
+flagged, with its reasons inline and in its tooltip, by these rules.
+
+General (kept from the first audit):
+- G1 the symbols of one kind disagree in that column (Pins and Units compare as sets per unit; Other
+  fields compares the field names, not their values; Tokens the field names);
+- G2 Name is absent while some kind of the same Role carries it;
+- G3 an other field is absent while a symbol of the same family carries it (family: Role and
   Appliance, or the kind itself where there is no Appliance); lower_snake_case settings are
-  per-device and never compared across symbols;
-- a Pin.* field names no pin.
-No other rule is applied: the view reports "carried by some, missing on others", never what a kind
-should carry. "Only flagged kinds" hides the clean groups; the search box matches any text.
+  per-device and never compared, and a field the rulings below supersede is never asked for;
+- G4 a Pin.* field names no pin.
+
+The owner's token rulings (2026-10-28), which the libraries do not follow yet; the page shows the gap:
+- R1 a PANEL lever (Appliance lever) states a token per function pin: `Control.<pin>` on an output
+  pin, `Indication.<pin>` on an input pin. A missing one is flagged, unless the pin deliberately has
+  none (EXEMPT_PINS: the lock lever's UNUSED, the code lever's CODE, keyed by Appliance and Style);
+  one of the wrong direction is flagged; a `Control.X` or `Indication.X` naming no pin is flagged on
+  any symbol; the whole-symbol `Control` and `Indication` on a lever are the superseded form.
+- R2 a model board lamp (a PANEL lamp whose only function pin is LAMP) states one whole-symbol
+  `Indication` (an expression); its LAMP pin is a driver wire, so no `Indication.LAMP` is expected;
+  `IndicationToken` is the superseded form.
+- R3 an APPLIANCE carries no tokens (it matches its panel appliance by Name): a `Control` or
+  `Indication` field on one is unexpected; lacking them is never flagged.
+- R4 `Invert` on a PANEL symbol is superseded (the inversion goes into the token, e.g.
+  `Indication.WLK=!${Value}WLK`); its absence is never flagged. DEVICE and IODRIVER keep `Invert`.
+- R5 a PANEL lamp pin (an input function pin) states `binary`; a level or PWM driver may still drive
+  it, which is a binding, not a pin value. Any other Pin.* value is flagged.
+- R6 a retiring kind (RETIRING: the PANEL lamp with Style indication, PanelMCall-Lamp) is marked
+  "retiring" and its cells are not flagged.
+Nothing else is asked of a kind. "Only flagged kinds" hides the clean groups; the search box
+matches any text.
 
 The default <out> is <directory of the first library>/production/overview/ (the Railroad repo
 gitignores production/). `--no-render` skips kicad-cli and omits the graphics column.
@@ -239,11 +259,15 @@ def svg_size_mm(svg_file: Path) -> tuple[float, float] | None:
 # --- conventions: one group per kind, one row per symbol, a cell per convention (the module docstring has the rules) ---
 
 KEY_FIELDS = ("Role", "Appliance", "Kind", "Style", "IC")       # what a kind is, in label order; empty values do not count
-TOKEN_FIELDS = ("Name", "Control", "Indication")               # the token conventions, compared across the Role
-STYLE_SHARED = ("Control", "Indication")                       # ... and these also across symbols sharing a Style word
-CONVENTION_COLUMNS = TOKEN_FIELDS + ("Pins", "Units", "Other fields")
-NOT_OTHER = set(KICAD_FIELDS) | {"Description"} | set(KEY_FIELDS) | set(TOKEN_FIELDS)   # plus Pin.* and ki_*
+TOKEN_FIELDS = ("Name", "Control", "Indication")               # the whole-symbol fields, one column each
+PIN_TOKENS = ("Control.", "Indication.")                       # per-pin token fields (R1): Control.<pin>, Indication.<pin>
+CONVENTION_COLUMNS = TOKEN_FIELDS + ("Tokens", "Pins", "Units", "Other fields")
+NOT_OTHER = set(KICAD_FIELDS) | {"Description"} | set(KEY_FIELDS) | set(TOKEN_FIELDS)   # plus Pin.*, ki_* and the per-pin tokens
 ABSENT = "—"                                              # how an absent field shows
+# R1: function pins of a PANEL lever that deliberately state no token, by (Appliance, Style) (owner, 2026-10-28).
+EXEMPT_PINS = {("lever", "lock"): {"UNUSED"}, ("lever", "code"): {"CODE"}}
+# R6: kinds to be retired after the bulk change, by their fields: marked, never flagged (owner, 2026-10-28).
+RETIRING = ({"Role": "PANEL", "Appliance": "lamp", "Style": "indication"},)
 
 
 @dataclass
@@ -258,10 +282,11 @@ class KindRow:
     key: tuple[tuple[str, str], ...]          # ((field, value), ...) in KEY_FIELDS order
     symbols: list[Symbol]
     cells: list[dict[str, Cell]]              # per symbol, one Cell per CONVENTION_COLUMNS entry
+    retiring: bool = False                    # R6: marked, its cells never flagged
 
     @property
     def label(self) -> str:
-        return " · ".join(f"{f}={v}" for f, v in self.key) or "(no Role)"
+        return (" · ".join(f"{f}={v}" for f, v in self.key) or "(no Role)") + (" (retiring)" if self.retiring else "")
 
     @property
     def flagged(self) -> int:
@@ -277,23 +302,91 @@ def family_key(s: Symbol) -> tuple:
     return (s.fields.get("Role", ""), s.fields["Appliance"]) if s.fields.get("Appliance") else kind_key(s)
 
 
-def style_words(s: Symbol) -> set[str]:
-    return {w.strip() for w in s.fields.get("Style", "").split(",") if w.strip()}
-
-
 def other_fields(s: Symbol) -> list[str]:
-    return [f for f in s.fields if f not in NOT_OTHER and not f.startswith(("Pin.", "ki_"))]
+    return [f for f in s.fields if f not in NOT_OTHER and not f.startswith(("Pin.", "ki_") + PIN_TOKENS)]
+
+
+def function_pins(s: Symbol) -> list[tuple[str, str]]:
+    """(base, electrical type) of every pin but the seam pins, in drawn order."""
+    return [(pin_base(n), ty) for n, _, ty in s.pins if n not in MEMBERSHIP_PINS]
+
+
+def is_panel_lever(s: Symbol) -> bool:
+    return s.fields.get("Role") == "PANEL" and s.fields.get("Appliance") == "lever"
+
+
+def is_board_lamp(s: Symbol) -> bool:
+    """R2: a PANEL lamp whose only function pin is LAMP."""
+    return (s.fields.get("Role") == "PANEL" and s.fields.get("Appliance") == "lamp"
+            and [b for b, _ in function_pins(s)] == ["LAMP"])
+
+
+def is_retiring(s: Symbol) -> bool:
+    return any(all(s.fields.get(f) == v for f, v in r.items()) for r in RETIRING)
+
+
+def superseded(s: Symbol) -> dict[str, str]:
+    """{field: reason} for the fields the rulings supersede on this symbol, whether it carries them or not."""
+    out = {}
+    if is_panel_lever(s):
+        out["Control"] = out["Indication"] = "R1: superseded by the per-pin Control.<pin> and Indication.<pin>"
+    if is_board_lamp(s):
+        out["IndicationToken"] = "R2: superseded by the whole-symbol Indication"
+    if s.fields.get("Role") == "PANEL":
+        out["Invert"] = "R4: superseded; the inversion goes into the token (Indication.X=!...)"
+    return out
+
+
+def expected_token(s: Symbol, base: str, etype: str) -> str | None:
+    """R1: the per-pin token field a PANEL lever's function pin states; None when it states none."""
+    exempt = EXEMPT_PINS.get((s.fields.get("Appliance"), s.fields.get("Style")), set())
+    if not is_panel_lever(s) or base in exempt or etype not in ("output", "input"):
+        return None
+    return ("Control." if etype == "output" else "Indication.") + base
+
+
+def tokens_cell(s: Symbol) -> Cell:
+    """The per-pin tokens: on a PANEL lever one entry per function pin (R1), elsewhere the token fields it carries."""
+    present = [f for f in s.fields if f.startswith(PIN_TOKENS)]
+    pins = {b: ty for b, ty in function_pins(s)}
+    items, flags = [], []
+    if is_panel_lever(s):
+        for b, ty in function_pins(s):
+            want = expected_token(s, b, ty)
+            have = [f for f in present if f.split(".", 1)[1] == b]
+            if want is None and not have:
+                items.append(f"{b}: none (deliberate)" if ty in ("output", "input") else f"{b}: none")
+            for f in have:
+                items.append(f"{f}={s.fields[f]}")
+                if want and f != want:
+                    flags.append(f"R1: {f} on a{'n' if ty[0] in 'aeiou' else ''} {ty} pin; {want} expected")
+            if want and want not in have:
+                items.append(f"{b}: {ABSENT}")
+                flags.append(f"R1: missing {want}")
+    for f in present:
+        b = f.split(".", 1)[1]
+        if b not in pins:
+            items.append(f"{f}={s.fields[f]} (no pin)")
+            flags.append(f"R1: {f} names no pin")
+        elif not is_panel_lever(s):
+            items.append(f"{f}={s.fields[f]}")
+            if is_board_lamp(s) and b == "LAMP":
+                flags.append(f"R2: {f} not expected; LAMP is a driver wire, the lamp states one Indication")
+    return Cell(", ".join(items), tuple(sorted(present)), flags)
 
 
 def symbol_cells(s: Symbol) -> dict[str, Cell]:
     """The convention cells of one symbol, before any comparison: the values as written."""
     cells = {f: Cell(s.fields[f] if f in s.fields else ABSENT, s.fields.get(f)) for f in TOKEN_FIELDS}
+    cells["Tokens"] = tokens_cell(s)
     drive = lambda b: s.fields.get("Pin." + b)                 # None: the pin has no Pin.* (a trackplan appliance's pins)
-    bases = [pin_base(n) for n, _, _ in s.pins if n not in MEMBERSHIP_PINS]
+    bases = [b for b, _ in function_pins(s)]
     orphans = sorted(f[4:] for f in s.fields if f.startswith("Pin.") and f[4:] not in {pin_base(n) for n, _, _ in s.pins})
     pins = [f"{b}={drive(b)}" if drive(b) else b for b in bases] + [f"Pin.{b}={s.fields['Pin.' + b]} (no pin)" for b in orphans]
-    cells["Pins"] = Cell(", ".join(pins), tuple(sorted(pins)),
-                         [f"Pin.{b} names no pin" for b in orphans])
+    cells["Pins"] = Cell(", ".join(pins), tuple(sorted(pins)), [f"Pin.{b} names no pin" for b in orphans])
+    if s.fields.get("Role") == "PANEL":                         # R5: a lamp pin (an input function pin) states binary
+        cells["Pins"].flags += [f"R5: lamp pin {b} is {drive(b)}; lamp pins state binary"
+                                for b, ty in function_pins(s) if ty == "input" and drive(b) and drive(b) != "binary"]
     units = []
     for u in sorted(s.units):
         names = [pin_base(n) for n in s.units[u]]
@@ -316,10 +409,11 @@ def convention_kinds(symbols: list[Symbol]) -> list[KindRow]:
     groups: dict[tuple, list[Symbol]] = {}
     for s in symbols:
         groups.setdefault(kind_key(s), []).append(s)
-    kinds = [KindRow(k, members, [symbol_cells(s) for s in members]) for k, members in sorted(groups.items())]
+    kinds = [KindRow(k, members, [symbol_cells(s) for s in members], all(is_retiring(s) for s in members))
+             for k, members in sorted(groups.items())]
     ref = lambda s: f"{s.library}:{s.name}"
     for kind in kinds:
-        # Rule 1: the symbols of one kind disagree in a column.
+        # G1: the symbols of one kind disagree in a column.
         for col in CONVENTION_COLUMNS:
             variants = {repr(row[col].key) for row in kind.cells}
             if len(variants) > 1:
@@ -327,27 +421,35 @@ def convention_kinds(symbols: list[Symbol]) -> list[KindRow]:
                     row[col].flags.append(f"the {len(kind.symbols)} symbols of this kind disagree ({len(variants)} variants)")
         for s, row in zip(kind.symbols, kind.cells):
             role = s.fields.get("Role", "")
-            # Rule 2: a token field absent here and carried by a kind of the same Role, or (Control, Indication)
-            # by a symbol sharing a Style word.
-            for f in TOKEN_FIELDS:
-                if f in s.fields:
-                    continue
-                by_role = [ref(o) for o in symbols if f in o.fields and o.fields.get("Role", "") == role]
-                by_style = [ref(o) for o in symbols if f in o.fields and f in STYLE_SHARED
-                            and style_words(o) & style_words(s) and ref(o) not in by_role]
+            gone = superseded(s)
+            # G2: Name absent here and carried by a kind of the same Role.
+            if "Name" not in s.fields:
+                by_role = [ref(o) for o in symbols if "Name" in o.fields and o.fields.get("Role", "") == role]
                 if by_role:
-                    row[f].flags.append(f"missing; Role {role} carries it on {carriers_text(by_role)}")
-                if by_style:
-                    words = ", ".join(sorted({w for o in symbols if ref(o) in by_style for w in style_words(o) & style_words(s)}))
-                    row[f].flags.append(f"missing; Style {words} carries it on {carriers_text(by_style)}")
-            # Rule 3: a non-setting other field absent here and carried by a symbol of the same family.
+                    row["Name"].flags.append(f"missing; Role {role} carries it on {carriers_text(by_role)}")
+            for f in ("Control", "Indication"):
+                if f in s.fields and f in gone:                # R1: the whole-symbol form on a lever
+                    row[f].flags.append(gone[f])
+                if f in s.fields and role == "APPLIANCE":      # R3: an appliance matches its panel appliance by Name
+                    row[f].flags.append("R3: unexpected; an APPLIANCE carries no tokens (it matches by Name)")
+            if is_board_lamp(s) and "Indication" not in s.fields:
+                row["Indication"].flags.append("R2: missing; a model board lamp states one Indication expression")
+            for f in ("IndicationToken", "Invert"):             # R2, R4: superseded fields carried
+                if f in s.fields and f in gone:
+                    row["Other fields"].flags.append(f"{f}: {gone[f]}")
+            # G3: a non-setting other field absent here, carried in the family, and not superseded here.
             mine = set(other_fields(s))
             family = [o for o in symbols if family_key(o) == family_key(s)]
-            wanted = {f for o in family for f in other_fields(o) if not _SNAKE_CASE.match(f)} - mine
+            wanted = {f for o in family for f in other_fields(o) if not _SNAKE_CASE.match(f)} - mine - set(gone)
             for f in sorted(wanted, key=str.lower):
                 row["Other fields"].flags.append(
                     f"missing {f}; carried by {carriers_text([ref(o) for o in family if f in o.fields])}")
+        if kind.retiring:                                      # R6: marked, never flagged
+            for row in kind.cells:
+                for c in row.values():
+                    c.flags.clear()
     return kinds
+
 
 
 # --- page -----------------------------------------------------------------------------------
@@ -1283,9 +1385,12 @@ Pins read name (number) electrical type = Pin.&lt;base&gt; value. A middle dot m
 </section>
 <section id="tab-conventions" hidden>
 <p class="meta">One group per kind (Role, Appliance, Kind, Style, IC as the symbols carry them), one row per symbol. A flagged
-cell (&#9873;) says why: the symbols of a kind disagree; Name, Control or Indication is missing while another kind of the
-same Role, or (Control, Indication) a symbol sharing a Style word, carries it; another field is missing while its family
-(Role and Appliance) carries it (settings excepted); or a Pin.* names no pin. Pins read base=drive; Units read
+cell (&#9873;) says why. G rules: the symbols of a kind disagree (G1); Name is missing while another kind of the same
+Role carries it (G2); another field is missing while its family carries it, settings and superseded fields excepted
+(G3); a Pin.* names no pin (G4). Token rulings of 2026-10-28: a PANEL lever states Control.&lt;pin&gt; or
+Indication.&lt;pin&gt; per function pin (R1); a model board lamp states one Indication (R2); an APPLIANCE carries no tokens
+(R3); Invert on a PANEL symbol is superseded (R4); a PANEL lamp pin states binary (R5); a retiring kind is not flagged
+(R6). Pins read base=drive; Units read
 unit [drive words]: pin bases. A dash is an absent field.</p>
 <div class="controls">
 <input type="search" id="convsearch" placeholder="search kinds" aria-label="search kinds">

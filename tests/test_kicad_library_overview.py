@@ -585,41 +585,60 @@ class GraphicsPageTests(unittest.TestCase):
         self.assertEqual(overview.pin_base("EN"), "EN")
 
 
-def sym(name: str, fields: dict[str, str], units: dict[int, list[str]], library: str = "Lib") -> overview.Symbol:
-    """An in-memory symbol: every pin is an input numbered in order; units as given."""
-    pins = [(p, str(i + 1), "input") for i, p in enumerate(p for u in sorted(units) for p in units[u])]
+def sym(name: str, fields: dict[str, str], units: dict[int, list[str]], library: str = "Lib",
+        outputs: tuple[str, ...] = ()) -> overview.Symbol:
+    """An in-memory symbol: pins numbered in order, outputs as named, Column passive, every other pin an input."""
+    etype = lambda p: "output" if p in outputs else "passive" if p == "Column" else "input"
+    pins = [(p, str(i + 1), etype(p)) for i, p in enumerate(p for u in sorted(units) for p in units[u])]
     return overview.Symbol(library, name, dict(fields), pins, units)
 
 
-# A desk switch lever and a maintainer-call lever (PANEL), a trackplan maintainer call (APPLIANCE) sharing the
-# maintainer_call Style, and two drawings of one field device kind that disagree on a drive.
+# PANEL levers: a switch lever stating one of its four per-pin tokens on the wrong pin direction and one naming no
+# pin; a maintainer-call lever in the superseded whole-symbol form with a level lamp pin; a lock lever with its
+# deliberate UNUSED pin and Invert. A model board lamp with IndicationToken, a retiring PANEL lamp, a trackplan
+# maintainer call (APPLIANCE) carrying Indication, a plain APPLIANCE, and one field device kind drawn twice.
 LEVER_SWITCH = sym("LeverSwitch", {"Role": "PANEL", "Appliance": "lever", "Style": "switch", "Name": "${Value}",
-                                   "Pin.NWS": "binary", "Pin.NWK": "binary"},
-                   {1: ["Column", "~{NWS}"], 2: ["~{NWK}"]})
+                                   "Control.NWS": "${Value}NWS", "Control.NWK": "${Value}NWK", "Indication.XX": "x",
+                                   "Pin.NWS": "binary", "Pin.RWS": "binary", "Pin.NWK": "binary"},
+                   {1: ["Column", "~{NWS}", "~{RWS}"], 2: ["~{NWK}"]}, outputs=("~{NWS}", "~{RWS}"))
 LEVER_MCALL = sym("LeverMCall", {"Role": "PANEL", "Appliance": "lever", "Style": "maintainer_call",
                                  "Name": "${Value}MC", "Control": "${Name}S", "Indication": "${Name}K",
                                  "Pin.MCS": "binary", "Pin.MCK": "level"},
-                  {1: ["Column", "~{MCS}"], 2: ["~{MCK}"]}, library="Office")
+                  {1: ["Column", "~{MCS}"], 2: ["~{MCK}"]}, library="Office", outputs=("~{MCS}",))
+LEVER_LOCK = sym("LeverLock", {"Role": "PANEL", "Appliance": "lever", "Style": "lock", "Name": "${Value}",
+                               "Invert": "WLK", "Control.WLS": "a", "Indication.WLK": "!${Value}WLK",
+                               "Pin.UNUSED": "binary", "Pin.WLS": "binary", "Pin.WLK": "binary"},
+                 {1: ["Column", "~{UNUSED}", "~{WLS}"], 2: ["~{WLK}"]}, outputs=("~{UNUSED}", "~{WLS}"))
+BOARD_LAMP = sym("BoardLamp", {"Role": "PANEL", "Appliance": "lamp", "Style": "board", "Name": "${Value}",
+                               "IndicationToken": "", "Pin.LAMP": "binary"}, {1: ["~{LAMP}"]})
+OLD_LAMP = sym("OldLamp", {"Role": "PANEL", "Appliance": "lamp", "Style": "indication", "Name": "${Value}",
+                           "IndicationToken": "", "Pin.LAMP": "level"}, {1: ["Column", "~{LAMP}"]})
 TRACK_MCALL = sym("TrackMCall", {"Role": "APPLIANCE", "Appliance": "lamp", "Style": "maintainer_call",
                                  "Name": "${Value}MC", "Indication": "${Name}K", "Pin.MCK": "level"},
                   {1: ["MC"]}, library="Trackplan")
-LAMP_A = sym("LampA", {"Role": "DEVICE", "Appliance": "lamp", "Name": "${Value}", "Pin.LAMP": "binary", "Address": ""},
-             {1: ["~{LAMP}"]})
+TRACK_SWITCH = sym("TrackSwitch", {"Role": "APPLIANCE", "Appliance": "switch", "Style": "powered", "Name": "${Value}"},
+                   {1: ["C", "N", "R"]})
+LAMP_A = sym("LampA", {"Role": "DEVICE", "Appliance": "lamp", "Name": "${Value}", "Pin.LAMP": "binary", "Address": "",
+                       "Invert": "LAMP"}, {1: ["~{LAMP}"]})
 LAMP_B = sym("LampB", {"Role": "DEVICE", "Appliance": "lamp", "Name": "${Value}", "Pin.LAMP": "level", "hold_ms": "5"},
              {1: ["~{LAMP}"]})
+ALL = [LEVER_SWITCH, LEVER_MCALL, LEVER_LOCK, BOARD_LAMP, OLD_LAMP, TRACK_MCALL, TRACK_SWITCH, LAMP_A, LAMP_B]
 
 
 class ConventionsTests(unittest.TestCase):
     def setUp(self):
-        self.kinds = overview.convention_kinds([LEVER_SWITCH, LEVER_MCALL, TRACK_MCALL, LAMP_A, LAMP_B])
+        self.kinds = overview.convention_kinds(ALL)
         self.by_symbol = {s.name: (k, cells) for k in self.kinds for s, cells in zip(k.symbols, k.cells)}
 
     def cell(self, symbol: str, column: str) -> overview.Cell:
         return self.by_symbol[symbol][1][column]
 
+    def flags(self, symbol: str) -> list[str]:
+        return [f for c in self.by_symbol[symbol][1].values() for f in c.flags]
+
     def test_kinds_are_keyed_by_fields_never_by_name(self):
         labels = [k.label for k in self.kinds]
-        self.assertEqual(len(self.kinds), 4)
+        self.assertEqual(len(self.kinds), 8)
         self.assertIn("Role=PANEL · Appliance=lever · Style=switch", labels)
         lamps = self.by_symbol["LampA"][0]
         self.assertEqual([s.name for s in lamps.symbols], ["LampA", "LampB"])   # one kind, two drawings
@@ -632,30 +651,65 @@ class ConventionsTests(unittest.TestCase):
         self.assertEqual(self.cell("LeverMCall", "Pins").text, "MCS=binary, MCK=level")     # Column is a seam pin
         self.assertEqual(self.cell("LeverMCall", "Units").text, "1 [binary]: Column MCS; 2 [level]: MCK")
         self.assertEqual(self.cell("LampB", "Other fields").text, "hold_ms=5")
+        self.assertNotIn("Control.NWS", self.cell("LeverSwitch", "Other fields").text)   # per-pin tokens have their column
 
     def test_symbols_of_one_kind_that_disagree_are_flagged(self):
         for name in ("LampA", "LampB"):
             self.assertTrue(any("disagree" in f for f in self.cell(name, "Pins").flags), name)       # binary vs level
             self.assertTrue(any("disagree" in f for f in self.cell(name, "Units").flags), name)
             self.assertFalse(self.cell(name, "Name").flags, name)                                    # both ${Value}
-        self.assertFalse(any("disagree" in f for c in self.by_symbol["LeverSwitch"][1].values() for f in c.flags))
 
-    def test_a_token_carried_by_another_kind_of_the_role_is_missing_here(self):
-        control = self.cell("LeverSwitch", "Control").flags
-        self.assertEqual(len(control), 1)
-        self.assertIn("Role PANEL", control[0])
-        self.assertIn("Office:LeverMCall", control[0])
-        self.assertTrue(self.cell("LeverSwitch", "Indication").flags)
-        self.assertFalse(self.cell("LeverMCall", "Control").flags)                 # it carries them
-        self.assertFalse(self.cell("LeverSwitch", "Name").flags)                   # every PANEL has a Name
+    def test_r1_a_panel_lever_states_a_token_per_function_pin(self):
+        tokens = self.cell("LeverSwitch", "Tokens")
+        self.assertIn("Control.NWS=${Value}NWS", tokens.text)
+        self.assertIn("RWS: " + overview.ABSENT, tokens.text)
+        self.assertIn("R1: missing Control.RWS", tokens.flags)
+        self.assertIn("R1: Control.NWK on an input pin; Indication.NWK expected", tokens.flags)
+        self.assertIn("R1: missing Indication.NWK", tokens.flags)
+        self.assertIn("R1: Indication.XX names no pin", tokens.flags)
+        self.assertNotIn("R1: missing Control.NWS", tokens.flags)
+        self.assertFalse(self.cell("LeverSwitch", "Control").flags)          # the whole-symbol form is not asked for
 
-    def test_control_and_indication_compare_across_a_shared_style(self):
-        # No APPLIANCE carries Control, but the maintainer_call lever does: the trackplan maintainer call lacks it.
-        flags = self.cell("TrackMCall", "Control").flags
-        self.assertEqual(len(flags), 1)
-        self.assertIn("Style maintainer_call", flags[0])
-        self.assertIn("Office:LeverMCall", flags[0])
-        self.assertFalse(self.cell("TrackMCall", "Indication").flags)
+    def test_r1_a_deliberately_tokenless_pin_is_not_flagged(self):
+        tokens = self.cell("LeverLock", "Tokens")
+        self.assertIn("UNUSED: none (deliberate)", tokens.text)
+        self.assertEqual(tokens.flags, [])                                  # WLS and WLK state theirs
+
+    def test_r1_the_whole_symbol_form_on_a_lever_is_superseded(self):
+        for f in ("Control", "Indication"):
+            self.assertEqual(len(self.cell("LeverMCall", f).flags), 1)
+            self.assertTrue(self.cell("LeverMCall", f).flags[0].startswith("R1: superseded"))
+        self.assertIn("R1: missing Control.MCS", self.cell("LeverMCall", "Tokens").flags)
+        self.assertIn("R1: missing Indication.MCK", self.cell("LeverMCall", "Tokens").flags)
+
+    def test_r2_a_model_board_lamp_states_one_indication(self):
+        self.assertEqual(self.cell("BoardLamp", "Indication").flags,
+                         ["R2: missing; a model board lamp states one Indication expression"])
+        self.assertTrue(any(f.startswith("IndicationToken: R2: superseded") for f in self.cell("BoardLamp", "Other fields").flags))
+        self.assertEqual(self.cell("BoardLamp", "Tokens").flags, [])        # no Indication.LAMP expected
+        self.assertFalse(self.cell("BoardLamp", "Control").flags)
+
+    def test_r3_an_appliance_carries_no_tokens(self):
+        self.assertEqual(self.cell("TrackMCall", "Indication").flags,
+                         ["R3: unexpected; an APPLIANCE carries no tokens (it matches by Name)"])
+        self.assertFalse(self.cell("TrackMCall", "Control").flags)          # lacking them is never flagged
+        self.assertFalse(self.flags("TrackSwitch"))
+
+    def test_r4_invert_on_a_panel_symbol_is_superseded_and_never_asked_for(self):
+        self.assertTrue(any(f.startswith("Invert: R4: superseded") for f in self.cell("LeverLock", "Other fields").flags))
+        self.assertFalse(any("Invert" in f for f in self.flags("LeverSwitch")))     # its absence is not flagged
+        self.assertFalse(any("Invert" in f for f in self.flags("LampA")))           # DEVICE keeps Invert
+
+    def test_r5_a_panel_lamp_pin_states_binary(self):
+        self.assertIn("R5: lamp pin MCK is level; lamp pins state binary", self.cell("LeverMCall", "Pins").flags)
+        self.assertFalse(any(f.startswith("R5") for f in self.flags("BoardLamp")))
+        self.assertFalse(any(f.startswith("R5") for f in self.flags("LampB")))      # a DEVICE pin is not a panel lamp
+
+    def test_r6_a_retiring_kind_is_marked_and_not_flagged(self):
+        kind = self.by_symbol["OldLamp"][0]
+        self.assertTrue(kind.retiring)
+        self.assertTrue(kind.label.endswith("(retiring)"))
+        self.assertEqual(kind.flagged, 0)                                   # level LAMP, IndicationToken, no Indication
 
     def test_a_pin_field_naming_no_pin_is_flagged(self):
         pins = self.cell("TrackMCall", "Pins")
