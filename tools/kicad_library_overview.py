@@ -42,6 +42,27 @@ scales together. The column set, order, dragged widths, image scale and ceiling,
 keys and folded groups are remembered in localStorage when available (under a versioned key); the
 value filters and the measured default widths are not.
 
+A second tab, Conventions (also reached as #conventions), audits whether the libraries apply their
+field conventions consistently. One group of rows per kind: the Role, Appliance, Kind, Style and IC
+a symbol carries (fields, never the symbol name), one row per symbol that draws the kind
+(library:name). Its columns are the conventions: the raw Name, Control and Indication fields (the
+`${...}` macros as written; absent is shown as a dash), the pins as base=Pin.* drive (seam pins such
+as Column left out; a Pin.* naming no pin is listed and flagged), the unit structure (each unit with
+pins: its drive words and its pin bases, membership pins included), the other fields, and the
+symbol-field lint's messages (`lint_symbol`, the same messages as the lint's command line). A cell
+is flagged, with its reasons inline and in its tooltip, when:
+- the symbols of one kind disagree in that column (Pins and Units compare as sets per unit; Other
+  fields compares the field names, not their values);
+- Name, Control or Indication is absent while some kind of the same Role carries it, or (Control
+  and Indication only) while a symbol sharing a Style word carries it, so a lever and its lamp drawn
+  in different libraries are compared (PanelMCall and MaintainerCall share maintainer_call);
+- an other field is absent while a symbol of the same family carries it (family: Role and
+  Appliance, or the kind itself where there is no Appliance); lower_snake_case settings are
+  per-device and never compared across symbols;
+- a Pin.* field names no pin.
+No other rule is applied: the view reports "carried by some, missing on others", never what a kind
+should carry. "Only flagged kinds" hides the clean groups; the search box matches any text.
+
 The default <out> is <directory of the first library>/production/overview/ (the Railroad repo
 gitignores production/). `--no-render` skips kicad-cli and omits the graphics column.
 """
@@ -60,6 +81,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from kicad_services.sch_text import library_standard_properties, library_symbols  # noqa: E402
+from contract.lint_symbol_fields import MEMBERSHIP_PINS, library_bodies, lint_symbol  # noqa: E402
 
 KICAD_CLI_APP = "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
 PAGE_NAME = "library-overview.html"
@@ -70,7 +92,7 @@ ALWAYS_SHOWN = {"Library", "Symbol", "Extends", "Role", "Appliance", "Style", "G
 # Column groups of the Columns control, in display order. Core is ALWAYS_SHOWN; Pin.* is every Pin.<base>
 # field; Settings is every lower_snake_case field; Other is whatever is left (Kind, ki_* excluded by Settings).
 KICAD_FIELDS = ("Reference", "Value", "Footprint", "Datasheet")
-CONTRACT_FIELDS = ("IC", "Address", "Invert", "Color", "IndicationToken", "IndicationCeiling", "CP Name", "TC",
+CONTRACT_FIELDS = ("IC", "Address", "Invert", "Color", "IndicationToken", "IndicationCeiling", "CP Name", "Control", "Indication", "TC",
                    "Processor", "Display", "Milepost")
 GROUPS = ("Core", "KiCad fields", "Contract", "Pin.*", "Settings", "Other")
 DEFAULT_CLOSED_GROUPS = ("Pin.*", "Settings")
@@ -112,6 +134,7 @@ class Symbol:
     extends: str | None = None
     graphics: list[str] = field(default_factory=list)  # SVG paths relative to the page
     sizes: dict[str, tuple[float, float]] = field(default_factory=dict)  # SVG path -> (width, height) mm; absent when unknown
+    lint: list[tuple[str, str]] = field(default_factory=list)           # (severity, message) from lint_symbol, no prefix
 
 
 def find_kicad_cli() -> str | None:
@@ -153,14 +176,18 @@ def column_group(name: str) -> str:
 
 
 def load_library(lib_file: Path) -> list[Symbol]:
-    """The symbols of one library in file order; a derived symbol inherits what it does not restate."""
+    """The symbols of one library in file order; a derived symbol inherits what it does not restate. Each carries
+    the symbol-field lint's messages for it, linted as the lint's command line does (the symbol as written)."""
     text = lib_file.read_text()
     standard = library_standard_properties(text)
     symbols = library_symbols(text)
+    bodies = library_bodies(text)
     out: dict[str, Symbol] = {}
     for name, sym in symbols.items():
         fields = {**standard.get(name, {}), **sym["properties"]}
         s = Symbol(lib_file.stem, name, fields, list(sym["pins"]), dict(sym["units"]), sym["extends"])
+        prefix = f"{lib_file.stem}:{name}: "
+        s.lint = [(sev, msg.removeprefix(prefix)) for sev, msg in lint_symbol(lib_file.stem, name, sym, bodies.get(name))]
         parent = out.get(s.extends) if s.extends else None
         if parent:
             s.fields = {**parent.fields, **s.fields}
@@ -207,6 +234,120 @@ def svg_size_mm(svg_file: Path) -> tuple[float, float] | None:
             return None
     width, height = sides
     return (width, height) if width > 0 and height > 0 else None
+
+
+# --- conventions: one group per kind, one row per symbol, a cell per convention (the module docstring has the rules) ---
+
+KEY_FIELDS = ("Role", "Appliance", "Kind", "Style", "IC")       # what a kind is, in label order; empty values do not count
+TOKEN_FIELDS = ("Name", "Control", "Indication")               # the token conventions, compared across the Role
+STYLE_SHARED = ("Control", "Indication")                       # ... and these also across symbols sharing a Style word
+CONVENTION_COLUMNS = TOKEN_FIELDS + ("Pins", "Units", "Other fields")
+NOT_OTHER = set(KICAD_FIELDS) | {"Description"} | set(KEY_FIELDS) | set(TOKEN_FIELDS)   # plus Pin.* and ki_*
+ABSENT = "—"                                              # how an absent field shows
+
+
+@dataclass
+class Cell:
+    text: str                                 # what the cell shows
+    key: object                               # what is compared between the symbols of one kind
+    flags: list[str] = field(default_factory=list)
+
+
+@dataclass
+class KindRow:
+    key: tuple[tuple[str, str], ...]          # ((field, value), ...) in KEY_FIELDS order
+    symbols: list[Symbol]
+    cells: list[dict[str, Cell]]              # per symbol, one Cell per CONVENTION_COLUMNS entry
+
+    @property
+    def label(self) -> str:
+        return " · ".join(f"{f}={v}" for f, v in self.key) or "(no Role)"
+
+    @property
+    def flagged(self) -> int:
+        return sum(1 for row in self.cells for c in row.values() if c.flags)
+
+
+def kind_key(s: Symbol) -> tuple[tuple[str, str], ...]:
+    return tuple((f, s.fields[f]) for f in KEY_FIELDS if s.fields.get(f))
+
+
+def family_key(s: Symbol) -> tuple:
+    """Role and Appliance; the kind itself where the symbol has no Appliance."""
+    return (s.fields.get("Role", ""), s.fields["Appliance"]) if s.fields.get("Appliance") else kind_key(s)
+
+
+def style_words(s: Symbol) -> set[str]:
+    return {w.strip() for w in s.fields.get("Style", "").split(",") if w.strip()}
+
+
+def other_fields(s: Symbol) -> list[str]:
+    return [f for f in s.fields if f not in NOT_OTHER and not f.startswith(("Pin.", "ki_"))]
+
+
+def symbol_cells(s: Symbol) -> dict[str, Cell]:
+    """The convention cells of one symbol, before any comparison: the values as written."""
+    cells = {f: Cell(s.fields[f] if f in s.fields else ABSENT, s.fields.get(f)) for f in TOKEN_FIELDS}
+    drive = lambda b: s.fields.get("Pin." + b)                 # None: the pin has no Pin.* (a trackplan appliance's pins)
+    bases = [pin_base(n) for n, _, _ in s.pins if n not in MEMBERSHIP_PINS]
+    orphans = sorted(f[4:] for f in s.fields if f.startswith("Pin.") and f[4:] not in {pin_base(n) for n, _, _ in s.pins})
+    pins = [f"{b}={drive(b)}" if drive(b) else b for b in bases] + [f"Pin.{b}={s.fields['Pin.' + b]} (no pin)" for b in orphans]
+    cells["Pins"] = Cell(", ".join(pins), tuple(sorted(pins)),
+                         [f"Pin.{b} names no pin" for b in orphans])
+    units = []
+    for u in sorted(s.units):
+        names = [pin_base(n) for n in s.units[u]]
+        if names:                                              # drive words of the unit's pins; "seam" when all are seam pins
+            words = "seam" if all(n in MEMBERSHIP_PINS for n in names) else "/".join(sorted({d for n in names if (d := drive(n))}))
+            units.append((u, words, names))
+    cells["Units"] = Cell("; ".join(f"{u}{f' [{w}]' if w else ''}: {' '.join(n)}" for u, w, n in units),
+                          tuple((u, w, tuple(sorted(n))) for u, w, n in units))
+    other = other_fields(s)
+    cells["Other fields"] = Cell(", ".join(f"{f}={s.fields[f]}" if s.fields[f] else f for f in other), frozenset(other))
+    return cells
+
+
+def carriers_text(names: list[str], limit: int = 3) -> str:
+    return ", ".join(names[:limit]) + (f" and {len(names) - limit} more" if len(names) > limit else "")
+
+
+def convention_kinds(symbols: list[Symbol]) -> list[KindRow]:
+    """One KindRow per kind (sorted by its key), each cell flagged by the rules in the module docstring."""
+    groups: dict[tuple, list[Symbol]] = {}
+    for s in symbols:
+        groups.setdefault(kind_key(s), []).append(s)
+    kinds = [KindRow(k, members, [symbol_cells(s) for s in members]) for k, members in sorted(groups.items())]
+    ref = lambda s: f"{s.library}:{s.name}"
+    for kind in kinds:
+        # Rule 1: the symbols of one kind disagree in a column.
+        for col in CONVENTION_COLUMNS:
+            variants = {repr(row[col].key) for row in kind.cells}
+            if len(variants) > 1:
+                for row in kind.cells:
+                    row[col].flags.append(f"the {len(kind.symbols)} symbols of this kind disagree ({len(variants)} variants)")
+        for s, row in zip(kind.symbols, kind.cells):
+            role = s.fields.get("Role", "")
+            # Rule 2: a token field absent here and carried by a kind of the same Role, or (Control, Indication)
+            # by a symbol sharing a Style word.
+            for f in TOKEN_FIELDS:
+                if f in s.fields:
+                    continue
+                by_role = [ref(o) for o in symbols if f in o.fields and o.fields.get("Role", "") == role]
+                by_style = [ref(o) for o in symbols if f in o.fields and f in STYLE_SHARED
+                            and style_words(o) & style_words(s) and ref(o) not in by_role]
+                if by_role:
+                    row[f].flags.append(f"missing; Role {role} carries it on {carriers_text(by_role)}")
+                if by_style:
+                    words = ", ".join(sorted({w for o in symbols if ref(o) in by_style for w in style_words(o) & style_words(s)}))
+                    row[f].flags.append(f"missing; Style {words} carries it on {carriers_text(by_style)}")
+            # Rule 3: a non-setting other field absent here and carried by a symbol of the same family.
+            mine = set(other_fields(s))
+            family = [o for o in symbols if family_key(o) == family_key(s)]
+            wanted = {f for o in family for f in other_fields(o) if not _SNAKE_CASE.match(f)} - mine
+            for f in sorted(wanted, key=str.lower):
+                row["Other fields"].flags.append(
+                    f"missing {f}; carried by {carriers_text([ref(o) for o in family if f in o.fields])}")
+    return kinds
 
 
 # --- page -----------------------------------------------------------------------------------
@@ -271,6 +412,23 @@ td.graphics img{width:var(--nom,NOM_PX);height:var(--nom,NOM_PX);background:#fff
 td.graphics img.mm{--f:clamp(calc(var(--floor,FLOOR_PX) / max(var(--w), var(--h))), var(--scale,SCALE_PX), calc(var(--ceil,CEIL_PX) / max(var(--w), var(--h))));
   width:calc(var(--w) * var(--f) * 1px);height:calc(var(--h) * var(--f) * 1px)}
 td.graphics img.capped{border-style:dashed;border-color:#c60}
+nav.tabs{display:flex;gap:.3em;margin-bottom:.8em;border-bottom:1px solid #bbb}
+nav.tabs button{font:inherit;padding:.3em 1em;border:1px solid #bbb;border-bottom:0;background:#f4f4f8;cursor:pointer;margin-bottom:-1px}
+nav.tabs button[aria-selected=true]{background:#fff;font-weight:600}
+table#conventions{table-layout:auto;width:100%;min-width:72em}
+table#conventions th,table#conventions td{overflow-wrap:break-word}
+table#conventions td{min-width:6em}
+table#conventions thead th{top:0}
+table#conventions tbody{border-top:2px solid #889}
+table#conventions th.kind{background:#f4f4fb;width:14em;font-weight:600}
+table#conventions th.kind .n{display:block;color:#666;font-weight:normal}
+table#conventions td.ref{font-weight:600;white-space:nowrap}
+table#conventions td.flag{background:#fff2e0}
+table#conventions td.flag::before{content:"\\2691 ";color:#c60}
+table#conventions .why{display:block;color:#a50;font-size:.85em}
+table#conventions ul.lint{margin:0;padding-left:1.1em}
+table#conventions .lint-error{color:#b00}
+table#conventions .lint-warning{color:#a60}
 """.replace("NOM_PX", f"{nominal_px()}px").replace("FLOOR_PX", str(IMG_FLOOR)).replace("SCALE_PX", str(IMG_SCALE_DEFAULT)) \
    .replace("CEIL_PX", str(css_ceiling())) \
    + f"table#symbols{{--scale:{IMG_SCALE_DEFAULT};--floor:{IMG_FLOOR};--ceil:{css_ceiling()};--nom:{nominal_px()}px}}\n"
@@ -882,6 +1040,73 @@ SCRIPT = r"""
    .replace("NOMINAL_MM_VALUE", str(IMG_NOMINAL_MM)) \
    .replace("COLUMN_MIN_PX", str(IMG_COLUMN_MIN)).replace("COLUMN_MAX_PX", str(IMG_COLUMN_MAX))
 
+# The tabs and the conventions view: a tab is chosen by the URL hash (#conventions; anything else is the symbols
+# table), so a link opens either; the conventions filter hides whole kind groups (one tbody each).
+TAB_SCRIPT = r"""
+(function () {
+  'use strict';
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('nav.tabs button'));
+  function show(name) {
+    tabs.forEach(function (b) {
+      var on = b.dataset.tab === name;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      document.getElementById('tab-' + b.dataset.tab).hidden = !on;
+    });
+  }
+  function fromHash() { show(location.hash === '#conventions' ? 'conventions' : 'symbols'); }
+  tabs.forEach(function (b) {
+    b.addEventListener('click', function () { history.replaceState(null, '', '#' + b.dataset.tab); show(b.dataset.tab); });
+  });
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+
+  var table = document.getElementById('conventions');
+  var groups = Array.prototype.slice.call(table.tBodies);
+  var search = document.getElementById('convsearch'), onlyFlagged = document.getElementById('convflagged');
+  var count = document.getElementById('convcount');
+  function apply() {
+    var q = search.value.toLowerCase(), shown = 0;
+    groups.forEach(function (g) {
+      var ok = (!onlyFlagged.checked || g.dataset.flagged !== '0') && (!q || g.textContent.toLowerCase().indexOf(q) >= 0);
+      g.hidden = !ok;
+      if (ok) { shown++; }
+    });
+    count.textContent = shown + ' of ' + groups.length + ' kinds';
+  }
+  search.addEventListener('input', apply);
+  onlyFlagged.addEventListener('change', apply);
+  apply();
+})();
+"""
+
+
+def conventions_html(kinds: list[KindRow]) -> str:
+    """The conventions table: one tbody per kind (its th spans the kind's rows), one tr per symbol."""
+    def td(c: Cell) -> str:
+        if not c.flags:
+            return f"<td>{esc(c.text)}</td>"
+        why = "".join(f'<span class="why">{esc(f)}</span>' for f in c.flags)
+        return f'<td class="flag" title="{esc("; ".join(c.flags))}">{esc(c.text)}{why}</td>'
+
+    def lint(s: Symbol) -> str:
+        if not s.lint:
+            return "<td></td>"
+        return '<td><ul class="lint">' + "".join(f'<li class="lint-{esc(sev)}">{esc(sev)}: {esc(m)}</li>'
+                                                for sev, m in s.lint) + "</ul></td>"
+
+    head = "".join(f"<th>{esc(c)}</th>" for c in ("Kind", "Symbol") + CONVENTION_COLUMNS + ("Lint",))
+    bodies = []
+    for kind in kinds:
+        rows = []
+        for i, (s, cells) in enumerate(zip(kind.symbols, kind.cells)):
+            lead = (f'<th class="kind" rowspan="{len(kind.symbols)}">{esc(kind.label)}'
+                    f'<span class="n">{len(kind.symbols)} symbol{"s" if len(kind.symbols) != 1 else ""}, '
+                    f'{kind.flagged} flagged</span></th>') if i == 0 else ""
+            rows.append(f'<tr>{lead}<td class="ref">{esc(s.library)}:{esc(s.name)}</td>'
+                        + "".join(td(cells[c]) for c in CONVENTION_COLUMNS) + lint(s) + "</tr>")
+        bodies.append(f'<tbody data-flagged="{kind.flagged}">' + "".join(rows) + "</tbody>")
+    return f'<table id="conventions"><thead><tr>{head}</tr></thead>{"".join(bodies)}</table>'
+
 
 def esc(s: str) -> str:
     return html.escape(s, quote=True)
@@ -1014,6 +1239,7 @@ def build_page(symbols: list[Symbol], title: str, libraries: list[Path], graphic
         return field_cell(s, c)
 
     rows = ["<tr>" + "".join(cell(s, c) for c in columns) + "</tr>" for s in symbols]
+    kinds = convention_kinds(symbols)
 
     sources = ", ".join(esc(p.name) for p in libraries)
     page = f"""<!doctype html>
@@ -1026,6 +1252,9 @@ def build_page(symbols: list[Symbol], title: str, libraries: list[Path], graphic
 </head>
 <body>
 <h1>{esc(title)}</h1>
+<nav class="tabs" role="tablist"><button type="button" role="tab" data-tab="symbols" aria-selected="true">Symbols</button>
+<button type="button" role="tab" data-tab="conventions" aria-selected="false">Conventions ({sum(1 for k in kinds if k.flagged)} of {len(kinds)} kinds flagged)</button></nav>
+<section id="tab-symbols">
 <p class="meta">{len(symbols)} symbols from {sources}. Click a header to add it to the sort as the last key (again to reverse
 it, a third time to remove it); sorting headers show their priority and direction. Drag a header onto another to reorder,
 drag its right edge to resize; right-click a header to hide it or its group. The funnel in a filter cell picks values.
@@ -1051,6 +1280,20 @@ Pins read name (number) electrical type = Pin.&lt;base&gt; value. A middle dot m
 {chr(10).join(rows)}
 </tbody>
 </table>
+</section>
+<section id="tab-conventions" hidden>
+<p class="meta">One group per kind (Role, Appliance, Kind, Style, IC as the symbols carry them), one row per symbol. A flagged
+cell (&#9873;) says why: the symbols of a kind disagree; Name, Control or Indication is missing while another kind of the
+same Role, or (Control, Indication) a symbol sharing a Style word, carries it; another field is missing while its family
+(Role and Appliance) carries it (settings excepted); or a Pin.* names no pin. Pins read base=drive; Units read
+unit [drive words]: pin bases. A dash is an absent field.</p>
+<div class="controls">
+<input type="search" id="convsearch" placeholder="search kinds" aria-label="search kinds">
+<label><input type="checkbox" id="convflagged"> Only flagged kinds</label>
+<span id="convcount"></span>
+</div>
+{conventions_html(kinds)}
+</section>
 <div id="valuepanel" hidden>
 <input type="search" id="valuesearch" placeholder="search values" aria-label="search values">
 <p><button type="button" id="valall">Select all</button> <button type="button" id="valclear">Clear</button></p>
@@ -1063,6 +1306,7 @@ Pins read name (number) electrical type = Pin.&lt;base&gt; value. A middle dot m
 <button type="button" data-act="all">Show all</button>
 </div>
 <script>{SCRIPT}</script>
+<script>{TAB_SCRIPT}</script>
 </body>
 </html>
 """

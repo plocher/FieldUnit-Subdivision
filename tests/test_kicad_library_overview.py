@@ -144,7 +144,8 @@ FIXTURE = '''(kicad_symbol_lib
 
 
 class TableReader(HTMLParser):
-    """Headers (first thead row), one list of cell texts per tbody row, and the ids and classes seen."""
+    """Headers (first thead row), one list of cell texts per tbody row, and the ids and classes seen.
+    Rows and headers come from the symbols table only (the first table); the conventions table is read apart."""
 
     def __init__(self):
         super().__init__()
@@ -156,12 +157,17 @@ class TableReader(HTMLParser):
         self._section = None
         self._cell: list[str] | None = None
         self._header_row_done = False
+        self._tables = 0
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
         if "id" in attrs:
             self.ids.add(attrs["id"])
         self.classes.update((attrs.get("class") or "").split())
+        if tag == "table":
+            self._tables += 1
+        if self._tables > 1:
+            return
         if tag in ("thead", "tbody"):
             self._section = tag
         elif tag == "tr" and self._section == "tbody":
@@ -577,6 +583,118 @@ class GraphicsPageTests(unittest.TestCase):
     def test_pin_base(self):
         self.assertEqual(overview.pin_base("~{OCC}"), "OCC")
         self.assertEqual(overview.pin_base("EN"), "EN")
+
+
+def sym(name: str, fields: dict[str, str], units: dict[int, list[str]], library: str = "Lib") -> overview.Symbol:
+    """An in-memory symbol: every pin is an input numbered in order; units as given."""
+    pins = [(p, str(i + 1), "input") for i, p in enumerate(p for u in sorted(units) for p in units[u])]
+    return overview.Symbol(library, name, dict(fields), pins, units)
+
+
+# A desk switch lever and a maintainer-call lever (PANEL), a trackplan maintainer call (APPLIANCE) sharing the
+# maintainer_call Style, and two drawings of one field device kind that disagree on a drive.
+LEVER_SWITCH = sym("LeverSwitch", {"Role": "PANEL", "Appliance": "lever", "Style": "switch", "Name": "${Value}",
+                                   "Pin.NWS": "binary", "Pin.NWK": "binary"},
+                   {1: ["Column", "~{NWS}"], 2: ["~{NWK}"]})
+LEVER_MCALL = sym("LeverMCall", {"Role": "PANEL", "Appliance": "lever", "Style": "maintainer_call",
+                                 "Name": "${Value}MC", "Control": "${Name}S", "Indication": "${Name}K",
+                                 "Pin.MCS": "binary", "Pin.MCK": "level"},
+                  {1: ["Column", "~{MCS}"], 2: ["~{MCK}"]}, library="Office")
+TRACK_MCALL = sym("TrackMCall", {"Role": "APPLIANCE", "Appliance": "lamp", "Style": "maintainer_call",
+                                 "Name": "${Value}MC", "Indication": "${Name}K", "Pin.MCK": "level"},
+                  {1: ["MC"]}, library="Trackplan")
+LAMP_A = sym("LampA", {"Role": "DEVICE", "Appliance": "lamp", "Name": "${Value}", "Pin.LAMP": "binary", "Address": ""},
+             {1: ["~{LAMP}"]})
+LAMP_B = sym("LampB", {"Role": "DEVICE", "Appliance": "lamp", "Name": "${Value}", "Pin.LAMP": "level", "hold_ms": "5"},
+             {1: ["~{LAMP}"]})
+
+
+class ConventionsTests(unittest.TestCase):
+    def setUp(self):
+        self.kinds = overview.convention_kinds([LEVER_SWITCH, LEVER_MCALL, TRACK_MCALL, LAMP_A, LAMP_B])
+        self.by_symbol = {s.name: (k, cells) for k in self.kinds for s, cells in zip(k.symbols, k.cells)}
+
+    def cell(self, symbol: str, column: str) -> overview.Cell:
+        return self.by_symbol[symbol][1][column]
+
+    def test_kinds_are_keyed_by_fields_never_by_name(self):
+        labels = [k.label for k in self.kinds]
+        self.assertEqual(len(self.kinds), 4)
+        self.assertIn("Role=PANEL · Appliance=lever · Style=switch", labels)
+        lamps = self.by_symbol["LampA"][0]
+        self.assertEqual([s.name for s in lamps.symbols], ["LampA", "LampB"])   # one kind, two drawings
+        self.assertEqual(lamps.label, "Role=DEVICE · Appliance=lamp")
+
+    def test_cells_show_the_raw_macros_pins_and_units(self):
+        self.assertEqual(self.cell("LeverMCall", "Name").text, "${Value}MC")
+        self.assertEqual(self.cell("LeverMCall", "Control").text, "${Name}S")
+        self.assertEqual(self.cell("LeverSwitch", "Control").text, overview.ABSENT)
+        self.assertEqual(self.cell("LeverMCall", "Pins").text, "MCS=binary, MCK=level")     # Column is a seam pin
+        self.assertEqual(self.cell("LeverMCall", "Units").text, "1 [binary]: Column MCS; 2 [level]: MCK")
+        self.assertEqual(self.cell("LampB", "Other fields").text, "hold_ms=5")
+
+    def test_symbols_of_one_kind_that_disagree_are_flagged(self):
+        for name in ("LampA", "LampB"):
+            self.assertTrue(any("disagree" in f for f in self.cell(name, "Pins").flags), name)       # binary vs level
+            self.assertTrue(any("disagree" in f for f in self.cell(name, "Units").flags), name)
+            self.assertFalse(self.cell(name, "Name").flags, name)                                    # both ${Value}
+        self.assertFalse(any("disagree" in f for c in self.by_symbol["LeverSwitch"][1].values() for f in c.flags))
+
+    def test_a_token_carried_by_another_kind_of_the_role_is_missing_here(self):
+        control = self.cell("LeverSwitch", "Control").flags
+        self.assertEqual(len(control), 1)
+        self.assertIn("Role PANEL", control[0])
+        self.assertIn("Office:LeverMCall", control[0])
+        self.assertTrue(self.cell("LeverSwitch", "Indication").flags)
+        self.assertFalse(self.cell("LeverMCall", "Control").flags)                 # it carries them
+        self.assertFalse(self.cell("LeverSwitch", "Name").flags)                   # every PANEL has a Name
+
+    def test_control_and_indication_compare_across_a_shared_style(self):
+        # No APPLIANCE carries Control, but the maintainer_call lever does: the trackplan maintainer call lacks it.
+        flags = self.cell("TrackMCall", "Control").flags
+        self.assertEqual(len(flags), 1)
+        self.assertIn("Style maintainer_call", flags[0])
+        self.assertIn("Office:LeverMCall", flags[0])
+        self.assertFalse(self.cell("TrackMCall", "Indication").flags)
+
+    def test_a_pin_field_naming_no_pin_is_flagged(self):
+        pins = self.cell("TrackMCall", "Pins")
+        self.assertEqual(pins.text, "Pin.MCK=level (no pin)")                     # MC is a seam pin: not listed
+        self.assertEqual(self.cell("TrackMCall", "Units").text, "1 [seam]: MC")
+        self.assertEqual(pins.flags, ["Pin.MCK names no pin"])
+
+    def test_other_fields_compare_in_the_family_and_settings_never(self):
+        self.assertTrue(any("missing Address" in f for f in self.cell("LampB", "Other fields").flags))
+        self.assertFalse(any("hold_ms" in f for f in self.cell("LampA", "Other fields").flags))
+
+    def test_page_has_the_conventions_tab_with_lint_messages(self):
+        page, _ = overview.build_page([LEVER_SWITCH, LEVER_MCALL], "T", [], graphics=False)
+        self.assertIn('<table id="conventions">', page)
+        self.assertIn('data-tab="conventions"', page)
+        self.assertEqual(page.count('<tbody data-flagged='), 2)
+        self.assertIn('class="flag"', page)
+
+
+class LintMessagesTests(unittest.TestCase):
+    def test_each_symbol_carries_the_lints_messages_without_its_prefix(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            lib = Path(tmp) / "Fixture.kicad_sym"
+            lib.write_text(FIXTURE)
+            gadget = {s.name: s for s in overview.load_library(lib)}["Gadget"]
+        self.assertTrue(gadget.lint)
+        self.assertTrue(all(not m.startswith("Fixture:Gadget") for _, m in gadget.lint))
+        self.assertIn(("error", "Pin.OCC = 'binary out' is not in the vocabulary (one primary word; direction is the pin type)"),
+                      gadget.lint)
+
+    def test_control_and_indication_are_contract_fields_not_settings(self):
+        from contract.lint_symbol_fields import lint_symbol
+        props = {"Role": "PANEL", "Appliance": "lever", "Style": "board", "Name": "${Value}MC",
+                 "Control": "${Name}S", "Indication": "${Name}K", "Pin.MCS": "binary"}
+        sym_dict = {"properties": props, "pins": [("~{MCS}", "1", "input")], "units": {1: ["~{MCS}"]},
+                    "locked": False, "value_autoplace": False}
+        self.assertEqual(lint_symbol("L", "S", sym_dict), [])
+        self.assertIn("Control", overview.CONTRACT_FIELDS)
+        self.assertIn("Indication", overview.CONTRACT_FIELDS)
 
 
 if __name__ == "__main__":
