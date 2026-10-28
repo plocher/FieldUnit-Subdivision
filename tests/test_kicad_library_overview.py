@@ -606,7 +606,7 @@ LEVER_MCALL = sym("LeverMCall", {"Role": "PANEL", "Appliance": "lever", "Style":
                                  "Pin.MCS": "binary", "Pin.MCK": "level"},
                   {1: ["Column", "~{MCS}"], 2: ["~{MCK}"]}, library="Office", outputs=("~{MCS}",))
 LEVER_LOCK = sym("LeverLock", {"Role": "PANEL", "Appliance": "lever", "Style": "lock", "Name": "${Value}",
-                               "Invert": "WLK", "Control.WLS": "a", "Indication.WLK": "!${Value}WLK",
+                               "Invert": "WLK", "Control.UNUSED": "", "Control.WLS": "a", "Indication.WLK": "!${Value}WLK",
                                "Pin.UNUSED": "binary", "Pin.WLS": "binary", "Pin.WLK": "binary"},
                  {1: ["Column", "~{UNUSED}", "~{WLS}"], 2: ["~{WLK}"]}, outputs=("~{UNUSED}", "~{WLS}"))
 BOARD_LAMP = sym("BoardLamp", {"Role": "PANEL", "Appliance": "lamp", "Style": "board", "Name": "${Value}",
@@ -665,15 +665,18 @@ class ConventionsTests(unittest.TestCase):
         self.assertIn("RWS: " + overview.ABSENT, tokens.text)
         self.assertIn("R1: missing Control.RWS", tokens.flags)
         self.assertIn("R1: Control.NWK on an input pin; Indication.NWK expected", tokens.flags)
-        self.assertIn("R1: missing Indication.NWK", tokens.flags)
+        self.assertNotIn("R1: missing Indication.NWK", tokens.flags)              # the wrong-direction one is flagged instead
         self.assertIn("R1: Indication.XX names no pin", tokens.flags)
         self.assertNotIn("R1: missing Control.NWS", tokens.flags)
         self.assertFalse(self.cell("LeverSwitch", "Control").flags)          # the whole-symbol form is not asked for
 
-    def test_r1_a_deliberately_tokenless_pin_is_not_flagged(self):
+    def test_r1_an_empty_field_is_a_deliberate_none_and_an_absent_one_not_done_yet(self):
         tokens = self.cell("LeverLock", "Tokens")
-        self.assertIn("UNUSED: none (deliberate)", tokens.text)
+        self.assertIn("Control.UNUSED= (none, deliberate)", tokens.text)
         self.assertEqual(tokens.flags, [])                                  # WLS and WLK state theirs
+        undone = sym("LeverLock2", {**LEVER_LOCK.fields}, LEVER_LOCK.units, outputs=("~{UNUSED}", "~{WLS}"))
+        del undone.fields["Control.UNUSED"]
+        self.assertEqual(overview.tokens_cell(undone).flags, ["R1: missing Control.UNUSED"])
 
     def test_r1_the_whole_symbol_form_on_a_lever_is_superseded(self):
         for f in ("Control", "Indication"):
@@ -747,6 +750,15 @@ class LintMessagesTests(unittest.TestCase):
         sym_dict = {"properties": props, "pins": [("~{MCS}", "1", "input")], "units": {1: ["~{MCS}"]},
                     "locked": False, "value_autoplace": False}
         self.assertEqual(lint_symbol("L", "S", sym_dict), [])
+        per_pin = {**sym_dict, "properties": {"Role": "PANEL", "Appliance": "lever", "Style": "board", "Name": "${Value}",
+                                              "Control.MCS": "${Value}MCS", "Indication.MCS": "", "Pin.MCS": "binary"}}
+        self.assertEqual(lint_symbol("L", "S", per_pin), [])                    # per-pin tokens, an empty one included
+        stray = {**per_pin, "properties": {**per_pin["properties"], "Indication.MCK": "${Value}MCK"}}
+        self.assertEqual(lint_symbol("L", "S", stray), [("error", "L:S: Indication.MCK names no pin")])
+        lamp = {**sym_dict, "properties": {"Role": "PANEL", "Appliance": "lamp", "Style": "board", "Name": "${Value}",
+                                           "Indication": "1NATK | !Watsonville:837T1K", "Pin.LAMP": "binary"},
+                "pins": [("~{LAMP}", "1", "input")], "units": {1: ["~{LAMP}"]}}
+        self.assertEqual(lint_symbol("L", "S", lamp), [])
         self.assertIn("Control", overview.CONTRACT_FIELDS)
         self.assertIn("Indication", overview.CONTRACT_FIELDS)
 

@@ -65,8 +65,8 @@ General (kept from the first audit):
 
 The owner's token rulings (2026-10-28), which the libraries do not follow yet; the page shows the gap:
 - R1 a PANEL lever (Appliance lever) states a token per function pin: `Control.<pin>` on an output
-  pin, `Indication.<pin>` on an input pin. A missing one is flagged, unless the pin deliberately has
-  none (EXEMPT_PINS: the lock lever's UNUSED, the code lever's CODE, keyed by Appliance and Style);
+  pin, `Indication.<pin>` on an input pin. A missing one is flagged (not done yet); a pin that
+  deliberately has none carries its field present but empty (`Control.UNUSED=`, `Control.CODE=`);
   one of the wrong direction is flagged; a `Control.X` or `Indication.X` naming no pin is flagged on
   any symbol; the whole-symbol `Control` and `Indication` on a lever are the superseded form.
 - R2 a model board lamp (a PANEL lamp whose only function pin is LAMP) states one whole-symbol
@@ -264,8 +264,6 @@ PIN_TOKENS = ("Control.", "Indication.")                       # per-pin token f
 CONVENTION_COLUMNS = TOKEN_FIELDS + ("Tokens", "Pins", "Units", "Other fields")
 NOT_OTHER = set(KICAD_FIELDS) | {"Description"} | set(KEY_FIELDS) | set(TOKEN_FIELDS)   # plus Pin.*, ki_* and the per-pin tokens
 ABSENT = "—"                                              # how an absent field shows
-# R1: function pins of a PANEL lever that deliberately state no token, by (Appliance, Style) (owner, 2026-10-28).
-EXEMPT_PINS = {("lever", "lock"): {"UNUSED"}, ("lever", "code"): {"CODE"}}
 # R6: kinds to be retired after the bulk change, by their fields: marked, never flagged (owner, 2026-10-28).
 RETIRING = ({"Role": "PANEL", "Appliance": "lamp", "Style": "indication"},)
 
@@ -339,8 +337,7 @@ def superseded(s: Symbol) -> dict[str, str]:
 
 def expected_token(s: Symbol, base: str, etype: str) -> str | None:
     """R1: the per-pin token field a PANEL lever's function pin states; None when it states none."""
-    exempt = EXEMPT_PINS.get((s.fields.get("Appliance"), s.fields.get("Style")), set())
-    if not is_panel_lever(s) or base in exempt or etype not in ("output", "input"):
+    if not is_panel_lever(s) or etype not in ("output", "input"):
         return None
     return ("Control." if etype == "output" else "Indication.") + base
 
@@ -355,12 +352,15 @@ def tokens_cell(s: Symbol) -> Cell:
             want = expected_token(s, b, ty)
             have = [f for f in present if f.split(".", 1)[1] == b]
             if want is None and not have:
-                items.append(f"{b}: none (deliberate)" if ty in ("output", "input") else f"{b}: none")
+                items.append(f"{b}: none")
             for f in have:
+                if not s.fields[f].strip():                    # an empty field: the pin deliberately binds no token
+                    items.append(f"{f}= (none, deliberate)")
+                    continue
                 items.append(f"{f}={s.fields[f]}")
                 if want and f != want:
                     flags.append(f"R1: {f} on a{'n' if ty[0] in 'aeiou' else ''} {ty} pin; {want} expected")
-            if want and want not in have:
+            if want and not have:
                 items.append(f"{b}: {ABSENT}")
                 flags.append(f"R1: missing {want}")
     for f in present:

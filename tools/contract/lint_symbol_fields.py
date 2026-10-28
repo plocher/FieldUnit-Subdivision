@@ -25,6 +25,10 @@ Per symbol, by Role:
 - PANEL is a device of the CTC machine: in a column, with a `Column` pin, or on the model board, Style
   `board`, with none (owner's ruling 2026-10-23: a model board lamp is a singleton; the board's shape
   lives in the driver). A DEVICE symbol has no `Column` pin (E72).
+- PANEL tokens (owner's rulings 2026-10-28): `Control.<pin>` and `Indication.<pin>` are contract
+  fields like `Pin.*`: each must name a pin of the symbol (empty is a deliberate none); a lamp's
+  whole-symbol `Indication` (a boolean expression) is a contract field. Whether every token pin
+  states one is the library overview's report, not this lint's.
 - SETTING: one passive pin, no Pin.*.
 - TRACK, POLICY, STRUCTURE, COLUMN, OFFICE_UNIT, TRANSPORT, CODELINE_ENCODING, IO_ENCODING: Kind allowed; nothing else checked.
 `--table` prints every symbol as a markdown row. Exit 1 on any error; warnings only print.
@@ -53,6 +57,7 @@ NOT_SETTINGS = {"Role", "Name", "Kind", "Appliance", "Style", "IC", "Address", "
                 "Transport", "NodeType", "InputBytes", "OutputBytes",
                 "IndicationCeiling", "Display", "Processor", "Milepost", "Reference", "Value", "Footprint",
                 "Datasheet", "Description", "ki_keywords", "ki_fp_filters", "ki_description"}
+PIN_TOKENS = ("Control.", "Indication.")   # PANEL per-pin tokens (owner, 2026-10-28); an empty one is a deliberate none
 MEMBERSHIP_PINS = {"Column", "IOBus", "Processor", "Transport", "Codeline", "MC"}   # seam pins (ADR 0009 §3.1): nets, not device functions
 DRIVER_LOOK = ("(width 0.3048)", "(type solid)", "(color 128 77 0 1)", "(type background)")
 RECT = re.compile(r"\(start ([-\d.]+) ([-\d.]+)\)\s*\(end ([-\d.]+) ([-\d.]+)\)")
@@ -174,9 +179,13 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
             err("wants exactly one passive pin")
         if pin_caps:
             err("carries Pin.* but serves no function")
+    all_bases = {base(n) for n, _, _ in pins}
     for f in props:
         if f in RETIRED_FIELDS and not (f == "Kind" and role == "IODRIVER"):
             err(f"field {f} is retired")
+        elif f.startswith(PIN_TOKENS) and role == "PANEL":          # a per-pin token (2026-10-28): its pin must exist
+            if f.split(".", 1)[1] not in all_bases:
+                err(f"{f} names no pin")
         elif f not in NOT_SETTINGS and not f.startswith("Pin.") and not SNAKE.match(f):
             err(f"setting {f} is not lower_snake_case")
     return out
@@ -187,7 +196,7 @@ def row(lib: str, name: str, sym: dict) -> str:
     caps = ", ".join(f"{base(n)}: {p.get('Pin.' + base(n), '?')}" for n, _, _ in sym["pins"] if n not in MEMBERSHIP_PINS)
     if len(sym["pins"]) > 8:
         caps = f"{len(sym['pins'])} pins: {p.get('Pin.A1', '?')}"
-    settings = ", ".join(f for f in p if f not in NOT_SETTINGS and not f.startswith("Pin.") and f != "Kind")
+    settings = ", ".join(f for f in p if f not in NOT_SETTINGS and not f.startswith(("Pin.",) + PIN_TOKENS) and f != "Kind")
     return (f"| {lib} | `{name}` | {p.get('Role', '')} | {p.get('Appliance', '')} | {p.get('Style', '')} | "
             f"{p.get('IC', '')} | {caps} | {p.get('Invert', '')} | {settings} |")
 
