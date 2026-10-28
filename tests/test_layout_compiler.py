@@ -125,6 +125,22 @@ class RuleTests(unittest.TestCase):
         driver = sym("U1", "MCP23017", "/X/", "", Role="IODRIVER", IC="MCP23017", Address="0x20", frequency_hz="50")
         self.assertEqual(seams.given_of(driver), {"IC": "MCP23017", "frequency_hz": "50"})   # Address is its key (D11)
 
+    def test_an_empty_per_pin_token_is_stated(self):
+        """The owner (2026-10-28): a desk lever's empty Control.<pin> or Indication.<pin> says the pin binds no token, so
+        it is kept in given as "" (an absent one means not done yet); every other empty field is still not stated."""
+        lever = sym("L1", "PanelLock", "/", "835", Role="PANEL", Appliance="lever", Style="lock", Name="835", Spare="",
+                    **{"Control.UNUSED": "", "Control.WLS": "835WLS", "Indication.WLK": "!835WLK", "Indication.WLQK": "~"})
+        given = seams.given_of(lever, keyed=False)
+        self.assertEqual(given, {"Appliance": "lever", "Style": "lock", "Name": "835", "Control.UNUSED": "",
+                                 "Control.WLS": "835WLS", "Indication.WLK": "!835WLK", "Indication.WLQK": ""})
+        row = emit._entity(given)
+        self.assertEqual(row["given"]["Control.UNUSED"], "")
+        model = emit.emit(seams.resolve(plant()))
+        model["officeUnits"] = {"Desk": {"devices": [row]}}
+        self.assertEqual(layout_model.errors(model), [])                       # the schema allows the empty per-pin token
+        model["officeUnits"]["Desk"]["devices"][0]["given"]["Spare"] = ""
+        self.assertNotEqual(layout_model.errors(model), [])                    # and no other empty field
+
     def test_one_entity_placed_twice_states_one_given(self):
         src = plant()
         src.symbols["T1"] = sym("T1", "Transport-MQTT", "/X/", "MQTT", Role="TRANSPORT", Kind="MQTT", Name="MQTT", Broker="a")

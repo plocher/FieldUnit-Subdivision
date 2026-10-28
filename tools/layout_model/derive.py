@@ -27,7 +27,9 @@ names every other track pin its wire reaches, so the relation is symmetric):
   reference, ``relations.indication`` the token it consumes (``Corporal:2NATK``). It resolves against the indications
   the named station sends; a track circuit's token names the circuit the row stands on.
 - **NextCP pairing** and the **cross-interlocking reference** check.
-- An OfficeUnit's columns (``house``, ``interlocking``) and every device's ``serves`` and ``shows``.
+- An OfficeUnit's columns (``house``, ``interlocking``), every device's ``serves``, a desk lamp's ``indications`` and
+  ``expression`` (its ``Indication``, ``tools/layout_model/expression.py``), a lever's ``controls`` and ``indications``
+  from its per-pin ``Control.X`` and ``Indication.X``.
 
 A track pin is named as the file names it: a switch port, a marker's TC or a named row's side by qualified name
 (``Luchessa:783.R``), an unnamed row's side by the row's id (``<id>.approach``).
@@ -42,7 +44,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Optional
 
-from . import reference
+from . import expression, reference
 from .report import Report
 
 RULES = "0.1.0"                     # the derivation's version, stamped as provenance.rules (ADR 0011 §3, ADR 0012 §7)
@@ -811,8 +813,8 @@ class _Derivation:
 
     def devices(self) -> None:
         """A device serves the appliance its ``Name`` names in its scope, a head device the mast its IND wire reaches; a
-        lamp shows its ``IndicationToken`` resolved in its scope. A panel device's scope is its column's interlocking,
-        else its own ``relations.interlocking``. A code lever serves the station, not an appliance."""
+        lamp consumes the tokens of its ``Indication`` expression, resolved in its scope (``lamp``). A panel device's
+        scope is its column's interlocking, else its own ``relations.interlocking``. A code lever serves the station, not an appliance."""
         for name, ix in self.m.get("interlockings", {}).items():
             for i, dev in enumerate(ix.get("devices", [])):
                 g = dev.get("given", {})
@@ -839,14 +841,34 @@ class _Derivation:
                 scope = scope or rel.get("interlocking")
                 derived = {}
                 if g.get("Appliance") == "lamp":
-                    tokens = [t.strip() for t in g.get("IndicationToken", "").split(",") if t.strip()]
-                    template = self.templates(scope).get("track_circuit", ("{name}K",))[0]
-                    derived["shows"] = [qualify(reference.indication_of(t, template), scope) for t in tokens] if scope else None
-                    if not tokens:
-                        self.r.add("lamp.token", f"panel lamp {g.get('Name', '')!r}: no IndicationToken", where)
+                    derived.update(self.lamp(g, scope, where))
                 elif g.get("Name") and scope and not self._code_lever(g):
                     derived["serves"] = qualify(g["Name"], scope)
                 _set_derived(dev, derived)
+
+    def lamp(self, g: dict[str, str], scope: Optional[str], where: str) -> dict[str, Any]:
+        """A desk lamp's ``indications`` (the tokens it consumes, qualified in its scope) and ``expression`` (its
+        ``Indication`` normalized, the tokens qualified), the owner, 2026-10-28. Without ``Indication`` the legacy
+        ``IndicationToken`` is read instead (a comma list, each circuit given the K of an indication), reported at info so
+        what is unconverted shows; with neither, ``lamp.token``."""
+        name = g.get("Name", "")
+        if g.get("Indication", "").strip():
+            source = g["Indication"]
+        elif g.get("IndicationToken", "").strip():
+            template = self.templates(scope).get("track_circuit", ("{name}K",))[0]
+            legacy = [reference.indication_of(t.strip(), template) for t in g["IndicationToken"].split(",") if t.strip()]
+            source = " | ".join(legacy)
+            self.r.add("desk.legacy_token", f"panel lamp {name!r}: no Indication; read from the legacy IndicationToken "
+                       f"{g['IndicationToken']!r} as {source}", where)
+        else:
+            self.r.add("lamp.token", f"panel lamp {name!r}: no Indication", where)
+            return {}
+        try:
+            text, tokens = expression.normalize(source, lambda t: qualify(t, scope) if scope else t)
+        except expression.ExpressionError as e:
+            self.r.add("desk.expression", f"panel lamp {name!r}: Indication does not parse: {e}", where)
+            return {}
+        return {"indications": tokens, "expression": text} if scope else {}
 
     def templates(self, interlocking: Optional[str]) -> dict[str, tuple[str, ...]]:
         line = self.m.get("interlockings", {}).get(interlocking or "", {}).get("relations", {}).get("codeline")
@@ -856,30 +878,32 @@ class _Derivation:
     # ---------------------------------------------------------------------------------------------- desk
 
     def desk(self) -> None:
-        """The office's side of each code line (the owner, 2026-10-27). A lever's controls are its name and each binding
-        that ends in S (``783NWS``, ``784HS``, ``795WLS``, ``MC1S``); a lever's bindings that end in K and a lamp's
-        ``shows`` are the indications the desk consumes. Both belong to the station of the desk column the device sits
-        in, whatever it serves: on a US&S 506 line the house its column names (``CP Name``), on an AAR token line the
-        column's interlocking. Each consumed indication must be one that station sends. ``UNUSED`` and the code lever bind
-        nothing of a station."""
+        """The office's side of each code line (the owner, 2026-10-27, 2026-10-28). A lever's tokens are its per-pin
+        fields: for each bound pin X, ``Control.X`` is a control (``783NWS``) and ``Indication.X`` an indication
+        expression whose tokens the desk consumes (``!795WLK``); an empty field binds none (``Control.UNUSED``), and a
+        bound pin with neither is reported (``desk.token``), never filled in from the lever's name. A lamp's
+        ``indications`` are its expression's tokens. Both belong to the station of the desk column the device sits in,
+        whatever it serves: on a US&S 506 line the house its column names (``CP Name``), on an AAR token line the column's
+        interlocking. Each consumed indication must be one that station sends. The code lever binds nothing of a
+        station."""
         for ou_name, ou in self.m.get("officeUnits", {}).items():
             for i, dev in enumerate(ou.get("devices", [])):
                 g, d = dev.get("given", {}), dev.get("derived", {})
                 where = f"officeUnits/{ou_name}/devices/{i}"
                 if g.get("Appliance") == "lamp":
-                    tokens, mine, what = d.get("shows", []), [], f"the lamp {g.get('Name', '')}"
+                    tokens, mine, what = d.get("indications", []), [], f"the lamp {g.get('Name', '')}"
                 elif g.get("Appliance") == "lever" and d.get("serves"):
                     b, _, n = d["serves"].partition(":")
-                    keys = sorted(dev.get("relations", {}).get("bindings", {}))
-                    mine = [f"{n}{k}" for k in keys if k.endswith("S")]
-                    tokens = [f"{b}:{n}{k}" for k in keys if k.endswith("K")]
                     what = f"lever {n}"
-                    _set_derived(dev, {**d, "controls": [f"{b}:{t}" for t in mine], "indications": tokens})
+                    controls, tokens = self.lever_tokens(g, dev.get("relations", {}).get("bindings", {}), b, what, where)
+                    mine = [t.partition(":")[2] for t in controls if t.partition(":")[0] == b]
+                    _set_derived(dev, {**d, "controls": controls, "indications": tokens})
                 else:
                     continue
                 if not tokens and not mine:
                     continue
-                b = (tokens[0] if tokens else d["serves"]).partition(":")[0]
+                if g.get("Appliance") == "lamp":                    # a lever's station is its serves' interlocking
+                    b = tokens[0].partition(":")[0]
                 found, house = self.station_of(ou_name, dev, b)
                 if not found:
                     self.r.add("desk.station", f"{what} sits in no column that names a house, and {b}'s code line makes each house a "
@@ -888,6 +912,29 @@ class _Derivation:
                 self.controls[(b, house)].update(mine)
                 for token in tokens:
                     self.consume(what, token, where, house)
+
+    def lever_tokens(self, g: dict[str, str], bindings: dict[str, Any], b: str, what: str,
+                     where: str) -> tuple[list[str], list[str]]:
+        """(controls, indications) of a lever from its bound pins' ``Control.X`` and ``Indication.X``, each token
+        qualified in ``b``, in binding order: an empty field binds none, a missing one is ``desk.token``, an expression
+        that does not parse ``desk.expression``."""
+        controls: list[str] = []
+        indications: list[str] = []
+        for pin in sorted(bindings):
+            stated = [f for f in (f"Control.{pin}", f"Indication.{pin}") if f in g]
+            if not stated:
+                self.r.add("desk.token", f"{what}: pin {pin} is bound but states no Control.{pin} or Indication.{pin}", where)
+                continue
+            if g.get(f"Control.{pin}", "").strip():
+                controls.append(qualify(g[f"Control.{pin}"].strip(), b))
+            if g.get(f"Indication.{pin}", "").strip():
+                try:
+                    _, consumed = expression.normalize(g[f"Indication.{pin}"], lambda t: qualify(t, b))
+                except expression.ExpressionError as e:
+                    self.r.add("desk.expression", f"{what}: Indication.{pin} does not parse: {e}", where)
+                    continue
+                indications += [t for t in consumed if t not in indications]
+        return controls, indications
 
     def station_of(self, ou_name: str, dev: dict[str, Any], b: str) -> tuple[bool, Optional[str]]:
         """The station of a desk device: (stated, its house, or None for the interlocking). On a line whose station is a

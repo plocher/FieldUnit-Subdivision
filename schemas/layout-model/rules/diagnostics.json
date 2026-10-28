@@ -65,7 +65,28 @@
       "feature": null,
       "replacedBy": null
     },
+    "desk.expression": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "desk.legacy_token": {
+      "level": "info",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
     "desk.station": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "desk.token": {
       "level": "missing",
       "lifecycle": "active",
       "since": "0.1.0",

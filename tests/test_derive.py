@@ -472,9 +472,12 @@ class OfficeUnits(unittest.TestCase):
         ou = out["officeUnits"]["Desk"]
         self.assertEqual(ou["columns"]["1"]["derived"], {"house": "X:East", "interlocking": "X"})
         self.assertNotIn("derived", ou["columns"]["2"])
-        self.assertEqual([d.get("derived") for d in ou["devices"]], [{"shows": ["X:1TK", "X:2TK"]}, {"serves": "Y:3"}, {"shows": ["Y:4TK"]}])
+        self.assertEqual([d.get("derived") for d in ou["devices"]],
+                         [{"indications": ["X:1TK", "X:2TK"], "expression": "X:1TK | X:2TK"}, {"serves": "Y:3"},
+                          {"indications": ["Y:4TK"], "expression": "Y:4TK"}])
         self.assertEqual([d.get("derived") for d in out["interlockings"]["X"]["devices"]], [{"serves": "X:1"}, {"serves": "X:2NA"}, None])
-        self.assertEqual(diags, [("column.cp_name", "2"), ("head.plan", "1"), ("reference.codeline", "0"), ("reference.codeline", "0"), ("reference.codeline", "2")])
+        self.assertEqual(diags, [("column.cp_name", "2"), ("desk.legacy_token", "0"), ("desk.legacy_token", "2"), ("head.plan", "1"),
+                                 ("reference.codeline", "0"), ("reference.codeline", "0"), ("reference.codeline", "2")])
 
     def test_a_cp_name_that_names_no_house_is_an_error(self):
         m = self.model()
@@ -483,9 +486,10 @@ class OfficeUnits(unittest.TestCase):
 
 
 class Desk(unittest.TestCase):
-    """The office's side of the code line (the owner, 2026-10-27): a lever's bindings that end in S are its station's
-    controls, on the house of the served appliance's control point; those that end in K, and a lamp's tokens, are
-    indications the desk consumes, which the station must send."""
+    """The office's side of the code line (the owner, 2026-10-27, 2026-10-28): each bound lever pin's ``Control.X`` is a
+    control of the station its column names, each ``Indication.X`` an expression whose tokens the desk consumes, as are a
+    lamp's ``Indication``'s; the station must send each. An empty per-pin field binds none; a missing one is reported,
+    never made up from the lever's name."""
 
     THINGS = ONE_SWITCH + "MC1 | appliance | Appliance=lamp Style=maintainer_call\n"
 
@@ -496,8 +500,60 @@ class Desk(unittest.TestCase):
         return m
 
     @staticmethod
-    def lever(name: str, *functions: str) -> dict:
-        return {"given": {"Appliance": "lever", "Name": name}, "relations": {"bindings": {f: f"P/0x20/A{i}" for i, f in enumerate(functions)}}}
+    def lever(name: str, *functions: str, **fields: str) -> dict:
+        """A lever bound at each function, with the bulk change's per-pin fields: Control.<f> = name+f on a pin ending in
+        S, Indication.<f> = name+f on one ending in K, an empty Control.UNUSED; ``fields`` adds or overrides
+        (``Control_NWS=...`` for Control.NWS, None to leave a field out)."""
+        given = {"Appliance": "lever", "Name": name}
+        for f in functions:
+            if f == "UNUSED":
+                given["Control.UNUSED"] = ""
+            elif f.endswith("S"):
+                given[f"Control.{f}"] = f"{name}{f}"
+            elif f.endswith("K"):
+                given[f"Indication.{f}"] = f"{name}{f}"
+        for k, v in fields.items():
+            key = k.replace("_", ".", 1)
+            if v is None:
+                given.pop(key, None)
+            else:
+                given[key] = v
+        return {"given": given, "relations": {"bindings": {f: f"P/0x20/A{i}" for i, f in enumerate(functions)}}}
+
+    def test_a_levers_tokens_are_its_per_pin_fields_never_its_name(self):
+        lever = self.lever("835", "WLS", "WLK", "WLQK", "UNUSED", Control_WLS="X:835WLS", Indication_WLK="!835WLK",
+                           Indication_WLQK="835WLQK & (1NATK | X:MC1K)")
+        out, diags = run(self.model([lever]))
+        self.assertEqual(out["officeUnits"]["Desk"]["devices"][0]["derived"],
+                         {"serves": "X:835", "controls": ["X:835WLS"], "indications": ["X:835WLK", "X:835WLQK", "X:1NATK", "X:MC1K"]})
+        self.assertEqual(only(diags, "desk"), [])
+
+    def test_a_bound_pin_with_no_token_field_is_missing_and_binds_nothing(self):
+        out, diags = run(self.model([self.lever("835", "NWS", "NWK", Control_NWS=None)]))
+        self.assertEqual(only(diags, "desk"), [("desk.token", "0")])
+        self.assertEqual(out["officeUnits"]["Desk"]["devices"][0]["derived"], {"serves": "X:835", "indications": ["X:835NWK"]})
+        self.assertNotIn("controls", out["interlockings"]["X"].get("derived", {}))
+
+    def test_an_indication_that_does_not_parse_is_an_error(self):
+        _, diags = run(self.model([self.lever("835", "NWK", Indication_NWK="835NWK |"),
+                                   {"given": {"Appliance": "lamp", "Indication": "(1NATK"}}]))
+        self.assertEqual(only(diags, "desk"), [("desk.expression", "0"), ("desk.expression", "1")])
+
+    def test_a_lamp_reads_its_indication_expression(self):
+        out, diags = run(self.model([{"given": {"Appliance": "lamp", "Indication": "1NATK|!X:MC1K, 835NWK"}}]))
+        self.assertEqual(out["officeUnits"]["Desk"]["devices"][0]["derived"],
+                         {"indications": ["X:1NATK", "X:MC1K", "X:835NWK"], "expression": "X:1NATK | !X:MC1K | X:835NWK"})
+        self.assertEqual(only(diags, "desk", "lamp"), [])
+
+    def test_a_lamp_without_indication_falls_back_to_its_legacy_token_at_info(self):
+        out, diags = run(self.model([{"given": {"Appliance": "lamp", "IndicationToken": "1NAT, MC1K"}},
+                                     {"given": {"Appliance": "lamp", "Indication": "1NATK", "IndicationToken": "9T"}}]))
+        devs = out["officeUnits"]["Desk"]["devices"]
+        self.assertEqual(devs[0]["derived"], {"indications": ["X:1NATK", "X:MC1K"], "expression": "X:1NATK | X:MC1K"})
+        self.assertEqual(devs[1]["derived"]["indications"], ["X:1NATK"])           # Indication wins; no fallback
+        self.assertEqual(only(diags, "desk", "reference"), [("desk.legacy_token", "0")])
+        _, report = derive.derive(self.model([{"given": {"Appliance": "lamp", "IndicationToken": "1NAT"}}]))
+        self.assertEqual([d.severity for d in report.by_code("desk.legacy_token")], ["info"])
 
     def test_controls_are_the_levers_s_bindings_on_the_station_and_indications_resolve(self):
         out, diags = run(self.model([self.lever("835", "WLS", "WLK", "WLQK", "UNUSED"), self.lever("836", "NGS", "SGS", "HS", "NGK", "SGK", "TEK"),
@@ -507,7 +563,7 @@ class Desk(unittest.TestCase):
                          sorted(["835WLS", "836HS", "836NGS", "836SGS", "MC1S"]))
         devs = out["officeUnits"]["Desk"]["devices"]
         self.assertEqual(devs[0]["derived"], {"serves": "X:835", "controls": ["X:835WLS"], "indications": ["X:835WLK", "X:835WLQK"]})
-        self.assertEqual(devs[3]["derived"], {"shows": ["X:1NATK", "X:MC1K"]})
+        self.assertEqual(devs[3]["derived"], {"indications": ["X:1NATK", "X:MC1K"], "expression": "X:1NATK | X:MC1K"})
         self.assertEqual(layout_model.errors(out), [])
 
     def test_an_indication_the_station_does_not_send_is_an_error(self):
@@ -532,13 +588,13 @@ class Desk(unittest.TestCase):
         houses = out["interlockings"]["X"]["houses"]
         self.assertEqual(houses["North"]["derived"]["controls"], ["816HS"])
         self.assertNotIn("controls", houses["South"]["derived"])
-        self.assertEqual(only(diags, "reference", "desk"), [("reference.unresolved", "0"), ("reference.unresolved", "2")])
+        self.assertEqual(only(diags, "reference", "desk.station", "desk.token"), [("reference.unresolved", "0"), ("reference.unresolved", "2")])
 
     def test_on_a_506_line_a_device_in_no_column_that_names_a_house_has_no_stated_station(self):
         m = on_line(layout(X=interlocking(TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH)), "X", kind="USS506")
         m["officeUnits"] = {"Desk": {"devices": [{"given": {"Appliance": "lamp", "Style": "board", "IndicationToken": "1NAT"},
                                                   "relations": {"interlocking": "X"}}]}}
-        self.assertEqual(only(run(m)[1], "reference", "desk"), [("desk.station", "0")])
+        self.assertEqual(only(run(m)[1], "reference", "desk.station"), [("desk.station", "0")])
 
 
 class Heads(unittest.TestCase):

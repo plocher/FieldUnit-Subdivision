@@ -67,7 +67,7 @@
       }
     },
     "given": {
-      "description": "Every field a person stated on the entity, keyed as drawn, every value a string as KiCad states it (ADR 0011 §2). Left out: KiCad's housekeeping (Reference, Value, Footprint, Datasheet, Description, Sheetname, Sheetfile, ki_*), Role (it picks the collection), the library's Pin.* contract, the key field, and any empty field. Which keys apply is reference data, not this schema's; a reader that wants a number or a list parses the string.",
+      "description": "Every field a person stated on the entity, keyed as drawn, every value a string as KiCad states it (ADR 0011 §2). Left out: KiCad's housekeeping (Reference, Value, Footprint, Datasheet, Description, Sheetname, Sheetfile, ki_*), Role (it picks the collection), the library's Pin.* contract, the key field, and any empty field but a per-pin Control.<pin> or Indication.<pin>. Which keys apply is reference data, not this schema's; a reader that wants a number or a list parses the string.",
       "type": "object",
       "propertyNames": {
         "type": "string",
@@ -85,6 +85,12 @@
           ]
         },
         "pattern": "^(?!ki_)(?!Pin\\.)"
+      },
+      "patternProperties": {
+        "^(Control|Indication)\\.": {
+          "type": "string",
+          "description": "A desk device's per-pin token (the owner, 2026-10-28): stated even when empty, since an empty one says the pin deliberately binds no token."
+        }
       },
       "additionalProperties": {
         "type": "string",
@@ -550,22 +556,19 @@
                   "$ref": "#/$defs/qualifiedName",
                   "description": "The appliance this device serves (given.Name in its scope); for a head device, its mast."
                 },
-                "shows": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/$defs/indicationRef"
-                  },
-                  "description": "The indications a lamp shows, OR'd, as tokens: its IndicationToken resolved in its scope, each circuit with the K of an indication added (2NAT shows Corporal:2NATK); each must be one its station sends."
-                },
                 "controls": {
-                  "description": "A lever's controls: its name and each binding that ends in S, qualified by its station's interlocking (Luchessa:783NWS).",
+                  "description": "A lever's controls: the Control.<pin> of each bound pin, qualified by its station's interlocking (Luchessa:783NWS); an empty one binds none.",
                   "type": "array",
                   "items": {
                     "$ref": "#/$defs/qualifiedName"
                   }
                 },
+                "expression": {
+                  "type": "string",
+                  "description": "A desk lamp's Indication, normalized (tools/layout_model/expression.py: | or, & and, ! not, parentheses; a comma read as |), every token qualified: Luchessa:1NATK | Luchessa:2NATK."
+                },
                 "indications": {
-                  "description": "The indications a lever consumes: its name and each binding that ends in K (Christopher:813WLK); each must be one its station sends.",
+                  "description": "The indications a device consumes, qualified: the tokens of a lever's Indication.<pin> expressions (Christopher:813WLK), or of a lamp's Indication expression (its legacy IndicationToken, each circuit with the K of an indication added, when it states no Indication); each must be one its station sends.",
                   "type": "array",
                   "items": {
                     "$ref": "#/$defs/indicationRef"

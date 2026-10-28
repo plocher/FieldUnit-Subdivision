@@ -26,6 +26,7 @@ from .source import Net, Source, Symbol, in_scope
 MACRO = re.compile(r"<([A-Z_]+):([A-Z_]*):([\w .]+)>")
 # KiCad's own housekeeping (ADR 0011 §2), and Role, which only picks the collection (three-maps D1): never in given.
 HOUSEKEEPING = frozenset({"Reference", "Value", "Footprint", "Datasheet", "Description", "Sheetname", "Sheetfile", "Role"})
+PIN_TOKENS = ("Control.", "Indication.")                              # a desk device's per-pin tokens: stated even when empty
 
 
 def loc(s: Symbol) -> str:
@@ -208,10 +209,19 @@ def check_milepost(s: Symbol, report: Report, what: str) -> None:
 def given_of(s: Symbol, keyed: bool = True) -> dict[str, str]:
     """Every field the person stated, keyed as drawn, as KiCad states it (ADR 0011 §2): less KiCad's housekeeping,
     ``Role`` (D1), the library's ``Pin.*`` contract (D2) and, for a keyed entity, its key field. An empty field or
-    KiCad's ``~`` is not stated (D21). A row without identity (a device) keeps its ``Name`` (``keyed=False``)."""
+    KiCad's ``~`` is not stated (D21), except a desk device's per-pin ``Control.<pin>`` or ``Indication.<pin>``: there the
+    empty field is the statement that the pin binds no token (the owner, 2026-10-28), written as "". A row without
+    identity (a device) keeps its ``Name`` (``keyed=False``)."""
     key = key_field(s) if keyed else None
-    return {k: v for k, v in s.fields.items()
-            if k not in HOUSEKEEPING and k != key and not k.startswith(("ki_", "Pin.")) and v.strip() not in ("", "~")}
+    out = {}
+    for k, v in s.fields.items():
+        if k in HOUSEKEEPING or k == key or k.startswith(("ki_", "Pin.")):
+            continue
+        if v.strip() not in ("", "~"):
+            out[k] = v
+        elif k.startswith(PIN_TOKENS):
+            out[k] = ""
+    return out
 
 
 def merge_given(have: dict[str, str], s: Symbol, what: str, report: Report) -> None:

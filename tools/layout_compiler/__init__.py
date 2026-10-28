@@ -2,7 +2,7 @@
 
 Transient (ADR 0011 §1): it reads the drawing and writes ``given`` and ``relations``, then calls the reference
 derivation, ``tools/layout_model/derive.py``, for ``derived`` (control points, circuits, links, NextCP pairing,
-references, a column's house, a device's serves and shows).
+references, a column's house, a device's serves, a lamp's indications and expression).
 
 - ``source``: the one interface the importer reads, symbols with fields and nets with pin names, and its only
   implementation today, the kicad-cli netlist export read through ``kicad_services``.
