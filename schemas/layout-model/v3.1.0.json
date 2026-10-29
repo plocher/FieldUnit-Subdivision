@@ -398,31 +398,15 @@
             },
             {
               "additionalProperties": false,
-              "properties": {
-                "indications": {
-                  "description": "On a code line whose station is the interlocking (AAR tokens), the office indications its station sends: every house's, as tokens, sorted (see house derived.indications).",
-                  "type": "array",
-                  "uniqueItems": true,
-                  "items": {
-                    "$ref": "#/$defs/name"
-                  }
-                },
-                "controls": {
-                  "description": "On a code line whose station is the interlocking, the controls its station receives: the bindings ending in S of every desk lever in a column of this interlocking, each with the lever's name.",
-                  "type": "array",
-                  "uniqueItems": true,
-                  "items": {
-                    "$ref": "#/$defs/name"
-                  }
-                }
-              }
+              "properties": {},
+              "description": "Nothing yet. A station's controls and indications are not stored (the owner, 2026-10-28): tools/railroad/codeline.py computes them on demand."
             }
           ]
         }
       }
     },
     "house": {
-      "description": "An instrument house at a control point, keyed by its CP Name; on a US&S 506 line it is a field station, addressed by its column (derived, not written); on a line whose station is a house, derived.indications and derived.controls are its station's.",
+      "description": "An instrument house at a control point, keyed by its CP Name; on a US&S 506 line it is a field station, addressed by its column (derived, not written). What a station receives and sends is not stored: tools/railroad/codeline.py computes it on demand (the owner, 2026-10-28).",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -467,24 +451,8 @@
             },
             {
               "additionalProperties": false,
-              "properties": {
-                "indications": {
-                  "description": "On a code line whose station is a house (US&S 506), the office indications this house's station sends, as tokens, sorted: those of the appliances and circuits whose control point it is, named by the code line's encoding through the reference data (a track circuit 2NATK, a switch 783NWK and 783RWK, an electric lock 795WLK and 795WLQK, a signal lever 784NGK, 784SGK and 784TEK, a maintainer call MC1K). On an AAR token line the station is the interlocking, which holds them.",
-                  "type": "array",
-                  "uniqueItems": true,
-                  "items": {
-                    "$ref": "#/$defs/name"
-                  }
-                },
-                "controls": {
-                  "description": "On a code line whose station is a house, the controls this station receives, as tokens, sorted: the bindings ending in S of every desk lever in a column whose CP Name names this house, each with the lever's name (783NWS, 784HS, 795WLS, MC1S; the owner, 2026-10-27).",
-                  "type": "array",
-                  "uniqueItems": true,
-                  "items": {
-                    "$ref": "#/$defs/name"
-                  }
-                }
-              }
+              "properties": {},
+              "description": "Nothing yet. A station's controls and indications are not stored (the owner, 2026-10-28): tools/railroad/codeline.py computes them on demand."
             }
           ]
         }
@@ -568,7 +536,7 @@
                   "description": "A desk lamp's Indication, normalized (tools/layout_model/expression.py: | or, & and, ! not, parentheses; a comma read as |), every token qualified: Luchessa:1NATK | Luchessa:2NATK."
                 },
                 "indications": {
-                  "description": "The indications a device consumes, qualified: the tokens of a lever's Indication.<pin> expressions (Christopher:813WLK), or of a lamp's Indication expression (its legacy IndicationToken, each circuit with the K of an indication added, when it states no Indication); each must be one its station sends.",
+                  "description": "The indications a device consumes, qualified: the tokens of a lever's Indication.<pin> expressions (Christopher:813WLK), or of a lamp's Indication expression (its legacy IndicationToken, each circuit with the K of an indication added, when it states no Indication), unqualified tokens in the lamp's own interlocking (relations.interlocking); each must be one an appliance of the named interlocking reports (tools/railroad/codeline.py).",
                   "type": "array",
                   "items": {
                     "$ref": "#/$defs/indicationRef"
@@ -625,7 +593,7 @@
       }
     },
     "column": {
-      "description": "A logical column tied to a control point (owner's ruling 2026-10-23), keyed by its Column number. given.\"CP Name\" names its house.",
+      "description": "A logical column tied to a control point (owner's ruling 2026-10-23), keyed by its Column number. given.\"CP Name\" names a house or an interlocking (the owner, 2026-10-28); on a line whose station is a house (US&S 506) it must name a house.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -661,10 +629,12 @@
               "additionalProperties": false,
               "properties": {
                 "house": {
-                  "$ref": "#/$defs/qualifiedName"
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "The house its CP Name names, qualified; absent when it names the interlocking or nothing. On a line whose station is a house it is the column's station; on an AAR token line it is location only."
                 },
                 "interlocking": {
-                  "$ref": "#/$defs/layoutName"
+                  "$ref": "#/$defs/layoutName",
+                  "description": "The interlocking its CP Name names, directly or through a house."
                 }
               }
             }

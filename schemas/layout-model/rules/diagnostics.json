@@ -2,6 +2,13 @@
   "version": "0.1.0",
   "description": "The diagnostic registry of the reference derivation (ADR 0012 §3.3): every code tools/layout_model/derive.py raises, its level and lifecycle. Pre-release with the rules (0.1.0); a code's feature is named when the features exist. Codes the KiCad importer raises about the drawing as drawn are the importer's own and are not listed.",
   "codes": {
+    "appliance.no_lever": {
+      "level": "warning",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
     "circuit.name.disagree": {
       "level": "error",
       "lifecycle": "active",
@@ -81,7 +88,7 @@
     },
     "desk.station": {
       "level": "missing",
-      "lifecycle": "active",
+      "lifecycle": "deprecated",
       "since": "0.1.0",
       "feature": null,
       "replacedBy": null
@@ -144,6 +151,13 @@
     },
     "lamp.token": {
       "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "lever.serves": {
+      "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
       "feature": null,
@@ -227,6 +241,20 @@
       "replacedBy": null
     },
     "reference.marker": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "reference.station": {
+      "level": "warning",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "reference.track": {
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",

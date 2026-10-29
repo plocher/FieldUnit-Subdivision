@@ -15,6 +15,7 @@ from pathlib import Path
 
 from tools import layout_model
 from tools.layout_model import derive
+from tools.railroad import codeline
 
 EXAMPLE = Path(__file__).resolve().parents[1] / "schemas" / "layout-model" / "examples" / "spcoast.layout.json"
 LISTS = ("joints", "ends", "policies", "consumers")
@@ -48,7 +49,7 @@ def interlocking(things: str, wires: str = "", houses: str = "House", name: str 
         else:
             row = {"id": key, "given": given, "relations": rel}
             if "name" in given:
-                row["name"] = f"{name}:{given.pop('name')}"
+                row["name"] = derive.qualify(given.pop("name"), name)
             ix["track"].setdefault(where, []).append(row)
             rows[key] = row
 
@@ -347,65 +348,124 @@ def on_line(m: dict, *names: str, kind: str = "AAR") -> dict:
     return m
 
 
-class Indications(unittest.TestCase):
-    """Each house's station sends the office indications of what its control point is, named by its code line's
-    encoding (FieldUnit GLOSSARY §10.3; reference data)."""
+def lever(name: str, *functions: str, column: str | None = None, **fields: str) -> dict:
+    """A desk lever bound at each function, with the bulk change's per-pin fields: Control.<f> = name+f on a pin ending in
+    S, Indication.<f> = name+f on one ending in K, an empty Control.UNUSED; ``fields`` adds or overrides
+    (``Control_NWS=...`` for Control.NWS, None to leave a field out)."""
+    given = {"Appliance": "lever", "Name": name}
+    for f in functions:
+        if f == "UNUSED":
+            given["Control.UNUSED"] = ""
+        elif f.endswith("S"):
+            given[f"Control.{f}"] = f"{name}{f}"
+        elif f.endswith("K"):
+            given[f"Indication.{f}"] = f"{name}{f}"
+    for k, v in fields.items():
+        key = k.replace("_", ".", 1)
+        if v is None:
+            given.pop(key, None)
+        else:
+            given[key] = v
+    rel = {"bindings": {f: f"P/0x20/A{i}" for i, f in enumerate(functions)}}
+    if column:
+        rel["column"] = column
+    return {"given": given, "relations": rel}
 
-    def test_a_house_sends_its_circuits_locks_signals_and_maintainer_calls(self):
-        """An electric lock (835, Style lock) sends WLK and WLQK, not NWK and RWK (the owner, 2026-10-27)."""
-        things = ONE_SWITCH + "MC1 | appliance | Appliance=lamp Style=maintainer_call\n"
-        out, _ = run(on_line(layout(X=interlocking(things, ONE_SWITCH_WIRES, "East")), "X"))
-        self.assertEqual(out["interlockings"]["X"]["derived"]["indications"], sorted([
-            "1NATK", "1SATK", "2SATK", "835T1K", "835WLK", "835WLQK", "836NGK", "836SGK", "836TEK", "MC1K"]))
 
-    def test_each_house_sends_what_its_control_point_is(self):
-        out, _ = run(on_line(layout(X=interlocking(TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH)), "X", kind="USS506"))
-        houses = out["interlockings"]["X"]["houses"]
-        self.assertIn("815NWK", houses["North"]["derived"]["indications"])
-        self.assertNotIn("815ANWK", houses["North"]["derived"]["indications"])          # a gang follower: pending
-        self.assertIn("817NWK", houses["South"]["derived"]["indications"])
-        self.assertIn("2NATK", houses["South"]["derived"]["indications"])
-        self.assertEqual({t for h in houses.values() for t in h["derived"]["indications"] if t.endswith("T1K")},
-                         {"813T1K", "815T1K", "815AT1K", "817T1K"})
+def lamp(indication: str, interlocking: str = "X", **given: str) -> dict:
+    """A desk lamp on the panel sheet of ``interlocking`` (its relations.interlocking), with its Indication expression."""
+    return {"given": {"Appliance": "lamp", "Style": "board", **({"Indication": indication} if indication else {}), **given},
+            "relations": {"interlocking": interlocking}}
 
-    def test_a_dependent_derail_and_a_manual_switch_send_nothing_of_their_own(self):
-        things = "795 | appliance | Appliance=switch Style=lock TC=795T1\n795D | appliance | Appliance=switch Style=derail\n" \
-                 "1 | appliance | Appliance=switch Style=manual\n"
-        out, _ = run(on_line(layout(X=interlocking(things, "rr | 795.R 795D.R\n", "East")), "X"))
-        self.assertEqual(out["interlockings"]["X"]["derived"]["indications"], ["795T1K", "795WLK", "795WLQK"])
 
-    def test_a_lamp_and_a_virtual_circuit_send_their_name_with_k_unless_it_ends_in_k(self):
-        """The desk's form (2026-10-27): Sargent's HBA lamp sends HBAK, Watsonville's NFLK sends NFLK, 0100T sends 0100TK."""
-        things = "HBA | appliance | Appliance=lamp Style=non_vital\nNFLK | appliance | Appliance=lamp Style=non_vital\n" \
-                 "0100T | appliance | Appliance=track_circuit Style=virtual IndicationToken=1T\n"
-        out, _ = run(on_line(layout(X=interlocking(things, "", "East")), "X"))
-        self.assertEqual(out["interlockings"]["X"]["derived"]["indications"], ["0100TK", "HBAK", "NFLK"])
+def desk(m: dict, columns: dict[str, str], devices: list[dict]) -> dict:
+    """An OfficeUnit Desk with ``columns`` (number to CP Name) and ``devices``."""
+    m["officeUnits"] = {"Desk": {"columns": {n: {"given": {"CP Name": cp}} for n, cp in columns.items()}, "devices": devices}}
+    return m
 
-    def test_on_no_code_line_a_station_sends_nothing_and_says_so_by_absence(self):
-        out, _ = run(layout(X=interlocking(ONE_SWITCH, ONE_SWITCH_WIRES, "East")))
+
+def stations(model: dict, ref: dict | None = None) -> tuple[dict, list[tuple[str, str]], codeline.Codeline]:
+    """The derivation's diagnostics, and the code line computed from its output: (station -> (controls, indications))."""
+    out, report = derive.derive(model, ref)
+    line = codeline.stations(out, (ref or {}).get("indicationTokens"))
+    diags = sorted((d.code, d.where.rsplit("/", 1)[-1]) for d in report.diags)
+    return {k: (sorted(s.controls), sorted(s.indications)) for k, s in line.stations.items()}, diags, line
+
+
+class Codeline(unittest.TestCase):
+    """What each station receives and must send is computed on demand, never stored (the owner, 2026-10-28): its
+    controls are the levers' ``Control.X`` of the desk columns it is the station of; its indications are the union of
+    the tokens its consumers state, each at the station of the appliance that reports it (``tools/railroad/codeline.py``)."""
+
+    THINGS = ONE_SWITCH + "MC1 | appliance | Appliance=lamp Style=maintainer_call\n"
+
+    def test_on_an_aar_line_the_interlocking_is_the_one_station_and_sends_what_its_consumers_state(self):
+        m = desk(on_line(layout(X=interlocking(self.THINGS, ONE_SWITCH_WIRES, "East")), "X"), {"1": "East"}, [
+            lever("835", "WLS", "WLK", "WLQK", "UNUSED", column="Desk:1"),
+            lever("836", "NGS", "SGS", "HS", "NGK", "SGK", "TEK", column="Desk:1"),
+            lever("MC1", "S", "K", column="Desk:1"), lamp("1NATK | MC1K | 835T1K")])
+        got, diags, _ = stations(m)
+        self.assertEqual(only(diags, "reference", "desk", "lever", "appliance"), [])
+        self.assertEqual(got, {("X", None): (["835WLS", "836HS", "836NGS", "836SGS", "MC1S"],
+                                             ["1NATK", "835T1K", "835WLK", "835WLQK", "836NGK", "836SGK", "836TEK", "MC1K"])})
+        out, _ = derive.derive(m)
+        self.assertNotIn("derived", out["interlockings"]["X"])
         self.assertNotIn("derived", out["interlockings"]["X"]["houses"]["East"])
-        self.assertNotIn("derived", out["interlockings"]["X"])
+        self.assertEqual(layout_model.errors(out), [])
 
-    def test_the_station_is_the_house_on_a_506_line_and_the_interlocking_on_an_aar_line(self):
-        """The owner, 2026-10-27: what a station is depends on the code line's encoding."""
-        out, _ = run(on_line(layout(X=interlocking(TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH)), "X", kind="USS506"))
-        self.assertNotIn("derived", out["interlockings"]["X"])
-        self.assertTrue(all("indications" in h["derived"] for h in out["interlockings"]["X"]["houses"].values()))
-        out, _ = run(on_line(layout(X=interlocking(TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH)), "X", kind="AAR"))
-        self.assertEqual([h.get("derived") for h in out["interlockings"]["X"]["houses"].values()], [None, None])
-        self.assertIn("815NWK", out["interlockings"]["X"]["derived"]["indications"])
-        self.assertIn("817NWK", out["interlockings"]["X"]["derived"]["indications"])
+    def test_on_a_506_line_controls_follow_the_column_and_indications_the_reporting_appliance(self):
+        """Lever 816 sits in North's column, so 816HS goes to North; 816NGK is reported by mast 816NA, which is South's.
+        A lamp has nothing to do with columns: 2NATK is South's, 01TK North's."""
+        m = desk(on_line(layout(X=interlocking(TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH)), "X", kind="USS506"),
+                 {"1": "North", "2": "South"}, [lever("816", "HS", "NGK", column="Desk:1"), lamp("2NATK | 01TK")])
+        got, diags, _ = stations(m)
+        self.assertEqual(only(diags, "reference", "desk"), [])
+        self.assertEqual(got, {("X", "North"): (["816HS"], ["01TK"]), ("X", "South"): ([], ["2NATK", "816NGK"])})
+
+    def test_appliances_the_dispatcher_does_not_control_report_nothing(self):
+        """A manual switch, a derail, a gang follower (it reports through its lead) and a mast's own K."""
+        things = TWO_HOUSES + "1 | appliance | Appliance=switch Style=manual CP_Name=North\n795D | appliance | Appliance=switch Style=derail CP_Name=North\n"
+        m = desk(on_line(layout(X=interlocking(things, TWO_HOUSES_WIRES, NORTH_SOUTH)), "X"), {}, [
+            lamp(t) for t in ("1NWK", "795DNWK", "815ANWK", "814SAK", "815NWK")])
+        got, diags, _ = stations(m)
+        self.assertEqual(only(diags, "reference"), [("reference.unresolved", str(i)) for i in range(4)])
+        self.assertEqual(got[("X", None)][1], ["815NWK"])
+
+    def test_a_name_that_ends_in_k_is_its_token_and_an_os_circuit_is_its_switchs(self):
+        things = ONE_SWITCH + "HBA | appliance | Appliance=lamp Style=non_vital\nNFLK | appliance | Appliance=lamp Style=non_vital\n" \
+                              "0100T | appliance | Appliance=track_circuit Style=virtual IndicationToken=1NAT\n"
+        m = desk(on_line(layout(X=interlocking(things, ONE_SWITCH_WIRES, "East")), "X"), {}, [lamp("HBAK | NFLK | 0100TK | 835T1K")])
+        got, diags, _ = stations(m)
+        self.assertEqual(only(diags, "reference"), [])
+        self.assertEqual(got[("X", None)][1], ["0100TK", "835T1K", "HBAK", "NFLK"])
+
+    def test_a_token_two_houses_report_is_a_warning(self):
+        things = TWO_HOUSES + "816SA | appliance | Appliance=mast Style=single CP_Name=North\n"
+        m = desk(on_line(layout(X=interlocking(things, TWO_HOUSES_WIRES, NORTH_SOUTH)), "X", kind="USS506"), {"1": "North"},
+                 [lever("816", "TEK", column="Desk:1")])
+        _, diags, line = stations(m)
+        self.assertEqual(only(diags, "reference"), [("reference.station", "0")])
+        self.assertEqual([p.kind for p in line.problems], ["station"])
 
     def test_the_users_reference_data_overrides_the_default(self):
-        m = on_line(layout(X=interlocking("9T | appliance | Appliance=track_circuit\nJ1 | joints | Kind=IRJ\n", "a | J1.A 9T.TC\n", "East")), "X")
-        out, _ = derive.derive(m, {"indicationTokens": {"AAR": {"track_circuit": ("{name}KK",)}}})
-        self.assertEqual(out["interlockings"]["X"]["derived"]["indications"], ["9TKK"])
+        m = desk(on_line(layout(X=interlocking("9T | appliance | Appliance=track_circuit\n", "", "East")), "X"), {},
+                 [lamp("9TKK"), lamp("9TK")])
+        got, diags, _ = stations(m, {"indicationTokens": {"AAR": {"track_circuit": ("{name}KK",)}}})
+        self.assertEqual(got[("X", None)][1], ["9TKK"])
+        self.assertEqual(only(diags, "reference"), [("reference.unresolved", "1")])
+
+    def test_a_station_not_in_the_file_is_a_warning_and_one_on_no_code_line_is_missing(self):
+        m = desk(on_line(layout(X=interlocking(self.THINGS, ONE_SWITCH_WIRES, "East"), Y=interlocking("", "", "West", "Y")), "X"), {},
+                 [lamp("Z:1TK"), lamp("Y:1TK")])
+        got, diags, _ = stations(m)
+        self.assertEqual(only(diags, "reference"), [("reference.codeline", "1"), ("reference.interlocking", "0")])
+        self.assertEqual(set(got), {("X", None)})
 
 
 class References(unittest.TestCase):
     """A reference to another interlocking's thing is one-sided (the owner, 2026-10-27). A marker so named is a consumer
-    of the named station's indication: it resolves against what that station sends. A switch or a named row so named
-    is still checked as a thing, with its ports."""
+    of the named station's indication: it resolves against what that station's appliances report. A switch port or a
+    track row so named is an error (the owner, 2026-10-28)."""
 
     Y = interlocking("""
 5    | appliance | Appliance=switch Style=lock TC=5T1
@@ -425,14 +485,16 @@ J5   | joints    | Kind=IRJ
     def check(self, things: str, wires: str, line: bool = True) -> list[tuple[str, str]]:
         return only(run(self.model(things, wires, line))[1], "reference")
 
-    def test_a_consumer_resolves_against_what_the_station_sends_and_names_the_circuit(self):
-        out, diags = run(self.model(self.consumer("Y:3NATK"), "a | J1.A K1.TC\n"))
+    def test_a_consumer_resolves_against_what_the_station_reports_and_names_the_circuit(self):
+        m = self.model(self.consumer("Y:3NATK"), "a | J1.A K1.TC\n")
+        out, diags = run(m)
         self.assertEqual(only(diags, "reference"), [])
         self.assertEqual(row(out["interlockings"]["X"], "J1")["derived"]["circuits"], {"A": "Y:3NAT", "B": "X:1SAT"})
         self.assertNotIn("derived", row(out["interlockings"]["X"], "K1"))
         self.assertEqual(layout_model.errors(out), [])
+        self.assertIn("3NATK", stations(m)[0][("Y", None)][1])
 
-    def test_an_indication_the_station_does_not_send_is_an_error(self):
+    def test_an_indication_no_appliance_reports_is_an_error(self):
         self.assertEqual(self.check(self.consumer("Y:4NATK"), "a | J1.A K1.TC\n"), [("reference.unresolved", "K1")])
 
     def test_a_station_not_in_the_file_is_a_warning_and_one_on_no_code_line_is_missing(self):
@@ -442,29 +504,59 @@ J5   | joints    | Kind=IRJ
     def test_a_pin_of_another_interlockings_marker_is_no_form(self):
         self.assertEqual(self.check("", "a | J1.A Y:3NAT.TC\n"), [("reference.marker", "X")])
 
-    def test_a_switch_reference_is_checked_as_a_thing_with_its_ports(self):
-        self.assertEqual(self.check("", "a | J1.A Y:5.R Y:6.R\n"), [])
-        self.assertEqual(self.check("", "a | J1.A Y:7.R\n"), [("reference.unresolved", "X")])
-        out, report = derive.derive(self.model("", "a | J1.A Y:6.N\n"))
-        self.assertEqual([d.code for d in report.diags if d.code.startswith("reference")], ["reference.unresolved"])
-        self.assertIn("no port N", report.by_code("reference.unresolved")[0].text)
+    def test_track_wired_to_another_interlockings_switch_or_track_row_is_an_error(self):
+        self.assertEqual(self.check("", "a | J1.A Y:5.R Y:6.R\n"), [("reference.track", "X"), ("reference.track", "X")])
+        self.assertEqual(self.check("I1 | ends | Kind=INDUSTRY name=Y:Cannery\n", "a | J1.A I1.EoT\n"), [("reference.track", "I1")])
 
     def test_a_circuit_named_in_a_field_must_exist_too(self):
         things = "9 | appliance | Appliance=switch Style=lock TC=Y:9T1\n1VT | appliance | Appliance=track_circuit Style=virtual IndicationToken=Y:3NAT,Y:8NAT\n"
         self.assertEqual(self.check(things, "a | J1.A 9.C\n"), [("reference.unresolved", "1VT"), ("reference.unresolved", "9")])
 
 
+class Columns(unittest.TestCase):
+    """A column's CP Name names a house or an interlocking; what it must name depends on the code line's encoding (the
+    owner, 2026-10-28)."""
+
+    def model(self, kind: str, columns: dict[str, dict]) -> dict:
+        m = on_line(layout(X=interlocking("", "", NORTH_SOUTH)), "X", kind=kind)
+        m["officeUnits"] = {"Desk": {"columns": columns}}
+        return m
+
+    def derived(self, kind: str, columns: dict[str, dict]) -> tuple[dict, list[tuple[str, str]]]:
+        out, diags = run(self.model(kind, columns))
+        return {n: c.get("derived") for n, c in out["officeUnits"]["Desk"]["columns"].items()}, only(diags, "column", "station")
+
+    COLUMNS = {"1": {"given": {"CP Name": "north"}}, "2": {"given": {"CP Name": "X"}}, "3": {"relations": {"interlocking": "X"}}}
+
+    def test_on_an_aar_line_a_column_names_the_interlocking_or_a_house_as_location(self):
+        got, diags = self.derived("AAR", self.COLUMNS)
+        self.assertEqual(got, {"1": {"house": "X:North", "interlocking": "X"}, "2": {"interlocking": "X"}, "3": None})
+        self.assertEqual(diags, [])
+
+    def test_on_a_506_line_a_column_must_name_a_house(self):
+        got, diags = self.derived("USS506", self.COLUMNS)
+        self.assertEqual(got["1"], {"house": "X:North", "interlocking": "X"})
+        self.assertEqual(diags, [("column.cp_name", "3"), ("column.house", "2")])
+
+    def test_a_cp_name_that_names_nothing_is_an_error_and_two_columns_of_one_506_house_are_two_addresses(self):
+        _, diags = self.derived("AAR", {"1": {"given": {"CP Name": "Nowhere"}}, "2": {"given": {"CP Name": "North"}}, "3": {"given": {"CP Name": "North"}}})
+        self.assertEqual(diags, [("column.house", "1")])
+        _, diags = self.derived("USS506", {"2": {"given": {"CP Name": "North"}}, "3": {"given": {"CP Name": "North"}}})
+        self.assertEqual(diags, [("station.columns", "X")])
+
+
 class OfficeUnits(unittest.TestCase):
     def model(self) -> dict:
-        m = layout(X=interlocking("", "", "East"), Y=interlocking("", "", "West", "Y"))
+        m = layout(X=interlocking("", "", "East"), Y=interlocking("2 | appliance | Appliance=switch Style=powered\n", "", "West", "Y"))
         m["interlockings"]["X"]["devices"] = [
             {"given": {"Appliance": "switch", "Name": "1"}},
             {"given": {"Appliance": "head", "Head": "A"}, "relations": {"mast": "X:2NA"}},
             {"given": {"Appliance": "lever", "Style": "code", "Name": "Code"}}]
         m["officeUnits"] = {"Desk": {"columns": {"1": {"given": {"CP Name": "east"}}, "2": {"relations": {"interlocking": "Y"}}},
-                                     "devices": [{"given": {"Appliance": "lamp", "IndicationToken": "1T, 2T"}, "relations": {"column": "Desk:1"}},
+                                     "devices": [lamp("", "X", IndicationToken="1T, 2T"),
                                                  {"given": {"Appliance": "lever", "Name": "3"}, "relations": {"column": "Desk:2"}},
-                                                 {"given": {"Appliance": "lamp", "Style": "board", "IndicationToken": "4T"}, "relations": {"interlocking": "Y"}}]}}
+                                                 {"given": {"Appliance": "lever", "Name": "2"}, "relations": {"column": "Desk:2"}},
+                                                 lamp("", "Y", IndicationToken="4T")]}}
         return m
 
     def test_a_columns_house_is_its_cp_name_and_a_device_resolves_in_its_scope(self):
@@ -473,128 +565,93 @@ class OfficeUnits(unittest.TestCase):
         self.assertEqual(ou["columns"]["1"]["derived"], {"house": "X:East", "interlocking": "X"})
         self.assertNotIn("derived", ou["columns"]["2"])
         self.assertEqual([d.get("derived") for d in ou["devices"]],
-                         [{"indications": ["X:1TK", "X:2TK"], "expression": "X:1TK | X:2TK"}, {"serves": "Y:3"},
+                         [{"indications": ["X:1TK", "X:2TK"], "expression": "X:1TK | X:2TK"}, {"serves": "Y:3"}, {"serves": "Y:2"},
                           {"indications": ["Y:4TK"], "expression": "Y:4TK"}])
         self.assertEqual([d.get("derived") for d in out["interlockings"]["X"]["devices"]], [{"serves": "X:1"}, {"serves": "X:2NA"}, None])
-        self.assertEqual(diags, [("column.cp_name", "2"), ("desk.legacy_token", "0"), ("desk.legacy_token", "2"), ("head.plan", "1"),
-                                 ("reference.codeline", "0"), ("reference.codeline", "0"), ("reference.codeline", "2")])
+        self.assertEqual(diags, [("desk.legacy_token", "0"), ("desk.legacy_token", "3"), ("head.plan", "1"), ("lever.serves", "1"),
+                                 ("reference.codeline", "0"), ("reference.codeline", "0"), ("reference.codeline", "3"), ("switch.track", "2")])
 
-    def test_a_cp_name_that_names_no_house_is_an_error(self):
+    def test_a_lamp_in_a_column_is_still_in_its_sheets_interlocking(self):
+        """A lamp has nothing to do with columns (the owner, 2026-10-28): its scope is its relations.interlocking."""
         m = self.model()
-        m["officeUnits"]["Desk"]["columns"]["1"]["given"]["CP Name"] = "Nowhere"
-        self.assertIn(("column.house", "1"), run(m)[1])
+        m["officeUnits"]["Desk"]["devices"][0]["relations"]["column"] = "Desk:2"
+        self.assertEqual(run(m)[0]["officeUnits"]["Desk"]["devices"][0]["derived"]["indications"], ["X:1TK", "X:2TK"])
 
 
 class Desk(unittest.TestCase):
     """The office's side of the code line (the owner, 2026-10-27, 2026-10-28): each bound lever pin's ``Control.X`` is a
-    control of the station its column names, each ``Indication.X`` an expression whose tokens the desk consumes, as are a
-    lamp's ``Indication``'s; the station must send each. An empty per-pin field binds none; a missing one is reported,
-    never made up from the lever's name."""
+    control, each ``Indication.X`` an expression whose tokens the desk consumes, as are a lamp's ``Indication``'s. An
+    empty per-pin field binds none; a missing one is reported, never made up from the lever's name."""
 
     THINGS = ONE_SWITCH + "MC1 | appliance | Appliance=lamp Style=maintainer_call\n"
 
     def model(self, devices: list[dict]) -> dict:
         m = on_line(layout(X=interlocking(self.THINGS, ONE_SWITCH_WIRES, "East")), "X")
-        m["officeUnits"] = {"Desk": {"columns": {"1": {"given": {"CP Name": "East"}}}, "devices": [
-            {**dev, "relations": {**dev.get("relations", {}), "column": "Desk:1"}} for dev in devices]}}
-        return m
-
-    @staticmethod
-    def lever(name: str, *functions: str, **fields: str) -> dict:
-        """A lever bound at each function, with the bulk change's per-pin fields: Control.<f> = name+f on a pin ending in
-        S, Indication.<f> = name+f on one ending in K, an empty Control.UNUSED; ``fields`` adds or overrides
-        (``Control_NWS=...`` for Control.NWS, None to leave a field out)."""
-        given = {"Appliance": "lever", "Name": name}
-        for f in functions:
-            if f == "UNUSED":
-                given["Control.UNUSED"] = ""
-            elif f.endswith("S"):
-                given[f"Control.{f}"] = f"{name}{f}"
-            elif f.endswith("K"):
-                given[f"Indication.{f}"] = f"{name}{f}"
-        for k, v in fields.items():
-            key = k.replace("_", ".", 1)
-            if v is None:
-                given.pop(key, None)
-            else:
-                given[key] = v
-        return {"given": given, "relations": {"bindings": {f: f"P/0x20/A{i}" for i, f in enumerate(functions)}}}
+        return desk(m, {"1": "East"}, [d if d["given"]["Appliance"] == "lamp" else
+                                       {**d, "relations": {**d.get("relations", {}), "column": "Desk:1"}} for d in devices])
 
     def test_a_levers_tokens_are_its_per_pin_fields_never_its_name(self):
-        lever = self.lever("835", "WLS", "WLK", "WLQK", "UNUSED", Control_WLS="X:835WLS", Indication_WLK="!835WLK",
-                           Indication_WLQK="835WLQK & (1NATK | X:MC1K)")
-        out, diags = run(self.model([lever]))
+        lv = lever("835", "WLS", "WLK", "WLQK", "UNUSED", Control_WLS="X:835WLS", Indication_WLK="!835WLK",
+                   Indication_WLQK="835WLQK & (1NATK | X:MC1K)")
+        out, diags = run(self.model([lv]))
         self.assertEqual(out["officeUnits"]["Desk"]["devices"][0]["derived"],
                          {"serves": "X:835", "controls": ["X:835WLS"], "indications": ["X:835WLK", "X:835WLQK", "X:1NATK", "X:MC1K"]})
         self.assertEqual(only(diags, "desk"), [])
 
     def test_a_bound_pin_with_no_token_field_is_missing_and_binds_nothing(self):
-        out, diags = run(self.model([self.lever("835", "NWS", "NWK", Control_NWS=None)]))
+        m = self.model([lever("835", "NWS", "NWK", Control_NWS=None)])
+        out, diags = run(m)
         self.assertEqual(only(diags, "desk"), [("desk.token", "0")])
         self.assertEqual(out["officeUnits"]["Desk"]["devices"][0]["derived"], {"serves": "X:835", "indications": ["X:835NWK"]})
-        self.assertNotIn("controls", out["interlockings"]["X"].get("derived", {}))
+        self.assertEqual(stations(m)[0][("X", None)][0], [])
 
     def test_an_indication_that_does_not_parse_is_an_error(self):
-        _, diags = run(self.model([self.lever("835", "NWK", Indication_NWK="835NWK |"),
-                                   {"given": {"Appliance": "lamp", "Indication": "(1NATK"}}]))
+        _, diags = run(self.model([lever("835", "NWK", Indication_NWK="835NWK |"), lamp("(1NATK")]))
         self.assertEqual(only(diags, "desk"), [("desk.expression", "0"), ("desk.expression", "1")])
 
     def test_a_lamp_reads_its_indication_expression(self):
-        out, diags = run(self.model([{"given": {"Appliance": "lamp", "Indication": "1NATK|!X:MC1K, 835NWK"}}]))
+        out, diags = run(self.model([lamp("1NATK|!X:MC1K, 835T1K")]))
         self.assertEqual(out["officeUnits"]["Desk"]["devices"][0]["derived"],
-                         {"indications": ["X:1NATK", "X:MC1K", "X:835NWK"], "expression": "X:1NATK | !X:MC1K | X:835NWK"})
-        self.assertEqual(only(diags, "desk", "lamp"), [])
+                         {"indications": ["X:1NATK", "X:MC1K", "X:835T1K"], "expression": "X:1NATK | !X:MC1K | X:835T1K"})
+        self.assertEqual(only(diags, "desk", "lamp", "reference"), [])
 
     def test_a_lamp_without_indication_falls_back_to_its_legacy_token_at_info(self):
-        out, diags = run(self.model([{"given": {"Appliance": "lamp", "IndicationToken": "1NAT, MC1K"}},
-                                     {"given": {"Appliance": "lamp", "Indication": "1NATK", "IndicationToken": "9T"}}]))
+        out, diags = run(self.model([lamp("", IndicationToken="1NAT, MC1K"), lamp("1NATK", IndicationToken="9T")]))
         devs = out["officeUnits"]["Desk"]["devices"]
         self.assertEqual(devs[0]["derived"], {"indications": ["X:1NATK", "X:MC1K"], "expression": "X:1NATK | X:MC1K"})
         self.assertEqual(devs[1]["derived"]["indications"], ["X:1NATK"])           # Indication wins; no fallback
         self.assertEqual(only(diags, "desk", "reference"), [("desk.legacy_token", "0")])
-        _, report = derive.derive(self.model([{"given": {"Appliance": "lamp", "IndicationToken": "1NAT"}}]))
+        _, report = derive.derive(self.model([lamp("", IndicationToken="1NAT")]))
         self.assertEqual([d.severity for d in report.by_code("desk.legacy_token")], ["info"])
 
-    def test_controls_are_the_levers_s_bindings_on_the_station_and_indications_resolve(self):
-        out, diags = run(self.model([self.lever("835", "WLS", "WLK", "WLQK", "UNUSED"), self.lever("836", "NGS", "SGS", "HS", "NGK", "SGK", "TEK"),
-                                     self.lever("MC1", "S"), {"given": {"Appliance": "lamp", "IndicationToken": "1NAT, MC1K"}}]))
-        self.assertEqual(only(diags, "reference", "lever"), [])
-        self.assertEqual(out["interlockings"]["X"]["derived"]["controls"],
-                         sorted(["835WLS", "836HS", "836NGS", "836SGS", "MC1S"]))
-        devs = out["officeUnits"]["Desk"]["devices"]
-        self.assertEqual(devs[0]["derived"], {"serves": "X:835", "controls": ["X:835WLS"], "indications": ["X:835WLK", "X:835WLQK"]})
-        self.assertEqual(devs[3]["derived"], {"indications": ["X:1NATK", "X:MC1K"], "expression": "X:1NATK | X:MC1K"})
-        self.assertEqual(layout_model.errors(out), [])
-
-    def test_an_indication_the_station_does_not_send_is_an_error(self):
-        _, diags = run(self.model([self.lever("835", "NWS", "NWK"), {"given": {"Appliance": "lamp", "IndicationToken": "9T"}}]))
+    def test_an_indication_no_appliance_reports_is_an_error(self):
+        _, diags = run(self.model([lever("835", "NWS", "NWK"), lamp("9TK")]))
         self.assertEqual(only(diags, "reference"), [("reference.unresolved", "0"), ("reference.unresolved", "1")])
 
-    def test_a_station_not_in_the_file_is_a_warning(self):
-        m = self.model([])
-        m["officeUnits"]["Desk"]["devices"] = [{"given": {"Appliance": "lamp", "IndicationToken": "1T"}, "relations": {"interlocking": "Z"}}]
-        self.assertEqual(only(run(m)[1], "reference"), [("reference.interlocking", "0")])
+    def test_a_lever_serves_a_switch_a_maintainer_call_or_its_masts(self):
+        _, diags = run(self.model([lever("835", "WLS"), lever("836", "HS"), lever("MC1", "S"), lever("999", "HS")]))
+        self.assertEqual(only(diags, "lever"), [("lever.serves", "3")])
 
-    def test_on_a_506_line_a_levers_controls_go_to_the_station_of_its_column(self):
-        """The owner, 2026-10-27: lever 816's masts stand in North and South, but the lever sits in North's column, so
-        816HS goes to station North. 816NGK is South's (its mast 816NA is), so North does not send it; 2NATK is South's, 01TK
-        North's."""
-        m = on_line(layout(X=interlocking(TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH)), "X", kind="USS506")
-        m["officeUnits"] = {"Desk": {"columns": {"1": {"given": {"CP Name": "North"}}, "2": {"given": {"CP Name": "South"}}}, "devices": [
-            {**self.lever("816", "HS", "NGK"), "relations": {**self.lever("816", "HS", "NGK")["relations"], "column": "Desk:1"}},
-            {"given": {"Appliance": "lamp", "IndicationToken": "2NAT"}, "relations": {"column": "Desk:2"}},
-            {"given": {"Appliance": "lamp", "IndicationToken": "01T"}, "relations": {"column": "Desk:2"}}]}}
-        out, diags = run(m)
-        houses = out["interlockings"]["X"]["houses"]
-        self.assertEqual(houses["North"]["derived"]["controls"], ["816HS"])
-        self.assertNotIn("controls", houses["South"]["derived"])
-        self.assertEqual(only(diags, "reference", "desk.station", "desk.token"), [("reference.unresolved", "0"), ("reference.unresolved", "2")])
 
-    def test_on_a_506_line_a_device_in_no_column_that_names_a_house_has_no_stated_station(self):
-        m = on_line(layout(X=interlocking(TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH)), "X", kind="USS506")
-        m["officeUnits"] = {"Desk": {"devices": [{"given": {"Appliance": "lamp", "Style": "board", "IndicationToken": "1NAT"},
-                                                  "relations": {"interlocking": "X"}}]}}
-        self.assertEqual(only(run(m)[1], "reference", "desk.station"), [("desk.station", "0")])
+class NoLever(unittest.TestCase):
+    """The 832 lesson (the owner, 2026-10-28): a switch or lock the dispatcher works over a code line with no desk lever
+    serving it is a warning. A manual switch, a derail and a gang follower need none; masts are not checked yet."""
+
+    def warnings(self, levers: list[str], line: bool = True) -> list[tuple[str, str]]:
+        things = TWO_HOUSES + "1 | appliance | Appliance=switch Style=manual_sensed CP_Name=North\n" \
+                              "795D | appliance | Appliance=switch Style=derail CP_Name=North\n"
+        m = layout(X=interlocking(things, TWO_HOUSES_WIRES, NORTH_SOUTH))
+        if line:
+            on_line(m, "X")
+        desk(m, {"1": "X"}, [lever(n, "NWS", column="Desk:1") for n in levers])
+        return only(run(m)[1], "appliance")
+
+    def test_a_powered_switch_with_no_lever_is_a_warning(self):
+        self.assertEqual(self.warnings(["813", "815"]), [("appliance.no_lever", "817")])
+        self.assertEqual(self.warnings(["813", "815", "817"]), [])
+
+    def test_an_interlocking_on_no_code_line_has_no_dispatcher(self):
+        self.assertEqual(self.warnings([], line=False), [])
 
 
 class Heads(unittest.TestCase):

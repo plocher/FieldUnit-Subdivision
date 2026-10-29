@@ -17,6 +17,7 @@ import unittest
 from tools import layout_model
 from tools.layout_compiler import emit, seams
 from tools.layout_compiler.source import Net, PinRef, Symbol, from_symbols
+from tools.railroad import codeline
 from tests.test_layout_compiler import NETLIST, PROJECT, SPCOAST_AVAILABLE, spcoast_source
 
 SHEET = "/X/"
@@ -458,7 +459,8 @@ class References(unittest.TestCase):
     appliance for it. A marker is a consumer row (``Circuits``); a switch is named by its port. ``test_derive`` checks
     that each resolves."""
 
-    def test_a_switch_reference_is_named_by_its_port_and_an_unwired_one_is_reported(self):
+    def test_a_switch_reference_is_named_by_its_port_is_an_error_and_an_unwired_one_is_reported(self):
+        """The owner, 2026-10-28: track wired to another interlocking's switch is an error (``reference.track``)."""
         given = """
 H1   | House            | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
 J1   | IRJ              | TRACK     | Kind=IRJ
@@ -468,7 +470,7 @@ L1   | AUXILIARY        | APPLIANCE | Appliance=lamp Style=non_vital Name=Y:SFLK
         sm, ix = compile_(given, "a | J1.A SW1.R\n")
         self.assertEqual(ix["track"]["joints"][0]["relations"], {"A": ["Y:5.R"]})
         self.assertNotIn("appliances", ix)
-        self.assertEqual(diags(sm, "reference"), [("reference.interlocking", "X"), ("reference.unwritten", "L1")])
+        self.assertEqual(diags(sm, "reference"), [("reference.track", "X"), ("reference.unwritten", "L1")])
 
 
 @unittest.skipUnless(SPCOAST_AVAILABLE, f"SPCoast project not present or kicad-cli missing: {NETLIST or PROJECT}")
@@ -547,7 +549,7 @@ class SPCoastTrackplan(unittest.TestCase):
     def test_sargents_consumer_of_corporals_2natk_is_the_only_reference_and_resolves(self):
         refs = {n: ix["track"].get("consumers", []) for n, ix in self.model["interlockings"].items()}
         self.assertEqual({n: [c["relations"]["indication"] for c in cs] for n, cs in refs.items() if cs}, {"Sargent": ["Corporal:2NATK"]})
-        self.assertIn("2NATK", self.ix("Corporal")["derived"]["indications"])
+        self.assertIn("2NATK", codeline.stations(self.model).stations[("Corporal", None)].indications)
         self.assertEqual([d for d in self.sm.report.diags if d.code.startswith("reference") and "/consumers/" in d.where], [])
         joint = next(j for j in self.ix("Sargent")["track"]["joints"] if j["given"]["Kind"] == "IRJ")
         self.assertIn(f"{refs['Sargent'][0]['id']}.TC", joint["relations"]["A"])
