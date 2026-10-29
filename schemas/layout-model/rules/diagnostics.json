@@ -4,10 +4,10 @@
   "codes": {
     "appliance.no_lever": {
       "level": "warning",
-      "lifecycle": "active",
+      "lifecycle": "deprecated",
       "since": "0.1.0",
       "feature": null,
-      "replacedBy": null
+      "replacedBy": "interlocking.no_lever"
     },
     "circuit.name.disagree": {
       "level": "error",
@@ -130,6 +130,13 @@
     },
     "head.vocabulary": {
       "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "interlocking.no_lever": {
+      "level": "missing",
       "lifecycle": "active",
       "since": "0.1.0",
       "feature": null,

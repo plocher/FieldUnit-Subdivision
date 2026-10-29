@@ -45,6 +45,7 @@ from tools.railroad import codeline
 
 from . import expression, reference
 from .grammar import GANG, MAST_NAME, lever_class, lever_of, styles
+from . import sort_key
 from .report import Report
 
 RULES = "0.1.0"                     # the derivation's version, stamped as provenance.rules (ADR 0011 §3, ADR 0012 §7)
@@ -540,11 +541,11 @@ class _Reporter:
     def __init__(self) -> None:
         self.report = Report()
 
-    def add(self, code: str, text: str, where: str = "") -> None:
+    def add(self, code: str, text: str, where: str = "", about: str = "") -> None:
         entry = registry().get(code)
         if entry is None:
             raise KeyError(f"diagnostic code {code!r} is not in the registry {REGISTRY}")
-        self.report.add(entry["level"], code, text, where)
+        self.report.add(entry["level"], code, text, where, about)
 
 
 class _Derivation:
@@ -796,20 +797,25 @@ class _Derivation:
         return n in apps or any(a.get("given", {}).get("Appliance") == "mast" and lever_of(m) == n for m, a in apps.items())
 
     def no_lever(self) -> None:
-        """The 832 lesson (the owner, 2026-10-28): a field switch the dispatcher works over a code line (powered, dual or
-        an electric lock, leading its gang; ``grammar.lever_class``) that no desk lever serves is a warning. Masts are
-        not checked: which signals the dispatcher controls is not yet a stated fact (an automatic signal stands on a
-        signal joint too)."""
+        """The 832 lesson (the owner, 2026-10-28): field switches the dispatcher works over a code line (powered, dual or
+        an electric lock, leading its gang; ``grammar.lever_class``) that no desk lever serves. One fact per
+        interlocking, at missing: they may be worked by an NX (entrance-exit) selection, which the drawing cannot state
+        yet (the owner, 2026-10-28). It names the interlocking and locates its first such switch. Masts are not checked:
+        which signals the dispatcher controls is not yet a stated fact (an automatic signal stands on a signal joint
+        too)."""
         served = {dev.get("derived", {}).get("serves") for ou in self.m.get("officeUnits", {}).values()
                   for dev in ou.get("devices", []) if dev.get("given", {}).get("Appliance") == "lever"}
         for b, plan in self.plans.items():
             if not plan.ix.get("relations", {}).get("codeline"):
                 continue
-            for n in plan.appliances:
-                cls = lever_class(n, plan.appliances)
-                if cls and f"{b}:{n}" not in served:
-                    self.r.add("appliance.no_lever", f"{b}: {'electric lock' if cls == 'lock' else 'powered switch'} {n} is worked by "
-                               "the dispatcher, but no desk lever serves it", plan.where("appliances", n))
+            bare = sorted((n for n in plan.appliances if lever_class(n, plan.appliances) and f"{b}:{n}" not in served), key=sort_key)
+            if not bare:
+                continue
+            counts = {c: sum(1 for n in bare if lever_class(n, plan.appliances) == c) for c in ("switch", "lock")}
+            what = " and ".join(f"{k} {'powered switch' if c == 'switch' else 'electric lock'}{'es' * (c == 'switch' and k > 1)}"
+                                f"{'s' * (c == 'lock' and k > 1)}" for c, k in counts.items() if k)
+            self.r.add("interlocking.no_lever", f"{b}: {what} {'have' if len(bare) > 1 else 'has'} no desk lever and no NX selection "
+                       f"is drawn ({', '.join(bare)})", plan.where(), about=plan.where("appliances", bare[0]))
 
     def lever_tokens(self, g: dict[str, str], bindings: dict[str, Any], b: str, what: str,
                      where: str) -> tuple[list[str], list[str]]:

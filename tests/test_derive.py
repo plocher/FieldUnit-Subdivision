@@ -636,8 +636,9 @@ class Desk(unittest.TestCase):
 
 
 class NoLever(unittest.TestCase):
-    """The 832 lesson (the owner, 2026-10-28): a switch or lock the dispatcher works over a code line with no desk lever
-    serving it is a warning. A manual switch, a derail and a gang follower need none; masts are not checked yet."""
+    """The 832 lesson (the owner, 2026-10-28): switches and locks the dispatcher works over a code line with no desk lever
+    serving them are one missing fact per interlocking, since an NX selection the drawing cannot state yet may work
+    them. A manual switch, a derail and a gang follower need none; masts are not checked yet."""
 
     def warnings(self, levers: list[str], line: bool = True) -> list[tuple[str, str]]:
         things = TWO_HOUSES + "1 | appliance | Appliance=switch Style=manual_sensed CP_Name=North\n" \
@@ -646,10 +647,17 @@ class NoLever(unittest.TestCase):
         if line:
             on_line(m, "X")
         desk(m, {"1": "X"}, [lever(n, "NWS", column="Desk:1") for n in levers])
-        return only(run(m)[1], "appliance")
+        self.report = derive.derive(m)[1]
+        return only(run(m)[1], "appliance", "interlocking")
 
-    def test_a_powered_switch_with_no_lever_is_a_warning(self):
-        self.assertEqual(self.warnings(["813", "815"]), [("appliance.no_lever", "817")])
+    def test_switches_with_no_lever_are_one_missing_fact_of_their_interlocking(self):
+        self.assertEqual(self.warnings(["813", "815"]), [("interlocking.no_lever", "X")])
+        (d,) = self.report.by_code("interlocking.no_lever")
+        self.assertEqual((d.severity, d.where, d.about), ("missing", "interlockings/X", "interlockings/X/appliances/817"))
+        self.assertIn("1 powered switch has no desk lever and no NX selection is drawn (817)", d.text)
+        self.warnings([])
+        self.assertIn("3 powered switches have no desk lever and no NX selection is drawn (813, 815, 817)",
+                      self.report.by_code("interlocking.no_lever")[0].text)
         self.assertEqual(self.warnings(["813", "815", "817"]), [])
 
     def test_an_interlocking_on_no_code_line_has_no_dispatcher(self):

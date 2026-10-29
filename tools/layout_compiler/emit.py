@@ -76,7 +76,8 @@ def emit(sm: Seams, source_path: Optional[Path] = None, geometry: Optional[Geome
     model, report = derivation.derive(facts(sm, geometry))
     if not sm.derived:
         where = sources(sm)
-        sm.report.diags.extend(replace(d, source=seams_loc(where[d.where])) if d.where in where else d for d in report.diags)
+        sm.report.diags.extend(replace(d, source=seams_loc(where[d.about or d.where])) if (d.about or d.where) in where else d
+                               for d in report.diags)
         _check_folders(sm, model)
         sm.derived = True
     return model

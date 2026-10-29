@@ -18,6 +18,7 @@ class Diag:
     text: str
     where: str = ""
     source: str = ""                  # a writer's own location of the thing, beside the model path (the KiCad importer's)
+    about: str = ""                   # the model path a writer locates, when it is not ``where`` (a summary's first thing)
 
     def __str__(self) -> str:
         return (f"{self.severity}: {self.code}: {self.text}" + (f"  [{self.where}]" if self.where else "")
@@ -28,8 +29,8 @@ class Report:
     def __init__(self) -> None:
         self.diags: list[Diag] = []
 
-    def add(self, severity: str, code: str, text: str, where: str = "") -> None:
-        self.diags.append(Diag(severity, code, text, where))
+    def add(self, severity: str, code: str, text: str, where: str = "", about: str = "") -> None:
+        self.diags.append(Diag(severity, code, text, where, about=about))
 
     def error(self, code, text, where=""):
         self.add(ERROR, code, text, where)
