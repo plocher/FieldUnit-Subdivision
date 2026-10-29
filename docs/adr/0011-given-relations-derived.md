@@ -165,9 +165,9 @@ language Studio is written in. Three parts, one version:
   their names, control point propagation, ports and links, a mast's heads), written as rules and versioned by date.
   This is a text change to ADR 0009 that waits for this ADR.
 - **A conformance suite, as data.** Each case is a file: `given` and `relations` in; the expected `derived` and the
-  expected diagnostics (by code and symbol) out. The scenario tables in `tests/test_trackplan.py` and
-  `tests/test_layout_compiler.py` become its first cases. Diagnostics are part of the suite so that every writer
-  reports one problem with one code.
+  expected rule-check findings (by code and the entities each names, ADR 0012 §3.3)[^findings] out. The scenario
+  tables in `tests/test_trackplan.py` and `tests/test_layout_compiler.py` become its first cases. Findings are part of
+  the suite so that every implementation reports one problem with one code.
 - **A reference derivation.** `tools/layout_model/derive.py`, beside the schema's reader and writer: it takes the
   three maps and returns `derived` and the diagnostics. Today that logic lives inside the KiCad compiler (§9 lists
   it); it moves out, and the importer calls it.
@@ -238,3 +238,6 @@ sheets and libraries beside the netlist. Geometry's own rows take the same three
 [^consumer]: Rewritten in place on 2026-10-28: the consumed token is the `Indication` field first, it resolves against
     the appliances that can report it, and station packets are computed on demand. The 2026-10-27 wording is at
     commit `de7e4a9`.
+
+[^findings]: Rewritten in place on 2026-10-29: cases name a finding's entities by model identity, not a KiCad symbol;
+    import diagnostics are the importer's and are not in the suite. The earlier wording is at commit `b23ce89`.

@@ -20,7 +20,7 @@ evolve (§7).
 2. **Rules are executable features.** Each rule is a Gherkin feature whose description states the principle and whose
    scenarios are the rule; together they are the normative conformance suite (§3). Default: yes; `behave` runs them
    here.
-3. **A registry of diagnostic codes**, as data: syntax, level, lifecycle, the rule that raises each (§3.3). Default:
+3. **A registry of rule-check codes**, as data: syntax, level, lifecycle, the rule that raises each (§3.3). Default:
    yes, `schemas/layout-model/rules/diagnostics.json`.
 4. **No fallbacks.** Where a relationship has an explicit form, it is stated or it is missing: the implicit
    alternatives of ADR 0009 §3.12 retire. Every derivation stays (§4). Default: yes.
@@ -48,6 +48,14 @@ they may talk about, how they change, and what else consumers must share. Four t
   complete enough to generate; Studio needs routes to show; doc packets need all three. Each would otherwise write its
   own route finder.
 - Ceilings and aspects depend on the railroad, the era and the rulebook, which are reference data, not layout data.
+
+### Primitives, not an executive[^checks]
+
+Everything this ADR defines (the reference derivation, the rule checks, the domain libraries) and the KiCad services
+beside them are primitives: functions a client calls, each returning a result. It should be possible to build an
+executive using these primitives, but these primitives are not that executive. When to derive, check, export a netlist
+or run ERC, in what order, and what to do with a result are the client's decisions: the KiCad importer's, a code
+generator's, Studio's.
 
 ## 2. The functional model
 
@@ -108,7 +116,12 @@ Only in structural features, and there as one paragraph: "in KiCad, a namespace 
 inheritance has nothing to do with KiCad and says nothing about it. The importer's own tests check that a drawing
 yields the `Given` facts.
 
-### 3.3 The diagnostic registry
+### 3.3 The rule-check registry[^checks]
+
+A rule check is a model-integrity check: a function from a model to a list of findings. Each finding has a code, a level,
+and names every entity it is about by model identity: one for a fact wrong in itself, every party for a relationship
+(the consumer and the interlocking it fails to resolve against, both pins of a shorted symbol). Calling it, and what to
+do with each level, are the client's (§1).
 
 The scenarios name the codes; the registry says what each code is:
 
@@ -127,6 +140,10 @@ The scenarios name the codes; the registry says what each code is:
 - Levels, most severe first: error, warning, info, missing.
 - Lifecycle: proposed, active, deprecated (with `replacedBy`), retired. A code retires only at a MAJOR version (§7).
 - A gate checks that every code a scenario names is in the registry and every active code is named by a scenario.
+- Import diagnostics are not rule checks. They are problems translating a drawing into a model, located in the
+  drawing's terms (project, sheet, reference, Name), and mean nothing to a code generator or to Studio, which imports
+  nothing. They belong to the KiCad importer, with their own registry in `tools/layout_compiler`. The importer may also
+  locate a rule check's entities in the drawing for its user; that is the importer's work, not the finding's.
 
 ## 4. No fallbacks
 
@@ -284,7 +301,8 @@ applied §5.3:
 | What | Where |
 |---|---|
 | Features, by family | `schemas/layout-model/rules/features/<family>/*.feature` |
-| Registry and changelog | `schemas/layout-model/rules/diagnostics.json`, `schemas/layout-model/rules/CHANGELOG.md` |
+| Rule-check registry and changelog | `schemas/layout-model/rules/diagnostics.json`, `schemas/layout-model/rules/CHANGELOG.md` |
+| Import diagnostic registry | `tools/layout_compiler/`, retired with the importer |
 | Reference derivation | `tools/layout_model/derive.py` (ADR 0011 §5) |
 | Domain libraries | `tools/railroad/` (`routes.py`, `blocks.py`, `ceilings.py`, `codeline.py`), each with its version and its features |
 | Naming grammar and Style classes, shared by the reference derivation and the domain libraries | `tools/layout_model/grammar.py`[^libs] |
@@ -312,3 +330,7 @@ All move to FieldUnit with the schema (view O15).
 
 [^libs]: Rewritten in place on 2026-10-28: §5.1 gains the codeline library and §10 gains `codeline.py` and
     `grammar.py`, both built in step 2. The earlier wording is at commit `f18e009`.
+
+[^checks]: Rewritten in place on 2026-10-29 (the owner): the package is primitives, not an executive (§1); §3.3
+    registers rule checks, which name every entity they are about, and import diagnostics move to the importer. The
+    earlier wording is at commit `2bf4bb1`.
