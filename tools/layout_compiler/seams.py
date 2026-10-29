@@ -509,7 +509,7 @@ def _nodes(sm: Seams) -> None:
                 try:
                     setattr(n, attr, int(s.get(fld)))
                 except ValueError:
-                    sm.report.error("node.bytes", f"CMRInet Node {ua}: {fld} {s.get(fld)!r} is not a number", source=loc(s))
+                    sm.report.error("node.bytes.number", f"CMRInet Node {ua}: {fld} {s.get(fld)!r} is not a number", source=loc(s))
             else:
                 sm.report.missing("node.bytes", f"CMRInet Node {ua}: no {fld}", source=loc(s))
         hit = _transport_on_net(sm, s)
@@ -582,7 +582,7 @@ def _drivers(sm: Seams) -> None:
             for prefix, declared in (("IB", n.input_bytes), ("OB", n.output_bytes)):
                 used = [int(a.split(".")[1]) for a in n.bits if a.startswith(prefix)]
                 if used and declared is not None and max(used) > declared * 8:
-                    sm.report.error("node.bytes", f"CMRInet Node {n.ua}: {prefix} bit {max(used)} used but {declared} byte(s) declared", source=loc(n.sym))
+                    sm.report.error("node.bytes.range", f"CMRInet Node {n.ua}: {prefix} bit {max(used)} used but {declared} byte(s) declared", source=loc(n.sym))
 
 
 def _served_device(sm: Seams, s: Symbol) -> Optional[str]:
@@ -598,7 +598,7 @@ def _served_device(sm: Seams, s: Symbol) -> Optional[str]:
                 if n:
                     names.add(n)
     if len(names) > 1:
-        sm.report.error("driver.serves", f"driver {s.get('IC')} {s.kind} serves two devices: {', '.join(sorted(names))}", source=loc(s))
+        sm.report.error("driver.serves.two", f"driver {s.get('IC')} {s.kind} serves two devices: {', '.join(sorted(names))}", source=loc(s))
         return None
     return next(iter(names), None)
 
@@ -669,7 +669,7 @@ def _devices(sm: Seams) -> None:
             col_net = sm.source.net_of(s.ref, "Column")
             cols = [sm.source.symbols[p.ref] for p in col_net.others(s.ref)] if col_net else []
             cols = [c for c in cols if c.role == "COLUMN"]
-            col = one(cols, "columns on one Column net", at, sm.report, "device.column") if cols else None
+            col = one(cols, "columns on one Column net", at, sm.report, "device.columns") if cols else None
             ou = next(iter(sm.office_units.values()), None) if len(sm.office_units) == 1 else None
             if col is not None and ou is not None:
                 column = ou.columns.get(key_of(col))
@@ -693,7 +693,7 @@ def _devices(sm: Seams) -> None:
                 ind = sm.source.net_of(s.ref, "IND")
                 masts = [sm.source.symbols[p.ref] for p in ind.others(s.ref)] if ind else []
                 masts = [m for m in masts if m.get("Appliance") == "mast" and m.role == "DEVICE"]
-                m = one(masts, "masts on one IND net", at, sm.report, "head.mast") if masts else None
+                m = one(masts, "masts on one IND net", at, sm.report, "head.masts") if masts else None
                 if m is None:
                     sm.report.missing("head.mast", f"head device {s.lib_id.split(':')[1]} letter {s.get('Head')!r}: wired to no Mast", source=at)
                 else:

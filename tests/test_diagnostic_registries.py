@@ -14,10 +14,6 @@ from tools.layout_model import derive
 ROOT = Path(__file__).resolve().parents[1]
 LEVELS = ("error", "warning", "info", "missing")
 
-# One code raised at two levels for two conditions, against one problem, one code (§3.3). Pending the owner's
-# decision to split each; registered at the more severe level until then.
-TWO_LEVELS = {"device.column", "driver.serves", "head.mast", "node.bytes"}
-
 
 def rule_raised() -> set[str]:
     return raised_codes.rule_codes(*(ROOT / "tools" / "layout_model").glob("*.py"), *(ROOT / "tools" / "railroad").glob("*.py"))
@@ -48,8 +44,7 @@ class Registries(unittest.TestCase):
         self.assertNotIn(None, raised, "an import diagnostic whose code is not a literal")
         self.assertEqual(sorted(set(raised) - set(reg)), [])
         self.assertEqual(sorted(c for c, e in reg.items() if e["lifecycle"] == "active" and c not in raised), [])
-        self.assertEqual(sorted(c for c, levels in raised.items() if levels != {reg[c]["level"]} and c not in TWO_LEVELS), [])
-        self.assertEqual(sorted(c for c in TWO_LEVELS if len(raised.get(c, ())) < 2), [], "split: drop it from TWO_LEVELS")
+        self.assertEqual(sorted(c for c, levels in raised.items() if levels != {reg[c]["level"]}), [])  # one code, one level
 
     def test_no_code_is_both_a_rule_check_and_an_import_diagnostic(self):
         self.assertEqual(sorted(set(derive.registry()) & set(importer.registry())), [])

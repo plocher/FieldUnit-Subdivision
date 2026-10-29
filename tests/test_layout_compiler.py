@@ -279,7 +279,7 @@ class SPCoastRelationTable(unittest.TestCase):
                          {"IC": "CMRI", "NodeType": "C", "InputBytes": "2", "OutputBytes": "3"})
         self.assertEqual(sum(1 for a in node.bits if a.startswith("IB")), 14)
         self.assertEqual(sum(1 for a in node.bits if a.startswith("OB")), 20)
-        self.assertEqual(self.sm.report.by_code("node.bytes"), [])
+        self.assertEqual([d for d in self.sm.report.diags if d.code.startswith("node.bytes")], [])
 
     def test_columns_resolve_by_their_line_and_stations_follow(self):
         """The owner, 2026-10-28: a column's CP Name names a house or the interlocking; on Luchessa's US&S 506 line each
