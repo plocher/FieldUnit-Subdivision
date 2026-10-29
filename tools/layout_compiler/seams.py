@@ -673,9 +673,9 @@ def _devices(sm: Seams) -> None:
                 column = ou.columns.get(key_of(col))
                 dev.column = f"{ou.name}:{column.number}" if column else None     # qualified by its OfficeUnit (D19)
                 placed = column is not None and (column.given.get("CP Name") or column.folder)
-            elif s.get("Style") != "board" and col_net is None:
+            elif s.get("Style") != "board" and col_net is None and appliance != "lamp":
                 sm.report.missing("device.column", f"panel {appliance} {s.value!r} is in no column", where)
-            if not placed:                                             # its column places it nowhere, or it has none
+            if not placed or appliance == "lamp":                     # a lamp is its panel sheet's, never its column's (2026-10-28)
                 folder = _unit_of_sheet(sm, s.sheet)
                 dev.interlocking = folder.name if folder else None     # membership by hierarchy alone (D6)
             if ou is None:

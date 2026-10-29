@@ -17,9 +17,11 @@ class Diag:
     code: str
     text: str
     where: str = ""
+    source: str = ""                  # a writer's own location of the thing, beside the model path (the KiCad importer's)
 
     def __str__(self) -> str:
-        return f"{self.severity}: {self.code}: {self.text}" + (f"  [{self.where}]" if self.where else "")
+        return (f"{self.severity}: {self.code}: {self.text}" + (f"  [{self.where}]" if self.where else "")
+                + (f"  at {self.source}" if self.source else ""))
 
 
 class Report:

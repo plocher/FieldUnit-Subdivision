@@ -10,6 +10,7 @@ empty map is not written. The dictionary is written canonically by ``layout_mode
 from __future__ import annotations
 
 import subprocess
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Optional
 
@@ -18,6 +19,7 @@ from tools.layout_model.reference import REFERENCE_DATA
 
 from .geometry import Geometry
 from .seams import PIN_TOKENS, Seams
+from .source import Symbol
 from .seams import loc as seams_loc
 
 SCHEMA = "layout-model/v3.1.0"                    # reshaped in place to the three maps (ADR 0011 §9; no release yet)
@@ -73,10 +75,38 @@ def emit(sm: Seams, source_path: Optional[Path] = None, geometry: Optional[Geome
     source built in memory has no sheets and passes none."""
     model, report = derivation.derive(facts(sm, geometry))
     if not sm.derived:
-        sm.report.diags.extend(report.diags)
+        where = sources(sm)
+        sm.report.diags.extend(replace(d, source=seams_loc(where[d.where])) if d.where in where else d for d in report.diags)
         _check_folders(sm, model)
         sm.derived = True
     return model
+
+
+def sources(sm: Seams) -> dict[str, Symbol]:
+    """Each model path the reference derivation names, to the symbol that states it (ADR 0011 §5: derive stays KiCad-
+    free; the importer adds where in the drawing). Built from what ``facts`` writes, in the same order."""
+    out: dict[str, Symbol] = {}
+    plans = sm.trackplan.plans if sm.trackplan else {}
+    for ix in sm.interlockings.values():
+        base = f"interlockings/{ix.name}"
+        out[base] = ix.sym
+        for cp, h in ix.houses.items():
+            out[f"{base}/houses/{cp}"] = h.sym
+        for i, d in enumerate(ix.devices):
+            out[f"{base}/devices/{i}"] = d.sym
+        for rel, s in (plans[ix.name].sources.items() if ix.name in plans else ()):
+            out[f"{base}/{rel}"] = s
+    for ou in sm.office_units.values():
+        base = f"officeUnits/{ou.name}"
+        out[base] = ou.sym
+        for c in ou.columns.values():
+            out[f"{base}/columns/{c.number}"] = c.sym
+        for i, d in enumerate(ou.devices):
+            out[f"{base}/devices/{i}"] = d.sym
+    for p in sm.processors.values():
+        for a, d in p.drivers.items():
+            out[f"layout/processors/{p.name}/drivers/{a}"] = d.sym
+    return out
 
 
 def _check_folders(sm: Seams, model: dict[str, Any]) -> None:

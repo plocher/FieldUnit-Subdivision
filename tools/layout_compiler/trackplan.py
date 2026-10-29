@@ -118,6 +118,7 @@ class Plan:
     name: str
     appliances: dict[str, dict[str, Any]] = field(default_factory=dict)
     track: dict[str, Any] = field(default_factory=dict)
+    sources: dict[str, Symbol] = field(default_factory=dict)          # model path under the interlocking -> its symbol
 
 
 @dataclass
@@ -160,6 +161,7 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
 
     track_nets = {n.name for s in syms for pin, n in src.pins_of(s.ref).items() if is_track_pin(s, pin)}
     consumers: list[dict[str, Any]] = []
+    _shorted(syms, src, report, ix.name)
 
     # ------------------------------------------------------------------ appliances
     for s in syms:
@@ -173,13 +175,15 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
         if ":" in name:                                                   # a reference to another interlocking's appliance
             wired = [p for p in (ports_of(s) if is_switch(s) else ("TC",) if appliance == "track_circuit" else ()) if net(s, p)]
             if _foreign(name, ix.name) and not wired:
-                report.info("reference.unwritten", f"{ix.name}: the {appliance or s.lib_id} {name} names another interlocking's "
-                            "thing, but no track wire reaches it, so the file has nothing to state it by; not written", loc(s))
+                report.warning("reference.unwritten", f"{ix.name}: the {appliance or s.lib_id} {name} names another interlocking's "
+                               "thing but nothing here uses it; not written", loc(s))
             elif is_consumer(ix.name, s):
                 if not s.uuid:
                     report.missing("track.id", f"{ix.name}: the marker {name} has no KiCad UUID in the export, so its row has no id", loc(s))
                 consumers.append(_maps({"id": s.uuid or None, "given": given_of(s, keyed=False),
-                                        "relations": {"TC": pin_refs(s, "TC"), "indication": _indication(name)}}))
+                                        "relations": {"TC": pin_refs(s, "TC"), "indication": _indication(s, name, report)}}))
+                if s.uuid:
+                    plan.sources[f"track/consumers/{s.uuid}"] = s
             continue
         if name in plan.appliances:
             report.error("appliance.duplicate", f"{ix.name}: two appliances named {name!r} (ADR 0003 D8: names are unique in an interlocking)", loc(s))
@@ -200,6 +204,7 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
         if appliance in ("lamp", "contact") and net(s, "MC") and net(s, "MC").name in track_nets:
             report.info("appliance.on_track", f"{ix.name}: {appliance} {name}'s MC pin is on the track; not written", loc(s))
         plan.appliances[name] = _maps(row)
+        plan.sources[f"appliances/{name}"] = s
 
     # ------------------------------------------------------------------ track
     named_track: dict[str, Symbol] = {}
@@ -226,19 +231,43 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
                 report.error("joint.masts", f"{ix.name}: one signal joint carries masts {', '.join(sorted(key_of(m) for m in masts))}", loc(s))
             relations["mast"] = qualify(key_of(masts[0]), ix.name) if len(masts) == 1 else None
         row = _maps(row)
-        (policies if s.role == "POLICY" else joints if s.kind in JOINTS else ends).append(row)
+        kind = "policies" if s.role == "POLICY" else "joints" if s.kind in JOINTS else "ends"
+        {"policies": policies, "joints": joints, "ends": ends}[kind].append(row)
+        if s.uuid:
+            plan.sources[f"track/{kind}/{s.uuid}"] = s
         if s.role == "TRACK" and s.kind not in JOINTS | ENDS:
             report.info("track.kind", f"{ix.name}: TRACK Kind {s.kind!r} is not one the KiCad importer reads; written with the ends", loc(s))
     plan.track = {k: v for k, v in {"joints": joints, "ends": ends, "policies": policies, "consumers": consumers}.items() if v}
     return plan
 
 
-def _indication(name: str) -> str:
-    """The indication token a drawn reference to a track circuit names: by the AAR nomenclature behind every code line,
-    the circuit's name with the indications' K added (``Corporal:2NAT`` is ``Corporal:2NATK``; the owner, 2026-10-27).
-    The template is the reference data's default, the one form every encoding shares."""
+def _indication(s: Symbol, name: str, report) -> str:
+    """The indication token a remote consumer marker consumes: its ``Indication`` field, qualified in the scope its
+    ``Name`` names (the owner, 2026-10-28: ``Indication=${Name}K`` is to be a library field macro). Without one, the
+    legacy form: by the AAR nomenclature behind every code line, the circuit's name with the indications' K added
+    (``Corporal:2NAT`` is ``Corporal:2NATK``; the owner, 2026-10-27), the reference data's default template, reported
+    at info so what is unconverted shows."""
     scope, _, circuit = name.partition(":")
-    return f"{scope}:" + indication_tokens(None)["track_circuit"][0].format(name=circuit)
+    if s.get("Indication"):
+        return qualify(s.get("Indication"), scope)
+    token = f"{scope}:" + indication_tokens(None)["track_circuit"][0].format(name=circuit)
+    report.info("consumer.legacy_token", f"the consumer {name} states no Indication; read from its Name as {token}", loc(s))
+    return token
+
+
+def _shorted(syms: list[Symbol], src, report, interlocking: str) -> None:
+    """Two track pins of one symbol on one net (a switch's N and R wired to each other with nothing between): an error
+    (the owner, 2026-10-28; a correct drawing has insulated joints, and maybe a track circuit, between them). The
+    relations cannot state it, since a pin never names its own symbol."""
+    for s in syms:
+        by_net: dict[str, list[str]] = {}
+        for pin, n in src.pins_of(s.ref).items():
+            if is_track_pin(s, pin):
+                by_net.setdefault(n.name, []).append(side_of(s, pin))
+        for sides in by_net.values():
+            if len(sides) > 1:
+                report.error("track.shorted", f"{interlocking}: {s.get('Appliance') or s.kind or s.lib_id} {key_of(s) or s.ref} has "
+                             f"{' and '.join(sorted(sides))} on one wire with nothing between; insulated joints belong there", loc(s))
 
 
 def _foreign(name: str, interlocking: str) -> bool:

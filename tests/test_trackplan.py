@@ -471,6 +471,46 @@ L1   | AUXILIARY        | APPLIANCE | Appliance=lamp Style=non_vital Name=Y:SFLK
         self.assertEqual(ix["track"]["joints"][0]["relations"], {"A": ["Y:5.R"]})
         self.assertNotIn("appliances", ix)
         self.assertEqual(diags(sm, "reference"), [("reference.track", "X"), ("reference.unwritten", "L1")])
+        self.assertEqual([d.severity for d in sm.report.by_code("reference.unwritten")], ["warning"])
+
+    CONSUMER = """
+H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
+J1   | IRJ             | TRACK     | Kind=IRJ
+TC1  | Track Circuit   | APPLIANCE | Appliance=track_circuit Name=Corporal:2NAT {}
+"""
+
+    def test_a_consumer_reads_its_indication_field_and_falls_back_to_its_name_at_info(self):
+        """The owner, 2026-10-28: a remote consumer marker's token is its Indication field (``${Name}K`` to be a library
+        macro), qualified in the scope its Name names; without one, its Name and K, reported so the unconverted show."""
+        for field, token, legacy in (("Indication=2NATXK", "Corporal:2NATXK", []), ("Indication=Corporal:2NATK", "Corporal:2NATK", []),
+                                     ("", "Corporal:2NATK", [("consumer.legacy_token", "TC1")])):
+            sm, ix = compile_(self.CONSUMER.format(field), "a | J1.A TC1.TC\n")
+            self.assertEqual(ix["track"]["consumers"][0]["relations"]["indication"], token, field)
+            self.assertEqual(diags(sm, "consumer"), legacy, field)
+            self.assertEqual([d.severity for d in sm.report.by_code("consumer.legacy_token")], ["info"] if legacy else [])
+
+
+class Shorted(unittest.TestCase):
+    def test_two_track_pins_of_one_symbol_on_one_wire_are_an_error(self):
+        """The owner, 2026-10-28: a switch's N and R wired to each other with nothing between; a correct drawing has
+        insulated joints between them. The relations cannot state it, since a pin never names its own symbol."""
+        sm, ix = compile_(ONE_SWITCH, ONE_SWITCH_NETS.replace("n    | SW1.N J2.A\nr    | SW1.R J3.A", "n    | SW1.N SW1.R J2.A J3.A"))
+        self.assertEqual(diags(sm, "track.shorted"), [("track.shorted", "SW1")])
+        self.assertNotIn("X:835.N", ix["appliances"]["835"]["relations"]["R"])
+        sm, _ = compile_(ONE_SWITCH, ONE_SWITCH_NETS)
+        self.assertEqual(diags(sm, "track.shorted"), [])
+
+
+class Locations(unittest.TestCase):
+    def test_a_derived_diagnostic_keeps_its_model_path_and_the_importer_adds_the_symbol(self):
+        """10c: derive names the model path; the importer appends sheet, reference, library symbol and Value."""
+        sm, _ = compile_(ONE_SWITCH, ONE_SWITCH_NETS.replace("s3   | J3.SIGNAL M3.SIGNAL\n", ""))
+        (d,) = sm.report.by_code("mast.joint")
+        self.assertEqual(d.where, "interlockings/X/appliances/836SB")
+        self.assertEqual(d.source, "/X/M3 Railroad-Trackplan:Mast_Dwarf ''")
+        self.assertTrue(str(d).endswith("at /X/M3 Railroad-Trackplan:Mast_Dwarf ''"))
+        (d,) = [d for d in sm.report.by_code("next_cp.interlocking")]
+        self.assertTrue(d.where.startswith("interlockings/X/track/ends/") and d.source.startswith("/X/NX1 "))
 
 
 @unittest.skipUnless(SPCOAST_AVAILABLE, f"SPCoast project not present or kicad-cli missing: {NETLIST or PROJECT}")
