@@ -19,13 +19,15 @@ translates pin names into sides here (``side_of``, three-maps D15; ADR 0012 §8)
 A name qualified with another interlocking's scope is a one-sided reference: it is no appliance here, and nothing is
 written back to the thing it names (the owner, 2026-10-27). A track circuit marker so named (Sargent's ``Corporal:2NAT``)
 is a consumer of that station's indication: a row of ``track.consumers`` with its symbol's UUID as ``id``, its fields
-in ``given`` (its ``Name`` included, since a row has no name), and ``relations.indication``, the token it consumes,
-the drawn name with the indications' ``K`` added at ingest (``Corporal:2NATK``; reference data). The neighbours name
-its TC by the id, like any local row. A switch so named (``Corporal:1``) is still named by its port
-(``Corporal:1.C``): what it consumes has no stated token form yet. The reference derivation checks both.
+in ``given`` (its ``Name`` included, since a row has no name), and ``relations.indication``, the token it consumes: its
+``Indication`` field, else the drawn name with the indications' ``K`` added at ingest (``Corporal:2NATK``; reference
+data), reported at info. The neighbours name its TC by the id, like any local row. A switch so named (``Corporal:1``)
+is named by its port (``Corporal:1.C``), which the reference derivation reports as an error (the owner, 2026-10-28).
+An off-track symbol so named that nothing is wired to is a warning, ``reference.unwritten``.
 
 Diagnostics here are about the drawing as drawn: a symbol with no name or no UUID, two symbols with one name, two masts
-on one signal joint (the file has one ``relations.mast``). Nothing here reads a coordinate, a net name, a reference or
+on one signal joint (the file has one ``relations.mast``), two track pins of one symbol on one wire
+(``track.shorted``). Nothing here reads a coordinate, a net name, a reference or
 ``Value``; every name is read through ``key_of``.
 """
 from __future__ import annotations
