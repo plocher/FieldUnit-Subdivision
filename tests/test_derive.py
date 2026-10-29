@@ -413,22 +413,23 @@ class Codeline(unittest.TestCase):
         self.assertNotIn("derived", out["interlockings"]["X"]["houses"]["East"])
         self.assertEqual(layout_model.errors(out), [])
 
-    def test_on_a_506_line_controls_follow_the_column_and_indications_the_reporting_appliance(self):
-        """Lever 816 sits in North's column, so 816HS goes to North; 816NGK is reported by mast 816NA, which is South's.
-        A lamp has nothing to do with columns: 2NATK is South's, 01TK North's."""
+    def test_on_a_506_line_a_levers_tokens_follow_its_column_and_a_lamps_the_reporting_appliance(self):
+        """The owner, 2026-10-28: lever 816 sits in North's column, so North does all its code line work, 816HS and
+        816NGK, though its mast 816NA is South's; masts report nothing. A lamp has nothing to do with columns: 2NATK is
+        South's, 01TK North's."""
         m = desk(on_line(layout(X=interlocking(TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH)), "X", kind="USS506"),
                  {"1": "North", "2": "South"}, [lever("816", "HS", "NGK", column="Desk:1"), lamp("2NATK | 01TK")])
         got, diags, _ = stations(m)
         self.assertEqual(only(diags, "reference", "desk"), [])
-        self.assertEqual(got, {("X", "North"): (["816HS"], ["01TK"]), ("X", "South"): ([], ["2NATK", "816NGK"])})
+        self.assertEqual(got, {("X", "North"): (["816HS"], ["01TK", "816NGK"]), ("X", "South"): ([], ["2NATK"])})
 
     def test_appliances_the_dispatcher_does_not_control_report_nothing(self):
-        """A manual switch, a derail, a gang follower (it reports through its lead) and a mast's own K."""
+        """A manual switch, a derail, a gang follower (it reports through its lead) a mast's own K, and a mast as the reporter of a signal lever's token (masts report nothing)."""
         things = TWO_HOUSES + "1 | appliance | Appliance=switch Style=manual CP_Name=North\n795D | appliance | Appliance=switch Style=derail CP_Name=North\n"
         m = desk(on_line(layout(X=interlocking(things, TWO_HOUSES_WIRES, NORTH_SOUTH)), "X"), {}, [
-            lamp(t) for t in ("1NWK", "795DNWK", "815ANWK", "814SAK", "815NWK")])
+            lamp(t) for t in ("1NWK", "795DNWK", "815ANWK", "814SAK", "816NGK", "815NWK")])
         got, diags, _ = stations(m)
-        self.assertEqual(only(diags, "reference"), [("reference.unresolved", str(i)) for i in range(4)])
+        self.assertEqual(only(diags, "reference"), [("reference.unresolved", str(i)) for i in range(5)])
         self.assertEqual(got[("X", None)][1], ["815NWK"])
 
     def test_a_name_that_ends_in_k_is_its_token_and_an_os_circuit_is_its_switchs(self):
@@ -439,10 +440,10 @@ class Codeline(unittest.TestCase):
         self.assertEqual(only(diags, "reference"), [])
         self.assertEqual(got[("X", None)][1], ["0100TK", "835T1K", "HBAK", "NFLK"])
 
-    def test_a_token_two_houses_report_is_a_warning(self):
-        things = TWO_HOUSES + "816SA | appliance | Appliance=mast Style=single CP_Name=North\n"
-        m = desk(on_line(layout(X=interlocking(things, TWO_HOUSES_WIRES, NORTH_SOUTH)), "X", kind="USS506"), {"1": "North"},
-                 [lever("816", "TEK", column="Desk:1")])
+    def test_a_lamp_token_two_houses_report_is_a_warning(self):
+        """815A's TC names 815AT1 (North, by its gang); a marker 815AT1 states South."""
+        things = TWO_HOUSES + "815AT1 | appliance | Appliance=track_circuit CP_Name=South\n"
+        m = desk(on_line(layout(X=interlocking(things, TWO_HOUSES_WIRES, NORTH_SOUTH)), "X", kind="USS506"), {}, [lamp("815AT1K")])
         _, diags, line = stations(m)
         self.assertEqual(only(diags, "reference"), [("reference.station", "0")])
         self.assertEqual([p.kind for p in line.problems], ["station"])
@@ -625,8 +626,9 @@ class Desk(unittest.TestCase):
         self.assertEqual([d.severity for d in report.by_code("desk.legacy_token")], ["info"])
 
     def test_an_indication_no_appliance_reports_is_an_error(self):
+        """A lever's own tokens need no reporter (its column's station does the work); a lamp's do."""
         _, diags = run(self.model([lever("835", "NWS", "NWK"), lamp("9TK")]))
-        self.assertEqual(only(diags, "reference"), [("reference.unresolved", "0"), ("reference.unresolved", "1")])
+        self.assertEqual(only(diags, "reference"), [("reference.unresolved", "1")])
 
     def test_a_lever_serves_a_switch_a_maintainer_call_or_its_masts(self):
         _, diags = run(self.model([lever("835", "WLS"), lever("836", "HS"), lever("MC1", "S"), lever("999", "HS")]))

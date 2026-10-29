@@ -6,13 +6,15 @@ with the same function (``stations``), so there is one definition.
 What a station is depends on its code line's encoding (``reference.station_of``; the owner, 2026-10-27): on a US&S 506
 line each house is a station, on an AAR token line the interlocking is one.
 
-- **Controls.** A desk lever's ``derived.controls`` go to the station of the desk column the lever sits in: on a
-  per-house line the house its column resolves to (``derived.house``), else the column's interlocking.
-- **Indications.** Panels define token content (the owner, 2026-10-28): what a station must send is the union of the
-  indication tokens its consumers state, the desk levers' and lamps' ``derived.indications`` and the remote consumer
-  markers' ``relations.indication``. Field appliances carry no tokens. Each token belongs to the station of the
+- **Levers.** A desk lever's ``derived.controls`` and ``derived.indications`` go to the station of the desk column the
+  lever sits in: on a per-house line the house its column resolves to (``derived.house``), else the column's
+  interlocking (the owner, 2026-10-28). That station does all the code line work for the lever; its field unit drives
+  masts in other houses internally, unseen by the office. A lever's tokens need no reporter, only an appliance it
+  serves (the derivation's ``lever.serves``).
+- **Lamps and consumer rows.** Panels define token content (the owner, 2026-10-28): what a station must send is the
+  union of the indication tokens its consumers state. A lamp's or a consumer row's token belongs to the station of the
   appliance that reports it (``reporters``): on a per-house line the house that is its ``derived.controlPoint``. A lamp
-  has nothing to do with columns.
+  has nothing to do with columns. Field appliances carry no tokens.
 """
 from __future__ import annotations
 
@@ -21,7 +23,7 @@ from dataclasses import dataclass, field
 from typing import Any, Iterator, Optional
 
 from tools.layout_model import reference
-from tools.layout_model.grammar import lever_class, lever_of, styles
+from tools.layout_model.grammar import lever_class, styles
 
 StationKey = tuple[str, Optional[str]]                 # (interlocking, house); house None: the interlocking is the station
 
@@ -89,9 +91,10 @@ def templates(model: dict[str, Any], interlocking: Optional[str], user: Optional
 # stated fact. Until it is, the reference data's indication templates are read backwards, here and nowhere else: a
 # token is reported by an appliance of the class whose template, filled with the appliance's name (or a mast's lever),
 # gives the token (``{name}K`` a track circuit, a switch's OS circuit by its TC, a maintainer call or another lamp;
-# ``{name}NWK`` a powered switch; ``{name}WLK`` an electric lock; ``{lever}NGK`` a signal lever's masts). An appliance
-# the dispatcher does not control reports nothing of its own: a manual or manual_sensed switch, a derail, a gang
-# follower (``grammar.lever_class``), and a mast has no K of its own. To be revisited with the token rulings.
+# ``{name}NWK`` a powered switch; ``{name}WLK`` an electric lock). An appliance the dispatcher does not control reports
+# nothing of its own: a manual or manual_sensed switch, a derail, a gang follower (``grammar.lever_class``). A mast
+# reports nothing at all (the owner, 2026-10-28): a signal lever's tokens are its column's station's, so the signal
+# templates are never read backwards. To be revisited with the token rulings.
 
 def _matches(template: str, token: str) -> Iterator[dict[str, str]]:
     pattern = re.escape(template).replace(re.escape("{name}"), "(?P<name>.+)").replace(re.escape("{lever}"), r"(?P<lever>\d+)")
@@ -114,10 +117,6 @@ def _candidates(cls: str, names: dict[str, str], apps: dict[str, dict[str, Any]]
     elif cls in ("switch", "lock"):
         if lever_class(n, apps) == cls:
             yield Reporter(cls, n)
-    elif cls == "signal":
-        for m, a in sorted(apps.items()):
-            if a.get("given", {}).get("Appliance") == "mast" and lever_of(m) == names.get("lever"):
-                yield Reporter(cls, m)
     elif cls == "maintainer_call":
         if g.get("Appliance") == "lamp" and "maintainer_call" in styles(g):
             yield Reporter(cls, n)
@@ -198,9 +197,15 @@ def stations(model: dict[str, Any], user: Optional[dict] = None) -> Codeline:
             if g.get("Appliance") == "lever" and d.get("serves"):
                 b = d["serves"].partition(":")[0]
                 key = _column_station(model, ou_name, dev, b)
+                mine = lambda tokens: {t.partition(":")[2] for t in tokens if t.partition(":")[0] == b}  # noqa: E731
                 if key in out:
-                    out[key].controls.update(t.partition(":")[2] for t in d.get("controls", []) if t.partition(":")[0] == b)
+                    out[key].controls.update(mine(d.get("controls", [])))
+                    out[key].indications.update(mine(d.get("indications", [])))
                 what = f"lever {d['serves'].partition(':')[2]}"
+                for token in d.get("indications", []):
+                    if token.partition(":")[0] != b:            # another interlocking's indication: resolved like a lamp's
+                        indication(token, what, where)
+                continue
             elif g.get("Appliance") == "lamp":
                 what = f"the lamp {g.get('Name', '')}".rstrip()
             else:
