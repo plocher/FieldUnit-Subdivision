@@ -60,7 +60,7 @@ JOINTS = frozenset({"IRJ", "IRJ_SIGNAL"})
 
 @lru_cache(maxsize=1)
 def registry() -> dict[str, dict[str, Any]]:
-    """The diagnostic registry (ADR 0012 §3.3): every code the derivation raises, with its level."""
+    """The rule-check registry (ADR 0012 §3.3): every code the derivation raises, with its level."""
     return json.loads(REGISTRY.read_text(encoding="utf-8"))["codes"]
 
 

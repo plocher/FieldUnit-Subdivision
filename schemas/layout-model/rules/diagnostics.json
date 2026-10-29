@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "description": "The diagnostic registry of the reference derivation (ADR 0012 §3.3): every code tools/layout_model/derive.py raises, its level and lifecycle. Pre-release with the rules (0.1.0); a code's feature is named when the features exist. Codes the KiCad importer raises about the drawing as drawn are the importer's own and are not listed.",
+  "description": "The rule-check registry of the reference derivation and the domain libraries (ADR 0012 §3.3): every code tools/layout_model/derive.py and tools/railroad raise about the model's facts, its level and lifecycle. Each finding names every entity it is about by model path. Pre-release with the rules (0.1.0); a code's feature is named when the features exist. Import diagnostics, the KiCad importer's problems translating the drawing, are in its own registry, tools/layout_compiler/diagnostics.json.",
   "codes": {
     "appliance.no_lever": {
       "level": "warning",

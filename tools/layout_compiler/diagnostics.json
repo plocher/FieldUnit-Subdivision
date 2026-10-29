@@ -1,0 +1,538 @@
+{
+  "version": "0.1.0",
+  "description": "The import-diagnostic registry of the KiCad importer (ADR 0012 §3.3): every code tools/layout_compiler raises about translating the drawing into a model, its level and lifecycle. Each is located in the drawing (Diag.source: sheet, reference, library symbol, Name) and means nothing to a code generator or to Studio. Rule checks about the model are in schemas/layout-model/rules/diagnostics.json. since is the importer version (layout_compiler 0.4.0).",
+  "codes": {
+    "appliance.duplicate": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "appliance.name": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "appliance.on_track": {
+      "level": "info",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "bit.direction": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "bit.duplicate": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "bus.kind": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "bus.net": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "codeline.net": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "column.duplicate": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "column.folder": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "column.number": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "column.office": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "consumer.legacy_token": {
+      "level": "info",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "device.column": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "device.interlocking": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "device.invert": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "device.office": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "driver.address": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "driver.address.override": {
+      "level": "info",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "driver.bus.missing": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "driver.duplicate": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "driver.ic": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "driver.kind": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "driver.serves": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "encoding.kind": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "encoding.processor": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "encoding.transport.missing": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "entity.conflict": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "entity.duplicate": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "entity.name": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "geometry.head": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "geometry.library": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "geometry.marker": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "geometry.name": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "geometry.placement": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "geometry.project": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "geometry.run_end": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "geometry.sheet": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "geometry.sheets": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "head.duplicate": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "head.letter": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "head.mast": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "house.codeline": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "house.cp_name": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "house.interlocking": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "house.mc": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "identity.address": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "identity.column": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "identity.cp_name": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "identity.name": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "interlocking.name": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "joint.masts": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "macro.field": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "macro.scope": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "milepost.number": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "node.address": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "node.bytes": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "node.transport.missing": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "office.processor": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "office.processor.missing": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "processor.board": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "processor.net": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "railroad.count": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "railroad.missing": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "railroad.name": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "reference.unwritten": {
+      "level": "warning",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "track.duplicate": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "track.id": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "track.kind": {
+      "level": "info",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "track.shorted": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "transport.anchor": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "transport.anchor.missing": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "transport.net": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "unit.codeline.missing": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "unit.processor": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "unit.processor.missing": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    }
+  }
+}

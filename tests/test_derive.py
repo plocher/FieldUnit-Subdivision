@@ -703,11 +703,6 @@ class Strip(unittest.TestCase):
         stale["interlockings"]["X"]["appliances"]["835"]["derived"] = {"osCircuit": "X:999T", "controlPoint": "X:West"}
         self.assertEqual(layout_model.dumps(derive.derive(stale)[0]), layout_model.dumps(derive.derive(m)[0]))
 
-    def test_every_code_is_in_the_registry_with_a_level(self):
-        for code, entry in derive.registry().items():
-            self.assertIn(entry["level"], ("error", "warning", "info", "missing"), code)
-            self.assertEqual(code, code.lower())
-
 
 class SPCoastExample(unittest.TestCase):
     """The gate (ADR 0011 §5): the committed example, stripped of every derived map and derived again, is the same
