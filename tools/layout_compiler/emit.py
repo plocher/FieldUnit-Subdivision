@@ -112,7 +112,12 @@ def sources(sm: Seams) -> dict[str, Symbol]:
             out[f"{base}/columns/{c.number}"] = c.sym
         for i, d in enumerate(ou.devices):
             out[f"{base}/devices/{i}"] = d.sym
+    for t in sm.transports.values():                                 # an entity drawn several times: its first placement
+        if t.instances:
+            out[f"layout/transports/{t.name}"] = next(iter(t.instances.values()))
     for p in sm.processors.values():
+        if p.syms:
+            out[f"layout/processors/{p.name}"] = p.syms[0]
         for a, d in p.drivers.items():
             out[f"layout/processors/{p.name}/drivers/{a}"] = d.sym
     return out
