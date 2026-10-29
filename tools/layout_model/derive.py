@@ -814,8 +814,8 @@ class _Derivation:
             counts = {c: sum(1 for n in bare if lever_class(n, plan.appliances) == c) for c in ("switch", "lock")}
             what = " and ".join(f"{k} {'powered switch' if c == 'switch' else 'electric lock'}{'es' * (c == 'switch' and k > 1)}"
                                 f"{'s' * (c == 'lock' and k > 1)}" for c, k in counts.items() if k)
-            self.r.add("interlocking.no_lever", f"{b}: {what} {'have' if len(bare) > 1 else 'has'} no desk lever and no NX selection "
-                       f"is drawn ({', '.join(bare)})", plan.where(), about=plan.where("appliances", bare[0]))
+            self.r.add("interlocking.no_lever", f"{b}: {what} {'have' if len(bare) > 1 else 'has'} no desk lever in this file; "
+                       f"how the dispatcher works {'them' if len(bare) > 1 else 'it'} (an NX selection, another office unit) is not drawn yet ({', '.join(bare)})", plan.where(), about=plan.where("appliances", bare[0]))
 
     def lever_tokens(self, g: dict[str, str], bindings: dict[str, Any], b: str, what: str,
                      where: str) -> tuple[list[str], list[str]]:

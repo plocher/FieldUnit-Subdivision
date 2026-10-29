@@ -654,9 +654,9 @@ class NoLever(unittest.TestCase):
         self.assertEqual(self.warnings(["813", "815"]), [("interlocking.no_lever", "X")])
         (d,) = self.report.by_code("interlocking.no_lever")
         self.assertEqual((d.severity, d.where, d.about), ("missing", "interlockings/X", "interlockings/X/appliances/817"))
-        self.assertIn("1 powered switch has no desk lever and no NX selection is drawn (817)", d.text)
+        self.assertIn("1 powered switch has no desk lever in this file; how the dispatcher works it (an NX selection, another office unit) is not drawn yet (817)", d.text)
         self.warnings([])
-        self.assertIn("3 powered switches have no desk lever and no NX selection is drawn (813, 815, 817)",
+        self.assertIn("3 powered switches have no desk lever in this file; how the dispatcher works them (an NX selection, another office unit) is not drawn yet (813, 815, 817)",
                       self.report.by_code("interlocking.no_lever")[0].text)
         self.assertEqual(self.warnings(["813", "815", "817"]), [])
 
