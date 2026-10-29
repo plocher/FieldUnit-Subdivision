@@ -171,24 +171,24 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
             continue
         name = key_of(s)
         if not name:
-            report.missing("appliance.name", f"{ix.name}: an {s.get('Appliance') or s.lib_id} has no Name", loc(s))
+            report.missing("appliance.name", f"{ix.name}: an {s.get('Appliance') or s.lib_id} has no Name", source=loc(s))
             continue
         appliance = s.get("Appliance")
         if ":" in name:                                                   # a reference to another interlocking's appliance
             wired = [p for p in (ports_of(s) if is_switch(s) else ("TC",) if appliance == "track_circuit" else ()) if net(s, p)]
             if _foreign(name, ix.name) and not wired:
                 report.warning("reference.unwritten", f"{ix.name}: the {appliance or s.lib_id} {name} names another interlocking's "
-                               "thing but nothing here uses it; not written", loc(s))
+                               "thing but nothing here uses it; not written", source=loc(s))
             elif is_consumer(ix.name, s):
                 if not s.uuid:
-                    report.missing("track.id", f"{ix.name}: the marker {name} has no KiCad UUID in the export, so its row has no id", loc(s))
+                    report.missing("track.id", f"{ix.name}: the marker {name} has no KiCad UUID in the export, so its row has no id", source=loc(s))
                 consumers.append(_maps({"id": s.uuid or None, "given": given_of(s, keyed=False),
                                         "relations": {"TC": pin_refs(s, "TC"), "indication": _indication(s, name, report)}}))
                 if s.uuid:
                     plan.sources[f"track/consumers/{s.uuid}"] = s
             continue
         if name in plan.appliances:
-            report.error("appliance.duplicate", f"{ix.name}: two appliances named {name!r} (ADR 0003 D8: names are unique in an interlocking)", loc(s))
+            report.error("appliance.duplicate", f"{ix.name}: two appliances named {name!r} (ADR 0003 D8: names are unique in an interlocking)", source=loc(s))
             continue
         check_milepost(s, report, f"{ix.name}: {appliance} {name}")
         relations: dict[str, Any] = {}
@@ -204,7 +204,7 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
             houses = [cp for cp, h in ix.houses.items() if h.maintainer_call == qualify(name, ix.name)]
             relations["house"] = f"{ix.name}:{houses[0]}" if len(houses) == 1 else None      # its MC wire (D8)
         if appliance in ("lamp", "contact") and net(s, "MC") and net(s, "MC").name in track_nets:
-            report.info("appliance.on_track", f"{ix.name}: {appliance} {name}'s MC pin is on the track; not written", loc(s))
+            report.info("appliance.on_track", f"{ix.name}: {appliance} {name}'s MC pin is on the track; not written", source=loc(s))
         plan.appliances[name] = _maps(row)
         plan.sources[f"appliances/{name}"] = s
 
@@ -217,11 +217,11 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
         relations: dict[str, Any] = {}
         row: dict[str, Any] = {"id": s.uuid or None, "given": given_of(s), "relations": relations}
         if not s.uuid:
-            report.missing("track.id", f"{ix.name}: a {s.kind} has no KiCad UUID in the export, so its row has no id", loc(s))
+            report.missing("track.id", f"{ix.name}: a {s.kind} has no KiCad UUID in the export, so its row has no id", source=loc(s))
         name = key_of(s) if s.role == "TRACK" else ""
         if name:
             if name in named_track or name in plan.appliances:
-                report.error("track.duplicate", f"{ix.name}: two symbols named {name!r} (ADR 0003 D8: names are unique in an interlocking)", loc(s))
+                report.error("track.duplicate", f"{ix.name}: two symbols named {name!r} (ADR 0003 D8: names are unique in an interlocking)", source=loc(s))
             named_track[name] = s
             row["name"] = qualify(name, ix.name)
         for p in src.pins_of(s.ref):
@@ -230,7 +230,7 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
         if s.kind == "IRJ_SIGNAL":
             masts = [o for o, p in others(s, "SIGNAL") if o.get("Appliance") == "mast" and key_of(o)]
             if len(masts) > 1:
-                report.error("joint.masts", f"{ix.name}: one signal joint carries masts {', '.join(sorted(key_of(m) for m in masts))}", loc(s))
+                report.error("joint.masts", f"{ix.name}: one signal joint carries masts {', '.join(sorted(key_of(m) for m in masts))}", source=loc(s))
             relations["mast"] = qualify(key_of(masts[0]), ix.name) if len(masts) == 1 else None
         row = _maps(row)
         kind = "policies" if s.role == "POLICY" else "joints" if s.kind in JOINTS else "ends"
@@ -238,7 +238,7 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
         if s.uuid:
             plan.sources[f"track/{kind}/{s.uuid}"] = s
         if s.role == "TRACK" and s.kind not in JOINTS | ENDS:
-            report.info("track.kind", f"{ix.name}: TRACK Kind {s.kind!r} is not one the KiCad importer reads; written with the ends", loc(s))
+            report.info("track.kind", f"{ix.name}: TRACK Kind {s.kind!r} is not one the KiCad importer reads; written with the ends", source=loc(s))
     plan.track = {k: v for k, v in {"joints": joints, "ends": ends, "policies": policies, "consumers": consumers}.items() if v}
     return plan
 
@@ -253,7 +253,7 @@ def _indication(s: Symbol, name: str, report) -> str:
     if s.get("Indication"):
         return qualify(s.get("Indication"), scope)
     token = f"{scope}:" + indication_tokens(None)["track_circuit"][0].format(name=circuit)
-    report.info("consumer.legacy_token", f"the consumer {name} states no Indication; read from its Name as {token}", loc(s))
+    report.info("consumer.legacy_token", f"the consumer {name} states no Indication; read from its Name as {token}", source=loc(s))
     return token
 
 
@@ -269,7 +269,7 @@ def _shorted(syms: list[Symbol], src, report, interlocking: str) -> None:
         for sides in by_net.values():
             if len(sides) > 1:
                 report.error("track.shorted", f"{interlocking}: {s.get('Appliance') or s.kind or s.lib_id} {key_of(s) or s.ref} has "
-                             f"{' and '.join(sorted(sides))} on one wire with nothing between; insulated joints belong there", loc(s))
+                             f"{' and '.join(sorted(sides))} on one wire with nothing between; insulated joints belong there", source=loc(s))
 
 
 def _foreign(name: str, interlocking: str) -> bool:
@@ -297,9 +297,9 @@ def _heads(mast: Symbol, others, report, interlocking: str) -> dict[str, Any]:
                 continue
             letter = key_of(o)
             if not letter:
-                report.missing("head.letter", f"{interlocking}: a head on mast {key_of(mast)} has no Name (its letter)", loc(o))
+                report.missing("head.letter", f"{interlocking}: a head on mast {key_of(mast)} has no Name (its letter)", source=loc(o))
                 continue
             if letter in heads:
-                report.error("head.duplicate", f"{interlocking}: mast {key_of(mast)} has two heads {letter}", loc(o))
+                report.error("head.duplicate", f"{interlocking}: mast {key_of(mast)} has two heads {letter}", source=loc(o))
             heads[letter] = _maps({"given": given_of(o)})                 # a head is an entity nested under its mast (D9)
     return heads

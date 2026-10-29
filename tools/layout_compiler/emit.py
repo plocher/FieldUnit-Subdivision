@@ -126,7 +126,7 @@ def _check_folders(sm: Seams, model: dict[str, Any]) -> None:
             ixn = model.get("officeUnits", {}).get(ou.name, {}).get("columns", {}).get(c.number, {}).get("derived", {}).get("interlocking")
             if ixn and c.sheet_folder and c.sheet_folder != ixn:
                 sm.report.error("column.folder", f"column {c.number}: house {c.given.get('CP Name')} is in {ixn}, the column is drawn "
-                                f"under {c.sheet_folder}", seams_loc(c.sym))
+                                f"under {c.sheet_folder}", source=seams_loc(c.sym))
 
 
 def facts(sm: Seams, geometry: Optional[Geometry] = None) -> dict[str, Any]:

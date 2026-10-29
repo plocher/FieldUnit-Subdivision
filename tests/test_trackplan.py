@@ -90,7 +90,7 @@ def track_relations(ix) -> dict[str, list[str]]:
 
 def diags(sm, *prefixes: str) -> list[tuple[str, str]]:
     """The diagnostics as a table of (code, symbol reference): structured fields, never the message text."""
-    return sorted((d.code, d.where.split(" ")[0].rsplit("/", 1)[-1]) for d in sm.report.diags if d.code.startswith(prefixes))
+    return sorted(((d.code, (d.where or d.source).split(" ")[0].rsplit("/", 1)[-1]) for d in sm.report.diags if d.code.startswith(prefixes)))
 
 
 # One switch inside three signal joints of house East: the Sargent shape.
@@ -511,6 +511,13 @@ class Locations(unittest.TestCase):
         self.assertTrue(str(d).endswith("at /X/M3 Railroad-Trackplan:Mast_Dwarf ''"))
         (d,) = [d for d in sm.report.by_code("next_cp.interlocking")]
         self.assertTrue(d.where.startswith("interlockings/X/track/ends/") and d.source.startswith("/X/NX1 "))
+
+    def test_an_import_diagnostic_is_located_in_the_drawing_not_the_model(self):
+        """ADR 0012 §3.3: an import diagnostic's location is in KiCad terms, in ``source``; it has no model path."""
+        sm, _ = compile_(ONE_SWITCH, ONE_SWITCH_NETS.replace("n    | SW1.N J2.A\nr    | SW1.R J3.A", "n    | SW1.N SW1.R J2.A J3.A"))
+        (d,) = sm.report.by_code("track.shorted")
+        self.assertEqual((d.where, d.entities), ("", ()))
+        self.assertEqual(d.source, "/X/SW1 Railroad-Trackplan:Switch_Lock ''")
 
     def test_the_importer_locates_every_party_of_a_relationship(self):
         """ADR 0012 §3.3: a rule check names every entity it is about; the importer locates each in the drawing."""

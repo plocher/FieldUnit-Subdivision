@@ -30,6 +30,8 @@ PIN_TOKENS = ("Control.", "Indication.")                              # a desk d
 
 
 def loc(s: Symbol) -> str:
+    """Where a symbol is in the drawing: sheet, reference, library symbol and Value. An import diagnostic's location is
+    this, in ``Diag.source`` (ADR 0012 §3.3); ``where`` is for a model path."""
     return f"{s.sheet}{s.ref} {s.lib_id} {s.value!r}"
 
 
@@ -187,7 +189,7 @@ def key_of(s: Symbol, report: Optional[Report] = None) -> str:
         v = s.get(k)
         return "" if v == "~" else v
     if report is not None:
-        report.missing(f"identity.{k.replace(' ', '_').lower()}", f"{s.lib_id} has no {k} field, so it has no name; Value is never read", loc(s))
+        report.missing(f"identity.{k.replace(' ', '_').lower()}", f"{s.lib_id} has no {k} field, so it has no name; Value is never read", source=loc(s))
     return ""
 
 
@@ -203,7 +205,7 @@ def check_milepost(s: Symbol, report: Report, what: str) -> None:
         try:
             float(s.get("Milepost"))
         except ValueError:
-            report.error("milepost.number", f"{what}: Milepost {s.get('Milepost')!r} is not a number", loc(s))
+            report.error("milepost.number", f"{what}: Milepost {s.get('Milepost')!r} is not a number", source=loc(s))
 
 
 def given_of(s: Symbol, keyed: bool = True) -> dict[str, str]:
@@ -228,7 +230,7 @@ def merge_given(have: dict[str, str], s: Symbol, what: str, report: Report) -> N
     """One entity drawn several times states one set of facts: each placement's ``given`` merged, a conflict an error."""
     for k, v in given_of(s).items():
         if k in have and have[k] != v:
-            report.error("entity.conflict", f"{what}: {k} {have[k]!r} on one placement, {v!r} on another", loc(s))
+            report.error("entity.conflict", f"{what}: {k} {have[k]!r} on one placement, {v!r} on another", source=loc(s))
             continue
         have[k] = v
 
@@ -246,19 +248,19 @@ def base(pin: str) -> str:
     return pin[2:-1] if pin.startswith("~{") and pin.endswith("}") else pin
 
 
-def one(items: list, what: str, where: str, report: Report, code: str) -> Optional[object]:
+def one(items: list, what: str, at: str, report: Report, code: str) -> Optional[object]:
     """Exactly one, or report and None: the rule every scope lookup shares."""
     if len(items) == 1:
         return items[0]
     if len(items) > 1:
-        report.error(code, f"{len(items)} {what} where one is expected", where)
+        report.error(code, f"{len(items)} {what} where one is expected", source=at)
     return None
 
 
-def stated(value, what: str, where: str, report: Report, code: str):
+def stated(value, what: str, at: str, report: Report, code: str):
     """A relation has one form, its wire (ADR 0012 §4): the value it names, or ``missing`` when none is drawn."""
     if value is None:
-        report.missing(f"{code}.missing", f"{what}: no wire states it", where)
+        report.missing(f"{code}.missing", f"{what}: no wire states it", source=at)
     return value
 
 
@@ -276,10 +278,10 @@ def expand_macros(source: Source, report: Report) -> None:
                 c = one(cands, f"symbols with Role {role} Kind {kind!r} in scope", loc(s), report, "macro.scope")
                 if c is None:
                     if not cands:
-                        report.error("macro.scope", f"no symbol with Role {role} Kind {kind!r} in scope for {m.group(0)}", loc(s))
+                        report.error("macro.scope", f"no symbol with Role {role} Kind {kind!r} in scope for {m.group(0)}", source=loc(s))
                     return m.group(0)
                 if fld not in c.fields:
-                    report.error("macro.field", f"{c.lib_id} has no field {fld} for {m.group(0)}", loc(s))
+                    report.error("macro.field", f"{c.lib_id} has no field {fld} for {m.group(0)}", source=loc(s))
                     return m.group(0)
                 return c.fields[fld]
             changed[k] = MACRO.sub(sub, v)
@@ -319,21 +321,21 @@ def _railroad(sm: Seams) -> None:
     sm.railroad = key_of(s) or None
     sm.railroad_given = given_of(s)
     if not key_of(s):
-        sm.report.missing("railroad.name", "the Railroad symbol has no Name", loc(s))
+        sm.report.missing("railroad.name", "the Railroad symbol has no Name", source=loc(s))
 
 
 def _processors(sm: Seams) -> None:
     for s in sm.source.where("STRUCTURE", "PROCESSOR"):
         name = key_of(s, sm.report)
         if not name:
-            sm.report.missing("entity.name", "a processor has no Name; it is not written", loc(s))
+            sm.report.missing("entity.name", "a processor has no Name; it is not written", source=loc(s))
             continue
         p = sm.processors.setdefault(name, Processor(name))
         p.syms.append(s)
         merge_given(p.given, s, f"processor {name}", sm.report)
     for p in sm.processors.values():
         if not p.given.get("Board"):
-            sm.report.missing("processor.board", f"processor {p.name}: no Board", loc(p.syms[0]))
+            sm.report.missing("processor.board", f"processor {p.name}: no Board", source=loc(p.syms[0]))
 
 
 def _anchor_of(sm: Seams, s: Symbol) -> Optional[str]:
@@ -350,17 +352,17 @@ def _transports(sm: Seams) -> None:
     for s in sm.source.where("TRANSPORT"):
         name = key_of(s, sm.report)
         if not name:
-            sm.report.missing("entity.name", "a transport has no Name; it is not written", loc(s))
+            sm.report.missing("entity.name", "a transport has no Name; it is not written", source=loc(s))
             continue
         t = sm.transports.setdefault(name, Transport(name, s.kind))
         if t.kind != s.kind:
-            sm.report.error("entity.conflict", f"transport {name}: Kind {t.kind} and {s.kind}", loc(s))
+            sm.report.error("entity.conflict", f"transport {name}: Kind {t.kind} and {s.kind}", source=loc(s))
         merge_given(t.given, s, f"transport {name}", sm.report)
         t.instances[s.ref] = s
         anchor = stated(_anchor_of(sm, s), f"transport {name} anchored on", loc(s), sm.report, "transport.anchor")
         if anchor:
             if anchor not in sm.processors:
-                sm.report.error("transport.anchor", f"transport {name}: anchor {anchor!r} is not a processor", loc(s))
+                sm.report.error("transport.anchor", f"transport {name}: anchor {anchor!r} is not a processor", source=loc(s))
             t.anchors.add(anchor)
 
 
@@ -377,10 +379,10 @@ def _encodings(sm: Seams) -> None:
     for s in sm.source.where("CODELINE_ENCODING") + sm.source.where("IO_ENCODING"):
         name = key_of(s, sm.report)
         if not name:
-            sm.report.missing("entity.name", "a encoding has no Name; it is not written", loc(s))
+            sm.report.missing("entity.name", "a encoding has no Name; it is not written", source=loc(s))
             continue
         if name in sm.encodings:
-            sm.report.error("entity.duplicate", f"two encodings named {name!r}", loc(s))
+            sm.report.error("entity.duplicate", f"two encodings named {name!r}", source=loc(s))
             continue
         e = Encoding(name, s.kind, s.role, s, given_of(s))
         hit = _transport_on_net(sm, s)
@@ -389,11 +391,11 @@ def _encodings(sm: Seams) -> None:
         if e.transport:
             t = sm.transports[e.transport]
             if want_kind and t.kind != want_kind:
-                sm.report.error("encoding.kind", f"encoding {name} ({s.kind}) rides {t.name} ({t.kind}); {s.kind} pairs with {want_kind}", loc(s))
+                sm.report.error("encoding.kind", f"encoding {name} ({s.kind}) rides {t.name} ({t.kind}); {s.kind} pairs with {want_kind}", source=loc(s))
             # the instance it rides is the transport symbol on its net; that instance's anchor is the encoding's processor (D7)
             e.processor = _anchor_of(sm, hit[1])
             if e.processor is None:
-                sm.report.missing("encoding.processor", f"encoding {name}: the transport instance it rides has no anchor", loc(s))
+                sm.report.missing("encoding.processor", f"encoding {name}: the transport instance it rides has no anchor", source=loc(s))
         if s.role == "CODELINE_ENCODING":
             e.codeline_net = sm.source.net_of(s.ref, "Codeline")
         sm.encodings[name] = e
@@ -411,15 +413,15 @@ def _interlockings(sm: Seams) -> None:
     for s in sm.source.where("STRUCTURE", "INTERLOCKING"):
         name = key_of(s, sm.report)
         if not name:
-            sm.report.missing("interlocking.name", "an Interlocking symbol has no Name", loc(s))
+            sm.report.missing("interlocking.name", "an Interlocking symbol has no Name", source=loc(s))
             continue
         if name in sm.interlockings:
-            sm.report.error("entity.duplicate", f"two interlockings named {name!r}", loc(s))
+            sm.report.error("entity.duplicate", f"two interlockings named {name!r}", source=loc(s))
             continue
         ix = Interlocking(name, s, given_of(s))
         ix.processor = stated(_anchor_of(sm, s), f"FieldUnit {name} runs on", loc(s), sm.report, "unit.processor")
         if ix.processor and ix.processor not in sm.processors:
-            sm.report.error("unit.processor", f"FieldUnit {name}: {ix.processor!r} is not a processor", loc(s))
+            sm.report.error("unit.processor", f"FieldUnit {name}: {ix.processor!r} is not a processor", source=loc(s))
         ix.codeline = stated(_codeline_of(sm, s), f"FieldUnit {name} on its line", loc(s), sm.report, "unit.codeline")
         sm.interlockings[name] = ix
 
@@ -434,19 +436,19 @@ def _houses(sm: Seams) -> None:
     for s in sm.source.where("STRUCTURE", "CONTROL_POINT"):
         cp = key_of(s, sm.report)
         if not cp:
-            sm.report.missing("house.cp_name", "a House has no CP Name", loc(s))
+            sm.report.missing("house.cp_name", "a House has no CP Name", source=loc(s))
             continue
         h = House(cp, s, given_of(s))
         ix = _unit_of_sheet(sm, s.sheet)
         if ix is None:
-            sm.report.error("house.interlocking", f"house {cp}: no Interlocking on its sheet or above", loc(s))
+            sm.report.error("house.interlocking", f"house {cp}: no Interlocking on its sheet or above", source=loc(s))
             continue
         h.interlocking = ix.name
         check_milepost(s, sm.report, f"house {cp}")
         line = _codeline_of(sm, s)                                     # stated only where wired; never required of a house
         h.codeline = line
         if line and ix.codeline and line != ix.codeline:
-            sm.report.error("house.codeline", f"house {cp} sits on {line!r} but its interlocking {ix.name} is on {ix.codeline!r}", loc(s))
+            sm.report.error("house.codeline", f"house {cp} sits on {line!r} but its interlocking {ix.name} is on {ix.codeline!r}", source=loc(s))
         mc = sm.source.net_of(s.ref, "MC")
         if mc:
             calls = [sm.source.symbols[p.ref] for p in mc.others(s.ref) if sm.source.symbols[p.ref].role == "APPLIANCE"]
@@ -454,7 +456,7 @@ def _houses(sm: Seams) -> None:
             if c is not None:
                 h.maintainer_call = qualify(key_of(c, sm.report), ix.name)
         if cp in ix.houses:
-            sm.report.error("entity.duplicate", f"two houses named {cp!r} in {ix.name}", loc(s))
+            sm.report.error("entity.duplicate", f"two houses named {cp!r} in {ix.name}", source=loc(s))
         ix.houses[cp] = h
 
 
@@ -462,15 +464,15 @@ def _office_units(sm: Seams) -> None:
     for s in sm.source.where("OFFICE_UNIT"):
         name = key_of(s, sm.report)
         if not name:
-            sm.report.missing("entity.name", "a office unit has no Name; it is not written", loc(s))
+            sm.report.missing("entity.name", "a office unit has no Name; it is not written", source=loc(s))
             continue
         if name in sm.office_units:
-            sm.report.error("entity.duplicate", f"two office units named {name!r}", loc(s))
+            sm.report.error("entity.duplicate", f"two office units named {name!r}", source=loc(s))
             continue
         ou = OfficeUnit(name, s, given_of(s))
         ou.processor = stated(_anchor_of(sm, s), f"OfficeUnit {name} runs on", loc(s), sm.report, "office.processor")
         if ou.processor and ou.processor not in sm.processors:
-            sm.report.error("office.processor", f"OfficeUnit {name}: {ou.processor!r} is not a processor", loc(s))
+            sm.report.error("office.processor", f"OfficeUnit {name}: {ou.processor!r} is not a processor", source=loc(s))
         sm.office_units[name] = ou
 
 
@@ -499,7 +501,7 @@ def _nodes(sm: Seams) -> None:
             continue
         ua = s.get("Address")
         if not ua:
-            sm.report.missing("node.address", "a CMRInet Node has no Address (its UA)", loc(s))
+            sm.report.missing("node.address", "a CMRInet Node has no Address (its UA)", source=loc(s))
             continue
         n = Node(ua, s, given_of(s))
         for attr, fld in (("input_bytes", "InputBytes"), ("output_bytes", "OutputBytes")):
@@ -507,9 +509,9 @@ def _nodes(sm: Seams) -> None:
                 try:
                     setattr(n, attr, int(s.get(fld)))
                 except ValueError:
-                    sm.report.error("node.bytes", f"CMRInet Node {ua}: {fld} {s.get(fld)!r} is not a number", loc(s))
+                    sm.report.error("node.bytes", f"CMRInet Node {ua}: {fld} {s.get(fld)!r} is not a number", source=loc(s))
             else:
-                sm.report.missing("node.bytes", f"CMRInet Node {ua}: no {fld}", loc(s))
+                sm.report.missing("node.bytes", f"CMRInet Node {ua}: no {fld}", source=loc(s))
         hit = _transport_on_net(sm, s)
         n.transport = stated(hit[0] if hit else None, f"CMRInet Node {ua} on its line", loc(s), sm.report, "node.transport")
         if n.transport:
@@ -534,7 +536,7 @@ def _drivers(sm: Seams) -> None:
             d_net = sm.source.net_of(s.ref, "D")
             direction = next((p.pintype for p in (d_net.pins if d_net else ()) if p.ref == s.ref), "")
             if direction not in ("input", "output"):
-                sm.report.error("bit.direction", f"CMRInet bit {s.value!r}: pin D is {direction!r}; input (IB) or output (OB) expected", loc(s))
+                sm.report.error("bit.direction", f"CMRInet bit {s.value!r}: pin D is {direction!r}; input (IB) or output (OB) expected", source=loc(s))
                 continue
             address = f"{'IB' if direction == 'input' else 'OB'}.{s.get('Bit')}"
         else:
@@ -542,45 +544,45 @@ def _drivers(sm: Seams) -> None:
             if ic in ENCODING_OF_IC:
                 address = _encoded_address(sm, s, address)
         d = Driver(s, ic, address, given=given_of(s), kind=s.kind, syms=[s])
-        where = loc(s)
-        d.owner = stated(_bus_owner(sm, s), f"driver {ic} {address or s.value!r} on a bus", where, sm.report, "driver.bus")
+        at = loc(s)
+        d.owner = stated(_bus_owner(sm, s), f"driver {ic} {address or s.value!r} on a bus", at, sm.report, "driver.bus")
         if not ic:
-            sm.report.missing("driver.ic", "a driver has no IC", where)
+            sm.report.missing("driver.ic", "a driver has no IC", source=at)
         if d.owner is None:
             continue
         if "/" in d.owner:
             tn, ua = d.owner.split("/", 1)
             node = sm.transports[tn].nodes[ua]
             if not is_bit:
-                sm.report.error("bus.kind", f"driver {ic} {address!r} sits on CMRInet Node {ua}'s bus; only its bits do", where)
+                sm.report.error("bus.kind", f"driver {ic} {address!r} sits on CMRInet Node {ua}'s bus; only its bits do", source=at)
                 continue
             if address in node.bits:
-                sm.report.error("bit.duplicate", f"CMRInet Node {ua}: two bits at {address}", where)
+                sm.report.error("bit.duplicate", f"CMRInet Node {ua}: two bits at {address}", source=at)
             node.bits[address] = d
         else:
             if is_bit:
-                sm.report.error("bus.kind", f"CMRInet bit {address} sits on processor {d.owner}'s bus; a bit sits on a node's", where)
+                sm.report.error("bus.kind", f"CMRInet bit {address} sits on processor {d.owner}'s bus; a bit sits on a node's", source=at)
                 continue
             p = sm.processors[d.owner]
             if not address:
                 if ic not in ENCODING_OF_IC:                           # an encoded driver without one was reported by _encoded_address
-                    sm.report.missing("driver.address", f"driver {ic} ({s.lib_id.split(':')[1]}) on {p.name} has no Address; its bindings are absent", where)
+                    sm.report.missing("driver.address", f"driver {ic} ({s.lib_id.split(':')[1]}) on {p.name} has no Address; its bindings are absent", source=at)
                 continue
             if address in p.drivers:
                 first = p.drivers[address]
                 if ic in ENCODING_OF_IC and first.ic == ic and first.kind == d.kind:
                     first.syms.append(s)                               # one JMRI object drawn twice: a Turnout's command and its feedback
                     if first.given != d.given:
-                        sm.report.error("entity.conflict", f"driver {address} on {p.name}: its symbols state different fields", where)
+                        sm.report.error("entity.conflict", f"driver {address} on {p.name}: its symbols state different fields", source=at)
                     continue
-                sm.report.error("driver.duplicate", f"processor {p.name}: two drivers at {address}", where)
+                sm.report.error("driver.duplicate", f"processor {p.name}: two drivers at {address}", source=at)
             p.drivers[address] = d
     for t in sm.transports.values():
         for n in t.nodes.values():
             for prefix, declared in (("IB", n.input_bytes), ("OB", n.output_bytes)):
                 used = [int(a.split(".")[1]) for a in n.bits if a.startswith(prefix)]
                 if used and declared is not None and max(used) > declared * 8:
-                    sm.report.error("node.bytes", f"CMRInet Node {n.ua}: {prefix} bit {max(used)} used but {declared} byte(s) declared", loc(n.sym))
+                    sm.report.error("node.bytes", f"CMRInet Node {n.ua}: {prefix} bit {max(used)} used but {declared} byte(s) declared", source=loc(n.sym))
 
 
 def _served_device(sm: Seams, s: Symbol) -> Optional[str]:
@@ -596,7 +598,7 @@ def _served_device(sm: Seams, s: Symbol) -> Optional[str]:
                 if n:
                     names.add(n)
     if len(names) > 1:
-        sm.report.error("driver.serves", f"driver {s.get('IC')} {s.kind} serves two devices: {', '.join(sorted(names))}", loc(s))
+        sm.report.error("driver.serves", f"driver {s.get('IC')} {s.kind} serves two devices: {', '.join(sorted(names))}", source=loc(s))
         return None
     return next(iter(names), None)
 
@@ -607,13 +609,13 @@ def _encoded_address(sm: Seams, s: Symbol, drawn: str) -> str:
     Address overrides that, reported at info."""
     served = _served_device(sm, s)
     if drawn:
-        sm.report.info("driver.address.override", f"driver {s.get('IC')} {s.kind}: Address {drawn!r} overrides the served device's name {served!r}", loc(s))
+        sm.report.info("driver.address.override", f"driver {s.get('IC')} {s.kind}: Address {drawn!r} overrides the served device's name {served!r}", source=loc(s))
         return drawn
     if not s.kind:
-        sm.report.missing("driver.kind", f"driver {s.get('IC')} serving {served!r}: no Kind, its object class; it has no key", loc(s))
+        sm.report.missing("driver.kind", f"driver {s.get('IC')} serving {served!r}: no Kind, its object class; it has no key", source=loc(s))
         return ""
     if served is None:
-        sm.report.missing("driver.serves", f"driver {s.get('IC')} {s.kind}: wired to no device; it has no key", loc(s))
+        sm.report.missing("driver.serves", f"driver {s.get('IC')} {s.kind}: wired to no device; it has no key", source=loc(s))
         return ""
     return f"{s.kind}.{served}"
 
@@ -621,21 +623,21 @@ def _encoded_address(sm: Seams, s: Symbol, drawn: str) -> str:
 def _columns(sm: Seams) -> None:
     for s in sm.source.where("COLUMN"):
         number = key_of(s, sm.report)
-        where = loc(s)
+        at = loc(s)
         if not number:
-            sm.report.missing("column.number", "a PanelColumn has no Column number", where)
+            sm.report.missing("column.number", "a PanelColumn has no Column number", source=at)
             continue
         c = Column(number, s, given_of(s))
         folder = _unit_of_sheet(sm, s.sheet)
         c.sheet_folder = folder.name if folder else None
         if not s.get("CP Name"):
             c.folder = c.sheet_folder                                  # membership by hierarchy alone, written as a relation (D6)
-        ou = one(list(sm.office_units.values()), "office units", where, sm.report, "column.office") if len(sm.office_units) != 1 else next(iter(sm.office_units.values()))
+        ou = one(list(sm.office_units.values()), "office units", at, sm.report, "column.office") if len(sm.office_units) != 1 else next(iter(sm.office_units.values()))
         if ou is None:
             continue
         c.office_unit = ou.name
         if number in ou.columns:
-            sm.report.error("column.duplicate", f"OfficeUnit {ou.name}: two columns numbered {number}", where)
+            sm.report.error("column.duplicate", f"OfficeUnit {ou.name}: two columns numbered {number}", source=at)
         ou.columns[number] = c
 
 
@@ -661,43 +663,43 @@ def _devices(sm: Seams) -> None:
         appliance = s.get("Appliance")
         name = device_name(s, sm.report)
         dev = Device(s, appliance, styles_of(s), given=given_of(s, keyed=False))
-        where = loc(s)
+        at = loc(s)
         placed = False
         if s.role == "PANEL":
             col_net = sm.source.net_of(s.ref, "Column")
             cols = [sm.source.symbols[p.ref] for p in col_net.others(s.ref)] if col_net else []
             cols = [c for c in cols if c.role == "COLUMN"]
-            col = one(cols, "columns on one Column net", where, sm.report, "device.column") if cols else None
+            col = one(cols, "columns on one Column net", at, sm.report, "device.column") if cols else None
             ou = next(iter(sm.office_units.values()), None) if len(sm.office_units) == 1 else None
             if col is not None and ou is not None:
                 column = ou.columns.get(key_of(col))
                 dev.column = f"{ou.name}:{column.number}" if column else None     # qualified by its OfficeUnit (D19)
                 placed = column is not None and (column.given.get("CP Name") or column.folder)
             elif s.get("Style") != "board" and col_net is None and appliance != "lamp":
-                sm.report.missing("device.column", f"panel {appliance} {s.value!r} is in no column", where)
+                sm.report.missing("device.column", f"panel {appliance} {s.value!r} is in no column", source=at)
             if not placed or appliance == "lamp":                     # a lamp is its panel sheet's, never its column's (2026-10-28)
                 folder = _unit_of_sheet(sm, s.sheet)
                 dev.interlocking = folder.name if folder else None     # membership by hierarchy alone (D6)
             if ou is None:
-                sm.report.error("device.office", f"panel device {s.value!r}: no single OfficeUnit", where)
+                sm.report.error("device.office", f"panel device {s.value!r}: no single OfficeUnit", source=at)
                 continue
             ou.devices.append(dev)
         else:
             ix = _unit_of_sheet(sm, s.sheet)
             if ix is None:
-                sm.report.error("device.interlocking", f"device {appliance} {s.value!r}: no Interlocking on its sheet or above", where)
+                sm.report.error("device.interlocking", f"device {appliance} {s.value!r}: no Interlocking on its sheet or above", source=at)
                 continue
             if appliance == "head":
                 ind = sm.source.net_of(s.ref, "IND")
                 masts = [sm.source.symbols[p.ref] for p in ind.others(s.ref)] if ind else []
                 masts = [m for m in masts if m.get("Appliance") == "mast" and m.role == "DEVICE"]
-                m = one(masts, "masts on one IND net", where, sm.report, "head.mast") if masts else None
+                m = one(masts, "masts on one IND net", at, sm.report, "head.mast") if masts else None
                 if m is None:
-                    sm.report.missing("head.mast", f"head device {s.lib_id.split(':')[1]} letter {s.get('Head')!r}: wired to no Mast", where)
+                    sm.report.missing("head.mast", f"head device {s.lib_id.split(':')[1]} letter {s.get('Head')!r}: wired to no Mast", source=at)
                 else:
                     dev.mast = qualify(device_name(m, sm.report) or "", ix.name)
                 if not s.get("Head"):
-                    sm.report.missing("head.letter", "a head device has no Head letter", where)
+                    sm.report.missing("head.letter", "a head device has no Head letter", source=at)
             ix.devices.append(dev)
         inverted = {x.strip() for x in s.get("Invert").split(",") if x.strip()}
         for pin, net in sorted(sm.source.pins_of(s.ref).items()):
@@ -708,5 +710,5 @@ def _devices(sm: Seams) -> None:
                 if hit:
                     dev.bindings.append(Binding(base(pin), hit[1]))
         for name in sorted(inverted - {base(pin) for pin in sm.source.pins_of(s.ref)}):
-            sm.report.error("device.invert", f"Invert names {name}, not a wired pin of this device", where)
+            sm.report.error("device.invert", f"Invert names {name}, not a wired pin of this device", source=at)
         dev.bindings.sort(key=lambda b: (b.function, b.route))
