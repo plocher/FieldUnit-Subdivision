@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 from tools import layout_model
+from tools.railroad import codeline
 
 EXAMPLE = Path(__file__).resolve().parents[1] / "schemas" / "layout-model" / "examples" / "spcoast.layout.json"
 
@@ -95,7 +96,7 @@ class LayoutModelFileTests(unittest.TestCase):
 
     def test_a_marker_names_its_row_by_id_and_copies_nothing(self):
         g = self.model["interlockings"]["Sargent"]["geometry"]
-        ids = {r["id"] for k in ("joints", "ends", "policies") for r in self.model["interlockings"]["Sargent"]["track"][k]}
+        ids = {r["id"] for k in ("joints", "ends", "policies", "consumers") for r in self.model["interlockings"]["Sargent"]["track"][k]}
         self.assertEqual({m["row"] for m in g["markers"]}, ids)
         for key, value in (("kind", "IRJ"), ("circuits", {"A": "Sargent:1NAT"}), ("name", "Sargent:Cannery")):
             bad = copy.deepcopy(self.model)
@@ -114,6 +115,24 @@ class LayoutModelFileTests(unittest.TestCase):
         bad = copy.deepcopy(self.model)
         bad["interlockings"]["Luchessa"]["geometry"]["track"][0]["relations"]["to"] = "somewhere"
         self.assertTrue(layout_model.errors(bad))
+
+    def test_a_consumer_row_consumes_an_indication_and_no_station_packet_is_stored(self):
+        """The owner, 2026-10-27: a reference to another interlocking's circuit is a consumer of its indication; 2026-10-28:
+        what a station sends is computed on demand (tools/railroad/codeline.py), never stored."""
+        consumer = self.model["interlockings"]["Sargent"]["track"]["consumers"][0]
+        self.assertEqual(consumer["relations"]["indication"], "Corporal:2NATK")
+        self.assertIn("2NATK", codeline.stations(self.model).stations[("Corporal", None)].indications)
+        for key, value in (("indication", "Corporal:2NAT"), ("indication", "2NATK"), ("mast", "Sargent:836NAB")):
+            bad = copy.deepcopy(self.model)
+            bad["interlockings"]["Sargent"]["track"]["consumers"][0]["relations"][key] = value
+            self.assertTrue(layout_model.errors(bad), (key, value))
+        for path in (("interlockings", "Corporal"), ("interlockings", "Luchessa", "houses", "Gilroy")):
+            bad = copy.deepcopy(self.model)
+            node = bad
+            for k in path:
+                node = node[k]
+            node["derived"] = {"indications": ["2NATK"]}
+            self.assertTrue(layout_model.errors(bad), path)
 
     def test_provenance_names_its_writer_and_rules(self):
         self.assertEqual(self.model["provenance"]["writer"]["name"], "layout_compiler")

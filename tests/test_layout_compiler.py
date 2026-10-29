@@ -1,7 +1,8 @@
 """Gates for the milestone D KiCad importer (ADR 0009 §3.12, ADR 0008 rev 4, ADR 0011, ADR 0012 §4).
 
 Two kinds. The rules are tested on small sources built in memory: a relation by its wire alone (the fallbacks of
-ADR 0012 §4 retired), the three maps, the macro, the head vocabulary. The relation table is tested on the SPCoast
+ADR 0012 §4 retired), the three maps, the macro. What the reference derivation computes is tested in
+``test_derive``. The relation table is tested on the SPCoast
 project when it is present (``SPCOAST_PROJECT``, default ``~/Dropbox/KiCad/Railroad/SPCoast/SPCoast.kicad_sch``)
 and kicad-cli can export its netlist fresh (the netlist rule, ``AGENTS.md``). ``SPCOAST_NETLIST`` names a saved netlist
 instead, on a machine where kicad-cli cannot run; it is read only when it is still a snapshot of the Railroad
@@ -17,6 +18,7 @@ from pathlib import Path
 
 from tools import layout_model
 from tools.layout_compiler import emit, seams
+from tools.railroad import codeline
 from tools.layout_compiler.source import Net, PinRef, Symbol, from_project, from_snapshot, from_symbols, kicad_cli_available
 
 PROJECT = Path(os.environ.get("SPCOAST_PROJECT", Path.home() / "Dropbox/KiCad/Railroad/SPCoast/SPCoast.kicad_sch"))
@@ -124,6 +126,22 @@ class RuleTests(unittest.TestCase):
         driver = sym("U1", "MCP23017", "/X/", "", Role="IODRIVER", IC="MCP23017", Address="0x20", frequency_hz="50")
         self.assertEqual(seams.given_of(driver), {"IC": "MCP23017", "frequency_hz": "50"})   # Address is its key (D11)
 
+    def test_an_empty_per_pin_token_is_stated(self):
+        """The owner (2026-10-28): a desk lever's empty Control.<pin> or Indication.<pin> says the pin binds no token, so
+        it is kept in given as "" (an absent one means not done yet); every other empty field is still not stated."""
+        lever = sym("L1", "PanelLock", "/", "835", Role="PANEL", Appliance="lever", Style="lock", Name="835", Spare="",
+                    **{"Control.UNUSED": "", "Control.WLS": "835WLS", "Indication.WLK": "!835WLK", "Indication.WLQK": "~"})
+        given = seams.given_of(lever, keyed=False)
+        self.assertEqual(given, {"Appliance": "lever", "Style": "lock", "Name": "835", "Control.UNUSED": "",
+                                 "Control.WLS": "835WLS", "Indication.WLK": "!835WLK", "Indication.WLQK": ""})
+        row = emit._entity(given)
+        self.assertEqual(row["given"]["Control.UNUSED"], "")
+        model = emit.emit(seams.resolve(plant()))
+        model["officeUnits"] = {"Desk": {"devices": [row]}}
+        self.assertEqual(layout_model.errors(model), [])                       # the schema allows the empty per-pin token
+        model["officeUnits"]["Desk"]["devices"][0]["given"]["Spare"] = ""
+        self.assertNotEqual(layout_model.errors(model), [])                    # and no other empty field
+
     def test_one_entity_placed_twice_states_one_given(self):
         src = plant()
         src.symbols["T1"] = sym("T1", "Transport-MQTT", "/X/", "MQTT", Role="TRANSPORT", Kind="MQTT", Name="MQTT", Broker="a")
@@ -205,32 +223,6 @@ class RuleTests(unittest.TestCase):
         self.assertEqual([x.ref for d in sm.processors["Alpha"].drivers.values() for x in d.syms], ["J2", "J3"])
 
 
-    def test_head_vocabulary(self):
-        src = plant()
-        src.symbols.update({
-            "M1": sym("M1", "Mast_Single", "/X/", "100NA", Role="APPLIANCE", Appliance="mast", Name="100NA", Style="single"),
-            "H1": sym("H1", "Signal Head - CPL", "/X/", "A", Role="APPLIANCE", Appliance="head", Name="A", Style="CPL"),
-            "DM1": sym("DM1", "Mast", "/X/", "100NA", Role="DEVICE", Appliance="mast", Name="100NA"),
-            "DH1": sym("DH1", "Device-Head-CL-Pixel", "/X/", "~", Role="DEVICE", Appliance="head", Style="CL", Head="A"),
-        })
-        src.nets += [net("h", ("H1", "M"), ("M1", "H")), net("ind", ("DH1", "IND"), ("DM1", "IND"))]
-        src = from_symbols(src.symbols.values(), src.nets)
-        sm = seams.resolve(src)
-        self.assertTrue(any("778" not in d.text and "100NA head A as CPL" in d.text for d in sm.report.by_code("head.vocabulary")))
-
-    def test_semaphore_lamp_is_allowed(self):
-        src = plant()
-        src.symbols.update({
-            "M1": sym("M1", "Mast_Dwarf", "/X/", "100SB", Role="APPLIANCE", Appliance="mast", Name="100SB", Style="dwarf"),
-            "H1": sym("H1", "Signal Head - Semaphore-UQ", "/X/", "B", Role="APPLIANCE", Appliance="head", Name="B", Style="UQ"),
-            "DM1": sym("DM1", "Mast", "/X/", "100SB", Role="DEVICE", Appliance="mast", Name="100SB"),
-            "DA": sym("DA", "Device-Head-Semaphore-UQ", "/X/", "~", Role="DEVICE", Appliance="head", Style="UQ", Head="B"),
-            "DL": sym("DL", "Device-Head-CL-RGB", "/X/", "~", Role="DEVICE", Appliance="head", Style="CL", Head="B"),
-        })
-        src.nets += [net("h", ("H1", "M"), ("M1", "H")), net("ind", ("DA", "IND"), ("DL", "IND"), ("DM1", "IND"))]
-        sm = seams.resolve(from_symbols(src.symbols.values(), src.nets))
-        self.assertEqual(sm.report.by_code("head.vocabulary"), [])
-
     def test_emitted_model_validates(self):
         sm = seams.resolve(plant())
         model = emit.emit(sm)
@@ -289,25 +281,31 @@ class SPCoastRelationTable(unittest.TestCase):
         self.assertEqual(sum(1 for a in node.bits if a.startswith("OB")), 20)
         self.assertEqual(self.sm.report.by_code("node.bytes"), [])
 
-    def test_stations_derive_from_houses_and_columns(self):
-        ou = self.sm.office_units["SPCoast South"]
-        self.assertEqual(ou.processor, "JohnCTC")
-        self.assertEqual({c.number: c.house for c in ou.columns.values() if c.house},
-                         {"5": ("Luchessa", "Luchessa"), "6": ("Luchessa", "Gilroy"), "7": ("Luchessa", "Carnadero")})
-        self.assertEqual(len(self.sm.report.by_code("column.cp_name")), 11)
+    def test_columns_resolve_by_their_line_and_stations_follow(self):
+        """The owner, 2026-10-28: a column's CP Name names a house or the interlocking; on Luchessa's US&S 506 line each
+        house is a station, so its columns resolve to houses; elsewhere the interlocking is the station."""
+        self.assertEqual(self.sm.office_units["SPCoast South"].processor, "JohnCTC")
+        self.assertEqual([str(d) for d in self.sm.report.diags if d.code.startswith(("column.", "station.", "desk.station"))], [])
         columns = self.model["officeUnits"]["SPCoast South"]["columns"]
-        self.assertEqual(columns["5"], {"given": {"CP Name": "Luchessa"}, "derived": {"house": "Luchessa:Luchessa", "interlocking": "Luchessa"}})
+        self.assertTrue(all(c.get("derived", {}).get("interlocking") or c.get("relations", {}).get("interlocking") for c in columns.values()))
+        luchessa = [c for c in columns.values() if c.get("derived", {}).get("interlocking") == "Luchessa"]
+        self.assertEqual({c["derived"]["house"] for c in luchessa}, {f"Luchessa:{h}" for h in self.model["interlockings"]["Luchessa"]["houses"]})
+        line = codeline.stations(self.model)
+        self.assertEqual({k for k in line.stations if k[0] == "Luchessa"}, {("Luchessa", h) for h in self.model["interlockings"]["Luchessa"]["houses"]})
+        self.assertEqual({k for k in line.stations if k[0] != "Luchessa"}, {(n, None) for n in self.model["interlockings"] if n != "Luchessa"})
+        sends = {k[1]: v.indications for k, v in line.stations.items() if k[0] == "Luchessa"}
+        for token, house in (("795T1K", "Gilroy"), ("01TK", "Gilroy"), ("799T1K", "Carnadero"), ("1NATK", "Carnadero"),
+                             ("783T1K", "Luchessa"), ("NFLK", "Luchessa"), ("SFLK", "Luchessa")):
+            self.assertIn(token, sends[house], house)
 
-    def test_membership_stated_only_by_the_sheet_hierarchy_is_a_relation(self):
-        """Three-maps D6: the 11 columns without a CP Name and the 34 board lamps carry relations.interlocking."""
+    def test_lamps_are_their_panel_sheets_and_membership_by_hierarchy_alone_is_a_relation(self):
+        """Three-maps D6: a column without a CP Name carries relations.interlocking; every lamp carries its panel sheet's
+        interlocking and nothing of a column (the owner, 2026-10-28)."""
         ou = self.model["officeUnits"]["SPCoast South"]
-        self.assertEqual({n: c["relations"]["interlocking"] for n, c in ou["columns"].items() if "relations" in c},
-                         {"1": "Gilroy Caltrain", "2": "Gilroy Caltrain", "3": "Gilroy Interchange", "4": "Gilroy Interchange",
-                          "8": "Christopher", "9": "Christopher", "10": "Christopher", "11": "Corporal", "12": "Corporal",
-                          "13": "Sargent", "14": "Watsonville"})
-        board = [d for d in ou["devices"] if d["given"].get("Style") == "board"]
-        self.assertEqual(len(board), 34)
-        self.assertEqual([d for d in board if "interlocking" not in d.get("relations", {}) or "column" in d.get("relations", {})], [])
+        self.assertEqual([n for n, c in ou["columns"].items() if ("CP Name" in c.get("given", {})) == ("relations" in c)], [])
+        lamps = [d for d in ou["devices"] if d["given"]["Appliance"] == "lamp"]
+        self.assertTrue(lamps)
+        self.assertEqual([d for d in lamps if d.get("relations", {}).get("interlocking") not in self.model["interlockings"]], [])
 
     def test_a_column_reference_is_qualified_by_its_office_unit(self):
         cols = {d["relations"]["column"] for d in self.model["officeUnits"]["SPCoast South"]["devices"] if "column" in d.get("relations", {})}

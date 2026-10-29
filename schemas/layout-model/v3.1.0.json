@@ -67,7 +67,7 @@
       }
     },
     "given": {
-      "description": "Every field a person stated on the entity, keyed as drawn, every value a string as KiCad states it (ADR 0011 §2). Left out: KiCad's housekeeping (Reference, Value, Footprint, Datasheet, Description, Sheetname, Sheetfile, ki_*), Role (it picks the collection), the library's Pin.* contract, the key field, and any empty field. Which keys apply is reference data, not this schema's; a reader that wants a number or a list parses the string.",
+      "description": "Every field a person stated on the entity, keyed as drawn, every value a string as KiCad states it (ADR 0011 §2). Left out: KiCad's housekeeping (Reference, Value, Footprint, Datasheet, Description, Sheetname, Sheetfile, ki_*), Role (it picks the collection), the library's Pin.* contract, the key field, and any empty field but a per-pin Control.<pin> or Indication.<pin>. Which keys apply is reference data, not this schema's; a reader that wants a number or a list parses the string.",
       "type": "object",
       "propertyNames": {
         "type": "string",
@@ -85,6 +85,12 @@
           ]
         },
         "pattern": "^(?!ki_)(?!Pin\\.)"
+      },
+      "patternProperties": {
+        "^(Control|Indication)\\.": {
+          "type": "string",
+          "description": "A desk device's per-pin token (the owner, 2026-10-28): stated even when empty, since an empty one says the pin deliberately binds no token."
+        }
       },
       "additionalProperties": {
         "type": "string",
@@ -115,7 +121,7 @@
       "pattern": "^[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?:[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?\\.[A-Za-z][A-Za-z0-9_]*$"
     },
     "rowPortRef": {
-      "description": "A pin of an unnamed track row, by the row's id, a dot and its side (approach, governed, A, B, track, CTC, DARK, EoT).",
+      "description": "A pin of an unnamed track row, by the row's id, a dot and its side (approach, governed, A, B, track, CTC, DARK, EoT; a consumer's TC).",
       "type": "string",
       "pattern": "^[^\\s:/.]+\\.[A-Za-z][A-Za-z0-9_]*$"
     },
@@ -384,11 +390,23 @@
         },
         "geometry": {
           "$ref": "#/$defs/geometry"
+        },
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {},
+              "description": "Nothing yet. A station's controls and indications are not stored (the owner, 2026-10-28): tools/railroad/codeline.py computes them on demand."
+            }
+          ]
         }
       }
     },
     "house": {
-      "description": "An instrument house at a control point, keyed by its CP Name; on a US&S 506 line it is a field station, addressed by its column (derived, not written).",
+      "description": "An instrument house at a control point, keyed by its CP Name; on a US&S 506 line it is a field station, addressed by its column (derived, not written). What a station receives and sends is not stored: tools/railroad/codeline.py computes it on demand (the owner, 2026-10-28).",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -423,6 +441,18 @@
                   "description": "The code line on its Codeline wire, where drawn."
                 }
               }
+            }
+          ]
+        },
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {},
+              "description": "Nothing yet. A station's controls and indications are not stored (the owner, 2026-10-28): tools/railroad/codeline.py computes them on demand."
             }
           ]
         }
@@ -494,12 +524,23 @@
                   "$ref": "#/$defs/qualifiedName",
                   "description": "The appliance this device serves (given.Name in its scope); for a head device, its mast."
                 },
-                "shows": {
+                "controls": {
+                  "description": "A lever's controls: the Control.<pin> of each bound pin, qualified by its station's interlocking (Luchessa:783NWS); an empty one binds none.",
                   "type": "array",
                   "items": {
                     "$ref": "#/$defs/qualifiedName"
-                  },
-                  "description": "The indications a lamp shows, OR'd: its IndicationToken resolved in its scope."
+                  }
+                },
+                "expression": {
+                  "type": "string",
+                  "description": "A desk lamp's Indication, normalized (tools/layout_model/expression.py: | or, & and, ! not, parentheses; a comma read as |), every token qualified: Luchessa:1NATK | Luchessa:2NATK."
+                },
+                "indications": {
+                  "description": "The indications a device consumes, qualified: the tokens of a lever's Indication.<pin> expressions (Christopher:813WLK), or of a lamp's Indication expression (its legacy IndicationToken, each circuit with the K of an indication added, when it states no Indication), unqualified tokens in the lamp's own interlocking (relations.interlocking); each must be one an appliance of the named interlocking reports (tools/railroad/codeline.py).",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/indicationRef"
+                  }
                 }
               }
             }
@@ -552,7 +593,7 @@
       }
     },
     "column": {
-      "description": "A logical column tied to a control point (owner's ruling 2026-10-23), keyed by its Column number. given.\"CP Name\" names its house.",
+      "description": "A logical column tied to a control point (owner's ruling 2026-10-23), keyed by its Column number. given.\"CP Name\" names a house or an interlocking (the owner, 2026-10-28); on a line whose station is a house (US&S 506) it must name a house.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -588,10 +629,12 @@
               "additionalProperties": false,
               "properties": {
                 "house": {
-                  "$ref": "#/$defs/qualifiedName"
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "The house its CP Name names, qualified; absent when it names the interlocking or nothing. On a line whose station is a house it is the column's station; on an AAR token line it is location only."
                 },
                 "interlocking": {
-                  "$ref": "#/$defs/layoutName"
+                  "$ref": "#/$defs/layoutName",
+                  "description": "The interlocking its CP Name names, directly or through a house."
                 }
               }
             }
@@ -780,7 +823,7 @@
       }
     },
     "marker": {
-      "description": "A track row's placement (a joint, END CTC, NextCP, an industry, a policy sign): the row it places, by id (three-maps D10), and its placement and glyph. It copies no fact of the row.",
+      "description": "A track row's placement (a joint, END CTC, NextCP, an industry, a policy sign, a consumer): the row it places, by id (three-maps D10), and its placement and glyph. It copies no fact of the row.",
       "type": "object",
       "required": [
         "row",
@@ -1323,6 +1366,13 @@
           "items": {
             "$ref": "#/$defs/link"
           }
+        },
+        "consumers": {
+          "description": "Consumers of another station's indications, drawn on this trackplan.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/consumer"
+          }
         }
       }
     },
@@ -1368,6 +1418,56 @@
                 },
                 "circuit": {
                   "$ref": "#/$defs/qualifiedName"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "indicationRef": {
+      "description": "An office indication token another interlocking's station sends, qualified by that interlocking: Corporal:2NATK. By the AAR nomenclature behind every code line, an indication ends in K (the owner, 2026-10-27).",
+      "allOf": [
+        {
+          "$ref": "#/$defs/qualifiedName"
+        },
+        {
+          "pattern": "K$"
+        }
+      ]
+    },
+    "consumer": {
+      "description": "A one-sided consumer of another station's office indication, drawn on this trackplan (the owner, 2026-10-27): a track circuit marker named for another interlocking's circuit (Sargent's Corporal:2NAT). It is a row, identified by id; its fields as drawn in given, its Name included; relations.TC its wire, which its neighbours name as <id>.TC; relations.indication the token it consumes (Corporal:2NATK). The circuit it stands on is the one that token indicates.",
+      "type": "object",
+      "required": [
+        "id",
+        "given"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/rowId"
+        },
+        "given": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/given"
+            }
+          ]
+        },
+        "relations": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/relations"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "TC": {
+                  "$ref": "#/$defs/portRefs"
+                },
+                "indication": {
+                  "$ref": "#/$defs/indicationRef"
                 }
               }
             }

@@ -14,9 +14,8 @@ end lies on the page, and records the connection, never a coordinate fact. No se
 
 What is on the trackplan is decided by Role (§4.1): ``APPLIANCE``, ``TRACK``, ``POLICY``, plus the house, never by
 library, symbol name or position (``trackplan.TRACKPLAN_ROLES``). A wire is track when it ends on a pin of a
-trackplan symbol or is chained onto one that does; which circuit it carries comes from the netlist through the
-trackplan piece's ``circuit_of_net``, the one place a circuit is named (§4.10): a switch's OS legs carry its OS
-circuit, dark track none.
+trackplan symbol or is chained onto one that does. Which circuit a run carries is derived from what its ends meet by
+the reference derivation (``tools/layout_model/derive.py``), never read here.
 """
 from __future__ import annotations
 
@@ -28,7 +27,7 @@ from typing import Any, Optional
 
 from .seams import Seams, key_of, loc
 from .source import Symbol
-from .trackplan import TRACKPLAN_ROLES, is_switch, pin_ref, unit_of
+from .trackplan import TRACKPLAN_ROLES, is_consumer, is_switch, pin_ref, unit_of
 
 COORDINATE_DECIMALS = 2     # placements and runs sit on the drawing's grid (§4.2)
 GLYPH_DECIMALS = 4          # a glyph's primitives have up to four
@@ -348,9 +347,6 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
     def net_of(ref: str, pin: str):
         return src.net_of(ref, pin)
 
-    def circuit(net) -> Optional[str]:
-        return sm.trackplan.circuit_of_net(ix.name, net) if sm.trackplan else None
-
     def end_ref(ref: str, pin: str) -> Optional[str]:
         """What a run's end meets (three-maps D5): a switch's port or a track row's side, in the one form the rows'
         relations use (``trackplan.pin_ref``). A run's end is never a track circuit marker's TC."""
@@ -359,12 +355,16 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
 
     appliances: dict[str, Any] = {}
     masts: dict[str, str] = {}
+    consumer_markers: list[dict[str, Any]] = []
     for s in trackplan:
         if s.role != "APPLIANCE" or s.get("Appliance") == "head" or s.ref not in placed:
             continue
         name = key_of(s, report)
         if not name:
             report.missing("geometry.name", f"{ix.name}: an {s.lib_id} has no Name; its placement is not written", loc(s))
+            continue
+        if is_consumer(ix.name, s) and s.uuid and src.net_of(s.ref, "TC"):
+            consumer_markers.append({"row": s.uuid, **placement(s.ref)})   # a consumer is a row: its marker names it by id (D10)
             continue
         appliances[name] = placement(s.ref)
         if s.get("Appliance") == "mast":
@@ -388,16 +388,12 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
             if end is None and xy not in model.junctions:
                 report.error("geometry.run_end", f"{ix.name}: a run of track ends at {xy} where no trackplan pin and no junction is", f"sheet {model.path.name}")
         row: dict[str, Any] = {"points": " ".join(f"{norm(p)['x']},{norm(p)['y']}" for p in line)}
-        net = next((net_of(*e) for e in ends if e and net_of(*e)), None)
-        c = circuit(net)
-        if c:
-            row["derived"] = {"circuit": c}
         relations = {key: end_ref(*e) for key, e in zip(("from", "to"), ends) if e and end_ref(*e)}
         if relations:
             row["relations"] = relations
         track.append(row)
 
-    markers: list[dict[str, Any]] = []
+    markers: list[dict[str, Any]] = list(consumer_markers)
     mileposts: dict[str, Any] = {}
     for s in trackplan:
         if s.role == "APPLIANCE" or s.ref not in placed:

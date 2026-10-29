@@ -189,14 +189,15 @@ class SPCoastGeometry(unittest.TestCase):
         self.assertEqual(g["appliances"]["835"], {"at": {"x": 90.17, "y": 33.02}, "glyph": "Railroad-Trackplan:Switch_Lock", "mirror": "y"})
         self.assertEqual(set(g["appliances"]["836NAB"]["heads"]), {"A", "B"})
         self.assertEqual(g["appliances"]["836SA"]["rotation"], 180)
-        self.assertIn("Corporal:2NAT", g["appliances"])
+        self.assertNotIn("Corporal:2NAT", g["appliances"])                       # a consumer row: a marker by id
         self.assertEqual(g["houses"], {"Sargent": {"at": {"x": 91.44, "y": 0.0}, "glyph": "Railroad-Trackplan:House"}})
-        self.assertEqual(len(g["appliances"]), 11)
+        self.assertEqual(len(g["appliances"]), 10)
         self.assertEqual(len(g["track"]), 4)
-        self.assertEqual(sorted(t["derived"]["circuit"] for t in g["track"]), ["Corporal:2NAT", "Sargent:1NAT", "Sargent:1SAT", "Sargent:2SAT"])
-        self.assertEqual(len(g["markers"]), 12)
+        runs = self.model["interlockings"]["Sargent"]["geometry"]["track"]                   # a run's circuit is derived
+        self.assertEqual(sorted(t["derived"]["circuit"] for t in runs), ["Corporal:2NAT", "Sargent:1NAT", "Sargent:1SAT", "Sargent:2SAT"])
+        self.assertEqual(len(g["markers"]), 13)
         rows = self.rows("Sargent")
-        self.assertEqual(sum(1 for m in g["markers"] if rows[m["row"]]["given"]["Kind"] == "INDUSTRY"), 2)
+        self.assertEqual(sum(1 for m in g["markers"] if rows[m["row"]]["given"].get("Kind") == "INDUSTRY"), 2)
         self.assertNotIn("mileposts", g)
         sw = self.geo.glyphs["Railroad-Trackplan:Switch_Lock"]
         self.assertEqual(sw["ports"], {"C": {"x": 0.0, "y": 0.0}, "N": {"x": 29.21, "y": 0.0}, "R": {"x": 29.21, "y": -16.51}})
@@ -205,7 +206,7 @@ class SPCoastGeometry(unittest.TestCase):
 
     def rows(self, ix: str) -> dict[str, dict]:
         track = self.model["interlockings"][ix]["track"]
-        return {r["id"]: r for k in ("joints", "ends", "policies") for r in track.get(k, [])}
+        return {r["id"]: r for k in ("joints", "ends", "policies", "consumers") for r in track.get(k, [])}
 
     def test_luchessa_mileposts_and_the_runs_that_meet_a_switch_port(self):
         g = self.geo.interlockings["Luchessa"]

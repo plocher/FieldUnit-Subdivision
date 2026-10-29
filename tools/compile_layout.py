@@ -7,8 +7,8 @@
 Given the project's root sheet, the KiCad importer exports a netlist with kicad-cli into a temporary location, reads
 it and deletes it (the netlist rule, ``AGENTS.md``: a netlist is a cache of the project's state, never used stale).
 Given a saved ``kicadsexpr`` netlist instead (a machine without KiCad), the caller answers for its freshness.
-Every entity and row holds ``given``, ``relations`` and ``derived`` (ADR 0011 §2), and every file carries geometry
-(ADR 0011 §7): the sheets and the symbol libraries are always read beside the netlist. Diagnostics go to the log
+Every entity and row holds ``given``, ``relations`` and ``derived`` (ADR 0011 §2): the importer writes the first two
+and the reference derivation (``tools/layout_model/derive.py``) the third. Every file carries geometry (ADR 0011 §7): the sheets and the symbol libraries are always read beside the netlist. Diagnostics go to the log
 (stderr by default): errors, then warnings, infos and the missing facts. An error means no Layout Data Model File is
 written (ADR 0008 §4.6). Exit 0 when one is written, 1 on errors, 2 on a bad invocation.
 """
@@ -39,6 +39,7 @@ def main(argv=None) -> int:
         return 2
     sm = seams.resolve(source.from_path(a.project))
     geo = geometry.read(sm)
+    model = emit.emit(sm, geometry=geo)                               # the drawing's facts, then the reference derivation
     diags = sorted(sm.report.diags, key=lambda d: (ORDER.get(d.severity, 9), d.code, d.where))
     lines = [str(d) for d in diags if not (a.quiet and d.severity != "error")]
     if a.log:
@@ -51,7 +52,6 @@ def main(argv=None) -> int:
     if sm.report.errors:
         print(f"{len(sm.report.errors)} error(s); no file written ({summary})", file=sys.stderr)
         return 1
-    model = emit.emit(sm, geometry=geo)
     errors = layout_model.errors(model)
     if errors:
         for e in errors:
