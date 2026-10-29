@@ -697,7 +697,7 @@ class SPCoastExample(unittest.TestCase):
         self.assertNotIn("rules", stripped["provenance"])
         out, report = derive.derive(stripped)
         self.assertEqual(layout_model.dumps(out), text)
-        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 8, "missing": 11})
+        self.assertEqual(report.counts(), {"error": 0, "warning": 16, "info": 8, "missing": 0})
 
 
 if __name__ == "__main__":

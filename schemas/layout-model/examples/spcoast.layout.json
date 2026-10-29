@@ -2,13 +2,25 @@
   "interlockings": {
     "Christopher": {
       "appliances": {
+        "1MC": {
+          "derived": {
+            "controlPoint": "Christopher:Christopher North"
+          },
+          "given": {
+            "Appliance": "lamp",
+            "Style": "maintainer_call"
+          },
+          "relations": {
+            "house": "Christopher:Christopher North"
+          }
+        },
         "1NAT": {
           "derived": {
             "controlPoint": "Christopher:Christopher South"
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Christopher South"
+            "CP Name": "Christopher South"
           },
           "relations": {
             "TC": [
@@ -24,7 +36,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Christopher North"
+            "CP Name": "Christopher North"
           },
           "relations": {
             "TC": [
@@ -40,7 +52,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Christopher North"
+            "CP Name": "Christopher North"
           },
           "relations": {
             "TC": [
@@ -50,13 +62,25 @@
             ]
           }
         },
+        "2MC": {
+          "derived": {
+            "controlPoint": "Christopher:Christopher South"
+          },
+          "given": {
+            "Appliance": "lamp",
+            "Style": "maintainer_call"
+          },
+          "relations": {
+            "house": "Christopher:Christopher South"
+          }
+        },
         "2NAT": {
           "derived": {
             "controlPoint": "Christopher:Christopher South"
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Christopher South"
+            "CP Name": "Christopher South"
           },
           "relations": {
             "TC": [
@@ -72,7 +96,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Christopher North"
+            "CP Name": "Christopher North"
           },
           "relations": {
             "TC": [
@@ -89,7 +113,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Christopher North",
+            "CP Name": "Christopher North",
             "Style": "lock",
             "TC": "813T1"
           },
@@ -112,7 +136,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Christopher North",
+            "CP Name": "Christopher North",
             "Style": "powered",
             "TC": "815T1"
           },
@@ -135,7 +159,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Christopher North",
+            "CP Name": "Christopher North",
             "Style": "powered",
             "TC": "815AT1"
           },
@@ -238,7 +262,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Christopher South",
+            "CP Name": "Christopher South",
             "Style": "lock",
             "TC": "817T1"
           },
@@ -252,30 +276,6 @@
             "R": [
               "b8ebf271-4787-4053-b0fb-66bc9e3a15d1.B"
             ]
-          }
-        },
-        "MC1": {
-          "derived": {
-            "controlPoint": "Christopher:Christopher North"
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Style": "maintainer_call"
-          },
-          "relations": {
-            "house": "Christopher:Christopher North"
-          }
-        },
-        "MC2": {
-          "derived": {
-            "controlPoint": "Christopher:Christopher South"
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Style": "maintainer_call"
-          },
-          "relations": {
-            "house": "Christopher:Christopher South"
           }
         }
       },
@@ -668,6 +668,13 @@
       ],
       "geometry": {
         "appliances": {
+          "1MC": {
+            "at": {
+              "x": 31.75,
+              "y": 0.0
+            },
+            "glyph": "Railroad-Trackplan:MaintainerCall"
+          },
           "1NAT": {
             "at": {
               "x": 168.91,
@@ -688,6 +695,13 @@
               "y": 67.31
             },
             "glyph": "Railroad-Trackplan:Track Circuit"
+          },
+          "2MC": {
+            "at": {
+              "x": 154.94,
+              "y": 0.0
+            },
+            "glyph": "Railroad-Trackplan:MaintainerCall"
           },
           "2NAT": {
             "at": {
@@ -816,20 +830,6 @@
             },
             "glyph": "Railroad-Trackplan:Switch_Lock",
             "rotation": 180
-          },
-          "MC1": {
-            "at": {
-              "x": 31.75,
-              "y": 0.0
-            },
-            "glyph": "Railroad-Trackplan:MaintainerCall"
-          },
-          "MC2": {
-            "at": {
-              "x": 154.94,
-              "y": 0.0
-            },
-            "glyph": "Railroad-Trackplan:MaintainerCall"
           }
         },
         "houses": {
@@ -1095,54 +1095,23 @@
       },
       "houses": {
         "Christopher North": {
-          "derived": {
-            "indications": [
-              "1SATK",
-              "01TK",
-              "2SATK",
-              "813NWK",
-              "813RWK",
-              "813T1K",
-              "815AT1K",
-              "815NWK",
-              "815RWK",
-              "815T1K",
-              "816NGK",
-              "816SGK",
-              "816TEK",
-              "MC1K"
-            ]
-          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "81.3"
           },
           "relations": {
             "codeline": "AAR Tokens",
-            "maintainerCall": "Christopher:MC1"
+            "maintainerCall": "Christopher:1MC"
           }
         },
         "Christopher South": {
-          "derived": {
-            "indications": [
-              "1NATK",
-              "2NATK",
-              "816NGK",
-              "816SGK",
-              "816TEK",
-              "817NWK",
-              "817RWK",
-              "817T1K",
-              "MC2K"
-            ]
-          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "81.6"
           },
           "relations": {
             "codeline": "AAR Tokens",
-            "maintainerCall": "Christopher:MC2"
+            "maintainerCall": "Christopher:2MC"
           }
         }
       },
@@ -1343,7 +1312,7 @@
               "controlPoint": "Christopher:Christopher South"
             },
             "given": {
-              "CP": "Christopher South",
+              "CP Name": "Christopher South",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "a2e8602c-de0a-45b1-a380-358d49c0ab54",
@@ -1368,7 +1337,7 @@
               "controlPoint": "Christopher:Christopher North"
             },
             "given": {
-              "CP": "Christopher North",
+              "CP Name": "Christopher North",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "80308d0f-f2c8-4ac0-b5db-842ea84e779f",
@@ -1393,7 +1362,7 @@
               "controlPoint": "Christopher:Christopher South"
             },
             "given": {
-              "CP": "Christopher South",
+              "CP Name": "Christopher South",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "37bafa86-889e-4b37-9ae3-00b8cee5ace7",
@@ -1418,7 +1387,7 @@
               "controlPoint": "Christopher:Christopher North"
             },
             "given": {
-              "CP": "Christopher North",
+              "CP Name": "Christopher North",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "51dc0b81-3000-475d-9a0e-465bcf77b816",
@@ -1542,7 +1511,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Corporal",
+            "CP Name": "Corporal",
             "IndicationCeiling": "RESTRICTING/RESTRICTING",
             "Style": "manual_sensed"
           },
@@ -1558,13 +1527,25 @@
             ]
           }
         },
+        "1MC": {
+          "derived": {
+            "controlPoint": "Corporal:Corporal"
+          },
+          "given": {
+            "Appliance": "lamp",
+            "Style": "maintainer_call"
+          },
+          "relations": {
+            "house": "Corporal:Corporal"
+          }
+        },
         "1NAT": {
           "derived": {
             "controlPoint": "Corporal:Corporal"
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Corporal"
+            "CP Name": "Corporal"
           },
           "relations": {
             "TC": [
@@ -1579,7 +1560,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Corporal"
+            "CP Name": "Corporal"
           },
           "relations": {
             "TC": [
@@ -1595,7 +1576,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Corporal"
+            "CP Name": "Corporal"
           },
           "relations": {
             "TC": [
@@ -1610,7 +1591,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Corporal"
+            "CP Name": "Corporal"
           },
           "relations": {
             "TC": [
@@ -1626,7 +1607,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Corporal"
+            "CP Name": "Corporal"
           },
           "relations": {
             "TC": [
@@ -1643,7 +1624,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Corporal",
+            "CP Name": "Corporal",
             "Style": "lock",
             "TC": "829T1"
           },
@@ -1666,7 +1647,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Corporal",
+            "CP Name": "Corporal",
             "IndicationCeiling": "STOP/RESTRICTING",
             "Style": "derail"
           },
@@ -1733,7 +1714,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Corporal",
+            "CP Name": "Corporal",
             "Style": "powered",
             "TC": "831T1"
           },
@@ -1781,18 +1762,6 @@
                 "Style": "CPL"
               }
             }
-          }
-        },
-        "MC1": {
-          "derived": {
-            "controlPoint": "Corporal:Corporal"
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Style": "maintainer_call"
-          },
-          "relations": {
-            "house": "Corporal:Corporal"
           }
         }
       },
@@ -2123,6 +2092,13 @@
             },
             "glyph": "Railroad-Trackplan:Switch_Manual_Sensed"
           },
+          "1MC": {
+            "at": {
+              "x": 35.56,
+              "y": 0.0
+            },
+            "glyph": "Railroad-Trackplan:MaintainerCall"
+          },
           "1NAT": {
             "at": {
               "x": 106.68,
@@ -2263,13 +2239,6 @@
               }
             },
             "rotation": 180
-          },
-          "MC1": {
-            "at": {
-              "x": 35.56,
-              "y": 0.0
-            },
-            "glyph": "Railroad-Trackplan:MaintainerCall"
           }
         },
         "houses": {
@@ -2514,35 +2483,13 @@
       },
       "houses": {
         "Corporal": {
-          "derived": {
-            "indications": [
-              "1NATK",
-              "1SATK",
-              "01TK",
-              "2NATK",
-              "2SATK",
-              "829NWK",
-              "829RWK",
-              "829T1K",
-              "830NGK",
-              "830SGK",
-              "830TEK",
-              "831NWK",
-              "831RWK",
-              "831T1K",
-              "832NGK",
-              "832SGK",
-              "832TEK",
-              "MC1K"
-            ]
-          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "83.0"
           },
           "relations": {
             "codeline": "AAR Tokens",
-            "maintainerCall": "Corporal:MC1"
+            "maintainerCall": "Corporal:1MC"
           }
         }
       },
@@ -2707,7 +2654,7 @@
               "controlPoint": "Corporal:Corporal"
             },
             "given": {
-              "CP": "Corporal",
+              "CP Name": "Corporal",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "89d46d4f-a3c1-4b2c-a64f-c3c0bb576e64",
@@ -2731,7 +2678,7 @@
               "controlPoint": "Corporal:Corporal"
             },
             "given": {
-              "CP": "Corporal",
+              "CP Name": "Corporal",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "4a4a8a59-1f6a-4701-9675-e1f591439b8d",
@@ -2756,7 +2703,7 @@
               "controlPoint": "Corporal:Corporal"
             },
             "given": {
-              "CP": "Corporal",
+              "CP Name": "Corporal",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "2d2a9ef0-9b47-40e3-b3ba-013a10286b2a",
@@ -2781,7 +2728,7 @@
               "controlPoint": "Corporal:Corporal"
             },
             "given": {
-              "CP": "Corporal",
+              "CP Name": "Corporal",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "903e6628-4d4c-4198-810d-2e454dfab397",
@@ -2896,7 +2843,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Gilroy Caltrain"
+            "CP Name": "Gilroy Caltrain"
           },
           "relations": {
             "TC": [
@@ -2912,7 +2859,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Gilroy Caltrain"
+            "CP Name": "Gilroy Caltrain"
           },
           "relations": {
             "TC": [
@@ -2928,7 +2875,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Gilroy Caltrain"
+            "CP Name": "Gilroy Caltrain"
           },
           "relations": {
             "TC": [
@@ -2944,7 +2891,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Gilroy Caltrain"
+            "CP Name": "Gilroy Caltrain"
           },
           "relations": {
             "TC": [
@@ -2960,7 +2907,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Gilroy Caltrain"
+            "CP Name": "Gilroy Caltrain"
           },
           "relations": {
             "TC": [
@@ -2977,7 +2924,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Gilroy Caltrain",
+            "CP Name": "Gilroy Caltrain",
             "Style": "powered",
             "TC": "771T1"
           },
@@ -3000,7 +2947,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Gilroy Caltrain",
+            "CP Name": "Gilroy Caltrain",
             "Style": "powered",
             "TC": "773T1"
           },
@@ -3120,7 +3067,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Gilroy Caltrain",
+            "CP Name": "Gilroy Caltrain",
             "Style": "powered",
             "TC": "775T1"
           },
@@ -3858,27 +3805,6 @@
       },
       "houses": {
         "Gilroy Caltrain": {
-          "derived": {
-            "indications": [
-              "1NATK",
-              "1SATK",
-              "01TK",
-              "02TK",
-              "03TK",
-              "771NWK",
-              "771RWK",
-              "771T1K",
-              "773NWK",
-              "773RWK",
-              "773T1K",
-              "774NGK",
-              "774SGK",
-              "774TEK",
-              "775NWK",
-              "775RWK",
-              "775T1K"
-            ]
-          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "77.1"
@@ -4037,7 +3963,7 @@
               "controlPoint": "Gilroy Caltrain:Gilroy Caltrain"
             },
             "given": {
-              "CP": "Gilroy Caltrain",
+              "CP Name": "Gilroy Caltrain",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "d5ab4695-dde4-44bd-a42b-83dffd322517",
@@ -4062,7 +3988,7 @@
               "controlPoint": "Gilroy Caltrain:Gilroy Caltrain"
             },
             "given": {
-              "CP": "Gilroy Caltrain",
+              "CP Name": "Gilroy Caltrain",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "0181f7d5-f132-4376-a96f-1f31ec01f1a2",
@@ -4087,7 +4013,7 @@
               "controlPoint": "Gilroy Caltrain:Gilroy Caltrain"
             },
             "given": {
-              "CP": "Gilroy Caltrain",
+              "CP Name": "Gilroy Caltrain",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "37df07ea-ec58-47c2-b85d-9e8ebbf6d84a",
@@ -4112,7 +4038,7 @@
               "controlPoint": "Gilroy Caltrain:Gilroy Caltrain"
             },
             "given": {
-              "CP": "Gilroy Caltrain",
+              "CP Name": "Gilroy Caltrain",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "5c92a95e-63ba-402a-9085-3443c8a4607d",
@@ -4137,7 +4063,7 @@
               "controlPoint": "Gilroy Caltrain:Gilroy Caltrain"
             },
             "given": {
-              "CP": "Gilroy Caltrain",
+              "CP Name": "Gilroy Caltrain",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "73922a59-4f81-4d5c-9f30-e00035472018",
@@ -4255,13 +4181,25 @@
     },
     "Gilroy Interchange": {
       "appliances": {
+        "1MC": {
+          "derived": {
+            "controlPoint": "Gilroy Interchange:Gilroy North"
+          },
+          "given": {
+            "Appliance": "lamp",
+            "Style": "maintainer_call"
+          },
+          "relations": {
+            "house": "Gilroy Interchange:Gilroy North"
+          }
+        },
         "1NAT": {
           "derived": {
             "controlPoint": "Gilroy Interchange:Gilroy North"
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Gilroy North"
+            "CP Name": "Gilroy North"
           },
           "relations": {
             "TC": [
@@ -4277,7 +4215,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Gilroy North"
+            "CP Name": "Gilroy North"
           },
           "relations": {
             "TC": [
@@ -4293,7 +4231,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Gilroy North"
+            "CP Name": "Gilroy North"
           },
           "relations": {
             "TC": [
@@ -4303,13 +4241,25 @@
             ]
           }
         },
+        "2MC": {
+          "derived": {
+            "controlPoint": "Gilroy Interchange:Gilroy South"
+          },
+          "given": {
+            "Appliance": "lamp",
+            "Style": "maintainer_call"
+          },
+          "relations": {
+            "house": "Gilroy Interchange:Gilroy South"
+          }
+        },
         "02T": {
           "derived": {
             "controlPoint": "Gilroy Interchange:Gilroy North"
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Gilroy North"
+            "CP Name": "Gilroy North"
           },
           "relations": {
             "TC": [
@@ -4325,7 +4275,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Gilroy North",
+            "CP Name": "Gilroy North",
             "Style": "lock",
             "TC": "777T1"
           },
@@ -4428,7 +4378,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Gilroy South",
+            "CP Name": "Gilroy South",
             "Style": "lock",
             "TC": "781T1"
           },
@@ -4442,30 +4392,6 @@
             "R": [
               "abde960c-453c-4d28-81ac-0a4634488adf.governed"
             ]
-          }
-        },
-        "MC1": {
-          "derived": {
-            "controlPoint": "Gilroy Interchange:Gilroy North"
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Style": "maintainer_call"
-          },
-          "relations": {
-            "house": "Gilroy Interchange:Gilroy North"
-          }
-        },
-        "MC2": {
-          "derived": {
-            "controlPoint": "Gilroy Interchange:Gilroy South"
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Style": "maintainer_call"
-          },
-          "relations": {
-            "house": "Gilroy Interchange:Gilroy South"
           }
         }
       },
@@ -4787,6 +4713,13 @@
       ],
       "geometry": {
         "appliances": {
+          "1MC": {
+            "at": {
+              "x": 21.59,
+              "y": 0.0
+            },
+            "glyph": "Railroad-Trackplan:MaintainerCall"
+          },
           "1NAT": {
             "at": {
               "x": 129.54,
@@ -4807,6 +4740,13 @@
               "y": 7.62
             },
             "glyph": "Railroad-Trackplan:Track Circuit"
+          },
+          "2MC": {
+            "at": {
+              "x": 115.57,
+              "y": 0.0
+            },
+            "glyph": "Railroad-Trackplan:MaintainerCall"
           },
           "02T": {
             "at": {
@@ -4912,20 +4852,6 @@
             },
             "glyph": "Railroad-Trackplan:Switch_Lock",
             "mirror": "y"
-          },
-          "MC1": {
-            "at": {
-              "x": 21.59,
-              "y": 0.0
-            },
-            "glyph": "Railroad-Trackplan:MaintainerCall"
-          },
-          "MC2": {
-            "at": {
-              "x": 115.57,
-              "y": 0.0
-            },
-            "glyph": "Railroad-Trackplan:MaintainerCall"
           }
         },
         "houses": {
@@ -5094,49 +5020,23 @@
       },
       "houses": {
         "Gilroy North": {
-          "derived": {
-            "indications": [
-              "1NATK",
-              "1SATK",
-              "01TK",
-              "02TK",
-              "777NWK",
-              "777RWK",
-              "777T1K",
-              "778NGK",
-              "778SGK",
-              "778TEK",
-              "MC1K"
-            ]
-          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "77.7"
           },
           "relations": {
             "codeline": "AAR Tokens",
-            "maintainerCall": "Gilroy Interchange:MC1"
+            "maintainerCall": "Gilroy Interchange:1MC"
           }
         },
         "Gilroy South": {
-          "derived": {
-            "indications": [
-              "778NGK",
-              "778SGK",
-              "778TEK",
-              "781NWK",
-              "781RWK",
-              "781T1K",
-              "MC2K"
-            ]
-          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "78.1"
           },
           "relations": {
             "codeline": "AAR Tokens",
-            "maintainerCall": "Gilroy Interchange:MC2"
+            "maintainerCall": "Gilroy Interchange:2MC"
           }
         }
       },
@@ -5237,7 +5137,7 @@
               "controlPoint": "Gilroy Interchange:Gilroy South"
             },
             "given": {
-              "CP": "Gilroy South",
+              "CP Name": "Gilroy South",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "80312d76-4212-441b-8f6c-e68bc04d67f9",
@@ -5262,7 +5162,7 @@
               "controlPoint": "Gilroy Interchange:Gilroy North"
             },
             "given": {
-              "CP": "Gilroy North",
+              "CP Name": "Gilroy North",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "0249d114-5932-4beb-90a3-c46d0bf4b9a5",
@@ -5287,7 +5187,7 @@
               "controlPoint": "Gilroy Interchange:Gilroy North"
             },
             "given": {
-              "CP": "Gilroy North",
+              "CP Name": "Gilroy North",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "04db8699-b4ad-46b8-8fcd-64608fde1ed0",
@@ -5312,7 +5212,7 @@
               "controlPoint": "Gilroy Interchange:Gilroy South"
             },
             "given": {
-              "CP": "Gilroy South",
+              "CP Name": "Gilroy South",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "abde960c-453c-4d28-81ac-0a4634488adf",
@@ -5392,13 +5292,25 @@
     },
     "Luchessa": {
       "appliances": {
+        "1MC": {
+          "derived": {
+            "controlPoint": "Luchessa:Gilroy"
+          },
+          "given": {
+            "Appliance": "lamp",
+            "Style": "maintainer_call"
+          },
+          "relations": {
+            "house": "Luchessa:Gilroy"
+          }
+        },
         "1NAT": {
           "derived": {
             "controlPoint": "Luchessa:Carnadero"
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Carnadero"
+            "CP Name": "Carnadero"
           },
           "relations": {
             "TC": [
@@ -5414,7 +5326,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Luchessa"
+            "CP Name": "Luchessa"
           },
           "relations": {
             "TC": [
@@ -5430,7 +5342,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Gilroy"
+            "CP Name": "Gilroy"
           },
           "relations": {
             "TC": [
@@ -5445,7 +5357,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Carnadero"
+            "CP Name": "Carnadero"
           },
           "relations": {
             "TC": [
@@ -5461,7 +5373,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Gilroy"
+            "CP Name": "Gilroy"
           },
           "relations": {
             "TC": [
@@ -5477,7 +5389,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Carnadero"
+            "CP Name": "Carnadero"
           },
           "relations": {
             "TC": [
@@ -5494,7 +5406,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Luchessa",
+            "CP Name": "Luchessa",
             "Style": "powered",
             "TC": "783T1"
           },
@@ -5614,7 +5526,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Gilroy",
+            "CP Name": "Gilroy",
             "Style": "lock",
             "TC": "795T1"
           },
@@ -5637,7 +5549,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Gilroy",
+            "CP Name": "Gilroy",
             "IndicationCeiling": "STOP/RESTRICTING",
             "Style": "derail"
           },
@@ -5657,7 +5569,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Carnadero",
+            "CP Name": "Carnadero",
             "Style": "powered",
             "TC": "799T1"
           },
@@ -5673,25 +5585,13 @@
             ]
           }
         },
-        "MC1": {
-          "derived": {
-            "controlPoint": "Luchessa:Gilroy"
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Style": "maintainer_call"
-          },
-          "relations": {
-            "house": "Luchessa:Gilroy"
-          }
-        },
         "NFLK": {
           "derived": {
             "controlPoint": "Luchessa:Luchessa"
           },
           "given": {
             "Appliance": "lamp",
-            "CP": "Luchessa",
+            "CP Name": "Luchessa",
             "Style": "non_vital"
           }
         },
@@ -5701,7 +5601,7 @@
           },
           "given": {
             "Appliance": "lamp",
-            "CP": "Luchessa",
+            "CP Name": "Luchessa",
             "Style": "non_vital"
           }
         }
@@ -6069,6 +5969,13 @@
       ],
       "geometry": {
         "appliances": {
+          "1MC": {
+            "at": {
+              "x": 81.28,
+              "y": 6.35
+            },
+            "glyph": "Railroad-Trackplan:MaintainerCall"
+          },
           "1NAT": {
             "at": {
               "x": 186.69,
@@ -6239,13 +6146,6 @@
               "y": 43.18
             },
             "glyph": "Railroad-Trackplan:Switch_Powered"
-          },
-          "MC1": {
-            "at": {
-              "x": 81.28,
-              "y": 6.35
-            },
-            "glyph": "Railroad-Trackplan:MaintainerCall"
           },
           "NFLK": {
             "at": {
@@ -6555,19 +6455,6 @@
       },
       "houses": {
         "Carnadero": {
-          "derived": {
-            "indications": [
-              "1NATK",
-              "2NATK",
-              "3NATK",
-              "784NGK",
-              "784SGK",
-              "784TEK",
-              "799NWK",
-              "799RWK",
-              "799T1K"
-            ]
-          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "79.9"
@@ -6577,40 +6464,16 @@
           }
         },
         "Gilroy": {
-          "derived": {
-            "indications": [
-              "01TK",
-              "02TK",
-              "784NGK",
-              "784SGK",
-              "784TEK",
-              "795NWK",
-              "795RWK",
-              "795T1K",
-              "MC1K"
-            ]
-          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "79.5"
           },
           "relations": {
             "codeline": "US&S 506",
-            "maintainerCall": "Luchessa:MC1"
+            "maintainerCall": "Luchessa:1MC"
           }
         },
         "Luchessa": {
-          "derived": {
-            "indications": [
-              "1SATK",
-              "783NWK",
-              "783RWK",
-              "783T1K",
-              "784NGK",
-              "784SGK",
-              "784TEK"
-            ]
-          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "78.3"
@@ -6808,7 +6671,7 @@
               "controlPoint": "Luchessa:Gilroy"
             },
             "given": {
-              "CP": "Gilroy",
+              "CP Name": "Gilroy",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "cecdcc5b-72f0-4088-bd8c-d8923a6541ea",
@@ -6833,7 +6696,7 @@
               "controlPoint": "Luchessa:Luchessa"
             },
             "given": {
-              "CP": "Luchessa",
+              "CP Name": "Luchessa",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "cd861a0b-1933-4346-957b-e6e72a3469af",
@@ -6858,7 +6721,7 @@
               "controlPoint": "Luchessa:Carnadero"
             },
             "given": {
-              "CP": "Carnadero",
+              "CP Name": "Carnadero",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "c35e8a7a-e9e8-447d-8058-8cf109209602",
@@ -6883,7 +6746,7 @@
               "controlPoint": "Luchessa:Gilroy"
             },
             "given": {
-              "CP": "Gilroy",
+              "CP Name": "Gilroy",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "17c5a311-d65e-4609-956b-0172ec9c98a1",
@@ -6908,7 +6771,7 @@
               "controlPoint": "Luchessa:Carnadero"
             },
             "given": {
-              "CP": "Carnadero",
+              "CP Name": "Carnadero",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "cb046a4f-2e58-425f-9c49-990eefbebe82",
@@ -7043,7 +6906,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Sargent",
+            "CP Name": "Sargent",
             "IndicationCeiling": "RESTRICTING/RESTRICTING",
             "Style": "manual_sensed"
           },
@@ -7059,13 +6922,25 @@
             ]
           }
         },
+        "1MC": {
+          "derived": {
+            "controlPoint": "Sargent:Sargent"
+          },
+          "given": {
+            "Appliance": "lamp",
+            "Style": "maintainer_call"
+          },
+          "relations": {
+            "house": "Sargent:Sargent"
+          }
+        },
         "1NAT": {
           "derived": {
             "controlPoint": "Sargent:Sargent"
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Sargent"
+            "CP Name": "Sargent"
           },
           "relations": {
             "TC": [
@@ -7081,7 +6956,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Sargent"
+            "CP Name": "Sargent"
           },
           "relations": {
             "TC": [
@@ -7096,7 +6971,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Sargent"
+            "CP Name": "Sargent"
           },
           "relations": {
             "TC": [
@@ -7113,7 +6988,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Sargent",
+            "CP Name": "Sargent",
             "Style": "lock",
             "TC": "835T1"
           },
@@ -7192,21 +7067,9 @@
           },
           "given": {
             "Appliance": "lamp",
-            "CP": "Sargent",
+            "CP Name": "Sargent",
             "Milepost": "83.4",
             "Style": "non_vital"
-          }
-        },
-        "MC1": {
-          "derived": {
-            "controlPoint": "Sargent:Sargent"
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Style": "maintainer_call"
-          },
-          "relations": {
-            "house": "Sargent:Sargent"
           }
         }
       },
@@ -7481,6 +7344,13 @@
             "glyph": "Railroad-Trackplan:Switch_Manual_Sensed",
             "mirror": "y"
           },
+          "1MC": {
+            "at": {
+              "x": 91.44,
+              "y": 0.0
+            },
+            "glyph": "Railroad-Trackplan:MaintainerCall"
+          },
           "1NAT": {
             "at": {
               "x": 106.68,
@@ -7575,13 +7445,6 @@
               "y": 38.1
             },
             "glyph": "Railroad-Trackplan:AUXILIARY"
-          },
-          "MC1": {
-            "at": {
-              "x": 91.44,
-              "y": 0.0
-            },
-            "glyph": "Railroad-Trackplan:MaintainerCall"
           }
         },
         "houses": {
@@ -7749,27 +7612,13 @@
       },
       "houses": {
         "Sargent": {
-          "derived": {
-            "indications": [
-              "1NATK",
-              "1SATK",
-              "2SATK",
-              "835NWK",
-              "835RWK",
-              "835T1K",
-              "836NGK",
-              "836SGK",
-              "836TEK",
-              "MC1K"
-            ]
-          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "83.5"
           },
           "relations": {
             "codeline": "AAR Tokens",
-            "maintainerCall": "Sargent:MC1"
+            "maintainerCall": "Sargent:1MC"
           }
         }
       },
@@ -7782,7 +7631,7 @@
           {
             "given": {
               "Appliance": "track_circuit",
-              "CP": "Corporal",
+              "CP Name": "Corporal",
               "Name": "Corporal:2NAT"
             },
             "id": "1f225e38-5cdb-4b01-9ab6-8bbb0d92c42a",
@@ -7914,7 +7763,7 @@
               "controlPoint": "Sargent:Sargent"
             },
             "given": {
-              "CP": "Sargent",
+              "CP Name": "Sargent",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "2c47f3de-619c-47c1-9a14-67eedbf2a085",
@@ -7939,7 +7788,7 @@
               "controlPoint": "Sargent:Sargent"
             },
             "given": {
-              "CP": "Sargent",
+              "CP Name": "Sargent",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "57f8967a-3010-441d-bea9-0eb783a0fa60",
@@ -7963,7 +7812,7 @@
               "controlPoint": "Sargent:Sargent"
             },
             "given": {
-              "CP": "Sargent",
+              "CP Name": "Sargent",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "78a1df40-a370-4f05-8c58-e8cee9c8b009",
@@ -8049,7 +7898,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8064,7 +7913,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8079,7 +7928,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8094,7 +7943,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8109,7 +7958,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8124,7 +7973,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8139,7 +7988,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8154,7 +8003,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8169,7 +8018,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8184,7 +8033,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8199,7 +8048,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8217,7 +8066,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Watsonville",
+            "CP Name": "Watsonville",
             "Style": "powered",
             "TC": "3T1"
           },
@@ -8240,7 +8089,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8255,7 +8104,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8270,7 +8119,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8285,7 +8134,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8300,7 +8149,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8316,7 +8165,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8331,7 +8180,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8346,7 +8195,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8361,7 +8210,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8377,7 +8226,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Watsonville",
+            "CP Name": "Watsonville",
             "Style": "powered",
             "TC": "5T1"
           },
@@ -8399,7 +8248,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8414,7 +8263,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8429,7 +8278,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8444,7 +8293,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8459,7 +8308,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8474,7 +8323,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8489,7 +8338,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8504,7 +8353,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8520,7 +8369,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Watsonville",
+            "CP Name": "Watsonville",
             "Style": "powered",
             "TC": "7T1"
           },
@@ -8542,7 +8391,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8557,7 +8406,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8572,7 +8421,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8587,7 +8436,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville"
+            "CP Name": "Watsonville"
           },
           "relations": {
             "TC": [
@@ -8603,7 +8452,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Watsonville",
+            "CP Name": "Watsonville",
             "Style": "powered",
             "TC": "9T1"
           },
@@ -8626,7 +8475,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Watsonville",
+            "CP Name": "Watsonville",
             "Style": "powered",
             "TC": "11T1"
           },
@@ -8649,7 +8498,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Watsonville",
+            "CP Name": "Watsonville",
             "Style": "powered",
             "TC": "13T1"
           },
@@ -8672,7 +8521,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Watsonville",
+            "CP Name": "Watsonville",
             "Style": "powered",
             "TC": "15T1"
           },
@@ -8695,7 +8544,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Watsonville",
+            "CP Name": "Watsonville",
             "Style": "powered",
             "TC": "17T1"
           },
@@ -8718,7 +8567,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Watsonville",
+            "CP Name": "Watsonville",
             "Style": "powered",
             "TC": "19T1"
           },
@@ -8741,7 +8590,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Watsonville",
+            "CP Name": "Watsonville",
             "Style": "powered",
             "TC": "21T1"
           },
@@ -8764,7 +8613,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Watsonville",
+            "CP Name": "Watsonville",
             "Style": "powered",
             "TC": "23T1"
           },
@@ -8787,7 +8636,7 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Watsonville",
+            "CP Name": "Watsonville",
             "Style": "powered",
             "TC": "25T1"
           },
@@ -8817,7 +8666,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville",
+            "CP Name": "Watsonville",
             "Display": "0100T: [15T1,17T1,19T1,21T1,23T1,25T1]",
             "IndicationToken": "15T1,17T1,19T1,21T1,23T1,25T1",
             "Style": "virtual"
@@ -8838,7 +8687,7 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP": "Watsonville",
+            "CP Name": "Watsonville",
             "Display": "0101T: [03T,3T1,5T1,7T1,9T1,11T1,13T1]",
             "IndicationToken": "03T,3T1,5T1,7T1,9T1,11T1,13T1",
             "Style": "virtual"
@@ -8851,13 +8700,13 @@
           },
           "given": {
             "Appliance": "switch",
-            "CP": "Watsonville",
+            "CP Name": "Watsonville",
             "Style": "powered",
             "TC": "837T1"
           },
           "relations": {
             "C": [
-              "fde36151-9fb9-48ab-a0b9-0baa29c776a5.track"
+              "fa08f12d-ce74-4c72-a82e-c48292c8ba79.governed"
             ],
             "N": [
               "293515f7-9155-4100-a639-23f6d051ab4e.governed"
@@ -8906,6 +8755,29 @@
               }
             },
             "D": {
+              "given": {
+                "Appliance": "head",
+                "Style": "CPL"
+              }
+            }
+          }
+        },
+        "838SAB": {
+          "derived": {
+            "controlPoint": "Watsonville:Watsonville"
+          },
+          "given": {
+            "Appliance": "mast",
+            "Style": "double"
+          },
+          "heads": {
+            "A": {
+              "given": {
+                "Appliance": "head",
+                "Style": "CPL"
+              }
+            },
+            "B": {
               "given": {
                 "Appliance": "head",
                 "Style": "CPL"
@@ -9032,7 +8904,7 @@
             }
           }
         },
-        "842SA": {
+        "840SA": {
           "derived": {
             "controlPoint": "Watsonville:Watsonville"
           },
@@ -9055,7 +8927,7 @@
           },
           "given": {
             "Appliance": "lamp",
-            "CP": "Watsonville",
+            "CP Name": "Watsonville",
             "Style": "non_vital"
           }
         },
@@ -9065,7 +8937,7 @@
           },
           "given": {
             "Appliance": "lamp",
-            "CP": "Watsonville",
+            "CP Name": "Watsonville",
             "Style": "non_vital"
           }
         }
@@ -10012,7 +9884,7 @@
         },
         {
           "derived": {
-            "serves": "Watsonville:842SA"
+            "serves": "Watsonville:840SA"
           },
           "given": {
             "Appliance": "head",
@@ -10024,16 +9896,16 @@
               "S0": "Watsonville/0x21/A3",
               "S1": "Watsonville/0x21/A4"
             },
-            "mast": "Watsonville:842SA"
+            "mast": "Watsonville:840SA"
           }
         },
         {
           "derived": {
-            "serves": "Watsonville:842SA"
+            "serves": "Watsonville:840SA"
           },
           "given": {
             "Appliance": "mast",
-            "Name": "842SA"
+            "Name": "840SA"
           }
         }
       ],
@@ -10041,84 +9913,84 @@
         "appliances": {
           "1BT": {
             "at": {
-              "x": 147.32,
+              "x": 152.4,
               "y": 24.13
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "1CT": {
             "at": {
-              "x": 137.16,
+              "x": 142.24,
               "y": 24.13
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "1DT": {
             "at": {
-              "x": 127.0,
+              "x": 132.08,
               "y": 24.13
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "1ET": {
             "at": {
-              "x": 116.84,
+              "x": 121.92,
               "y": 24.13
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "01T": {
             "at": {
-              "x": 147.32,
+              "x": 152.4,
               "y": 87.63
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "2AT": {
             "at": {
-              "x": 185.42,
+              "x": 190.5,
               "y": 36.83
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "2BT": {
             "at": {
-              "x": 147.32,
+              "x": 152.4,
               "y": 36.83
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "2CT": {
             "at": {
-              "x": 137.16,
+              "x": 142.24,
               "y": 36.83
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "2DT": {
             "at": {
-              "x": 127.0,
+              "x": 132.08,
               "y": 36.83
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "2ET": {
             "at": {
-              "x": 116.84,
+              "x": 121.92,
               "y": 36.83
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "02T": {
             "at": {
-              "x": 49.53,
+              "x": 54.61,
               "y": 54.61
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "3": {
             "at": {
-              "x": 40.64,
+              "x": 45.72,
               "y": 24.13
             },
             "glyph": "Railroad-Trackplan:Switch_Powered_Small",
@@ -10126,70 +9998,70 @@
           },
           "3BT": {
             "at": {
-              "x": 147.32,
+              "x": 152.4,
               "y": 44.45
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "3CT": {
             "at": {
-              "x": 137.16,
+              "x": 142.24,
               "y": 44.45
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "3DT": {
             "at": {
-              "x": 127.0,
+              "x": 132.08,
               "y": 44.45
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "3ET": {
             "at": {
-              "x": 116.84,
+              "x": 121.92,
               "y": 44.45
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "03T": {
             "at": {
-              "x": 31.75,
+              "x": 36.83,
               "y": 24.13
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "4BT": {
             "at": {
-              "x": 147.32,
+              "x": 152.4,
               "y": 52.07
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "4CT": {
             "at": {
-              "x": 137.16,
+              "x": 142.24,
               "y": 52.07
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "4DT": {
             "at": {
-              "x": 127.0,
+              "x": 132.08,
               "y": 52.07
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "4ET": {
             "at": {
-              "x": 116.84,
+              "x": 121.92,
               "y": 52.07
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "5": {
             "at": {
-              "x": 58.42,
+              "x": 63.5,
               "y": 34.29
             },
             "glyph": "Railroad-Trackplan:Switch_Powered_Diag",
@@ -10197,63 +10069,63 @@
           },
           "5BT": {
             "at": {
-              "x": 147.32,
+              "x": 152.4,
               "y": 59.69
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "5CT": {
             "at": {
-              "x": 137.16,
+              "x": 142.24,
               "y": 59.69
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "5DT": {
             "at": {
-              "x": 127.0,
+              "x": 132.08,
               "y": 59.69
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "5ET": {
             "at": {
-              "x": 116.84,
+              "x": 121.92,
               "y": 59.69
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "6BT": {
             "at": {
-              "x": 147.32,
+              "x": 152.4,
               "y": 67.31
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "6CT": {
             "at": {
-              "x": 137.16,
+              "x": 142.24,
               "y": 67.31
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "6DT": {
             "at": {
-              "x": 127.0,
+              "x": 132.08,
               "y": 67.31
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "6ET": {
             "at": {
-              "x": 116.84,
+              "x": 121.92,
               "y": 67.31
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "7": {
             "at": {
-              "x": 66.04,
+              "x": 71.12,
               "y": 41.91
             },
             "glyph": "Railroad-Trackplan:Switch_Powered_Diag",
@@ -10261,35 +10133,35 @@
           },
           "7BT": {
             "at": {
-              "x": 147.32,
+              "x": 152.4,
               "y": 74.93
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "7CT": {
             "at": {
-              "x": 137.16,
+              "x": 142.24,
               "y": 74.93
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "7DT": {
             "at": {
-              "x": 127.0,
+              "x": 132.08,
               "y": 74.93
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "7ET": {
             "at": {
-              "x": 116.84,
+              "x": 121.92,
               "y": 74.93
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
           },
           "9": {
             "at": {
-              "x": 73.66,
+              "x": 78.74,
               "y": 49.53
             },
             "glyph": "Railroad-Trackplan:Switch_Powered_Diag",
@@ -10297,7 +10169,7 @@
           },
           "11": {
             "at": {
-              "x": 81.28,
+              "x": 86.36,
               "y": 57.15
             },
             "glyph": "Railroad-Trackplan:Switch_Powered_Diag",
@@ -10305,7 +10177,7 @@
           },
           "13": {
             "at": {
-              "x": 88.9,
+              "x": 93.98,
               "y": 64.77
             },
             "glyph": "Railroad-Trackplan:Switch_Powered_Diag",
@@ -10313,7 +10185,7 @@
           },
           "15": {
             "at": {
-              "x": 234.95,
+              "x": 240.03,
               "y": 77.47
             },
             "glyph": "Railroad-Trackplan:Switch_Powered_Diag",
@@ -10321,7 +10193,7 @@
           },
           "17": {
             "at": {
-              "x": 227.33,
+              "x": 232.41,
               "y": 69.85
             },
             "glyph": "Railroad-Trackplan:Switch_Powered_Diag",
@@ -10329,7 +10201,7 @@
           },
           "19": {
             "at": {
-              "x": 219.71,
+              "x": 224.79,
               "y": 62.23
             },
             "glyph": "Railroad-Trackplan:Switch_Powered_Diag",
@@ -10337,7 +10209,7 @@
           },
           "21": {
             "at": {
-              "x": 212.09,
+              "x": 217.17,
               "y": 54.61
             },
             "glyph": "Railroad-Trackplan:Switch_Powered_Diag",
@@ -10345,7 +10217,7 @@
           },
           "23": {
             "at": {
-              "x": 204.47,
+              "x": 209.55,
               "y": 46.99
             },
             "glyph": "Railroad-Trackplan:Switch_Powered_Diag",
@@ -10353,7 +10225,7 @@
           },
           "25": {
             "at": {
-              "x": 176.53,
+              "x": 181.61,
               "y": 36.83
             },
             "glyph": "Railroad-Trackplan:Switch_Powered_Small",
@@ -10361,21 +10233,21 @@
           },
           "0100T": {
             "at": {
-              "x": 60.96,
+              "x": 66.04,
               "y": 5.08
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Virtual"
           },
           "0101T": {
             "at": {
-              "x": 60.96,
+              "x": 66.04,
               "y": 10.16
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Virtual"
           },
           "837": {
             "at": {
-              "x": 0.0,
+              "x": 5.08,
               "y": 24.13
             },
             "glyph": "Railroad-Trackplan:Switch_Powered_Small",
@@ -10383,21 +10255,21 @@
           },
           "838NAB": {
             "at": {
-              "x": 19.05,
+              "x": 24.13,
               "y": 20.32
             },
             "glyph": "Railroad-Trackplan:Mast_Double",
             "heads": {
               "A": {
                 "at": {
-                  "x": 12.7,
+                  "x": 17.78,
                   "y": 17.78
                 },
                 "glyph": "Railroad-Trackplan:Signal Head - CPL"
               },
               "B": {
                 "at": {
-                  "x": 15.24,
+                  "x": 20.32,
                   "y": 17.78
                 },
                 "glyph": "Railroad-Trackplan:Signal Head - CPL"
@@ -10406,37 +10278,63 @@
           },
           "838NCD": {
             "at": {
-              "x": 25.4,
+              "x": 30.48,
               "y": 33.02
             },
             "glyph": "Railroad-Trackplan:Mast_Double",
             "heads": {
               "C": {
                 "at": {
-                  "x": 19.05,
+                  "x": 24.13,
                   "y": 30.48
                 },
                 "glyph": "Railroad-Trackplan:Signal Head - CPL"
               },
               "D": {
                 "at": {
-                  "x": 21.59,
+                  "x": 26.67,
                   "y": 30.48
                 },
                 "glyph": "Railroad-Trackplan:Signal Head - CPL"
               }
             }
           },
+          "838SAB": {
+            "at": {
+              "x": 3.81,
+              "y": 27.94
+            },
+            "glyph": "Railroad-Trackplan:Mast_Double",
+            "heads": {
+              "A": {
+                "at": {
+                  "x": 10.16,
+                  "y": 30.48
+                },
+                "glyph": "Railroad-Trackplan:Signal Head - CPL",
+                "rotation": 180
+              },
+              "B": {
+                "at": {
+                  "x": 7.62,
+                  "y": 30.48
+                },
+                "glyph": "Railroad-Trackplan:Signal Head - CPL",
+                "rotation": 180
+              }
+            },
+            "rotation": 180
+          },
           "840NA": {
             "at": {
-              "x": 63.5,
+              "x": 68.58,
               "y": 20.32
             },
             "glyph": "Railroad-Trackplan:Mast_Dwarf",
             "heads": {
               "A": {
                 "at": {
-                  "x": 62.23,
+                  "x": 67.31,
                   "y": 17.78
                 },
                 "glyph": "Railroad-Trackplan:Signal Head - CPL"
@@ -10445,14 +10343,14 @@
           },
           "840NB": {
             "at": {
-              "x": 73.66,
+              "x": 78.74,
               "y": 33.02
             },
             "glyph": "Railroad-Trackplan:Mast_Dwarf",
             "heads": {
               "B": {
                 "at": {
-                  "x": 72.39,
+                  "x": 77.47,
                   "y": 30.48
                 },
                 "glyph": "Railroad-Trackplan:Signal Head - CPL"
@@ -10461,14 +10359,14 @@
           },
           "840NC": {
             "at": {
-              "x": 81.28,
+              "x": 86.36,
               "y": 40.64
             },
             "glyph": "Railroad-Trackplan:Mast_Dwarf",
             "heads": {
               "C": {
                 "at": {
-                  "x": 80.01,
+                  "x": 85.09,
                   "y": 38.1
                 },
                 "glyph": "Railroad-Trackplan:Signal Head - CPL"
@@ -10477,14 +10375,14 @@
           },
           "840ND": {
             "at": {
-              "x": 88.9,
+              "x": 93.98,
               "y": 48.26
             },
             "glyph": "Railroad-Trackplan:Mast_Dwarf",
             "heads": {
               "D": {
                 "at": {
-                  "x": 87.63,
+                  "x": 92.71,
                   "y": 45.72
                 },
                 "glyph": "Railroad-Trackplan:Signal Head - CPL"
@@ -10493,14 +10391,14 @@
           },
           "840NE": {
             "at": {
-              "x": 96.52,
+              "x": 101.6,
               "y": 55.88
             },
             "glyph": "Railroad-Trackplan:Mast_Dwarf",
             "heads": {
               "E": {
                 "at": {
-                  "x": 95.25,
+                  "x": 100.33,
                   "y": 53.34
                 },
                 "glyph": "Railroad-Trackplan:Signal Head - CPL"
@@ -10509,14 +10407,14 @@
           },
           "840NF": {
             "at": {
-              "x": 104.14,
+              "x": 109.22,
               "y": 63.5
             },
             "glyph": "Railroad-Trackplan:Mast_Dwarf",
             "heads": {
               "F": {
                 "at": {
-                  "x": 102.87,
+                  "x": 107.95,
                   "y": 60.96
                 },
                 "glyph": "Railroad-Trackplan:Signal Head - CPL"
@@ -10525,30 +10423,30 @@
           },
           "840NG": {
             "at": {
-              "x": 110.49,
+              "x": 115.57,
               "y": 71.12
             },
             "glyph": "Railroad-Trackplan:Mast_Dwarf",
             "heads": {
               "G": {
                 "at": {
-                  "x": 109.22,
+                  "x": 114.3,
                   "y": 68.58
                 },
                 "glyph": "Railroad-Trackplan:Signal Head - CPL"
               }
             }
           },
-          "842SA": {
+          "840SA": {
             "at": {
-              "x": 223.52,
+              "x": 228.6,
               "y": 91.44
             },
             "glyph": "Railroad-Trackplan:Mast_Dwarf",
             "heads": {
               "A": {
                 "at": {
-                  "x": 224.79,
+                  "x": 229.87,
                   "y": 93.98
                 },
                 "glyph": "Railroad-Trackplan:Signal Head - CPL",
@@ -10559,14 +10457,14 @@
           },
           "NFLK": {
             "at": {
-              "x": 129.54,
+              "x": 134.62,
               "y": 0.0
             },
             "glyph": "Railroad-Trackplan:AUXILIARY"
           },
           "SFLK": {
             "at": {
-              "x": 135.89,
+              "x": 140.97,
               "y": 0.0
             },
             "glyph": "Railroad-Trackplan:AUXILIARY"
@@ -10575,7 +10473,7 @@
         "houses": {
           "Watsonville": {
             "at": {
-              "x": 33.02,
+              "x": 38.1,
               "y": 7.62
             },
             "glyph": "Railroad-Trackplan:House"
@@ -10588,11 +10486,20 @@
               "y": 24.13
             },
             "glyph": "Railroad-Trackplan:NextCP",
-            "row": "fde36151-9fb9-48ab-a0b9-0baa29c776a5"
+            "row": "65d2c920-24a5-4b01-a780-2a5a06a0350e"
           },
           {
             "at": {
-              "x": 17.78,
+              "x": 5.08,
+              "y": 24.13
+            },
+            "glyph": "Railroad-Trackplan:IRJ-Signal",
+            "rotation": 180,
+            "row": "fa08f12d-ce74-4c72-a82e-c48292c8ba79"
+          },
+          {
+            "at": {
+              "x": 22.86,
               "y": 24.13
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
@@ -10600,7 +10507,7 @@
           },
           {
             "at": {
-              "x": 24.13,
+              "x": 29.21,
               "y": 36.83
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
@@ -10608,7 +10515,7 @@
           },
           {
             "at": {
-              "x": 25.4,
+              "x": 30.48,
               "y": 24.13
             },
             "glyph": "Railroad-Trackplan:Rule251-DoT-Left",
@@ -10616,7 +10523,7 @@
           },
           {
             "at": {
-              "x": 26.67,
+              "x": 31.75,
               "y": 36.83
             },
             "glyph": "Railroad-Trackplan:Rule93-Yard Limits",
@@ -10624,7 +10531,7 @@
           },
           {
             "at": {
-              "x": 38.1,
+              "x": 43.18,
               "y": 24.13
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10632,7 +10539,7 @@
           },
           {
             "at": {
-              "x": 40.64,
+              "x": 45.72,
               "y": 24.13
             },
             "glyph": "Railroad-Trackplan:Rule93-Yard Limits",
@@ -10640,7 +10547,7 @@
           },
           {
             "at": {
-              "x": 58.42,
+              "x": 63.5,
               "y": 34.29
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
@@ -10648,7 +10555,7 @@
           },
           {
             "at": {
-              "x": 62.23,
+              "x": 67.31,
               "y": 24.13
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
@@ -10656,7 +10563,7 @@
           },
           {
             "at": {
-              "x": 66.04,
+              "x": 71.12,
               "y": 41.91
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
@@ -10664,7 +10571,7 @@
           },
           {
             "at": {
-              "x": 72.39,
+              "x": 77.47,
               "y": 36.83
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
@@ -10672,7 +10579,7 @@
           },
           {
             "at": {
-              "x": 73.66,
+              "x": 78.74,
               "y": 49.53
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
@@ -10680,7 +10587,7 @@
           },
           {
             "at": {
-              "x": 80.01,
+              "x": 85.09,
               "y": 44.45
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
@@ -10688,7 +10595,7 @@
           },
           {
             "at": {
-              "x": 81.28,
+              "x": 86.36,
               "y": 57.15
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
@@ -10696,7 +10603,7 @@
           },
           {
             "at": {
-              "x": 83.82,
+              "x": 88.9,
               "y": 87.63
             },
             "glyph": "Railroad-Trackplan:Rule251-DoT-Right",
@@ -10704,7 +10611,7 @@
           },
           {
             "at": {
-              "x": 87.63,
+              "x": 92.71,
               "y": 52.07
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
@@ -10712,7 +10619,7 @@
           },
           {
             "at": {
-              "x": 87.63,
+              "x": 92.71,
               "y": 87.63
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10720,7 +10627,7 @@
           },
           {
             "at": {
-              "x": 88.9,
+              "x": 93.98,
               "y": 64.77
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
@@ -10728,7 +10635,7 @@
           },
           {
             "at": {
-              "x": 95.25,
+              "x": 100.33,
               "y": 59.69
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
@@ -10736,7 +10643,7 @@
           },
           {
             "at": {
-              "x": 102.87,
+              "x": 107.95,
               "y": 67.31
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
@@ -10744,7 +10651,7 @@
           },
           {
             "at": {
-              "x": 109.22,
+              "x": 114.3,
               "y": 74.93
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
@@ -10752,7 +10659,7 @@
           },
           {
             "at": {
-              "x": 120.65,
+              "x": 125.73,
               "y": 24.13
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10760,7 +10667,7 @@
           },
           {
             "at": {
-              "x": 120.65,
+              "x": 125.73,
               "y": 36.83
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10768,7 +10675,7 @@
           },
           {
             "at": {
-              "x": 120.65,
+              "x": 125.73,
               "y": 44.45
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10776,7 +10683,7 @@
           },
           {
             "at": {
-              "x": 120.65,
+              "x": 125.73,
               "y": 52.07
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10784,7 +10691,7 @@
           },
           {
             "at": {
-              "x": 120.65,
+              "x": 125.73,
               "y": 59.69
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10792,7 +10699,7 @@
           },
           {
             "at": {
-              "x": 120.65,
+              "x": 125.73,
               "y": 67.31
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10800,7 +10707,7 @@
           },
           {
             "at": {
-              "x": 120.65,
+              "x": 125.73,
               "y": 74.93
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10808,7 +10715,7 @@
           },
           {
             "at": {
-              "x": 130.81,
+              "x": 135.89,
               "y": 24.13
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10816,7 +10723,7 @@
           },
           {
             "at": {
-              "x": 130.81,
+              "x": 135.89,
               "y": 36.83
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10824,7 +10731,7 @@
           },
           {
             "at": {
-              "x": 130.81,
+              "x": 135.89,
               "y": 44.45
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10832,7 +10739,7 @@
           },
           {
             "at": {
-              "x": 130.81,
+              "x": 135.89,
               "y": 52.07
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10840,7 +10747,7 @@
           },
           {
             "at": {
-              "x": 130.81,
+              "x": 135.89,
               "y": 59.69
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10848,7 +10755,7 @@
           },
           {
             "at": {
-              "x": 130.81,
+              "x": 135.89,
               "y": 67.31
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10856,7 +10763,7 @@
           },
           {
             "at": {
-              "x": 130.81,
+              "x": 135.89,
               "y": 74.93
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10864,7 +10771,7 @@
           },
           {
             "at": {
-              "x": 140.97,
+              "x": 146.05,
               "y": 24.13
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10872,7 +10779,7 @@
           },
           {
             "at": {
-              "x": 140.97,
+              "x": 146.05,
               "y": 36.83
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10880,7 +10787,7 @@
           },
           {
             "at": {
-              "x": 140.97,
+              "x": 146.05,
               "y": 44.45
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10888,7 +10795,7 @@
           },
           {
             "at": {
-              "x": 140.97,
+              "x": 146.05,
               "y": 52.07
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10896,7 +10803,7 @@
           },
           {
             "at": {
-              "x": 140.97,
+              "x": 146.05,
               "y": 59.69
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10904,7 +10811,7 @@
           },
           {
             "at": {
-              "x": 140.97,
+              "x": 146.05,
               "y": 67.31
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10912,7 +10819,7 @@
           },
           {
             "at": {
-              "x": 140.97,
+              "x": 146.05,
               "y": 74.93
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10920,7 +10827,7 @@
           },
           {
             "at": {
-              "x": 151.13,
+              "x": 156.21,
               "y": 24.13
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10928,7 +10835,7 @@
           },
           {
             "at": {
-              "x": 151.13,
+              "x": 156.21,
               "y": 36.83
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10936,7 +10843,7 @@
           },
           {
             "at": {
-              "x": 151.13,
+              "x": 156.21,
               "y": 44.45
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10944,7 +10851,7 @@
           },
           {
             "at": {
-              "x": 151.13,
+              "x": 156.21,
               "y": 52.07
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10952,7 +10859,7 @@
           },
           {
             "at": {
-              "x": 151.13,
+              "x": 156.21,
               "y": 59.69
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10960,7 +10867,7 @@
           },
           {
             "at": {
-              "x": 151.13,
+              "x": 156.21,
               "y": 67.31
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10968,7 +10875,7 @@
           },
           {
             "at": {
-              "x": 151.13,
+              "x": 156.21,
               "y": 74.93
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10976,7 +10883,7 @@
           },
           {
             "at": {
-              "x": 176.53,
+              "x": 181.61,
               "y": 36.83
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10984,7 +10891,7 @@
           },
           {
             "at": {
-              "x": 190.5,
+              "x": 195.58,
               "y": 36.83
             },
             "glyph": "Railroad-Trackplan:IRJ",
@@ -10992,7 +10899,7 @@
           },
           {
             "at": {
-              "x": 207.01,
+              "x": 212.09,
               "y": 49.53
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
@@ -11000,7 +10907,7 @@
           },
           {
             "at": {
-              "x": 214.63,
+              "x": 219.71,
               "y": 57.15
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
@@ -11008,7 +10915,7 @@
           },
           {
             "at": {
-              "x": 222.25,
+              "x": 227.33,
               "y": 64.77
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
@@ -11016,7 +10923,7 @@
           },
           {
             "at": {
-              "x": 224.79,
+              "x": 229.87,
               "y": 87.63
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
@@ -11025,7 +10932,7 @@
           },
           {
             "at": {
-              "x": 229.87,
+              "x": 234.95,
               "y": 72.39
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
@@ -11037,7 +10944,7 @@
             "derived": {
               "circuit": "Watsonville:1BT"
             },
-            "points": "143.51,24.13 151.13,24.13",
+            "points": "148.59,24.13 156.21,24.13",
             "relations": {
               "from": "95cf20c8-c0c4-4eb0-9e11-b416e37726f9.B",
               "to": "9dab8882-d710-4792-a368-e1172a63c349.A"
@@ -11047,7 +10954,7 @@
             "derived": {
               "circuit": "Watsonville:1CT"
             },
-            "points": "133.35,24.13 140.97,24.13",
+            "points": "138.43,24.13 146.05,24.13",
             "relations": {
               "from": "6568cf06-3839-4d5c-ab64-201f106efbc3.B",
               "to": "95cf20c8-c0c4-4eb0-9e11-b416e37726f9.A"
@@ -11057,7 +10964,7 @@
             "derived": {
               "circuit": "Watsonville:1DT"
             },
-            "points": "123.19,24.13 130.81,24.13",
+            "points": "128.27,24.13 135.89,24.13",
             "relations": {
               "from": "3e200808-3280-4616-88fb-dda9b8280ace.B",
               "to": "6568cf06-3839-4d5c-ab64-201f106efbc3.A"
@@ -11067,7 +10974,7 @@
             "derived": {
               "circuit": "Watsonville:1ET"
             },
-            "points": "64.77,24.13 120.65,24.13",
+            "points": "69.85,24.13 125.73,24.13",
             "relations": {
               "from": "a68352d0-96a1-4423-9b0b-87c21e4b044c.approach",
               "to": "3e200808-3280-4616-88fb-dda9b8280ace.A"
@@ -11077,7 +10984,7 @@
             "derived": {
               "circuit": "Watsonville:01T"
             },
-            "points": "90.17,87.63 222.25,87.63",
+            "points": "95.25,87.63 227.33,87.63",
             "relations": {
               "from": "4ff0a280-f62c-4928-afcb-b3114c00e7b5.B",
               "to": "623dbaf7-6a99-4c76-9cd4-ed14f750b23d.approach"
@@ -11087,7 +10994,7 @@
             "derived": {
               "circuit": "Watsonville:2AT"
             },
-            "points": "179.07,36.83 190.5,36.83",
+            "points": "184.15,36.83 195.58,36.83",
             "relations": {
               "from": "77fdeaf8-4b06-442a-9da5-96da05361350.B",
               "to": "cc756de4-608c-4963-b1ae-0ac549200d12.A"
@@ -11097,7 +11004,7 @@
             "derived": {
               "circuit": "Watsonville:2BT"
             },
-            "points": "143.51,36.83 151.13,36.83",
+            "points": "148.59,36.83 156.21,36.83",
             "relations": {
               "from": "3493c95f-075b-48ce-9dfc-fbd16de5eb7a.B",
               "to": "b4e79e42-3e0b-4ec3-a43f-1bf238392547.A"
@@ -11107,7 +11014,7 @@
             "derived": {
               "circuit": "Watsonville:2CT"
             },
-            "points": "133.35,36.83 140.97,36.83",
+            "points": "138.43,36.83 146.05,36.83",
             "relations": {
               "from": "43d702ac-d4df-4128-941b-452290b04d21.B",
               "to": "3493c95f-075b-48ce-9dfc-fbd16de5eb7a.A"
@@ -11117,7 +11024,7 @@
             "derived": {
               "circuit": "Watsonville:2DT"
             },
-            "points": "123.19,36.83 130.81,36.83",
+            "points": "128.27,36.83 135.89,36.83",
             "relations": {
               "from": "d148e342-30a3-4771-a1c4-e10ec1ac385d.B",
               "to": "43d702ac-d4df-4128-941b-452290b04d21.A"
@@ -11127,7 +11034,7 @@
             "derived": {
               "circuit": "Watsonville:2ET"
             },
-            "points": "74.93,36.83 120.65,36.83",
+            "points": "80.01,36.83 125.73,36.83",
             "relations": {
               "from": "d5c58279-b96e-4f47-82d4-7b4ba58012ad.approach",
               "to": "d148e342-30a3-4771-a1c4-e10ec1ac385d.A"
@@ -11137,7 +11044,7 @@
             "derived": {
               "circuit": "Watsonville:02T"
             },
-            "points": "26.67,36.83 31.75,36.83 49.53,54.61 82.55,87.63 87.63,87.63",
+            "points": "31.75,36.83 36.83,36.83 54.61,54.61 87.63,87.63 92.71,87.63",
             "relations": {
               "from": "14dfa959-b581-4e8a-956a-1356ba4cee8d.track",
               "to": "4ff0a280-f62c-4928-afcb-b3114c00e7b5.A"
@@ -11147,7 +11054,7 @@
             "derived": {
               "circuit": "Watsonville:3BT"
             },
-            "points": "143.51,44.45 151.13,44.45",
+            "points": "148.59,44.45 156.21,44.45",
             "relations": {
               "from": "32d0914a-6cc5-4bb4-b1e5-efaa17503738.B",
               "to": "e7c0fc59-c176-4268-ba19-dd327eb73662.A"
@@ -11157,7 +11064,7 @@
             "derived": {
               "circuit": "Watsonville:3CT"
             },
-            "points": "133.35,44.45 140.97,44.45",
+            "points": "138.43,44.45 146.05,44.45",
             "relations": {
               "from": "272c39c1-fad7-4056-8f98-bd01cb13bb96.B",
               "to": "32d0914a-6cc5-4bb4-b1e5-efaa17503738.A"
@@ -11167,7 +11074,7 @@
             "derived": {
               "circuit": "Watsonville:3DT"
             },
-            "points": "123.19,44.45 130.81,44.45",
+            "points": "128.27,44.45 135.89,44.45",
             "relations": {
               "from": "500918d5-2a29-4f86-a7ce-118211e3a875.B",
               "to": "272c39c1-fad7-4056-8f98-bd01cb13bb96.A"
@@ -11177,7 +11084,7 @@
             "derived": {
               "circuit": "Watsonville:3ET"
             },
-            "points": "82.55,44.45 120.65,44.45",
+            "points": "87.63,44.45 125.73,44.45",
             "relations": {
               "from": "515cb1a5-ad1f-4cdb-9040-7dc42819b984.approach",
               "to": "500918d5-2a29-4f86-a7ce-118211e3a875.A"
@@ -11187,7 +11094,7 @@
             "derived": {
               "circuit": "Watsonville:3T1"
             },
-            "points": "55.88,24.13 62.23,24.13",
+            "points": "60.96,24.13 67.31,24.13",
             "relations": {
               "from": "Watsonville:3.N",
               "to": "a68352d0-96a1-4423-9b0b-87c21e4b044c.governed"
@@ -11197,7 +11104,7 @@
             "derived": {
               "circuit": "Watsonville:03T"
             },
-            "points": "20.32,24.13 38.1,24.13",
+            "points": "25.4,24.13 43.18,24.13",
             "relations": {
               "from": "293515f7-9155-4100-a639-23f6d051ab4e.approach",
               "to": "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A"
@@ -11207,7 +11114,7 @@
             "derived": {
               "circuit": "Watsonville:4BT"
             },
-            "points": "143.51,52.07 151.13,52.07",
+            "points": "148.59,52.07 156.21,52.07",
             "relations": {
               "from": "793f0198-f601-462f-aad2-4b09f2152b59.B",
               "to": "95f9e1f9-ea74-450c-a6fd-d38f4a25b6e5.A"
@@ -11217,7 +11124,7 @@
             "derived": {
               "circuit": "Watsonville:4CT"
             },
-            "points": "133.35,52.07 140.97,52.07",
+            "points": "138.43,52.07 146.05,52.07",
             "relations": {
               "from": "fb71d98b-27d1-4f90-8738-725015092571.B",
               "to": "793f0198-f601-462f-aad2-4b09f2152b59.A"
@@ -11227,7 +11134,7 @@
             "derived": {
               "circuit": "Watsonville:4DT"
             },
-            "points": "123.19,52.07 130.81,52.07",
+            "points": "128.27,52.07 135.89,52.07",
             "relations": {
               "from": "e2315edb-74a9-4293-b3d5-80426d14b2c2.B",
               "to": "fb71d98b-27d1-4f90-8738-725015092571.A"
@@ -11237,7 +11144,7 @@
             "derived": {
               "circuit": "Watsonville:4ET"
             },
-            "points": "90.17,52.07 120.65,52.07",
+            "points": "95.25,52.07 125.73,52.07",
             "relations": {
               "from": "45d85c6d-f7a5-4d7d-b7a5-5e9907b4f0af.approach",
               "to": "e2315edb-74a9-4293-b3d5-80426d14b2c2.A"
@@ -11247,7 +11154,7 @@
             "derived": {
               "circuit": "Watsonville:5BT"
             },
-            "points": "143.51,59.69 151.13,59.69",
+            "points": "148.59,59.69 156.21,59.69",
             "relations": {
               "from": "d5a18f20-f129-4945-b9e2-9f3d864f9b36.B",
               "to": "4c41471a-a4b9-4668-afcc-c166ba44818f.A"
@@ -11257,7 +11164,7 @@
             "derived": {
               "circuit": "Watsonville:5CT"
             },
-            "points": "133.35,59.69 140.97,59.69",
+            "points": "138.43,59.69 146.05,59.69",
             "relations": {
               "from": "c7969a55-9fc3-4993-aa7d-3fb91cdafbb2.B",
               "to": "d5a18f20-f129-4945-b9e2-9f3d864f9b36.A"
@@ -11267,7 +11174,7 @@
             "derived": {
               "circuit": "Watsonville:5DT"
             },
-            "points": "123.19,59.69 130.81,59.69",
+            "points": "128.27,59.69 135.89,59.69",
             "relations": {
               "from": "02ce8ed1-b8fb-49b4-b75c-18debfaac7d0.B",
               "to": "c7969a55-9fc3-4993-aa7d-3fb91cdafbb2.A"
@@ -11277,7 +11184,7 @@
             "derived": {
               "circuit": "Watsonville:5ET"
             },
-            "points": "97.79,59.69 120.65,59.69",
+            "points": "102.87,59.69 125.73,59.69",
             "relations": {
               "from": "29dc489d-a8e9-4359-adb5-95899e4e99aa.approach",
               "to": "02ce8ed1-b8fb-49b4-b75c-18debfaac7d0.A"
@@ -11287,7 +11194,7 @@
             "derived": {
               "circuit": "Watsonville:5T1"
             },
-            "points": "64.77,36.83 72.39,36.83",
+            "points": "69.85,36.83 77.47,36.83",
             "relations": {
               "from": "Watsonville:5.R",
               "to": "d5c58279-b96e-4f47-82d4-7b4ba58012ad.governed"
@@ -11297,7 +11204,7 @@
             "derived": {
               "circuit": "Watsonville:6BT"
             },
-            "points": "143.51,67.31 151.13,67.31",
+            "points": "148.59,67.31 156.21,67.31",
             "relations": {
               "from": "c06095b3-8f8a-4812-8dd9-41b08a1d0f3c.B",
               "to": "96f07de7-860e-496e-bb6a-40c7171ba222.A"
@@ -11307,7 +11214,7 @@
             "derived": {
               "circuit": "Watsonville:6CT"
             },
-            "points": "133.35,67.31 140.97,67.31",
+            "points": "138.43,67.31 146.05,67.31",
             "relations": {
               "from": "36620c76-421c-44a0-aebd-6045758b5a12.B",
               "to": "c06095b3-8f8a-4812-8dd9-41b08a1d0f3c.A"
@@ -11317,7 +11224,7 @@
             "derived": {
               "circuit": "Watsonville:6DT"
             },
-            "points": "123.19,67.31 130.81,67.31",
+            "points": "128.27,67.31 135.89,67.31",
             "relations": {
               "from": "4e268fa6-4e87-402c-94c8-571d7ad17b00.B",
               "to": "36620c76-421c-44a0-aebd-6045758b5a12.A"
@@ -11327,7 +11234,7 @@
             "derived": {
               "circuit": "Watsonville:6ET"
             },
-            "points": "105.41,67.31 120.65,67.31",
+            "points": "110.49,67.31 125.73,67.31",
             "relations": {
               "from": "f2263aa1-aa98-4fd6-8f13-a39ebfe78ac1.approach",
               "to": "4e268fa6-4e87-402c-94c8-571d7ad17b00.A"
@@ -11337,7 +11244,7 @@
             "derived": {
               "circuit": "Watsonville:7BT"
             },
-            "points": "143.51,74.93 151.13,74.93",
+            "points": "148.59,74.93 156.21,74.93",
             "relations": {
               "from": "055b30ce-2e51-401c-95f9-2f5128602125.B",
               "to": "c25da741-efe1-482c-aa07-70a7c30dea96.A"
@@ -11347,7 +11254,7 @@
             "derived": {
               "circuit": "Watsonville:7CT"
             },
-            "points": "133.35,74.93 140.97,74.93",
+            "points": "138.43,74.93 146.05,74.93",
             "relations": {
               "from": "2fba876d-65ba-40bd-8539-10ac1bfd5ab3.B",
               "to": "055b30ce-2e51-401c-95f9-2f5128602125.A"
@@ -11357,7 +11264,7 @@
             "derived": {
               "circuit": "Watsonville:7DT"
             },
-            "points": "123.19,74.93 130.81,74.93",
+            "points": "128.27,74.93 135.89,74.93",
             "relations": {
               "from": "a67e66c2-6007-40e5-95ae-4a600857e6a9.B",
               "to": "2fba876d-65ba-40bd-8539-10ac1bfd5ab3.A"
@@ -11367,7 +11274,7 @@
             "derived": {
               "circuit": "Watsonville:7ET"
             },
-            "points": "111.76,74.93 120.65,74.93",
+            "points": "116.84,74.93 125.73,74.93",
             "relations": {
               "from": "be95c00a-9e6d-4b80-9014-98920c40141e.approach",
               "to": "a67e66c2-6007-40e5-95ae-4a600857e6a9.A"
@@ -11377,7 +11284,7 @@
             "derived": {
               "circuit": "Watsonville:7T1"
             },
-            "points": "72.39,44.45 80.01,44.45",
+            "points": "77.47,44.45 85.09,44.45",
             "relations": {
               "from": "Watsonville:7.R",
               "to": "515cb1a5-ad1f-4cdb-9040-7dc42819b984.governed"
@@ -11387,7 +11294,7 @@
             "derived": {
               "circuit": "Watsonville:9T1"
             },
-            "points": "80.01,52.07 87.63,52.07",
+            "points": "85.09,52.07 92.71,52.07",
             "relations": {
               "from": "Watsonville:9.R",
               "to": "45d85c6d-f7a5-4d7d-b7a5-5e9907b4f0af.governed"
@@ -11397,7 +11304,7 @@
             "derived": {
               "circuit": "Watsonville:11T1"
             },
-            "points": "87.63,59.69 95.25,59.69",
+            "points": "92.71,59.69 100.33,59.69",
             "relations": {
               "from": "Watsonville:11.R",
               "to": "29dc489d-a8e9-4359-adb5-95899e4e99aa.governed"
@@ -11407,7 +11314,7 @@
             "derived": {
               "circuit": "Watsonville:13T1"
             },
-            "points": "93.98,69.85 99.06,74.93 109.22,74.93",
+            "points": "99.06,69.85 104.14,74.93 114.3,74.93",
             "relations": {
               "from": "Watsonville:13.N",
               "to": "be95c00a-9e6d-4b80-9014-98920c40141e.governed"
@@ -11417,7 +11324,7 @@
             "derived": {
               "circuit": "Watsonville:13T1"
             },
-            "points": "95.25,67.31 102.87,67.31",
+            "points": "100.33,67.31 107.95,67.31",
             "relations": {
               "from": "Watsonville:13.R",
               "to": "f2263aa1-aa98-4fd6-8f13-a39ebfe78ac1.governed"
@@ -11427,7 +11334,7 @@
             "derived": {
               "circuit": "Watsonville:15T1"
             },
-            "points": "153.67,74.93 228.6,74.93",
+            "points": "158.75,74.93 233.68,74.93",
             "relations": {
               "from": "c25da741-efe1-482c-aa07-70a7c30dea96.B",
               "to": "Watsonville:15.R"
@@ -11437,7 +11344,7 @@
             "derived": {
               "circuit": "Watsonville:15T1"
             },
-            "points": "224.79,87.63 234.95,87.63 237.49,85.09 237.49,80.01 234.95,77.47",
+            "points": "229.87,87.63 240.03,87.63 242.57,85.09 242.57,80.01 240.03,77.47",
             "relations": {
               "from": "623dbaf7-6a99-4c76-9cd4-ed14f750b23d.governed",
               "to": "Watsonville:15.C"
@@ -11447,7 +11354,7 @@
             "derived": {
               "circuit": "Watsonville:17T1"
             },
-            "points": "153.67,67.31 220.98,67.31",
+            "points": "158.75,67.31 226.06,67.31",
             "relations": {
               "from": "96f07de7-860e-496e-bb6a-40c7171ba222.B",
               "to": "Watsonville:17.R"
@@ -11457,7 +11364,7 @@
             "derived": {
               "circuit": "Watsonville:19T1"
             },
-            "points": "153.67,59.69 213.36,59.69",
+            "points": "158.75,59.69 218.44,59.69",
             "relations": {
               "from": "4c41471a-a4b9-4668-afcc-c166ba44818f.B",
               "to": "Watsonville:19.R"
@@ -11467,7 +11374,7 @@
             "derived": {
               "circuit": "Watsonville:21T1"
             },
-            "points": "153.67,52.07 205.74,52.07",
+            "points": "158.75,52.07 210.82,52.07",
             "relations": {
               "from": "95f9e1f9-ea74-450c-a6fd-d38f4a25b6e5.B",
               "to": "Watsonville:21.R"
@@ -11477,7 +11384,7 @@
             "derived": {
               "circuit": "Watsonville:23T1"
             },
-            "points": "153.67,44.45 198.12,44.45",
+            "points": "158.75,44.45 203.2,44.45",
             "relations": {
               "from": "e7c0fc59-c176-4268-ba19-dd327eb73662.B",
               "to": "Watsonville:23.R"
@@ -11487,7 +11394,7 @@
             "derived": {
               "circuit": "Watsonville:23T1"
             },
-            "points": "193.04,36.83 194.31,36.83 199.39,41.91",
+            "points": "198.12,36.83 199.39,36.83 204.47,41.91",
             "relations": {
               "from": "cc756de4-608c-4963-b1ae-0ac549200d12.B",
               "to": "Watsonville:23.N"
@@ -11497,7 +11404,7 @@
             "derived": {
               "circuit": "Watsonville:25T1"
             },
-            "points": "153.67,24.13 156.21,24.13 161.29,29.21",
+            "points": "158.75,24.13 161.29,24.13 166.37,29.21",
             "relations": {
               "from": "9dab8882-d710-4792-a368-e1172a63c349.B",
               "to": "Watsonville:25.R"
@@ -11507,7 +11414,7 @@
             "derived": {
               "circuit": "Watsonville:25T1"
             },
-            "points": "153.67,36.83 161.29,36.83",
+            "points": "158.75,36.83 166.37,36.83",
             "relations": {
               "from": "b4e79e42-3e0b-4ec3-a43f-1bf238392547.B",
               "to": "Watsonville:25.N"
@@ -11517,7 +11424,7 @@
             "derived": {
               "circuit": "Watsonville:837T1"
             },
-            "points": "15.24,24.13 17.78,24.13",
+            "points": "20.32,24.13 22.86,24.13",
             "relations": {
               "from": "Watsonville:837.N",
               "to": "293515f7-9155-4100-a639-23f6d051ab4e.governed"
@@ -11527,10 +11434,17 @@
             "derived": {
               "circuit": "Watsonville:837T1"
             },
-            "points": "15.24,31.75 20.32,36.83 24.13,36.83",
+            "points": "20.32,31.75 25.4,36.83 29.21,36.83",
             "relations": {
               "from": "Watsonville:837.R",
               "to": "3478e3b9-eb36-424c-bb66-b3db1669812d.governed"
+            }
+          },
+          {
+            "points": "0.0,24.13 2.54,24.13",
+            "relations": {
+              "from": "65d2c920-24a5-4b01-a780-2a5a06a0350e.track",
+              "to": "fa08f12d-ce74-4c72-a82e-c48292c8ba79.approach"
             }
           }
         ]
@@ -11540,90 +11454,6 @@
       },
       "houses": {
         "Watsonville": {
-          "derived": {
-            "indications": [
-              "1BTK",
-              "1CTK",
-              "1DTK",
-              "1ETK",
-              "01TK",
-              "2ATK",
-              "2BTK",
-              "2CTK",
-              "2DTK",
-              "2ETK",
-              "02TK",
-              "3BTK",
-              "3CTK",
-              "3DTK",
-              "3ETK",
-              "3NWK",
-              "3RWK",
-              "3T1K",
-              "03TK",
-              "4BTK",
-              "4CTK",
-              "4DTK",
-              "4ETK",
-              "5BTK",
-              "5CTK",
-              "5DTK",
-              "5ETK",
-              "5NWK",
-              "5RWK",
-              "5T1K",
-              "6BTK",
-              "6CTK",
-              "6DTK",
-              "6ETK",
-              "7BTK",
-              "7CTK",
-              "7DTK",
-              "7ETK",
-              "7NWK",
-              "7RWK",
-              "7T1K",
-              "9NWK",
-              "9RWK",
-              "9T1K",
-              "11NWK",
-              "11RWK",
-              "11T1K",
-              "13NWK",
-              "13RWK",
-              "13T1K",
-              "15NWK",
-              "15RWK",
-              "15T1K",
-              "17NWK",
-              "17RWK",
-              "17T1K",
-              "19NWK",
-              "19RWK",
-              "19T1K",
-              "21NWK",
-              "21RWK",
-              "21T1K",
-              "23NWK",
-              "23RWK",
-              "23T1K",
-              "25NWK",
-              "25RWK",
-              "25T1K",
-              "837NWK",
-              "837RWK",
-              "837T1K",
-              "838NGK",
-              "838SGK",
-              "838TEK",
-              "840NGK",
-              "840SGK",
-              "840TEK",
-              "842NGK",
-              "842SGK",
-              "842TEK"
-            ]
-          },
           "given": {
             "Kind": "CONTROL_POINT",
             "Milepost": "83.7"
@@ -11640,19 +11470,14 @@
       "track": {
         "ends": [
           {
-            "derived": {
-              "circuits": {
-                "track": "Watsonville:837T1"
-              }
-            },
             "given": {
               "Interlocking": "Sargent",
               "Kind": "NEXT_CP"
             },
-            "id": "fde36151-9fb9-48ab-a0b9-0baa29c776a5",
+            "id": "65d2c920-24a5-4b01-a780-2a5a06a0350e",
             "relations": {
               "track": [
-                "Watsonville:837.C"
+                "fa08f12d-ce74-4c72-a82e-c48292c8ba79.approach"
               ]
             }
           }
@@ -12545,7 +12370,7 @@
               "controlPoint": "Watsonville:Watsonville"
             },
             "given": {
-              "CP": "Watsonville",
+              "CP Name": "Watsonville",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "a68352d0-96a1-4423-9b0b-87c21e4b044c",
@@ -12569,7 +12394,7 @@
               "controlPoint": "Watsonville:Watsonville"
             },
             "given": {
-              "CP": "Watsonville",
+              "CP Name": "Watsonville",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "623dbaf7-6a99-4c76-9cd4-ed14f750b23d",
@@ -12581,7 +12406,7 @@
               "governed": [
                 "Watsonville:15.C"
               ],
-              "mast": "Watsonville:842SA"
+              "mast": "Watsonville:840SA"
             }
           },
           {
@@ -12593,7 +12418,7 @@
               "controlPoint": "Watsonville:Watsonville"
             },
             "given": {
-              "CP": "Watsonville",
+              "CP Name": "Watsonville",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "d5c58279-b96e-4f47-82d4-7b4ba58012ad",
@@ -12617,7 +12442,7 @@
               "controlPoint": "Watsonville:Watsonville"
             },
             "given": {
-              "CP": "Watsonville",
+              "CP Name": "Watsonville",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "3478e3b9-eb36-424c-bb66-b3db1669812d",
@@ -12643,7 +12468,7 @@
               "controlPoint": "Watsonville:Watsonville"
             },
             "given": {
-              "CP": "Watsonville",
+              "CP Name": "Watsonville",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "515cb1a5-ad1f-4cdb-9040-7dc42819b984",
@@ -12667,7 +12492,7 @@
               "controlPoint": "Watsonville:Watsonville"
             },
             "given": {
-              "CP": "Watsonville",
+              "CP Name": "Watsonville",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "293515f7-9155-4100-a639-23f6d051ab4e",
@@ -12692,7 +12517,7 @@
               "controlPoint": "Watsonville:Watsonville"
             },
             "given": {
-              "CP": "Watsonville",
+              "CP Name": "Watsonville",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "45d85c6d-f7a5-4d7d-b7a5-5e9907b4f0af",
@@ -12716,7 +12541,7 @@
               "controlPoint": "Watsonville:Watsonville"
             },
             "given": {
-              "CP": "Watsonville",
+              "CP Name": "Watsonville",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "29dc489d-a8e9-4359-adb5-95899e4e99aa",
@@ -12740,7 +12565,7 @@
               "controlPoint": "Watsonville:Watsonville"
             },
             "given": {
-              "CP": "Watsonville",
+              "CP Name": "Watsonville",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "f2263aa1-aa98-4fd6-8f13-a39ebfe78ac1",
@@ -12764,7 +12589,7 @@
               "controlPoint": "Watsonville:Watsonville"
             },
             "given": {
-              "CP": "Watsonville",
+              "CP Name": "Watsonville",
               "Kind": "IRJ_SIGNAL"
             },
             "id": "be95c00a-9e6d-4b80-9014-98920c40141e",
@@ -12777,6 +12602,28 @@
                 "Watsonville:13.N"
               ],
               "mast": "Watsonville:840NG"
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "governed": "Watsonville:837T1"
+              },
+              "controlPoint": "Watsonville:Watsonville"
+            },
+            "given": {
+              "CP Name": "Watsonville",
+              "Kind": "IRJ_SIGNAL"
+            },
+            "id": "fa08f12d-ce74-4c72-a82e-c48292c8ba79",
+            "relations": {
+              "approach": [
+                "65d2c920-24a5-4b01-a780-2a5a06a0350e.track"
+              ],
+              "governed": [
+                "Watsonville:837.C"
+              ],
+              "mast": "Watsonville:838SAB"
             }
           }
         ],
@@ -14766,23 +14613,39 @@
     "SPCoast South": {
       "columns": {
         "1": {
-          "relations": {
+          "derived": {
+            "house": "Gilroy Caltrain:Gilroy Caltrain",
             "interlocking": "Gilroy Caltrain"
+          },
+          "given": {
+            "CP Name": "Gilroy Caltrain"
           }
         },
         "2": {
-          "relations": {
+          "derived": {
+            "house": "Gilroy Caltrain:Gilroy Caltrain",
             "interlocking": "Gilroy Caltrain"
+          },
+          "given": {
+            "CP Name": "Gilroy Caltrain"
           }
         },
         "3": {
-          "relations": {
+          "derived": {
+            "house": "Gilroy Interchange:Gilroy North",
             "interlocking": "Gilroy Interchange"
+          },
+          "given": {
+            "CP Name": "Gilroy North"
           }
         },
         "4": {
-          "relations": {
+          "derived": {
+            "house": "Gilroy Interchange:Gilroy South",
             "interlocking": "Gilroy Interchange"
+          },
+          "given": {
+            "CP Name": "Gilroy South"
           }
         },
         "5": {
@@ -14813,49 +14676,136 @@
           }
         },
         "8": {
-          "relations": {
+          "derived": {
+            "house": "Christopher:Christopher North",
             "interlocking": "Christopher"
+          },
+          "given": {
+            "CP Name": "Christopher North"
           }
         },
         "9": {
-          "relations": {
+          "derived": {
             "interlocking": "Christopher"
+          },
+          "given": {
+            "CP Name": "Christopher"
           }
         },
         "10": {
-          "relations": {
+          "derived": {
+            "house": "Christopher:Christopher South",
             "interlocking": "Christopher"
+          },
+          "given": {
+            "CP Name": "Christopher South"
           }
         },
         "11": {
-          "relations": {
+          "derived": {
+            "house": "Corporal:Corporal",
             "interlocking": "Corporal"
+          },
+          "given": {
+            "CP Name": "Corporal"
           }
         },
         "12": {
-          "relations": {
+          "derived": {
+            "house": "Corporal:Corporal",
             "interlocking": "Corporal"
+          },
+          "given": {
+            "CP Name": "Corporal"
           }
         },
         "13": {
-          "relations": {
+          "derived": {
+            "house": "Sargent:Sargent",
             "interlocking": "Sargent"
+          },
+          "given": {
+            "CP Name": "Sargent"
           }
         },
         "14": {
-          "relations": {
+          "derived": {
+            "house": "Watsonville:Watsonville",
             "interlocking": "Watsonville"
+          },
+          "given": {
+            "CP Name": "Watsonville"
           }
         }
       },
       "devices": [
         {
           "derived": {
+            "controls": [
+              "Christopher:1MCS"
+            ],
+            "indications": [
+              "Christopher:1MCK"
+            ],
+            "serves": "Christopher:1MC"
+          },
+          "given": {
+            "Appliance": "lever",
+            "Control.MCS": "1MCS",
+            "Indication.MCK": "1MCK",
+            "Name": "1MC",
+            "Style": "maintainer_call"
+          },
+          "relations": {
+            "bindings": {
+              "MCK": "JohnCTC/0x27/B1",
+              "MCS": "JohnCTC/0x27/A3"
+            },
+            "column": "SPCoast South:8"
+          }
+        },
+        {
+          "derived": {
+            "controls": [
+              "Christopher:2MCS"
+            ],
+            "indications": [
+              "Christopher:2MCK"
+            ],
+            "serves": "Christopher:2MC"
+          },
+          "given": {
+            "Appliance": "lever",
+            "Control.MCS": "2MCS",
+            "Indication.MCK": "2MCK",
+            "Name": "2MC",
+            "Style": "maintainer_call"
+          },
+          "relations": {
+            "bindings": {
+              "MCK": "JohnCTC/0x29/B1",
+              "MCS": "JohnCTC/0x29/A3"
+            },
+            "column": "SPCoast South:10"
+          }
+        },
+        {
+          "derived": {
+            "controls": [
+              "Christopher:813WLS"
+            ],
+            "indications": [
+              "Christopher:813WLK",
+              "Christopher:813WLQK"
+            ],
             "serves": "Christopher:813"
           },
           "given": {
             "Appliance": "lever",
-            "Invert": "WLK",
+            "Control.UNUSED": "",
+            "Control.WLS": "813WLS",
+            "Indication.WLK": "!813WLK",
+            "Indication.WLQK": "813WLQK",
             "Name": "813",
             "Style": "lock"
           },
@@ -14871,10 +14821,22 @@
         },
         {
           "derived": {
+            "controls": [
+              "Christopher:815NWS",
+              "Christopher:815RWS"
+            ],
+            "indications": [
+              "Christopher:815NWK",
+              "Christopher:815RWK"
+            ],
             "serves": "Christopher:815"
           },
           "given": {
             "Appliance": "lever",
+            "Control.NWS": "815NWS",
+            "Control.RWS": "815RWS",
+            "Indication.NWK": "815NWK",
+            "Indication.RWK": "815RWK",
             "Name": "815",
             "Style": "switch"
           },
@@ -14890,10 +14852,26 @@
         },
         {
           "derived": {
+            "controls": [
+              "Christopher:816HS",
+              "Christopher:816NGS",
+              "Christopher:816SGS"
+            ],
+            "indications": [
+              "Christopher:816NGK",
+              "Christopher:816SGK",
+              "Christopher:816TEK"
+            ],
             "serves": "Christopher:816"
           },
           "given": {
             "Appliance": "lever",
+            "Control.HS": "816HS",
+            "Control.NGS": "816NGS",
+            "Control.SGS": "816SGS",
+            "Indication.NGK": "816NGK",
+            "Indication.SGK": "816SGK",
+            "Indication.TEK": "816TEK",
             "Name": "816",
             "Style": "signal"
           },
@@ -14911,11 +14889,21 @@
         },
         {
           "derived": {
+            "controls": [
+              "Christopher:817WLS"
+            ],
+            "indications": [
+              "Christopher:817WLK",
+              "Christopher:817WLQK"
+            ],
             "serves": "Christopher:817"
           },
           "given": {
             "Appliance": "lever",
-            "Invert": "WLK",
+            "Control.UNUSED": "",
+            "Control.WLS": "817WLS",
+            "Indication.WLK": "!817WLK",
+            "Indication.WLQK": "817WLQK",
             "Name": "817",
             "Style": "lock"
           },
@@ -14931,43 +14919,46 @@
         },
         {
           "derived": {
-            "serves": "Christopher:MC1"
+            "controls": [
+              "Corporal:1MCS"
+            ],
+            "indications": [
+              "Corporal:1MCK"
+            ],
+            "serves": "Corporal:1MC"
           },
           "given": {
             "Appliance": "lever",
-            "Name": "MC1",
+            "Control.MCS": "1MCS",
+            "Indication.MCK": "1MCK",
+            "Name": "1MC",
             "Style": "maintainer_call"
           },
           "relations": {
             "bindings": {
-              "S": "JohnCTC/0x27/A3"
+              "MCK": "JohnCTC/0x2A/B1",
+              "MCS": "JohnCTC/0x2A/A3"
             },
-            "column": "SPCoast South:8"
+            "column": "SPCoast South:11"
           }
         },
         {
           "derived": {
-            "serves": "Christopher:MC2"
-          },
-          "given": {
-            "Appliance": "lever",
-            "Name": "MC2",
-            "Style": "maintainer_call"
-          },
-          "relations": {
-            "bindings": {
-              "S": "JohnCTC/0x29/A3"
-            },
-            "column": "SPCoast South:10"
-          }
-        },
-        {
-          "derived": {
+            "controls": [
+              "Corporal:829WLS"
+            ],
+            "indications": [
+              "Corporal:829WLK",
+              "Corporal:829WLQK"
+            ],
             "serves": "Corporal:829"
           },
           "given": {
             "Appliance": "lever",
-            "Invert": "WLK",
+            "Control.UNUSED": "",
+            "Control.WLS": "829WLS",
+            "Indication.WLK": "!829WLK",
+            "Indication.WLQK": "829WLQK",
             "Name": "829",
             "Style": "lock"
           },
@@ -14983,10 +14974,26 @@
         },
         {
           "derived": {
+            "controls": [
+              "Corporal:830HS",
+              "Corporal:830NGS",
+              "Corporal:830SGS"
+            ],
+            "indications": [
+              "Corporal:830NGK",
+              "Corporal:830SGK",
+              "Corporal:830TEK"
+            ],
             "serves": "Corporal:830"
           },
           "given": {
             "Appliance": "lever",
+            "Control.HS": "830HS",
+            "Control.NGS": "830NGS",
+            "Control.SGS": "830SGS",
+            "Indication.NGK": "830NGK",
+            "Indication.SGK": "830SGK",
+            "Indication.TEK": "830TEK",
             "Name": "830",
             "Style": "signal"
           },
@@ -15004,10 +15011,22 @@
         },
         {
           "derived": {
+            "controls": [
+              "Corporal:831NWS",
+              "Corporal:831RWS"
+            ],
+            "indications": [
+              "Corporal:831NWK",
+              "Corporal:831RWK"
+            ],
             "serves": "Corporal:831"
           },
           "given": {
             "Appliance": "lever",
+            "Control.NWS": "831NWS",
+            "Control.RWS": "831RWS",
+            "Indication.NWK": "831NWK",
+            "Indication.RWK": "831RWK",
             "Name": "831",
             "Style": "switch"
           },
@@ -15023,26 +15042,59 @@
         },
         {
           "derived": {
-            "serves": "Corporal:MC1"
+            "controls": [
+              "Corporal:832HS",
+              "Corporal:832NGS",
+              "Corporal:832SGS"
+            ],
+            "indications": [
+              "Corporal:832NGK",
+              "Corporal:832SGK",
+              "Corporal:832TEK"
+            ],
+            "serves": "Corporal:832"
           },
           "given": {
             "Appliance": "lever",
-            "Name": "MC1",
-            "Style": "maintainer_call"
+            "Control.HS": "832HS",
+            "Control.NGS": "832NGS",
+            "Control.SGS": "832SGS",
+            "Indication.NGK": "832NGK",
+            "Indication.SGK": "832SGK",
+            "Indication.TEK": "832TEK",
+            "Name": "832",
+            "Style": "signal"
           },
           "relations": {
             "bindings": {
-              "S": "JohnCTC/0x2A/A3"
+              "HS": "JohnCTC/0x2B/B3",
+              "NGK": "JohnCTC/0x2B/B6",
+              "NGS": "JohnCTC/0x2B/B2",
+              "SGK": "JohnCTC/0x2B/B7",
+              "SGS": "JohnCTC/0x2B/B4",
+              "TEK": "JohnCTC/0x2B/B8"
             },
-            "column": "SPCoast South:11"
+            "column": "SPCoast South:12"
           }
         },
         {
           "derived": {
+            "controls": [
+              "Gilroy Caltrain:773NWS",
+              "Gilroy Caltrain:773RWS"
+            ],
+            "indications": [
+              "Gilroy Caltrain:773NWK",
+              "Gilroy Caltrain:773RWK"
+            ],
             "serves": "Gilroy Caltrain:773"
           },
           "given": {
             "Appliance": "lever",
+            "Control.NWS": "773NWS",
+            "Control.RWS": "773RWS",
+            "Indication.NWK": "773NWK",
+            "Indication.RWK": "773RWK",
             "Name": "773",
             "Style": "switch"
           },
@@ -15058,10 +15110,22 @@
         },
         {
           "derived": {
+            "controls": [
+              "Gilroy Caltrain:775NWS",
+              "Gilroy Caltrain:775RWS"
+            ],
+            "indications": [
+              "Gilroy Caltrain:775NWK",
+              "Gilroy Caltrain:775RWK"
+            ],
             "serves": "Gilroy Caltrain:775"
           },
           "given": {
             "Appliance": "lever",
+            "Control.NWS": "775NWS",
+            "Control.RWS": "775RWS",
+            "Indication.NWK": "775NWK",
+            "Indication.RWK": "775RWK",
             "Name": "775",
             "Style": "switch"
           },
@@ -15077,27 +15141,71 @@
         },
         {
           "derived": {
-            "serves": "Gilroy Caltrain:MC1"
+            "controls": [
+              "Gilroy Interchange:1MCS"
+            ],
+            "indications": [
+              "Gilroy Interchange:1MCK"
+            ],
+            "serves": "Gilroy Interchange:1MC"
           },
           "given": {
             "Appliance": "lever",
-            "Name": "MC1",
+            "Control.MCS": "1MCS",
+            "Indication.MCK": "1MCK",
+            "Name": "1MC",
             "Style": "maintainer_call"
           },
           "relations": {
             "bindings": {
-              "S": "JohnCTC/0x20/A3"
+              "MCK": "JohnCTC/0x22/B1",
+              "MCS": "JohnCTC/0x22/A3"
             },
-            "column": "SPCoast South:1"
+            "column": "SPCoast South:3"
           }
         },
         {
           "derived": {
+            "controls": [
+              "Gilroy Interchange:2MCS"
+            ],
+            "indications": [
+              "Gilroy Interchange:2MCK"
+            ],
+            "serves": "Gilroy Interchange:2MC"
+          },
+          "given": {
+            "Appliance": "lever",
+            "Control.MCS": "2MCS",
+            "Indication.MCK": "2MCK",
+            "Name": "2MC",
+            "Style": "maintainer_call"
+          },
+          "relations": {
+            "bindings": {
+              "MCK": "JohnCTC/0x23/B1",
+              "MCS": "JohnCTC/0x23/A3"
+            },
+            "column": "SPCoast South:4"
+          }
+        },
+        {
+          "derived": {
+            "controls": [
+              "Gilroy Interchange:777WLS"
+            ],
+            "indications": [
+              "Gilroy Interchange:777WLK",
+              "Gilroy Interchange:777WLQK"
+            ],
             "serves": "Gilroy Interchange:777"
           },
           "given": {
             "Appliance": "lever",
-            "Invert": "WLK",
+            "Control.UNUSED": "",
+            "Control.WLS": "777WLS",
+            "Indication.WLK": "!777WLK",
+            "Indication.WLQK": "777WLQK",
             "Name": "777",
             "Style": "lock"
           },
@@ -15113,11 +15221,21 @@
         },
         {
           "derived": {
+            "controls": [
+              "Gilroy Interchange:781WLS"
+            ],
+            "indications": [
+              "Gilroy Interchange:781WLK",
+              "Gilroy Interchange:781WLQK"
+            ],
             "serves": "Gilroy Interchange:781"
           },
           "given": {
             "Appliance": "lever",
-            "Invert": "WLK",
+            "Control.UNUSED": "",
+            "Control.WLS": "781WLS",
+            "Indication.WLK": "!781WLK",
+            "Indication.WLQK": "781WLQK",
             "Name": "781",
             "Style": "lock"
           },
@@ -15133,42 +15251,47 @@
         },
         {
           "derived": {
-            "serves": "Gilroy Interchange:MC1"
+            "controls": [
+              "Luchessa:1MCS"
+            ],
+            "indications": [
+              "Luchessa:1MCK"
+            ],
+            "serves": "Luchessa:1MC"
           },
           "given": {
             "Appliance": "lever",
-            "Name": "MC1",
+            "Control.MCS": "1MCS",
+            "Indication.MCK": "1MCK",
+            "Name": "1MC",
             "Style": "maintainer_call"
           },
           "relations": {
             "bindings": {
-              "S": "JohnCTC/0x22/A3"
+              "MCK": "JohnCTC/0x25/B1",
+              "MCS": "JohnCTC/0x25/A3"
             },
-            "column": "SPCoast South:3"
+            "column": "SPCoast South:6"
           }
         },
         {
           "derived": {
-            "serves": "Gilroy Interchange:MC2"
-          },
-          "given": {
-            "Appliance": "lever",
-            "Name": "MC2",
-            "Style": "maintainer_call"
-          },
-          "relations": {
-            "bindings": {
-              "S": "JohnCTC/0x23/A3"
-            },
-            "column": "SPCoast South:4"
-          }
-        },
-        {
-          "derived": {
+            "controls": [
+              "Luchessa:783NWS",
+              "Luchessa:783RWS"
+            ],
+            "indications": [
+              "Luchessa:783NWK",
+              "Luchessa:783RWK"
+            ],
             "serves": "Luchessa:783"
           },
           "given": {
             "Appliance": "lever",
+            "Control.NWS": "783NWS",
+            "Control.RWS": "783RWS",
+            "Indication.NWK": "783NWK",
+            "Indication.RWK": "783RWK",
             "Name": "783",
             "Style": "switch"
           },
@@ -15184,10 +15307,26 @@
         },
         {
           "derived": {
+            "controls": [
+              "Luchessa:784HS",
+              "Luchessa:784NGS",
+              "Luchessa:784SGS"
+            ],
+            "indications": [
+              "Luchessa:784NGK",
+              "Luchessa:784SGK",
+              "Luchessa:784TEK"
+            ],
             "serves": "Luchessa:784"
           },
           "given": {
             "Appliance": "lever",
+            "Control.HS": "784HS",
+            "Control.NGS": "784NGS",
+            "Control.SGS": "784SGS",
+            "Indication.NGK": "784NGK",
+            "Indication.SGK": "784SGK",
+            "Indication.TEK": "784TEK",
             "Name": "784",
             "Style": "signal"
           },
@@ -15205,11 +15344,21 @@
         },
         {
           "derived": {
+            "controls": [
+              "Luchessa:795WLS"
+            ],
+            "indications": [
+              "Luchessa:795WLK",
+              "Luchessa:795WLQK"
+            ],
             "serves": "Luchessa:795"
           },
           "given": {
             "Appliance": "lever",
-            "Invert": "WLK",
+            "Control.UNUSED": "",
+            "Control.WLS": "795WLS",
+            "Indication.WLK": "!795WLK",
+            "Indication.WLQK": "795WLQK",
             "Name": "795",
             "Style": "lock"
           },
@@ -15225,10 +15374,22 @@
         },
         {
           "derived": {
+            "controls": [
+              "Luchessa:799NWS",
+              "Luchessa:799RWS"
+            ],
+            "indications": [
+              "Luchessa:799NWK",
+              "Luchessa:799RWK"
+            ],
             "serves": "Luchessa:799"
           },
           "given": {
             "Appliance": "lever",
+            "Control.NWS": "799NWS",
+            "Control.RWS": "799RWS",
+            "Indication.NWK": "799NWK",
+            "Indication.RWK": "799RWK",
             "Name": "799",
             "Style": "switch"
           },
@@ -15244,27 +15405,46 @@
         },
         {
           "derived": {
-            "serves": "Luchessa:MC1"
+            "controls": [
+              "Sargent:1MCS"
+            ],
+            "indications": [
+              "Sargent:1MCK"
+            ],
+            "serves": "Sargent:1MC"
           },
           "given": {
             "Appliance": "lever",
-            "Name": "MC1",
+            "Control.MCS": "1MCS",
+            "Indication.MCK": "1MCK",
+            "Name": "1MC",
             "Style": "maintainer_call"
           },
           "relations": {
             "bindings": {
-              "S": "JohnCTC/0x25/A3"
+              "MCK": "JohnCTC/0x2C/B1",
+              "MCS": "JohnCTC/0x2C/A3"
             },
-            "column": "SPCoast South:6"
+            "column": "SPCoast South:13"
           }
         },
         {
           "derived": {
+            "controls": [
+              "Sargent:835WLS"
+            ],
+            "indications": [
+              "Sargent:835WLK",
+              "Sargent:835WLQK"
+            ],
             "serves": "Sargent:835"
           },
           "given": {
             "Appliance": "lever",
-            "Invert": "WLK",
+            "Control.UNUSED": "",
+            "Control.WLS": "835WLS",
+            "Indication.WLK": "!835WLK",
+            "Indication.WLQK": "835WLQK",
             "Name": "835",
             "Style": "lock"
           },
@@ -15280,26 +15460,22 @@
         },
         {
           "derived": {
-            "serves": "Sargent:MC1"
-          },
-          "given": {
-            "Appliance": "lever",
-            "Name": "MC1",
-            "Style": "maintainer_call"
-          },
-          "relations": {
-            "bindings": {
-              "S": "JohnCTC/0x2C/A3"
-            },
-            "column": "SPCoast South:13"
-          }
-        },
-        {
-          "derived": {
+            "controls": [
+              "Watsonville:837NWS",
+              "Watsonville:837RWS"
+            ],
+            "indications": [
+              "Watsonville:837NWK",
+              "Watsonville:837RWK"
+            ],
             "serves": "Watsonville:837"
           },
           "given": {
             "Appliance": "lever",
+            "Control.NWS": "837NWS",
+            "Control.RWS": "837RWS",
+            "Indication.NWK": "837NWK",
+            "Indication.RWK": "837RWK",
             "Name": "837",
             "Style": "switch"
           },
@@ -15315,10 +15491,26 @@
         },
         {
           "derived": {
+            "controls": [
+              "Watsonville:838HS",
+              "Watsonville:838NGS",
+              "Watsonville:838SGS"
+            ],
+            "indications": [
+              "Watsonville:838NGK",
+              "Watsonville:838SGK",
+              "Watsonville:838TEK"
+            ],
             "serves": "Watsonville:838"
           },
           "given": {
             "Appliance": "lever",
+            "Control.HS": "838HS",
+            "Control.NGS": "838NGS",
+            "Control.SGS": "838SGS",
+            "Indication.NGK": "838NGK",
+            "Indication.SGK": "838SGK",
+            "Indication.TEK": "838TEK",
             "Name": "838",
             "Style": "signal"
           },
@@ -15336,14 +15528,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Christopher:1NAT"
+            "expression": "Christopher:1NATK",
+            "indications": [
+              "Christopher:1NATK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "IndicationToken": "1NAT",
+            "Indication": "1NATK",
             "Name": "TRACK",
             "Style": "board"
           },
@@ -15356,14 +15549,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Christopher:1SAT"
+            "expression": "Christopher:1SATK",
+            "indications": [
+              "Christopher:1SATK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "IndicationToken": "1SAT",
+            "Indication": "1SATK",
             "Name": "TRACK",
             "Style": "board"
           },
@@ -15376,14 +15570,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Christopher:2NAT"
+            "expression": "Christopher:2NATK",
+            "indications": [
+              "Christopher:2NATK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "IndicationToken": "2NAT",
+            "Indication": "2NATK",
             "Name": "TRACK",
             "Style": "board"
           },
@@ -15396,14 +15591,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Christopher:2SAT"
+            "expression": "Christopher:2SATK",
+            "indications": [
+              "Christopher:2SATK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "IndicationToken": "2SAT",
+            "Indication": "2SATK",
             "Name": "TRACK",
             "Style": "board"
           },
@@ -15416,14 +15612,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Christopher:813T1"
+            "expression": "Christopher:813T1K",
+            "indications": [
+              "Christopher:813T1K"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "red",
-            "IndicationToken": "813T1",
+            "Indication": "813T1K",
             "Name": "OS",
             "Style": "board"
           },
@@ -15436,14 +15633,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Christopher:815AT1"
+            "expression": "Christopher:815AT1K",
+            "indications": [
+              "Christopher:815AT1K"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "red",
-            "IndicationToken": "815AT1",
+            "Indication": "815AT1K",
             "Name": "OS",
             "Style": "board"
           },
@@ -15456,14 +15654,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Christopher:815T1"
+            "expression": "Christopher:815T1K",
+            "indications": [
+              "Christopher:815T1K"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "red",
-            "IndicationToken": "815T1",
+            "Indication": "815T1K",
             "Name": "OS",
             "Style": "board"
           },
@@ -15476,14 +15675,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Christopher:817T1"
+            "expression": "Christopher:817T1K",
+            "indications": [
+              "Christopher:817T1K"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "red",
-            "IndicationToken": "817T1",
+            "Indication": "817T1K",
             "Name": "OS",
             "Style": "board"
           },
@@ -15496,54 +15696,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Christopher:MC1K"
+            "expression": "Corporal:1SATK",
+            "indications": [
+              "Corporal:1SATK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "IndicationToken": "MC1K",
-            "Name": "MC",
-            "Style": "indication"
-          },
-          "relations": {
-            "bindings": {
-              "LAMP": "JohnCTC/0x27/B1"
-            },
-            "column": "SPCoast South:8"
-          }
-        },
-        {
-          "derived": {
-            "shows": [
-              "Christopher:MC2K"
-            ]
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Color": "yellow",
-            "IndicationToken": "MC2K",
-            "Name": "MC",
-            "Style": "indication"
-          },
-          "relations": {
-            "bindings": {
-              "LAMP": "JohnCTC/0x29/B1"
-            },
-            "column": "SPCoast South:10"
-          }
-        },
-        {
-          "derived": {
-            "shows": [
-              "Corporal:1SAT"
-            ]
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Color": "yellow",
-            "IndicationToken": "1SAT",
+            "Indication": "1SATK",
             "Name": "TRACK",
             "Style": "board"
           },
@@ -15556,14 +15717,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Corporal:829T1"
+            "expression": "Corporal:829T1K",
+            "indications": [
+              "Corporal:829T1K"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "IndicationToken": "829T1",
+            "Indication": "829T1K",
             "Name": "OS",
             "Style": "board"
           },
@@ -15576,14 +15738,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Corporal:831T1"
+            "expression": "Corporal:831T1K",
+            "indications": [
+              "Corporal:831T1K"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "red",
-            "IndicationToken": "831T1",
+            "Indication": "831T1K",
             "Name": "OS",
             "Style": "board"
           },
@@ -15596,34 +15759,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Corporal:MC1K"
+            "expression": "Gilroy Caltrain:1SATK",
+            "indications": [
+              "Gilroy Caltrain:1SATK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "IndicationToken": "MC1K",
-            "Name": "MC",
-            "Style": "indication"
-          },
-          "relations": {
-            "bindings": {
-              "LAMP": "JohnCTC/0x2A/B1"
-            },
-            "column": "SPCoast South:11"
-          }
-        },
-        {
-          "derived": {
-            "shows": [
-              "Gilroy Caltrain:1SAT"
-            ]
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Color": "yellow",
-            "IndicationToken": "1SAT",
+            "Indication": "1SATK",
             "Name": "TRACK",
             "Style": "board"
           },
@@ -15636,14 +15780,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Gilroy Caltrain:01T"
+            "expression": "Gilroy Caltrain:01TK",
+            "indications": [
+              "Gilroy Caltrain:01TK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "IndicationToken": "01T",
+            "Indication": "01TK",
             "Name": "TRACK",
             "Style": "board"
           },
@@ -15656,14 +15801,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Gilroy Caltrain:02T"
+            "expression": "Gilroy Caltrain:02TK",
+            "indications": [
+              "Gilroy Caltrain:02TK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "IndicationToken": "02T",
+            "Indication": "02TK",
             "Name": "TRACK",
             "Style": "board"
           },
@@ -15676,14 +15822,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Gilroy Caltrain:03T"
+            "expression": "Gilroy Caltrain:03TK",
+            "indications": [
+              "Gilroy Caltrain:03TK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "IndicationToken": "03T",
+            "Indication": "03TK",
             "Name": "TRACK",
             "Style": "board"
           },
@@ -15696,15 +15843,16 @@
         },
         {
           "derived": {
-            "shows": [
-              "Gilroy Caltrain:773T1",
-              "Gilroy Caltrain:775T1"
+            "expression": "Gilroy Caltrain:773T1K | Gilroy Caltrain:775T1K",
+            "indications": [
+              "Gilroy Caltrain:773T1K",
+              "Gilroy Caltrain:775T1K"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "red",
-            "IndicationToken": "773T1,775T1",
+            "Indication": "773T1K | 775T1K",
             "Name": "OS",
             "Style": "board"
           },
@@ -15717,34 +15865,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Gilroy Caltrain:MC1K"
+            "expression": "Gilroy Interchange:1SATK",
+            "indications": [
+              "Gilroy Interchange:1SATK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "IndicationToken": "MC1K",
-            "Name": "MC",
-            "Style": "indication"
-          },
-          "relations": {
-            "bindings": {
-              "LAMP": "JohnCTC/0x20/B1"
-            },
-            "column": "SPCoast South:1"
-          }
-        },
-        {
-          "derived": {
-            "shows": [
-              "Gilroy Interchange:1SAT"
-            ]
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Color": "yellow",
-            "IndicationToken": "1SAT",
+            "Indication": "1SATK",
             "Name": "TRACK",
             "Style": "board"
           },
@@ -15757,14 +15886,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Gilroy Interchange:02T"
+            "expression": "Gilroy Interchange:02TK",
+            "indications": [
+              "Gilroy Interchange:02TK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "IndicationToken": "02T",
+            "Indication": "02TK",
             "Name": "TRACK",
             "Style": "board"
           },
@@ -15777,14 +15907,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Gilroy Interchange:777T1"
+            "expression": "Gilroy Interchange:777T1K",
+            "indications": [
+              "Gilroy Interchange:777T1K"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "IndicationToken": "777T1",
+            "Indication": "777T1K",
             "Name": "OS",
             "Style": "board"
           },
@@ -15797,14 +15928,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Gilroy Interchange:781T1"
+            "expression": "Gilroy Interchange:781T1K",
+            "indications": [
+              "Gilroy Interchange:781T1K"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "IndicationToken": "781T1",
+            "Indication": "781T1K",
             "Name": "OS",
             "Style": "board"
           },
@@ -15817,54 +15949,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Gilroy Interchange:MC1K"
+            "expression": "Luchessa:1NATK",
+            "indications": [
+              "Luchessa:1NATK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "IndicationToken": "MC1K",
-            "Name": "MC",
-            "Style": "indication"
-          },
-          "relations": {
-            "bindings": {
-              "LAMP": "JohnCTC/0x22/B1"
-            },
-            "column": "SPCoast South:3"
-          }
-        },
-        {
-          "derived": {
-            "shows": [
-              "Gilroy Interchange:MC2K"
-            ]
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Color": "yellow",
-            "IndicationToken": "MC2K",
-            "Name": "MC",
-            "Style": "indication"
-          },
-          "relations": {
-            "bindings": {
-              "LAMP": "JohnCTC/0x23/B1"
-            },
-            "column": "SPCoast South:4"
-          }
-        },
-        {
-          "derived": {
-            "shows": [
-              "Luchessa:1NAT"
-            ]
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Color": "yellow",
-            "IndicationToken": "1NAT",
+            "Indication": "1NATK",
             "Name": "TRACK",
             "Style": "board"
           },
@@ -15877,36 +15970,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Luchessa:01T",
-              "Luchessa:795T1",
-              "Luchessa:799T1"
+            "expression": "Luchessa:783T1K",
+            "indications": [
+              "Luchessa:783T1K"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "red",
-            "IndicationToken": "795T1,01T,799T1",
-            "Name": "OS",
-            "Style": "board"
-          },
-          "relations": {
-            "bindings": {
-              "LAMP": "JohnCTC/0x25/A5"
-            },
-            "interlocking": "Luchessa"
-          }
-        },
-        {
-          "derived": {
-            "shows": [
-              "Luchessa:783T1"
-            ]
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Color": "red",
-            "IndicationToken": "783T1",
+            "Indication": "783T1K",
             "Name": "OS",
             "Style": "board"
           },
@@ -15919,34 +15991,38 @@
         },
         {
           "derived": {
-            "shows": [
-              "Luchessa:MC1K"
+            "expression": "Luchessa:795T1K | Luchessa:01TK | Luchessa:799T1K",
+            "indications": [
+              "Luchessa:01TK",
+              "Luchessa:795T1K",
+              "Luchessa:799T1K"
             ]
           },
           "given": {
             "Appliance": "lamp",
-            "Color": "yellow",
-            "IndicationToken": "MC1K",
-            "Name": "MC",
-            "Style": "indication"
+            "Color": "red",
+            "Indication": "795T1K | 01TK | 799T1K",
+            "Name": "OS",
+            "Style": "board"
           },
           "relations": {
             "bindings": {
-              "LAMP": "JohnCTC/0x25/B1"
+              "LAMP": "JohnCTC/0x25/A5"
             },
-            "column": "SPCoast South:6"
+            "interlocking": "Luchessa"
           }
         },
         {
           "derived": {
-            "shows": [
+            "expression": "Luchessa:NFLK",
+            "indications": [
               "Luchessa:NFLK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "blue",
-            "IndicationToken": "Luchessa:NFLK",
+            "Indication": "Luchessa:NFLK",
             "Name": "TRAFFIC",
             "Style": "board"
           },
@@ -15959,14 +16035,15 @@
         },
         {
           "derived": {
-            "shows": [
+            "expression": "Luchessa:SFLK",
+            "indications": [
               "Luchessa:SFLK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "blue",
-            "IndicationToken": "Luchessa:SFLK",
+            "Indication": "Luchessa:SFLK",
             "Name": "TRAFFIC",
             "Style": "board"
           },
@@ -15979,14 +16056,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Sargent:835T1"
+            "expression": "Sargent:835T1K",
+            "indications": [
+              "Sargent:835T1K"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "red",
-            "IndicationToken": "835T1",
+            "Indication": "835T1K",
             "Name": "OS",
             "Style": "board"
           },
@@ -15999,14 +16077,15 @@
         },
         {
           "derived": {
-            "shows": [
+            "expression": "Sargent:HBAK",
+            "indications": [
               "Sargent:HBAK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "red",
-            "IndicationToken": "HBAK",
+            "Indication": "HBAK",
             "Name": "HBD",
             "Style": "board"
           },
@@ -16019,34 +16098,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Sargent:MC1K"
+            "expression": "Watsonville:01TK",
+            "indications": [
+              "Watsonville:01TK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "IndicationToken": "MC1K",
-            "Name": "MC",
-            "Style": "indication"
-          },
-          "relations": {
-            "bindings": {
-              "LAMP": "JohnCTC/0x2C/B1"
-            },
-            "column": "SPCoast South:13"
-          }
-        },
-        {
-          "derived": {
-            "shows": [
-              "Watsonville:01T"
-            ]
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Color": "yellow",
-            "IndicationToken": "01T",
+            "Indication": "01TK",
             "Name": "TRACK",
             "Style": "board"
           },
@@ -16059,14 +16119,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Watsonville:02T"
+            "expression": "Watsonville:02TK",
+            "indications": [
+              "Watsonville:02TK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "IndicationToken": "Watsonville:02T",
+            "Indication": "Watsonville:02TK",
             "Name": "TRACK",
             "Style": "board"
           },
@@ -16079,14 +16140,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Watsonville:0100T"
+            "expression": "Watsonville:0100TK",
+            "indications": [
+              "Watsonville:0100TK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "IndicationToken": "0100T",
+            "Indication": "0100TK",
             "Name": "TRACK",
             "Style": "board"
           },
@@ -16099,14 +16161,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Watsonville:0101T"
+            "expression": "Watsonville:0101TK",
+            "indications": [
+              "Watsonville:0101TK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "IndicationToken": "0101T",
+            "Indication": "0101TK",
             "Name": "TRACK",
             "Style": "board"
           },
@@ -16119,14 +16182,15 @@
         },
         {
           "derived": {
-            "shows": [
-              "Watsonville:837T1"
+            "expression": "Watsonville:837T1K",
+            "indications": [
+              "Watsonville:837T1K"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "red",
-            "IndicationToken": "Watsonville:837T1",
+            "Indication": "Watsonville:837T1K",
             "Name": "TRACK",
             "Style": "board"
           },
@@ -16139,14 +16203,15 @@
         },
         {
           "derived": {
-            "shows": [
+            "expression": "Watsonville:NFLK",
+            "indications": [
               "Watsonville:NFLK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "blue",
-            "IndicationToken": "Watsonville:NFLK",
+            "Indication": "Watsonville:NFLK",
             "Name": "TRACK",
             "Style": "board"
           },
@@ -16159,14 +16224,15 @@
         },
         {
           "derived": {
-            "shows": [
+            "expression": "Watsonville:SFLK",
+            "indications": [
               "Watsonville:SFLK"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "blue",
-            "IndicationToken": "Watsonville:SFLK",
+            "Indication": "Watsonville:SFLK",
             "Name": "TRACK",
             "Style": "board"
           },
@@ -16180,6 +16246,7 @@
         {
           "given": {
             "Appliance": "lever",
+            "Control.CODE": "",
             "Name": "CODE",
             "Style": "code"
           },
@@ -16193,6 +16260,7 @@
         {
           "given": {
             "Appliance": "lever",
+            "Control.CODE": "",
             "Name": "CODE",
             "Style": "code"
           },
@@ -16206,6 +16274,7 @@
         {
           "given": {
             "Appliance": "lever",
+            "Control.CODE": "",
             "Name": "CODE",
             "Style": "code"
           },
@@ -16219,6 +16288,7 @@
         {
           "given": {
             "Appliance": "lever",
+            "Control.CODE": "",
             "Name": "CODE",
             "Style": "code"
           },
@@ -16232,6 +16302,7 @@
         {
           "given": {
             "Appliance": "lever",
+            "Control.CODE": "",
             "Name": "CODE",
             "Style": "code"
           },
@@ -16245,6 +16316,7 @@
         {
           "given": {
             "Appliance": "lever",
+            "Control.CODE": "",
             "Name": "CODE",
             "Style": "code"
           },
@@ -16258,6 +16330,7 @@
         {
           "given": {
             "Appliance": "lever",
+            "Control.CODE": "",
             "Name": "CODE",
             "Style": "code"
           },
@@ -16279,16 +16352,17 @@
   },
   "provenance": {
     "libraries": {
-      "Railroad-Trackplan": "split-projects-final-97-g288b941"
+      "Railroad-Trackplan": "split-projects-final-107-g085cd97"
     },
     "referenceData": {
       "driverEncodings": "2026-10-23",
       "encodingTransportPairing": "2026-10-23",
-      "indicationTokens": "2026-10-27"
+      "indicationTokens": "2026-10-27.2",
+      "stations": "2026-10-27"
     },
     "rules": "0.1.0",
     "source": {
-      "describe": "split-projects-final-97-g288b941",
+      "describe": "split-projects-final-107-g085cd97",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad",
