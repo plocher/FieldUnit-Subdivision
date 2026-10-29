@@ -304,6 +304,9 @@ class ControlPoints(unittest.TestCase):
         out, diags = run(layout(X=interlocking(TWO_HOUSES.replace("TC=815AT1", "TC=815AT1 CP_Name=South"), TWO_HOUSES_WIRES, NORTH_SOUTH)))
         self.assertEqual(only(diags, "control_point"), [("control_point.gang", "815A")])
         self.assertEqual(control_points(out)["815A"], "South")
+        (d,) = derive.derive(layout(X=interlocking(TWO_HOUSES.replace("TC=815AT1", "TC=815AT1 CP_Name=South"), TWO_HOUSES_WIRES,
+                                                   NORTH_SOUTH)))[1].by_code("control_point.gang")
+        self.assertEqual(d.entities, ("interlockings/X/appliances/815A", "interlockings/X/appliances/815"))  # every party (ADR 0012 §3.3)
 
     def test_a_control_point_that_is_no_house_is_an_error(self):
         _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("Kind=IRJ_SIGNAL rel.mast=X:836NAB", "Kind=IRJ_SIGNAL CP_Name=Nowhere rel.mast=X:836NAB"),
@@ -316,6 +319,9 @@ class ControlPoints(unittest.TestCase):
         self.assertEqual(control_points(out), {"MC1": "West"})
         _, diags = run(layout(X=interlocking(things.replace("maintainer_call", "maintainer_call CP_Name=East"), "", "East\nWest rel.maintainerCall=X:MC1")))
         self.assertEqual(only(diags, "control_point"), [("control_point.disagree", "MC1")])
+        (d,) = derive.derive(layout(X=interlocking(things.replace("maintainer_call", "maintainer_call CP_Name=East"), "",
+                                                   "East\nWest rel.maintainerCall=X:MC1")))[1].by_code("control_point.disagree")
+        self.assertEqual(d.entities, ("interlockings/X/appliances/MC1", "interlockings/X/houses/West", "interlockings/X/houses/East"))
 
     def test_a_virtual_circuit_lists_its_members_and_follows_them(self):
         things = TWO_HOUSES + "0100T | appliance | Appliance=track_circuit Style=virtual IndicationToken=1SAT,01T\n"
@@ -334,6 +340,8 @@ class NextCPs(unittest.TestCase):
     def test_next_cps_lead_back_as_often_as_they_lead_out(self):
         self.assertEqual(run(pair(2, 2))[1], [])
         self.assertEqual(run(pair(2, 1))[1], [("next_cp.pair", "A"), ("next_cp.pair", "B")])
+        self.assertEqual([d.entities for d in derive.derive(pair(2, 1))[1].by_code("next_cp.pair")],
+                         [("interlockings/A", "interlockings/B"), ("interlockings/B", "interlockings/A")])
 
     def test_one_beyond_the_layout_is_info(self):
         out, diags = run(layout(X=interlocking("N1 | ends | Kind=NEXT_CP Interlocking=Lick\n", "", "East")))
@@ -497,6 +505,9 @@ J5   | joints    | Kind=IRJ
 
     def test_an_indication_no_appliance_reports_is_an_error(self):
         self.assertEqual(self.check(self.consumer("Y:4NATK"), "a | J1.A K1.TC\n"), [("reference.unresolved", "K1")])
+        (d,) = derive.derive(self.model(self.consumer("Y:4NATK"), "a | J1.A K1.TC\n"))[1].by_code("reference.unresolved")
+        self.assertEqual(d.entities[1:], ("interlockings/Y",))       # the consumer, then the interlocking it fails against
+        self.assertTrue(d.entities[0].startswith("interlockings/X/track/consumers/"))
 
     def test_a_station_not_in_the_file_is_a_warning_and_one_on_no_code_line_is_missing(self):
         self.assertEqual(self.check(self.consumer("Z:2NATK"), "a | J1.A K1.TC\n"), [("reference.interlocking", "K1")])
@@ -507,6 +518,8 @@ J5   | joints    | Kind=IRJ
 
     def test_track_wired_to_another_interlockings_switch_or_track_row_is_an_error(self):
         self.assertEqual(self.check("", "a | J1.A Y:5.R Y:6.R\n"), [("reference.track", "X"), ("reference.track", "X")])
+        self.assertIn("track leaves an interlocking at a NextCP or an END_CTC",
+                      derive.derive(self.model("", "a | J1.A Y:5.R\n"))[1].by_code("reference.track")[0].text)
         self.assertEqual(self.check("I1 | ends | Kind=INDUSTRY name=Y:Cannery\n", "a | J1.A I1.EoT\n"), [("reference.track", "I1")])
 
     def test_a_circuit_named_in_a_field_must_exist_too(self):
@@ -653,7 +666,7 @@ class NoLever(unittest.TestCase):
     def test_switches_with_no_lever_are_one_missing_fact_of_their_interlocking(self):
         self.assertEqual(self.warnings(["813", "815"]), [("interlocking.no_lever", "X")])
         (d,) = self.report.by_code("interlocking.no_lever")
-        self.assertEqual((d.severity, d.where, d.about), ("missing", "interlockings/X", "interlockings/X/appliances/817"))
+        self.assertEqual((d.severity, d.where, d.entities), ("missing", "interlockings/X", ("interlockings/X", "interlockings/X/appliances/817")))
         self.assertIn("1 powered switch has no desk lever in this file; how the dispatcher works it (an NX selection, another office unit) is not drawn yet (817)", d.text)
         self.warnings([])
         self.assertIn("3 powered switches have no desk lever in this file; how the dispatcher works them (an NX selection, another office unit) is not drawn yet (813, 815, 817)",

@@ -44,10 +44,13 @@ class Station:
 class Problem:
     """A consumer whose token no station can serve. ``kind``: ``interlocking`` (the named interlocking is not in the
     file), ``codeline`` (it is on no code line, so what it sends is unknown), ``unresolved`` (no appliance of it can
-    report the token), ``station`` (appliances of two houses report it, on a line whose station is a house)."""
+    report the token), ``station`` (appliances of two houses report it, on a line whose station is a house).
+    ``where`` is the consumer; ``parties`` the other entities it is about, by model path: the interlocking it fails to
+    resolve against when the file has it, and for ``station`` the appliances that report the token."""
     kind: str
     where: str
     text: str
+    parties: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -172,11 +175,13 @@ def stations(model: dict[str, Any], user: Optional[dict] = None) -> Codeline:
             return
         sc = scope(model, b)
         if sc is None:
-            problems.append(Problem("codeline", where, f"{what} consumes {token}, but {b} is on no code line, so what it sends is unknown"))
+            problems.append(Problem("codeline", where, f"{what} consumes {token}, but {b} is on no code line, so what it sends is unknown",
+                                    (f"interlockings/{b}",)))
             return
         reps = reporters(ixs[b], t, templates(model, b, user))
         if not reps:
-            problems.append(Problem("unresolved", where, f"{what} consumes {token}, but no appliance of {b} reports {t}"))
+            problems.append(Problem("unresolved", where, f"{what} consumes {token}, but no appliance of {b} reports {t}",
+                                    (f"interlockings/{b}",)))
             return
         if sc == "interlocking":
             out[(b, None)].indications.add(t)
@@ -185,7 +190,8 @@ def stations(model: dict[str, Any], user: Optional[dict] = None) -> Codeline:
                   if (cp := ixs[b].get("appliances", {}).get(r.appliance, {}).get("derived", {}).get("controlPoint"))}
         if len(houses) > 1:
             problems.append(Problem("station", where, f"{what} consumes {token}, which appliances of houses {', '.join(sorted(houses))} "
-                                    f"report; {b}'s code line makes each house a station"))
+                                    f"report; {b}'s code line makes each house a station",
+                                    (f"interlockings/{b}", *sorted({f"interlockings/{b}/appliances/{r.appliance}" for r in reps}))))
         elif houses and (b, next(iter(houses))) in out:
             out[(b, next(iter(houses)))].indications.add(t)
         # no house: the appliance's control point is unreached, reported by the derivation

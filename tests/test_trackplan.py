@@ -512,6 +512,15 @@ class Locations(unittest.TestCase):
         (d,) = [d for d in sm.report.by_code("next_cp.interlocking")]
         self.assertTrue(d.where.startswith("interlockings/X/track/ends/") and d.source.startswith("/X/NX1 "))
 
+    def test_the_importer_locates_every_party_of_a_relationship(self):
+        """ADR 0012 §3.3: a rule check names every entity it is about; the importer locates each in the drawing."""
+        sm, _ = compile_(ONE_SWITCH.replace("Name=836SB", "Name=836SAB"), ONE_SWITCH_NETS)
+        (d,) = sm.report.by_code("mast.letters")
+        self.assertEqual(d.entities, ("interlockings/X/appliances/836SAB", "interlockings/X/appliances/836SA"))
+        self.assertEqual(d.source, "/X/M3 Railroad-Trackplan:Mast_Dwarf ''; /X/M2 Railroad-Trackplan:Mast_Single ''")
+        self.assertTrue(str(d).endswith("[interlockings/X/appliances/836SAB]  at /X/M3 Railroad-Trackplan:Mast_Dwarf ''; "
+                                        "/X/M2 Railroad-Trackplan:Mast_Single ''"))
+
 
 @unittest.skipUnless(SPCOAST_AVAILABLE, f"SPCoast project not present or kicad-cli missing: {NETLIST or PROJECT}")
 class SPCoastTrackplan(unittest.TestCase):

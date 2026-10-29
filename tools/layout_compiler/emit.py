@@ -75,12 +75,20 @@ def emit(sm: Seams, source_path: Optional[Path] = None, geometry: Optional[Geome
     source built in memory has no sheets and passes none."""
     model, report = derivation.derive(facts(sm, geometry))
     if not sm.derived:
-        where = sources(sm)
-        sm.report.diags.extend(replace(d, source=seams_loc(where[d.about or d.where])) if (d.about or d.where) in where else d
-                               for d in report.diags)
+        sm.report.diags.extend(locate(report.diags, sources(sm)))
         _check_folders(sm, model)
         sm.derived = True
     return model
+
+
+def locate(diags, symbols: dict[str, Symbol]) -> list:
+    """Each rule-check finding with every entity it names located in the drawing (ADR 0012 §3.3: the importer's work,
+    not the finding's): ``source`` lists each party's symbol, in the finding's order, separated by ``; ``."""
+    out = []
+    for d in diags:
+        found = dict.fromkeys(seams_loc(symbols[e]) for e in (d.entities or (d.where,)) if e in symbols)
+        out.append(replace(d, source="; ".join(found)) if found else d)
+    return out
 
 
 def sources(sm: Seams) -> dict[str, Symbol]:
