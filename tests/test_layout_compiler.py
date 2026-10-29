@@ -18,6 +18,7 @@ from pathlib import Path
 
 from tools import layout_model
 from tools.layout_compiler import emit, seams
+from tools.railroad import codeline
 from tools.layout_compiler.source import Net, PinRef, Symbol, from_project, from_snapshot, from_symbols, kicad_cli_available
 
 PROJECT = Path(os.environ.get("SPCOAST_PROJECT", Path.home() / "Dropbox/KiCad/Railroad/SPCoast/SPCoast.kicad_sch"))
@@ -280,25 +281,31 @@ class SPCoastRelationTable(unittest.TestCase):
         self.assertEqual(sum(1 for a in node.bits if a.startswith("OB")), 20)
         self.assertEqual(self.sm.report.by_code("node.bytes"), [])
 
-    def test_stations_derive_from_houses_and_columns(self):
-        ou = self.sm.office_units["SPCoast South"]
-        self.assertEqual(ou.processor, "JohnCTC")
+    def test_columns_resolve_by_their_line_and_stations_follow(self):
+        """The owner, 2026-10-28: a column's CP Name names a house or the interlocking; on Luchessa's US&S 506 line each
+        house is a station, so its columns resolve to houses; elsewhere the interlocking is the station."""
+        self.assertEqual(self.sm.office_units["SPCoast South"].processor, "JohnCTC")
+        self.assertEqual([str(d) for d in self.sm.report.diags if d.code.startswith(("column.", "station.", "desk.station"))], [])
         columns = self.model["officeUnits"]["SPCoast South"]["columns"]
-        self.assertEqual({n: c["derived"]["house"] for n, c in columns.items() if "derived" in c},
-                         {"5": "Luchessa:Luchessa", "6": "Luchessa:Gilroy", "7": "Luchessa:Carnadero"})
-        self.assertEqual(len(self.sm.report.by_code("column.cp_name")), 11)
-        self.assertEqual(columns["5"], {"given": {"CP Name": "Luchessa"}, "derived": {"house": "Luchessa:Luchessa", "interlocking": "Luchessa"}})
+        self.assertTrue(all(c.get("derived", {}).get("interlocking") or c.get("relations", {}).get("interlocking") for c in columns.values()))
+        luchessa = [c for c in columns.values() if c.get("derived", {}).get("interlocking") == "Luchessa"]
+        self.assertEqual({c["derived"]["house"] for c in luchessa}, {f"Luchessa:{h}" for h in self.model["interlockings"]["Luchessa"]["houses"]})
+        line = codeline.stations(self.model)
+        self.assertEqual({k for k in line.stations if k[0] == "Luchessa"}, {("Luchessa", h) for h in self.model["interlockings"]["Luchessa"]["houses"]})
+        self.assertEqual({k for k in line.stations if k[0] != "Luchessa"}, {(n, None) for n in self.model["interlockings"] if n != "Luchessa"})
+        sends = {k[1]: v.indications for k, v in line.stations.items() if k[0] == "Luchessa"}
+        for token, house in (("795T1K", "Gilroy"), ("01TK", "Gilroy"), ("799T1K", "Carnadero"), ("1NATK", "Carnadero"),
+                             ("783T1K", "Luchessa"), ("NFLK", "Luchessa"), ("SFLK", "Luchessa")):
+            self.assertIn(token, sends[house], house)
 
-    def test_membership_stated_only_by_the_sheet_hierarchy_is_a_relation(self):
-        """Three-maps D6: the 11 columns without a CP Name and the 34 board lamps carry relations.interlocking."""
+    def test_lamps_are_their_panel_sheets_and_membership_by_hierarchy_alone_is_a_relation(self):
+        """Three-maps D6: a column without a CP Name carries relations.interlocking; every lamp carries its panel sheet's
+        interlocking and nothing of a column (the owner, 2026-10-28)."""
         ou = self.model["officeUnits"]["SPCoast South"]
-        self.assertEqual({n: c["relations"]["interlocking"] for n, c in ou["columns"].items() if "relations" in c},
-                         {"1": "Gilroy Caltrain", "2": "Gilroy Caltrain", "3": "Gilroy Interchange", "4": "Gilroy Interchange",
-                          "8": "Christopher", "9": "Christopher", "10": "Christopher", "11": "Corporal", "12": "Corporal",
-                          "13": "Sargent", "14": "Watsonville"})
-        board = [d for d in ou["devices"] if d["given"].get("Style") == "board"]
-        self.assertEqual(len(board), 34)
-        self.assertEqual([d for d in board if "interlocking" not in d.get("relations", {}) or "column" in d.get("relations", {})], [])
+        self.assertEqual([n for n, c in ou["columns"].items() if ("CP Name" in c.get("given", {})) == ("relations" in c)], [])
+        lamps = [d for d in ou["devices"] if d["given"]["Appliance"] == "lamp"]
+        self.assertTrue(lamps)
+        self.assertEqual([d for d in lamps if d.get("relations", {}).get("interlocking") not in self.model["interlockings"]], [])
 
     def test_a_column_reference_is_qualified_by_its_office_unit(self):
         cols = {d["relations"]["column"] for d in self.model["officeUnits"]["SPCoast South"]["devices"] if "column" in d.get("relations", {})}
