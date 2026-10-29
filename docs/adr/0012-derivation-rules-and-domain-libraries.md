@@ -174,6 +174,7 @@ sufficient for them.
 | routes | the structural routes of each signal: entrance, end, switch alignment, circuits passed | switch legs and their neighbours, signal joints and the direction each governs, circuit adjacency, ends |
 | blocks | the track between two interlockings: the pair of NextCPs, its method of operation, the signals that protect it from each end | NextCP pairs, policies (Rule 251, Rule 261), routes |
 | ceilings | the indication ceiling of each route | routes, `IndicationCeiling` where stated, reference data (§6) |
+| codeline[^libs] | per station, the controls it receives, the indications it must send, and the appliance that reports each token | desk columns, the levers' `Control.X`, the consumers' `Indication`, the appliances; which appliance reports a token is an interim lookup that reads the reference templates backwards |
 
 What a processor needs (its transports and the encodings riding them there) is a query in the same family, a join of
 facts the model holds; it is not stored.
@@ -285,7 +286,8 @@ applied §5.3:
 | Features, by family | `schemas/layout-model/rules/features/<family>/*.feature` |
 | Registry and changelog | `schemas/layout-model/rules/diagnostics.json`, `schemas/layout-model/rules/CHANGELOG.md` |
 | Reference derivation | `tools/layout_model/derive.py` (ADR 0011 §5) |
-| Domain libraries | `tools/railroad/` (`routes.py`, `blocks.py`, `ceilings.py`), each with its version and its features |
+| Domain libraries | `tools/railroad/` (`routes.py`, `blocks.py`, `ceilings.py`, `codeline.py`), each with its version and its features |
+| Naming grammar and Style classes, shared by the reference derivation and the domain libraries | `tools/layout_model/grammar.py`[^libs] |
 | Reference data | FieldUnit, path TBD |
 
 All move to FieldUnit with the schema (view O15).
@@ -307,3 +309,6 @@ All move to FieldUnit with the schema (view O15).
 - `AGENTS.md` gains the libraries and the reference data in its Layout and Direction sections once this is ruled.
 - The vocabulary gate covers this repository only; FieldUnit's design documents still use the proof-of-concept names
   (`Indications`, `Rulebook`, `dark_exit`, the compiler). Extending the gate to FieldUnit is a separate step.
+
+[^libs]: Rewritten in place on 2026-10-28: §5.1 gains the codeline library and §10 gains `codeline.py` and
+    `grammar.py`, both built in step 2. The earlier wording is at commit `f18e009`.
