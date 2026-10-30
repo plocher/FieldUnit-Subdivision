@@ -596,7 +596,8 @@ def sym(name: str, fields: dict[str, str], units: dict[int, list[str]], library:
 # PANEL levers: a switch lever stating one of its four per-pin tokens on the wrong pin direction and one naming no
 # pin; a maintainer-call lever in the superseded whole-symbol form with a level lamp pin; a lock lever with its
 # deliberate UNUSED pin and Invert. A model board lamp with IndicationToken, a retiring PANEL lamp, a trackplan
-# maintainer call (APPLIANCE) carrying Indication, a plain APPLIANCE, and one field device kind drawn twice.
+# maintainer call (APPLIANCE) carrying Indication, a switch drawn with and without an OS circuit, and one field
+# device kind drawn twice.
 LEVER_SWITCH = sym("LeverSwitch", {"Role": "PANEL", "Appliance": "lever", "Style": "switch", "Name": "${Value}",
                                    "Control.NWS": "${Value}NWS", "Control.NWK": "${Value}NWK", "Indication.XX": "x",
                                    "Pin.NWS": "binary", "Pin.RWS": "binary", "Pin.NWK": "binary"},
@@ -616,13 +617,15 @@ OLD_LAMP = sym("OldLamp", {"Role": "PANEL", "Appliance": "lamp", "Style": "indic
 TRACK_MCALL = sym("TrackMCall", {"Role": "APPLIANCE", "Appliance": "lamp", "Style": "maintainer_call",
                                  "Name": "${Value}MC", "Indication": "${Name}K", "Pin.MCK": "level"},
                   {1: ["MC"]}, library="Trackplan")
-TRACK_SWITCH = sym("TrackSwitch", {"Role": "APPLIANCE", "Appliance": "switch", "Style": "powered", "Name": "${Value}"},
-                   {1: ["C", "N", "R"]})
+TRACK_SWITCH = sym("TrackSwitch", {"Role": "APPLIANCE", "Appliance": "switch", "Style": "powered", "Name": "${Value}",
+                                   "TC": "${VALUE}T1", "Indication": "${TC}K"}, {1: ["C", "N", "R"]})
+TRACK_SWITCH_NO_TC = sym("TrackSwitchNoTC", {"Role": "APPLIANCE", "Appliance": "switch", "Style": "powered",
+                                             "Name": "${Value}", "TC": "", "Indication": ""}, {1: ["C", "N", "R"]})
 LAMP_A = sym("LampA", {"Role": "DEVICE", "Appliance": "lamp", "Name": "${Value}", "Pin.LAMP": "binary", "Address": "",
                        "Invert": "LAMP"}, {1: ["~{LAMP}"]})
 LAMP_B = sym("LampB", {"Role": "DEVICE", "Appliance": "lamp", "Name": "${Value}", "Pin.LAMP": "level", "hold_ms": "5"},
              {1: ["~{LAMP}"]})
-ALL = [LEVER_SWITCH, LEVER_MCALL, LEVER_LOCK, BOARD_LAMP, OLD_LAMP, TRACK_MCALL, TRACK_SWITCH, LAMP_A, LAMP_B]
+ALL = [LEVER_SWITCH, LEVER_MCALL, LEVER_LOCK, BOARD_LAMP, OLD_LAMP, TRACK_MCALL, TRACK_SWITCH, TRACK_SWITCH_NO_TC, LAMP_A, LAMP_B]
 
 
 class ConventionsTests(unittest.TestCase):
@@ -692,11 +695,18 @@ class ConventionsTests(unittest.TestCase):
         self.assertEqual(self.cell("BoardLamp", "Tokens").flags, [])        # no Indication.LAMP expected
         self.assertFalse(self.cell("BoardLamp", "Control").flags)
 
-    def test_r3_an_appliance_carries_no_tokens(self):
-        self.assertEqual(self.cell("TrackMCall", "Indication").flags,
-                         ["R3: unexpected; an APPLIANCE carries no tokens (it matches by Name)"])
-        self.assertFalse(self.cell("TrackMCall", "Control").flags)          # lacking them is never flagged
-        self.assertFalse(self.flags("TrackSwitch"))
+    def test_r3_an_appliance_states_what_it_reports(self):
+        self.assertFalse(self.flags("TrackSwitch"))                         # ${TC}K
+        self.assertFalse(self.flags("TrackSwitchNoTC"))                     # no OS circuit: stated empty, and G1 agrees
+        self.assertFalse(self.cell("TrackMCall", "Indication").flags)       # the maintainer call is not asked yet
+        appliance = lambda **f: sym("A", {"Role": "APPLIANCE", **f}, {1: ["TC"]})
+        self.assertEqual(overview.reporter_flags(appliance(Appliance="track_circuit")),
+                         ["R3: missing; an appliance states what it reports"])
+        self.assertEqual(overview.reporter_flags(appliance(Appliance="switch", TC="${VALUE}T1", Indication="")),
+                         ["R3: empty, but the switch has an OS circuit (TC)"])
+        self.assertEqual(overview.reporter_flags(appliance(Appliance="mast", Indication="x")),
+                         ["R3: unexpected; this appliance reports nothing"])
+        self.assertEqual(overview.reporter_flags(appliance(Appliance="lamp", Indication="${Name}K")), [])
 
     def test_r4_invert_on_a_panel_symbol_is_superseded_and_never_asked_for(self):
         self.assertTrue(any(f.startswith("Invert: R4: superseded") for f in self.cell("LeverLock", "Other fields").flags))

@@ -72,8 +72,11 @@ The owner's token rulings (2026-10-28), which the libraries do not follow yet; t
 - R2 a model board lamp (a PANEL lamp whose only function pin is LAMP) states one whole-symbol
   `Indication` (an expression); its LAMP pin is a driver wire, so no `Indication.LAMP` is expected;
   `IndicationToken` is the superseded form.
-- R3 an APPLIANCE carries no tokens (it matches its panel appliance by Name): a `Control` or
-  `Indication` field on one is unexpected; lacking them is never flagged.
+- R3 an APPLIANCE states what it reports (owner, 2026-10-29): a track circuit and a field lamp
+  carry `Indication` (`${Name}K`); a switch carries `Indication` (`${TC}K`), present but empty when
+  its `TC` is empty, and for G1 the two forms agree; a missing one is flagged. A `Control` on any
+  APPLIANCE, and an `Indication` on any other (a mast, a head, a contact), is unexpected. The
+  maintainer call is not asked either way yet.
 - R4 `Invert` on a PANEL symbol is superseded (the inversion goes into the token, e.g.
   `Indication.WLK=!${Value}WLK`); its absence is never flagged. DEVICE and IODRIVER keep `Invert`.
 - R5 a PANEL lamp pin (an input function pin) states `binary`; a level or PWM driver may still drive
@@ -378,6 +381,8 @@ def tokens_cell(s: Symbol) -> Cell:
 def symbol_cells(s: Symbol) -> dict[str, Cell]:
     """The convention cells of one symbol, before any comparison: the values as written."""
     cells = {f: Cell(s.fields[f] if f in s.fields else ABSENT, s.fields.get(f)) for f in TOKEN_FIELDS}
+    if reporter(s) == "switch" and "Indication" in s.fields:     # R3: ${TC}K and an empty TC's "" are one form
+        cells["Indication"].key = "stated"
     cells["Tokens"] = tokens_cell(s)
     drive = lambda b: s.fields.get("Pin." + b)                 # None: the pin has no Pin.* (a trackplan appliance's pins)
     bases = [b for b, _ in function_pins(s)]
@@ -398,6 +403,30 @@ def symbol_cells(s: Symbol) -> dict[str, Cell]:
     other = other_fields(s)
     cells["Other fields"] = Cell(", ".join(f"{f}={s.fields[f]}" if s.fields[f] else f for f in other), frozenset(other))
     return cells
+
+
+def reporter(s: Symbol) -> str | None:
+    """R3: which kind of reporter an APPLIANCE is ("switch" or "name"), "" for one that reports nothing,
+    None for the maintainer call (not asked yet) and anything not an APPLIANCE."""
+    if s.fields.get("Role") != "APPLIANCE" or s.fields.get("Style") == "maintainer_call":
+        return None
+    return {"switch": "switch", "track_circuit": "name", "lamp": "name"}.get(s.fields.get("Appliance", ""), "")
+
+
+def reporter_flags(s: Symbol) -> list[str]:
+    """R3: an appliance states what it reports; only presence is checked, never the value."""
+    kind, ind = reporter(s), s.fields.get("Indication")
+    if kind is None:
+        return []
+    if kind == "":
+        return ["R3: unexpected; this appliance reports nothing"] if ind is not None else []
+    if ind is None:
+        return ["R3: missing; an appliance states what it reports"]
+    if kind == "switch" and not ind and s.fields.get("TC"):
+        return ["R3: empty, but the switch has an OS circuit (TC)"]
+    if kind == "name" and not ind:
+        return ["R3: empty; a track circuit or field lamp reports its own token"]
+    return []
 
 
 def carriers_text(names: list[str], limit: int = 3) -> str:
@@ -430,8 +459,9 @@ def convention_kinds(symbols: list[Symbol]) -> list[KindRow]:
             for f in ("Control", "Indication"):
                 if f in s.fields and f in gone:                # R1: the whole-symbol form on a lever
                     row[f].flags.append(gone[f])
-                if f in s.fields and role == "APPLIANCE":      # R3: an appliance matches its panel appliance by Name
-                    row[f].flags.append("R3: unexpected; an APPLIANCE carries no tokens (it matches by Name)")
+            row["Indication"].flags += reporter_flags(s)          # R3: an appliance states what it reports
+            if "Control" in s.fields and role == "APPLIANCE":
+                row["Control"].flags.append("R3: unexpected; an APPLIANCE reports, it takes no control")
             if is_board_lamp(s) and "Indication" not in s.fields:
                 row["Indication"].flags.append("R2: missing; a model board lamp states one Indication expression")
             for f in ("IndicationToken", "Invert"):             # R2, R4: superseded fields carried
