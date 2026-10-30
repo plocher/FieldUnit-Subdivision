@@ -138,7 +138,7 @@ DoD3 asks the file to say which schema it follows; R1 asks it to say which versi
 
 R1 says absence is information, not an error (view O13), incomplete models are allowed, their gaps are found by the readers and stubbed where useful by the emulator's mocks, and reference data is created in its simpleton form as the compiler first needs it.
 
-- A field that is absent is absent (view §4): a device without a binding, an interlocking without a field unit, a processor without a board are valid - but incomplete - files. The reader reports each absence as `info` when it evaluates (§4.6); the file does not.
+- A field that is absent is absent (view §4): a device without a binding, an interlocking without a field unit, a processor without a board are valid - but incomplete - files. The reader reports each absence as `info` when it evaluates (§4.6); the file does not. An empty field is absent too, except a token field (`Indication`, `Control.<pin>`, `Indication.<pin>`) on any entity: stated empty, it is written as `""` and says there is deliberately no token, while an absent token field is not done yet.[^tokens]
 - Reference data (driver definitions by IC, boards, transport and encoding kinds and their pairing, the encodings a driver IC needs, aspect and indication tables by rulebook) is named by key in the file and by version in `provenance`; no row is copied. Each set lives in its own place with its own small document, not in this file; the two the compiler uses today are its own constants, versioned by date.
 
 The alternative, copying the referenced rows into the file so it reads stand-alone, was rejected: it makes the file a second source of every table (the one-source rule of `AGENTS.md`), and a version in `provenance` gives a reader the same guarantee.
@@ -258,3 +258,5 @@ How the choices were made, in order:
 - Generator options, including which processor runs what in the emulator (processor-cases case 6), and the Day 0 view that elides hardware (§4.9).
 - The all-explicit and all-implicit copies of the project (ADR 0009 C7); this file is compiled from the "both" copy.
 - The trackplan: appliances, track circuits, policies and the control point membership derived from signals; with it, the retirement of the `CP` field from the Trackplan library.
+
+[^tokens]: Amended 2026-10-29 (the owner): the token-field exception, which until then held only for a desk device's per-pin fields. The earlier wording is at `0a55b2f`.
