@@ -20,7 +20,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Christopher South"
+            "CP Name": "Christopher South",
+            "Indication": "1NATK"
           },
           "relations": {
             "TC": [
@@ -36,7 +37,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Christopher North"
+            "CP Name": "Christopher North",
+            "Indication": "1SATK"
           },
           "relations": {
             "TC": [
@@ -52,7 +54,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Christopher North"
+            "CP Name": "Christopher North",
+            "Indication": "01TK"
           },
           "relations": {
             "TC": [
@@ -80,7 +83,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Christopher South"
+            "CP Name": "Christopher South",
+            "Indication": "2NATK"
           },
           "relations": {
             "TC": [
@@ -96,7 +100,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Christopher North"
+            "CP Name": "Christopher North",
+            "Indication": "2SATK"
           },
           "relations": {
             "TC": [
@@ -1545,7 +1550,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Corporal"
+            "CP Name": "Corporal",
+            "Indication": "1NATK"
           },
           "relations": {
             "TC": [
@@ -1560,7 +1566,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Corporal"
+            "CP Name": "Corporal",
+            "Indication": "1SATK"
           },
           "relations": {
             "TC": [
@@ -1576,7 +1583,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Corporal"
+            "CP Name": "Corporal",
+            "Indication": "01TK"
           },
           "relations": {
             "TC": [
@@ -1591,7 +1599,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Corporal"
+            "CP Name": "Corporal",
+            "Indication": "2NATK"
           },
           "relations": {
             "TC": [
@@ -1607,7 +1616,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Corporal"
+            "CP Name": "Corporal",
+            "Indication": "2SATK"
           },
           "relations": {
             "TC": [
@@ -2843,7 +2853,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy Caltrain"
+            "CP Name": "Gilroy Caltrain",
+            "Indication": "1NATK"
           },
           "relations": {
             "TC": [
@@ -2859,7 +2870,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy Caltrain"
+            "CP Name": "Gilroy Caltrain",
+            "Indication": "1SATK"
           },
           "relations": {
             "TC": [
@@ -2875,7 +2887,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy Caltrain"
+            "CP Name": "Gilroy Caltrain",
+            "Indication": "01TK"
           },
           "relations": {
             "TC": [
@@ -2891,7 +2904,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy Caltrain"
+            "CP Name": "Gilroy Caltrain",
+            "Indication": "02TK"
           },
           "relations": {
             "TC": [
@@ -2907,7 +2921,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy Caltrain"
+            "CP Name": "Gilroy Caltrain",
+            "Indication": "03TK"
           },
           "relations": {
             "TC": [
@@ -4199,7 +4214,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy North"
+            "CP Name": "Gilroy North",
+            "Indication": "1NATK"
           },
           "relations": {
             "TC": [
@@ -4215,7 +4231,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy North"
+            "CP Name": "Gilroy North",
+            "Indication": "1SATK"
           },
           "relations": {
             "TC": [
@@ -4231,7 +4248,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy North"
+            "CP Name": "Gilroy North",
+            "Indication": "01TK"
           },
           "relations": {
             "TC": [
@@ -4259,7 +4277,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy North"
+            "CP Name": "Gilroy North",
+            "Indication": "02TK"
           },
           "relations": {
             "TC": [
@@ -5310,7 +5329,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Carnadero"
+            "CP Name": "Carnadero",
+            "Indication": "1NATK"
           },
           "relations": {
             "TC": [
@@ -5326,7 +5346,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Luchessa"
+            "CP Name": "Luchessa",
+            "Indication": "1SATK"
           },
           "relations": {
             "TC": [
@@ -5342,7 +5363,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy"
+            "CP Name": "Gilroy",
+            "Indication": "01TK"
           },
           "relations": {
             "TC": [
@@ -5357,7 +5379,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Carnadero"
+            "CP Name": "Carnadero",
+            "Indication": "2NATK"
           },
           "relations": {
             "TC": [
@@ -5373,7 +5396,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy"
+            "CP Name": "Gilroy",
+            "Indication": "02TK"
           },
           "relations": {
             "TC": [
@@ -5389,7 +5413,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Carnadero"
+            "CP Name": "Carnadero",
+            "Indication": "3NATK"
           },
           "relations": {
             "TC": [
@@ -6940,7 +6965,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Sargent"
+            "CP Name": "Sargent",
+            "Indication": "1NATK"
           },
           "relations": {
             "TC": [
@@ -6956,7 +6982,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Sargent"
+            "CP Name": "Sargent",
+            "Indication": "1SATK"
           },
           "relations": {
             "TC": [
@@ -6971,7 +6998,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Sargent"
+            "CP Name": "Sargent",
+            "Indication": "2SATK"
           },
           "relations": {
             "TC": [
@@ -7632,6 +7660,7 @@
             "given": {
               "Appliance": "track_circuit",
               "CP Name": "Corporal",
+              "Indication": "Corporal:2NATK",
               "Name": "Corporal:2NAT"
             },
             "id": "1f225e38-5cdb-4b01-9ab6-8bbb0d92c42a",
@@ -7898,7 +7927,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "1BTK"
           },
           "relations": {
             "TC": [
@@ -7913,7 +7943,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "1CTK"
           },
           "relations": {
             "TC": [
@@ -7928,7 +7959,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "1DTK"
           },
           "relations": {
             "TC": [
@@ -7943,7 +7975,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "1ETK"
           },
           "relations": {
             "TC": [
@@ -7958,7 +7991,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "01TK"
           },
           "relations": {
             "TC": [
@@ -7973,7 +8007,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "2ATK"
           },
           "relations": {
             "TC": [
@@ -7988,7 +8023,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "2BTK"
           },
           "relations": {
             "TC": [
@@ -8003,7 +8039,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "2CTK"
           },
           "relations": {
             "TC": [
@@ -8018,7 +8055,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "2DTK"
           },
           "relations": {
             "TC": [
@@ -8033,7 +8071,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "2ETK"
           },
           "relations": {
             "TC": [
@@ -8048,7 +8087,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "02TK"
           },
           "relations": {
             "TC": [
@@ -8089,7 +8129,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "3BTK"
           },
           "relations": {
             "TC": [
@@ -8104,7 +8145,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "3CTK"
           },
           "relations": {
             "TC": [
@@ -8119,7 +8161,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "3DTK"
           },
           "relations": {
             "TC": [
@@ -8134,7 +8177,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "3ETK"
           },
           "relations": {
             "TC": [
@@ -8149,7 +8193,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "03TK"
           },
           "relations": {
             "TC": [
@@ -8165,7 +8210,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "4BTK"
           },
           "relations": {
             "TC": [
@@ -8180,7 +8226,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "4CTK"
           },
           "relations": {
             "TC": [
@@ -8195,7 +8242,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "4DTK"
           },
           "relations": {
             "TC": [
@@ -8210,7 +8258,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "4ETK"
           },
           "relations": {
             "TC": [
@@ -8248,7 +8297,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "5BTK"
           },
           "relations": {
             "TC": [
@@ -8263,7 +8313,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "5CTK"
           },
           "relations": {
             "TC": [
@@ -8278,7 +8329,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "5DTK"
           },
           "relations": {
             "TC": [
@@ -8293,7 +8345,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "5ETK"
           },
           "relations": {
             "TC": [
@@ -8308,7 +8361,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "6BTK"
           },
           "relations": {
             "TC": [
@@ -8323,7 +8377,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "6CTK"
           },
           "relations": {
             "TC": [
@@ -8338,7 +8393,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "6DTK"
           },
           "relations": {
             "TC": [
@@ -8353,7 +8409,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "6ETK"
           },
           "relations": {
             "TC": [
@@ -8391,7 +8448,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "7BTK"
           },
           "relations": {
             "TC": [
@@ -8406,7 +8464,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "7CTK"
           },
           "relations": {
             "TC": [
@@ -8421,7 +8480,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "7DTK"
           },
           "relations": {
             "TC": [
@@ -8436,7 +8496,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "7ETK"
           },
           "relations": {
             "TC": [
@@ -8668,7 +8729,8 @@
             "Appliance": "track_circuit",
             "CP Name": "Watsonville",
             "Display": "0100T: [15T1,17T1,19T1,21T1,23T1,25T1]",
-            "IndicationToken": "15T1,17T1,19T1,21T1,23T1,25T1",
+            "Indication": "0100TK",
+            "Members": "15T1,17T1,19T1,21T1,23T1,25T1",
             "Style": "virtual"
           }
         },
@@ -8689,7 +8751,8 @@
             "Appliance": "track_circuit",
             "CP Name": "Watsonville",
             "Display": "0101T: [03T,3T1,5T1,7T1,9T1,11T1,13T1]",
-            "IndicationToken": "03T,3T1,5T1,7T1,9T1,11T1,13T1",
+            "Indication": "0101TK",
+            "Members": "03T,3T1,5T1,7T1,9T1,11T1,13T1",
             "Style": "virtual"
           }
         },
@@ -13933,6 +13996,15 @@
         },
         "shape": [
           {
+            "at": {
+              "x": 0.0,
+              "y": -2.54
+            },
+            "size": 0.762,
+            "text": "${Name}",
+            "type": "text"
+          },
+          {
             "center": {
               "x": 0.0,
               "y": 0.0
@@ -13977,6 +14049,15 @@
           }
         },
         "shape": [
+          {
+            "at": {
+              "x": 0.0,
+              "y": -2.54
+            },
+            "size": 0.762,
+            "text": "${Name}",
+            "type": "text"
+          },
           {
             "center": {
               "x": 0.0,
@@ -16352,7 +16433,7 @@
   },
   "provenance": {
     "libraries": {
-      "Railroad-Trackplan": "split-projects-final-107-g085cd97"
+      "Railroad-Trackplan": "split-projects-final-109-g6ce30b3"
     },
     "referenceData": {
       "driverEncodings": "2026-10-23",
@@ -16362,7 +16443,7 @@
     },
     "rules": "0.1.0",
     "source": {
-      "describe": "split-projects-final-107-g085cd97",
+      "describe": "split-projects-final-109-g6ce30b3",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad",
