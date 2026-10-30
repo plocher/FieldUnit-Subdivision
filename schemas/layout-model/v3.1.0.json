@@ -459,7 +459,7 @@
       }
     },
     "device": {
-      "description": "One row of devices[]: one device instance, without identity (ADR 0008 §4.5), so its Name lands in given. given holds Appliance, Style (as drawn, a comma list), Head, Address, Invert, IndicationToken and its fields.",
+      "description": "One row of devices[]: one device instance, without identity (ADR 0008 §4.5), so its Name lands in given. given holds Appliance, Style (as drawn, a comma list), Head, Address, Invert, Indication (a lamp's expression), its per-pin Control.<pin> and Indication.<pin>, and its other fields.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -1217,7 +1217,7 @@
                   "items": {
                     "$ref": "#/$defs/qualifiedName"
                   },
-                  "description": "A virtual track circuit's member circuits, its IndicationToken resolved."
+                  "description": "A virtual track circuit's member circuits, its Members resolved."
                 }
               }
             }
