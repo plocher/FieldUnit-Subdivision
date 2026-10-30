@@ -372,11 +372,11 @@ MC1  | MaintainerCall  | APPLIANCE | Appliance=lamp Style=maintainer_call Name=M
         self.assertEqual(ix["houses"]["West"]["relations"], {"maintainerCall": "X:MC1"})
 
     def test_a_virtual_circuit_lists_its_members_and_follows_them(self):
-        given = TWO_HOUSES + "V1 | Track Circuit_Virtual | APPLIANCE | Appliance=track_circuit Style=virtual Name=0100T IndicationToken=1SAT,01T\n"
+        given = TWO_HOUSES + "V1 | Track Circuit_Virtual | APPLIANCE | Appliance=track_circuit Style=virtual Name=0100T Members=1SAT,01T\n"
         sm, ix = compile_(given, TWO_HOUSES_NETS)
         self.assertEqual(sm.report.errors, [])
         self.assertEqual(ix["appliances"]["0100T"], {
-            "given": {"Appliance": "track_circuit", "Style": "virtual", "IndicationToken": "1SAT,01T"},
+            "given": {"Appliance": "track_circuit", "Style": "virtual", "Members": "1SAT,01T"},
             "derived": {"members": ["X:1SAT", "X:01T"], "controlPoint": "X:North"}})
 
     def test_the_output_validates(self):

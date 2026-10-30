@@ -324,7 +324,7 @@ class ControlPoints(unittest.TestCase):
         self.assertEqual(d.entities, ("interlockings/X/appliances/MC1", "interlockings/X/houses/West", "interlockings/X/houses/East"))
 
     def test_a_virtual_circuit_lists_its_members_and_follows_them(self):
-        things = TWO_HOUSES + "0100T | appliance | Appliance=track_circuit Style=virtual IndicationToken=1SAT,01T\n"
+        things = TWO_HOUSES + "0100T | appliance | Appliance=track_circuit Style=virtual Members=1SAT,01T\n"
         out, diags = run(layout(X=interlocking(things, TWO_HOUSES_WIRES, NORTH_SOUTH)))
         self.assertEqual(only(diags, "control_point"), [])
         self.assertEqual(out["interlockings"]["X"]["appliances"]["0100T"]["derived"], {"members": ["X:1SAT", "X:01T"], "controlPoint": "X:North"})
@@ -442,7 +442,7 @@ class Codeline(unittest.TestCase):
 
     def test_a_name_that_ends_in_k_is_its_token_and_an_os_circuit_is_its_switchs(self):
         things = ONE_SWITCH + "HBA | appliance | Appliance=lamp Style=non_vital\nNFLK | appliance | Appliance=lamp Style=non_vital\n" \
-                              "0100T | appliance | Appliance=track_circuit Style=virtual IndicationToken=1NAT\n"
+                              "0100T | appliance | Appliance=track_circuit Style=virtual Members=1NAT\n"
         m = desk(on_line(layout(X=interlocking(things, ONE_SWITCH_WIRES, "East")), "X"), {}, [lamp("HBAK | NFLK | 0100TK | 835T1K")])
         got, diags, _ = stations(m)
         self.assertEqual(only(diags, "reference"), [])
@@ -523,7 +523,7 @@ J5   | joints    | Kind=IRJ
         self.assertEqual(self.check("I1 | ends | Kind=INDUSTRY name=Y:Cannery\n", "a | J1.A I1.EoT\n"), [("reference.track", "I1")])
 
     def test_a_circuit_named_in_a_field_must_exist_too(self):
-        things = "9 | appliance | Appliance=switch Style=lock TC=Y:9T1\n1VT | appliance | Appliance=track_circuit Style=virtual IndicationToken=Y:3NAT,Y:8NAT\n"
+        things = "9 | appliance | Appliance=switch Style=lock TC=Y:9T1\n1VT | appliance | Appliance=track_circuit Style=virtual Members=Y:3NAT,Y:8NAT\n"
         self.assertEqual(self.check(things, "a | J1.A 9.C\n"), [("reference.unresolved", "1VT"), ("reference.unresolved", "9")])
 
 

@@ -356,7 +356,7 @@ class _Plan:
         for n, a in apps:
             g = a.get("given", {})
             if g.get("Appliance") == "track_circuit" and g.get("Style") == "virtual":
-                for t in g.get("IndicationToken", "").split(","):
+                for t in g.get("Members", "").split(","):
                     r = circuit_regions.get(qualify(t.strip(), self.name)) if t.strip() else None
                     if r:
                         edges[r].add(key(n))
@@ -404,7 +404,7 @@ class _Plan:
             if g.get("Appliance") == "switch":
                 derived["osCircuit"] = next((c for p in ports_of(a) if (c := self.circuit(self.pin(name, p)))), None)
             if g.get("Appliance") == "track_circuit" and g.get("Style") == "virtual":
-                derived["members"] = [qualify(t.strip(), self.name) for t in g.get("IndicationToken", "").split(",") if t.strip()]
+                derived["members"] = [qualify(t.strip(), self.name) for t in g.get("Members", "").split(",") if t.strip()]
             cp = self.cp.get(id(a))
             derived["controlPoint"] = f"{self.name}:{cp}" if cp else None
             _set_derived(a, derived)
@@ -533,9 +533,9 @@ class _Plan:
             if g.get("Appliance") == "switch" and g.get("TC") and foreign(g["TC"], self.name) and "," not in g["TC"]:
                 out.append(("circuit", g["TC"], frozenset(), f"switch {name}'s TC", self.where("appliances", name)))
             if g.get("Appliance") == "track_circuit" and g.get("Style") == "virtual":
-                for t in g.get("IndicationToken", "").split(","):
+                for t in g.get("Members", "").split(","):
                     if t.strip() and foreign(t.strip(), self.name):
-                        out.append(("circuit", t.strip(), frozenset(), f"virtual circuit {name}'s IndicationToken",
+                        out.append(("circuit", t.strip(), frozenset(), f"virtual circuit {name}'s Members",
                                     self.where("appliances", name)))
         return out
 
