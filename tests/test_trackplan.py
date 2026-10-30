@@ -406,6 +406,17 @@ L1   | AUXILIARY       | APPLIANCE | Appliance=lamp Name=NFLK Display="North fla
         sm, ix = compile_(given, "")
         self.assertEqual(ix["appliances"]["NFLK"]["given"], {"Appliance": "lamp", "Display": "North flasher", "Column": "7"})
 
+    def test_an_empty_indication_is_stated_and_any_other_empty_field_is_absent(self):
+        """An empty token field says there is deliberately no token; an absent one is not done yet (ADR 0008 §4.7)."""
+        given = """
+H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
+L1   | AUXILIARY       | APPLIANCE | Appliance=lamp Name=HBA Indication= Milepost=
+L2   | AUXILIARY       | APPLIANCE | Appliance=lamp Name=NFL
+"""
+        sm, ix = compile_(given, "")
+        self.assertEqual(ix["appliances"]["HBA"]["given"], {"Appliance": "lamp", "Indication": ""})
+        self.assertEqual(ix["appliances"]["NFL"]["given"], {"Appliance": "lamp"})
+
 
 class Ends(unittest.TestCase):
     def test_a_named_end_is_what_a_dark_pin_meets(self):

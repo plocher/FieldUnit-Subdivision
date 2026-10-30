@@ -18,7 +18,7 @@ from tools.layout_model import derive as derivation
 from tools.layout_model.reference import REFERENCE_DATA
 
 from .geometry import Geometry
-from .seams import PIN_TOKENS, Seams
+from .seams import Seams, token_field
 from .source import Symbol
 from .seams import loc as seams_loc
 
@@ -33,7 +33,7 @@ def _clean(d: dict) -> dict:
 def _entity(given: Optional[dict] = None, relations: Optional[dict] = None, derived: Optional[dict] = None, **rest) -> dict:
     """An entity or a row: its three maps, each without empty values, then whatever else it holds (collections). An
     empty per-pin ``Control.<pin>`` or ``Indication.<pin>`` in ``given`` is kept: it states the pin binds no token."""
-    stated = {k: v for k, v in (given or {}).items() if v not in (None, "", [], {}) or k.startswith(PIN_TOKENS)}
+    stated = {k: v for k, v in (given or {}).items() if v not in (None, "", [], {}) or token_field(k)}
     return _clean({"given": stated, "relations": _clean(dict(relations or {})),
                    "derived": _clean(dict(derived or {})), **rest})
 

@@ -37,7 +37,7 @@ from typing import Any, Optional
 
 from tools.layout_model.reference import indication_tokens
 
-from .seams import Seams, check_milepost, given_of, key_of, loc, qualify
+from .seams import Seams, check_milepost, given_of, key_of, loc, qualify, token_field
 from .source import Net, Symbol
 
 TRACKPLAN_ROLES = frozenset({"APPLIANCE", "TRACK", "POLICY"})
@@ -278,12 +278,13 @@ def _foreign(name: str, interlocking: str) -> bool:
 
 
 def _maps(row: dict[str, Any]) -> dict[str, Any]:
-    """A row with its empty values and empty maps left out: absent is absent (ADR 0008 §4.7)."""
+    """A row with its empty values and empty maps left out: absent is absent, but a token field stated empty stays
+    (ADR 0008 §4.7)."""
     out: dict[str, Any] = {}
     for k, v in row.items():
         if isinstance(v, dict) and k in ("given", "relations", "derived", "circuits"):
             v = _maps(v)
-        if v not in (None, "", [], {}):
+        if v not in (None, "", [], {}) or (v == "" and token_field(k)):
             out[k] = v
     return out
 

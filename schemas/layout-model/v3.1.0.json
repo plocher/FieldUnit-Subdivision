@@ -67,7 +67,7 @@
       }
     },
     "given": {
-      "description": "Every field a person stated on the entity, keyed as drawn, every value a string as KiCad states it (ADR 0011 §2). Left out: KiCad's housekeeping (Reference, Value, Footprint, Datasheet, Description, Sheetname, Sheetfile, ki_*), Role (it picks the collection), the library's Pin.* contract, the key field, and any empty field but a per-pin Control.<pin> or Indication.<pin>. Which keys apply is reference data, not this schema's; a reader that wants a number or a list parses the string.",
+      "description": "Every field a person stated on the entity, keyed as drawn, every value a string as KiCad states it (ADR 0011 §2). Left out: KiCad's housekeeping (Reference, Value, Footprint, Datasheet, Description, Sheetname, Sheetfile, ki_*), Role (it picks the collection), the library's Pin.* contract, the key field, and any empty field but a token field (Indication, Control.<pin>, Indication.<pin>). Which keys apply is reference data, not this schema's; a reader that wants a number or a list parses the string.",
       "type": "object",
       "propertyNames": {
         "type": "string",
@@ -87,9 +87,9 @@
         "pattern": "^(?!ki_)(?!Pin\\.)"
       },
       "patternProperties": {
-        "^(Control|Indication)\\.": {
+        "^(Control\\.|Indication(\\.|$))": {
           "type": "string",
-          "description": "A desk device's per-pin token (the owner, 2026-10-28): stated even when empty, since an empty one says the pin deliberately binds no token."
+          "description": "A token field on any entity, Indication or a per-pin Control.<pin> or Indication.<pin> (the owner, 2026-10-28 and 10-29): stated even when empty, since an empty one says there is deliberately no token; an absent one is not done yet."
         }
       },
       "additionalProperties": {

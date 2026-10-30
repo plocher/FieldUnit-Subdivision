@@ -26,7 +26,13 @@ from .source import Net, Source, Symbol, in_scope
 MACRO = re.compile(r"<([A-Z_]+):([A-Z_]*):([\w .]+)>")
 # KiCad's own housekeeping (ADR 0011 §2), and Role, which only picks the collection (three-maps D1): never in given.
 HOUSEKEEPING = frozenset({"Reference", "Value", "Footprint", "Datasheet", "Description", "Sheetname", "Sheetfile", "Role"})
-PIN_TOKENS = ("Control.", "Indication.")                              # a desk device's per-pin tokens: stated even when empty
+PIN_TOKENS = ("Control.", "Indication.")                              # per-pin tokens: Control.<pin>, Indication.<pin>
+
+
+def token_field(k: str) -> bool:
+    """A token field, ``Indication`` or a per-pin ``Control.<pin>``/``Indication.<pin>``: stated even when empty, where
+    the empty field is the statement that there is no token and an absent one is not done yet (ADR 0008 §4.7)."""
+    return k == "Indication" or k.startswith(PIN_TOKENS)
 
 
 def loc(s: Symbol) -> str:
@@ -211,8 +217,8 @@ def check_milepost(s: Symbol, report: Report, what: str) -> None:
 def given_of(s: Symbol, keyed: bool = True) -> dict[str, str]:
     """Every field the person stated, keyed as drawn, as KiCad states it (ADR 0011 §2): less KiCad's housekeeping,
     ``Role`` (D1), the library's ``Pin.*`` contract (D2) and, for a keyed entity, its key field. An empty field or
-    KiCad's ``~`` is not stated (D21), except a desk device's per-pin ``Control.<pin>`` or ``Indication.<pin>``: there the
-    empty field is the statement that the pin binds no token (the owner, 2026-10-28), written as "". A row without
+    KiCad's ``~`` is not stated (D21), except a token field (``token_field``) on any symbol: there the empty field is the
+    statement that there is no token (the owner, 2026-10-28 and 10-29), written as "". A row without
     identity (a device) keeps its ``Name`` (``keyed=False``)."""
     key = key_field(s) if keyed else None
     out = {}
@@ -221,7 +227,7 @@ def given_of(s: Symbol, keyed: bool = True) -> dict[str, str]:
             continue
         if v.strip() not in ("", "~"):
             out[k] = v
-        elif k.startswith(PIN_TOKENS):
+        elif token_field(k):
             out[k] = ""
     return out
 
