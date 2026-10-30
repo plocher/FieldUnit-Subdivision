@@ -101,7 +101,7 @@ def row(ix: dict, rid: str) -> dict:
 
 # One switch inside three signal joints of house East: the Sargent shape.
 ONE_SWITCH = """
-835    | appliance | Appliance=switch Style=lock TC=835T1
+835    | appliance | Appliance=switch Style=lock TC=835T1 Indication=835T1K
 836NAB | appliance | Appliance=mast Style=double
 836SA  | appliance | Appliance=mast Style=single
 836SB  | appliance | Appliance=mast Style=dwarf
@@ -163,7 +163,7 @@ I1 | ends      | Kind=INDUSTRY name="Gilroy Industry"
 
     def test_ports_that_meet_with_no_joint_between_are_a_link(self):
         things = """
-795  | appliance | Appliance=switch Style=lock TC=795T1
+795  | appliance | Appliance=switch Style=lock TC=795T1 Indication=795T1K
 795D | appliance | Appliance=switch Style=derail
 J1   | joints    | Kind=IRJ_SIGNAL
 """
@@ -230,10 +230,10 @@ class Checks(unittest.TestCase):
 # between 813's R and 817's R; 815's R meets 815A's R at a plain joint. Each signal states its house on the joint or on
 # the mast; approach circuit 1NAT states North though South's signal bounds it.
 TWO_HOUSES = """
-813   | appliance | Appliance=switch Style=powered TC=813T1 CP_Name=North
-815   | appliance | Appliance=switch Style=powered TC=815T1 CP_Name=North
-815A  | appliance | Appliance=switch Style=powered TC=815AT1
-817   | appliance | Appliance=switch Style=powered TC=817T1 CP_Name=South
+813   | appliance | Appliance=switch Style=powered TC=813T1 Indication=813T1K CP_Name=North
+815   | appliance | Appliance=switch Style=powered TC=815T1 Indication=815T1K CP_Name=North
+815A  | appliance | Appliance=switch Style=powered TC=815AT1 Indication=815AT1K
+817   | appliance | Appliance=switch Style=powered TC=817T1 Indication=817T1K CP_Name=South
 814SA | appliance | Appliance=mast Style=single
 816NA | appliance | Appliance=mast Style=single CP_Name=South
 818NA | appliance | Appliance=mast Style=single
@@ -392,10 +392,10 @@ def desk(m: dict, columns: dict[str, str], devices: list[dict]) -> dict:
     return m
 
 
-def stations(model: dict, ref: dict | None = None) -> tuple[dict, list[tuple[str, str]], codeline.Codeline]:
+def stations(model: dict) -> tuple[dict, list[tuple[str, str]], codeline.Codeline]:
     """The derivation's diagnostics, and the code line computed from its output: (station -> (controls, indications))."""
-    out, report = derive.derive(model, ref)
-    line = codeline.stations(out, (ref or {}).get("indicationTokens"))
+    out, report = derive.derive(model)
+    line = codeline.stations(out)
     diags = sorted((d.code, d.where.rsplit("/", 1)[-1]) for d in report.diags)
     return {k: (sorted(s.controls), sorted(s.indications)) for k, s in line.stations.items()}, diags, line
 
@@ -459,15 +459,16 @@ class Codeline(unittest.TestCase):
         out, _ = derive.derive(m)
         self.assertEqual(codeline.reporters(out, "X", "817nwk"), [codeline.Reporter("switch", "817")])
 
-    def test_a_name_that_ends_in_k_is_its_token_and_an_os_circuit_is_its_switchs(self):
-        """INTERIM: a field lamp and a switch's OS circuit state no token yet, so the reference templates are read
-        backwards for them alone; a virtual track circuit states its own."""
-        things = ONE_SWITCH + "HBA | appliance | Appliance=lamp Style=non_vital\nNFLK | appliance | Appliance=lamp Style=non_vital\n" \
+    def test_a_field_lamp_and_a_switchs_os_circuit_report_what_they_state(self):
+        """A field lamp states its own token, a switch its OS circuit's, a virtual track circuit its own."""
+        things = ONE_SWITCH + "HBA | appliance | Appliance=lamp Style=non_vital Indication=HBAK\n" \
+                              "NFL | appliance | Appliance=lamp Style=non_vital Indication=NFLK\n" \
                               "0100T | appliance | Appliance=track_circuit Style=virtual Members=1NAT Indication=0100TK\n"
         m = desk(on_line(layout(X=interlocking(things, ONE_SWITCH_WIRES, "East")), "X"), {}, [lamp("HBAK | NFLK | 0100TK | 835T1K")])
-        got, diags, _ = stations(m)
+        got, diags, line = stations(m)
         self.assertEqual(only(diags, "reference"), [])
         self.assertEqual(got[("X", None)][1], ["0100TK", "835T1K", "HBAK", "NFLK"])
+        self.assertEqual(codeline.reporters(derive.derive(m)[0], "X", "835T1K"), [codeline.Reporter("track_circuit", "835", "835T1")])
 
     def test_a_lamp_token_two_houses_report_is_a_warning(self):
         """815A's TC names 815AT1 (North, by its gang); a marker 815AT1 states South."""
@@ -477,13 +478,14 @@ class Codeline(unittest.TestCase):
         self.assertEqual(only(diags, "reference"), [("reference.station", "0")])
         self.assertEqual([p.kind for p in line.problems], ["station"])
 
-    def test_the_users_reference_data_overrides_the_default_where_a_template_is_still_read(self):
-        """Only the interim OS circuit reads the templates; a track circuit's stated token is its own whatever they say."""
-        things = "9 | appliance | Appliance=switch Style=powered TC=9T1\n9T | appliance | Appliance=track_circuit Indication=9TK\n"
-        m = desk(on_line(layout(X=interlocking(things, "", "East")), "X"), {}, [lamp("9T1KK"), lamp("9T1K"), lamp("9TK")])
-        got, diags, _ = stations(m, {"indicationTokens": {"AAR": {"track_circuit": ("{name}KK",)}}})
-        self.assertEqual(got[("X", None)][1], ["9T1KK", "9TK"])
-        self.assertEqual(only(diags, "reference"), [("reference.unresolved", "1")])
+    def test_a_token_no_appliance_states_is_unresolved_never_filled_in_from_a_template(self):
+        """A switch with no Indication states no OS circuit token; HBA states none; the templates are not read."""
+        things = "9 | appliance | Appliance=switch Style=powered TC=9T1\nHBA | appliance | Appliance=lamp Style=non_vital\n" \
+                 "9T | appliance | Appliance=track_circuit Indication=9TK\n"
+        m = desk(on_line(layout(X=interlocking(things, "", "East")), "X"), {}, [lamp("9T1K"), lamp("HBAK"), lamp("9TK")])
+        got, diags, _ = stations(m)
+        self.assertEqual(got[("X", None)][1], ["9TK"])
+        self.assertEqual(only(diags, "reference"), [("reference.unresolved", "0"), ("reference.unresolved", "1")])
 
     def test_a_station_not_in_the_file_is_a_warning_and_one_on_no_code_line_is_missing(self):
         m = desk(on_line(layout(X=interlocking(self.THINGS, ONE_SWITCH_WIRES, "East"), Y=interlocking("", "", "West", "Y")), "X"), {},
@@ -499,7 +501,7 @@ class References(unittest.TestCase):
     track row so named is an error (the owner, 2026-10-28)."""
 
     Y = interlocking("""
-5    | appliance | Appliance=switch Style=lock TC=5T1
+5    | appliance | Appliance=switch Style=lock TC=5T1 Indication=5T1K
 6    | appliance | Appliance=switch Style=derail
 3NAT | appliance | Appliance=track_circuit Indication=3NATK
 J5   | joints    | Kind=IRJ

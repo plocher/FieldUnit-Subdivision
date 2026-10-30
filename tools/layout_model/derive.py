@@ -573,7 +573,7 @@ class _Derivation:
         the named interlocking (``codeline.circuit_of``)."""
         out = {}
         for row in plan.consumers():
-            circuit = codeline.circuit_of(self.m, row.get("relations", {}).get("indication", ""), self.ref.get("indicationTokens"))
+            circuit = codeline.circuit_of(self.m, row.get("relations", {}).get("indication", ""))
             if circuit and "TC" in track_pins(row.get("relations", {})):
                 out[f"{row.get('id', '')}.TC"] = circuit
         return out
@@ -595,7 +595,7 @@ class _Derivation:
         domain library's own computation, so the check and what a generator reads are one definition (the owner,
         2026-10-28). An interlocking not in the file is a warning, one on no code line missing, a token no appliance
         reports an error."""
-        for p in codeline.stations(self.m, self.ref.get("indicationTokens")).problems:
+        for p in codeline.stations(self.m).problems:
             self.r.add(self.PROBLEM_CODES[p.kind], p.text, p.where, p.parties)
 
     def run(self) -> None:
