@@ -389,11 +389,11 @@ class Attributes(unittest.TestCase):
     def test_an_appliance_states_its_milepost(self):
         given = """
 H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
-L1   | AUXILIARY       | APPLIANCE | Appliance=lamp Style=non_vital Name=HBA Milepost=83.4
-L2   | AUXILIARY       | APPLIANCE | Appliance=lamp Style=non_vital Name=NFLK Milepost=north
+L1   | AUXILIARY       | APPLIANCE | Appliance=lamp Name=HBA Milepost=83.4
+L2   | AUXILIARY       | APPLIANCE | Appliance=lamp Name=NFLK Milepost=north
 """
         sm, ix = compile_(given, "")
-        self.assertEqual(ix["appliances"]["HBA"], {"given": {"Appliance": "lamp", "Style": "non_vital", "Milepost": "83.4"},
+        self.assertEqual(ix["appliances"]["HBA"], {"given": {"Appliance": "lamp", "Milepost": "83.4"},
                                                    "derived": {"controlPoint": "X:East"}})
         self.assertEqual(diags(sm, "milepost"), [("milepost.number", "L2")])
 
@@ -401,10 +401,10 @@ L2   | AUXILIARY       | APPLIANCE | Appliance=lamp Style=non_vital Name=NFLK Mi
         """A field nothing reads is kept, never dropped (the owner, 2026-10-26; ADR 0011 §2)."""
         given = """
 H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
-L1   | AUXILIARY       | APPLIANCE | Appliance=lamp Style=non_vital Name=NFLK Display="North flasher" Column=7
+L1   | AUXILIARY       | APPLIANCE | Appliance=lamp Name=NFLK Display="North flasher" Column=7
 """
         sm, ix = compile_(given, "")
-        self.assertEqual(ix["appliances"]["NFLK"]["given"], {"Appliance": "lamp", "Style": "non_vital", "Display": "North flasher", "Column": "7"})
+        self.assertEqual(ix["appliances"]["NFLK"]["given"], {"Appliance": "lamp", "Display": "North flasher", "Column": "7"})
 
 
 class Ends(unittest.TestCase):
@@ -465,7 +465,7 @@ class References(unittest.TestCase):
 H1   | House            | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
 J1   | IRJ              | TRACK     | Kind=IRJ
 SW1  | Switch_Lock      | APPLIANCE | Appliance=switch Style=lock Name=Y:5
-L1   | AUXILIARY        | APPLIANCE | Appliance=lamp Style=non_vital Name=Y:SFLK
+L1   | AUXILIARY        | APPLIANCE | Appliance=lamp Name=Y:SFLK
 """
         sm, ix = compile_(given, "a | J1.A SW1.R\n")
         self.assertEqual(ix["track"]["joints"][0]["relations"], {"A": ["Y:5.R"]})

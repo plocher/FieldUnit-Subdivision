@@ -297,7 +297,7 @@ class ControlPoints(unittest.TestCase):
         self.assertEqual(only(diags, "control_point"), [("control_point.chains", "01T")])
 
     def test_an_appliance_no_house_reaches_is_an_error(self):
-        _, diags = run(layout(X=interlocking(TWO_HOUSES + "NFLK | appliance | Appliance=lamp Style=non_vital\n", TWO_HOUSES_WIRES, NORTH_SOUTH)))
+        _, diags = run(layout(X=interlocking(TWO_HOUSES + "NFLK | appliance | Appliance=lamp\n", TWO_HOUSES_WIRES, NORTH_SOUTH)))
         self.assertEqual(only(diags, "control_point"), [("control_point.unreached", "NFLK")])
 
     def test_a_gang_split_across_houses_is_a_warning(self):
@@ -461,8 +461,8 @@ class Codeline(unittest.TestCase):
 
     def test_a_field_lamp_and_a_switchs_os_circuit_report_what_they_state(self):
         """A field lamp states its own token, a switch its OS circuit's, a virtual track circuit its own."""
-        things = ONE_SWITCH + "HBA | appliance | Appliance=lamp Style=non_vital Indication=HBAK\n" \
-                              "NFL | appliance | Appliance=lamp Style=non_vital Indication=NFLK\n" \
+        things = ONE_SWITCH + "HBA | appliance | Appliance=lamp Indication=HBAK\n" \
+                              "NFL | appliance | Appliance=lamp Indication=NFLK\n" \
                               "0100T | appliance | Appliance=track_circuit Style=virtual Members=1NAT Indication=0100TK\n"
         m = desk(on_line(layout(X=interlocking(things, ONE_SWITCH_WIRES, "East")), "X"), {}, [lamp("HBAK | NFLK | 0100TK | 835T1K")])
         got, diags, line = stations(m)
@@ -480,7 +480,7 @@ class Codeline(unittest.TestCase):
 
     def test_a_token_no_appliance_states_is_unresolved_never_filled_in_from_a_template(self):
         """A switch with no Indication states no OS circuit token; HBA states none; the templates are not read."""
-        things = "9 | appliance | Appliance=switch Style=powered TC=9T1\nHBA | appliance | Appliance=lamp Style=non_vital\n" \
+        things = "9 | appliance | Appliance=switch Style=powered TC=9T1\nHBA | appliance | Appliance=lamp\n" \
                  "9T | appliance | Appliance=track_circuit Indication=9TK\n"
         m = desk(on_line(layout(X=interlocking(things, "", "East")), "X"), {}, [lamp("9T1K"), lamp("HBAK"), lamp("9TK")])
         got, diags, _ = stations(m)
