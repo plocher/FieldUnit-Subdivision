@@ -119,6 +119,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Christopher North",
+            "Indication": "813T1K",
             "Style": "lock",
             "TC": "813T1"
           },
@@ -142,6 +143,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Christopher North",
+            "Indication": "815T1K",
             "Style": "powered",
             "TC": "815T1"
           },
@@ -165,6 +167,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Christopher North",
+            "Indication": "815AT1K",
             "Style": "powered",
             "TC": "815AT1"
           },
@@ -268,6 +271,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Christopher South",
+            "Indication": "817T1K",
             "Style": "lock",
             "TC": "817T1"
           },
@@ -1635,6 +1639,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Corporal",
+            "Indication": "829T1K",
             "Style": "lock",
             "TC": "829T1"
           },
@@ -1725,6 +1730,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Corporal",
+            "Indication": "831T1K",
             "Style": "powered",
             "TC": "831T1"
           },
@@ -2940,6 +2946,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Gilroy Caltrain",
+            "Indication": "771T1K",
             "Style": "powered",
             "TC": "771T1"
           },
@@ -2963,6 +2970,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Gilroy Caltrain",
+            "Indication": "773T1K",
             "Style": "powered",
             "TC": "773T1"
           },
@@ -3083,6 +3091,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Gilroy Caltrain",
+            "Indication": "775T1K",
             "Style": "powered",
             "TC": "775T1"
           },
@@ -4295,6 +4304,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Gilroy North",
+            "Indication": "777T1K",
             "Style": "lock",
             "TC": "777T1"
           },
@@ -4398,6 +4408,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Gilroy South",
+            "Indication": "781T1K",
             "Style": "lock",
             "TC": "781T1"
           },
@@ -5432,6 +5443,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Luchessa",
+            "Indication": "783T1K",
             "Style": "powered",
             "TC": "783T1"
           },
@@ -5552,6 +5564,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Gilroy",
+            "Indication": "795T1K",
             "Style": "lock",
             "TC": "795T1"
           },
@@ -5595,6 +5608,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Carnadero",
+            "Indication": "799T1K",
             "Style": "powered",
             "TC": "799T1"
           },
@@ -5610,23 +5624,25 @@
             ]
           }
         },
-        "NFLK": {
+        "NFL": {
           "derived": {
             "controlPoint": "Luchessa:Luchessa"
           },
           "given": {
             "Appliance": "lamp",
             "CP Name": "Luchessa",
+            "Indication": "NFLK",
             "Style": "non_vital"
           }
         },
-        "SFLK": {
+        "SFL": {
           "derived": {
             "controlPoint": "Luchessa:Luchessa"
           },
           "given": {
             "Appliance": "lamp",
             "CP Name": "Luchessa",
+            "Indication": "SFLK",
             "Style": "non_vital"
           }
         }
@@ -6172,14 +6188,14 @@
             },
             "glyph": "Railroad-Trackplan:Switch_Powered"
           },
-          "NFLK": {
+          "NFL": {
             "at": {
               "x": 186.69,
               "y": 0.0
             },
             "glyph": "Railroad-Trackplan:AUXILIARY"
           },
-          "SFLK": {
+          "SFL": {
             "at": {
               "x": 193.04,
               "y": 0.0
@@ -7017,6 +7033,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Sargent",
+            "Indication": "835T1K",
             "Style": "lock",
             "TC": "835T1"
           },
@@ -7096,6 +7113,7 @@
           "given": {
             "Appliance": "lamp",
             "CP Name": "Sargent",
+            "Indication": "HBAK",
             "Milepost": "83.4",
             "Style": "non_vital"
           }
@@ -8107,6 +8125,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "3T1K",
             "Style": "powered",
             "TC": "3T1"
           },
@@ -8276,6 +8295,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "5T1K",
             "Style": "powered",
             "TC": "5T1"
           },
@@ -8427,6 +8447,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "7T1K",
             "Style": "powered",
             "TC": "7T1"
           },
@@ -8514,6 +8535,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "9T1K",
             "Style": "powered",
             "TC": "9T1"
           },
@@ -8537,6 +8559,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "11T1K",
             "Style": "powered",
             "TC": "11T1"
           },
@@ -8560,6 +8583,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "13T1K",
             "Style": "powered",
             "TC": "13T1"
           },
@@ -8583,6 +8607,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "15T1K",
             "Style": "powered",
             "TC": "15T1"
           },
@@ -8606,6 +8631,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "17T1K",
             "Style": "powered",
             "TC": "17T1"
           },
@@ -8629,6 +8655,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "19T1K",
             "Style": "powered",
             "TC": "19T1"
           },
@@ -8652,6 +8679,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "21T1K",
             "Style": "powered",
             "TC": "21T1"
           },
@@ -8675,6 +8703,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "23T1K",
             "Style": "powered",
             "TC": "23T1"
           },
@@ -8698,6 +8727,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "25T1K",
             "Style": "powered",
             "TC": "25T1"
           },
@@ -8764,6 +8794,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "837T1K",
             "Style": "powered",
             "TC": "837T1"
           },
@@ -8984,23 +9015,25 @@
             }
           }
         },
-        "NFLK": {
+        "NFL": {
           "derived": {
             "controlPoint": "Watsonville:Watsonville"
           },
           "given": {
             "Appliance": "lamp",
             "CP Name": "Watsonville",
+            "Indication": "NFLK",
             "Style": "non_vital"
           }
         },
-        "SFLK": {
+        "SFL": {
           "derived": {
             "controlPoint": "Watsonville:Watsonville"
           },
           "given": {
             "Appliance": "lamp",
             "CP Name": "Watsonville",
+            "Indication": "SFLK",
             "Style": "non_vital"
           }
         }
@@ -10518,14 +10551,14 @@
             },
             "rotation": 180
           },
-          "NFLK": {
+          "NFL": {
             "at": {
               "x": 134.62,
               "y": 0.0
             },
             "glyph": "Railroad-Trackplan:AUXILIARY"
           },
-          "SFLK": {
+          "SFL": {
             "at": {
               "x": 140.97,
               "y": 0.0
@@ -16433,7 +16466,7 @@
   },
   "provenance": {
     "libraries": {
-      "Railroad-Trackplan": "split-projects-final-109-g6ce30b3"
+      "Railroad-Trackplan": "split-projects-final-110-g13f7ecd"
     },
     "referenceData": {
       "driverEncodings": "2026-10-23",
@@ -16443,7 +16476,7 @@
     },
     "rules": "0.1.0",
     "source": {
-      "describe": "split-projects-final-109-g6ce30b3",
+      "describe": "split-projects-final-110-g13f7ecd",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad",
