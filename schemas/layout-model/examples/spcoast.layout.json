@@ -1521,6 +1521,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Corporal",
+            "Indication": "",
             "IndicationCeiling": "RESTRICTING/RESTRICTING",
             "Style": "manual_sensed"
           },
@@ -1663,6 +1664,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Corporal",
+            "Indication": "",
             "IndicationCeiling": "STOP/RESTRICTING",
             "Style": "derail"
           },
@@ -5588,6 +5590,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Gilroy",
+            "Indication": "",
             "IndicationCeiling": "STOP/RESTRICTING",
             "Style": "derail"
           },
@@ -6946,6 +6949,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Sargent",
+            "Indication": "",
             "IndicationCeiling": "RESTRICTING/RESTRICTING",
             "Style": "manual_sensed"
           },
