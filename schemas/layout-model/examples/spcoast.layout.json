@@ -5631,8 +5631,7 @@
           "given": {
             "Appliance": "lamp",
             "CP Name": "Luchessa",
-            "Indication": "NFLK",
-            "Style": "non_vital"
+            "Indication": "NFLK"
           }
         },
         "SFL": {
@@ -5642,8 +5641,7 @@
           "given": {
             "Appliance": "lamp",
             "CP Name": "Luchessa",
-            "Indication": "SFLK",
-            "Style": "non_vital"
+            "Indication": "SFLK"
           }
         }
       },
@@ -7114,8 +7112,7 @@
             "Appliance": "lamp",
             "CP Name": "Sargent",
             "Indication": "HBAK",
-            "Milepost": "83.4",
-            "Style": "non_vital"
+            "Milepost": "83.4"
           }
         }
       },
@@ -9022,8 +9019,7 @@
           "given": {
             "Appliance": "lamp",
             "CP Name": "Watsonville",
-            "Indication": "NFLK",
-            "Style": "non_vital"
+            "Indication": "NFLK"
           }
         },
         "SFL": {
@@ -9033,8 +9029,7 @@
           "given": {
             "Appliance": "lamp",
             "CP Name": "Watsonville",
-            "Indication": "SFLK",
-            "Style": "non_vital"
+            "Indication": "SFLK"
           }
         }
       },
@@ -16466,7 +16461,7 @@
   },
   "provenance": {
     "libraries": {
-      "Railroad-Trackplan": "split-projects-final-110-g13f7ecd"
+      "Railroad-Trackplan": "split-projects-final-111-gc948e06"
     },
     "referenceData": {
       "driverEncodings": "2026-10-23",
@@ -16476,7 +16471,7 @@
     },
     "rules": "0.1.0",
     "source": {
-      "describe": "split-projects-final-110-g13f7ecd",
+      "describe": "split-projects-final-111-gc948e06",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad",
