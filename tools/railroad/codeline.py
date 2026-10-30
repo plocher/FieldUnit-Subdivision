@@ -14,7 +14,8 @@ line each house is a station, on an AAR token line the interlocking is one.
 - **Lamps and consumer rows.** Panels define token content (the owner, 2026-10-28): what a station must send is the
   union of the indication tokens its consumers state. A lamp's or a consumer row's token belongs to the station of the
   appliance that reports it (``reporters``): on a per-house line the house that is its ``derived.controlPoint``. A lamp
-  has nothing to do with columns. Field appliances carry no tokens.
+  has nothing to do with columns. The reporter is the appliance that states the token: a track circuit its own, any
+  other field appliance through the desk device that serves it.
 """
 from __future__ import annotations
 
@@ -22,7 +23,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Iterator, Optional
 
-from tools.layout_model import reference
+from tools.layout_model import expression, reference
 from tools.layout_model.grammar import lever_class, styles
 
 StationKey = tuple[str, Optional[str]]                 # (interlocking, house); house None: the interlocking is the station
@@ -90,52 +91,82 @@ def templates(model: dict[str, Any], interlocking: Optional[str], user: Optional
 
 # ------------------------------------------------------------------------------ which appliance reports a token
 
-# INTERIM (the owner, 2026-10-28): panels define token content, so which field appliance reports a token is not yet a
-# stated fact. Until it is, the reference data's indication templates are read backwards, here and nowhere else: a
-# token is reported by an appliance of the class whose template, filled with the appliance's name (or a mast's lever),
-# gives the token (``{name}K`` a track circuit, a switch's OS circuit by its TC, a maintainer call or another lamp;
-# ``{name}NWK`` a powered switch; ``{name}WLK`` an electric lock). An appliance the dispatcher does not control reports
-# nothing of its own: a manual or manual_sensed switch, a derail, a gang follower (``grammar.lever_class``). A mast
-# reports nothing at all (the owner, 2026-10-28): a signal lever's tokens are its column's station's, so the signal
-# templates are never read backwards. To be revisited with the token rulings.
+# Reporters state what they report: an appliance reports a token because it states it, never because a template filled
+# with its name gives it. A track circuit states its own (``Indication``, ``${Name}K`` in the library). No other field
+# appliance states a token: it is matched by Name to the desk device that serves it (``derived.serves``), whose bound
+# pins' ``Indication.X`` map its tokens (``815NWK``, ``813WLK``, ``1MCK``). A field that names one token states it,
+# negated or not (``!813WLK``); an expression over several tokens is a composite the desk consumes, and reports nothing.
+# A missing field is not done yet: the token is then unresolved, never filled in. A mast reports nothing (the owner,
+# 2026-10-28): a signal lever serves no appliance, and its tokens are its column's station's.
+#
+# INTERIM: two kinds of reporter state no token anywhere yet, so for them alone the reference data's indication
+# templates are still read backwards: a switch reports its OS circuit, named by its TC (``{name}K``: ``783T1K``), and a
+# field lamp other than a maintainer call reports ``{name}K``, or its name when that ends in K (``HBAK``, ``NFLK``). To
+# be removed when they state theirs.
 
-def _matches(template: str, token: str) -> Iterator[dict[str, str]]:
-    pattern = re.escape(template).replace(re.escape("{name}"), "(?P<name>.+)").replace(re.escape("{lever}"), r"(?P<lever>\d+)")
-    m = re.fullmatch(pattern, token)
+def _stated(text: str) -> Optional[str]:
+    """The one token a field states: a single token, negated or not; None for an expression over several, or none."""
+    try:
+        tree = expression.parse(text)
+    except expression.ExpressionError:
+        return None
+    while tree[0] == "not":
+        tree = tree[1]
+    return tree[1] if tree[0] == "token" else None
+
+
+def _states(text: str, interlocking: str, token: str) -> bool:
+    """Whether a field states ``token`` (bare) of ``interlocking``; a qualified token keeps its scope."""
+    s, _, t = (_stated(text) or "").rpartition(":")
+    return bool(t) and (not s or s.casefold() == interlocking.casefold()) and t.casefold() == token.casefold()
+
+
+def _class(name: str, apps: dict[str, dict[str, Any]]) -> str:
+    g = apps.get(name, {}).get("given", {})
+    if g.get("Appliance") == "lamp":
+        return "maintainer_call" if "maintainer_call" in styles(g) else "lamp"
+    return lever_class(name, apps) or g.get("Appliance", "")
+
+
+def _matches(template: str, token: str) -> Iterator[str]:
+    """INTERIM: the names a ``{name}`` template gives ``token`` for."""
+    m = re.fullmatch(re.escape(template).replace(re.escape("{name}"), "(?P<name>.+)"), token)
     if m:
-        yield m.groupdict()
+        yield m["name"]
     if template.endswith("{name}K") and token[-1:] in ("K", "k"):
-        yield {"name": token}                          # a name that ends in K is the token already (reference.indication_of)
+        yield token                                    # a name that ends in K is the token already (reference.indication_of)
 
 
-def _candidates(cls: str, names: dict[str, str], apps: dict[str, dict[str, Any]]) -> Iterator[Reporter]:
-    n = names.get("name", "")
-    g = apps.get(n, {}).get("given", {})
-    if cls == "track_circuit":
-        if g.get("Appliance") == "track_circuit":
-            yield Reporter(cls, n, n)
-        for s, a in apps.items():
-            if a.get("given", {}).get("Appliance") == "switch" and a["given"].get("TC", "").strip() == n:
-                yield Reporter(cls, s, n)
-    elif cls in ("switch", "lock"):
-        if lever_class(n, apps) == cls:
-            yield Reporter(cls, n)
-    elif cls == "maintainer_call":
-        if g.get("Appliance") == "lamp" and "maintainer_call" in styles(g):
-            yield Reporter(cls, n)
-    elif cls == "lamp":
-        if g.get("Appliance") == "lamp" and "maintainer_call" not in styles(g):
-            yield Reporter(cls, n)
-
-
-def reporters(ix: dict[str, Any], token: str, tmpl: dict[str, tuple[str, ...]]) -> list[Reporter]:
-    """The appliances of one interlocking that can report ``token`` (bare), by the interim template lookup above."""
-    apps = ix.get("appliances", {})
+def reporters(model: dict[str, Any], interlocking: str, token: str, user: Optional[dict] = None) -> list[Reporter]:
+    """The appliances of one interlocking that report ``token`` (bare): those that state it, by their own field or their
+    desk device's, and the interim template lookup above."""
+    apps = model.get("interlockings", {}).get(interlocking, {}).get("appliances", {})
     out: list[Reporter] = []
-    for cls, temps in tmpl.items():
-        for t in temps:
-            for names in _matches(t, token):
-                out += [r for r in _candidates(cls, names, apps) if r not in out]
+
+    def found(r: Reporter) -> None:
+        if r not in out:
+            out.append(r)
+
+    for n, a in apps.items():
+        g = a.get("given", {})
+        if g.get("Appliance") == "track_circuit" and _states(g.get("Indication", ""), interlocking, token):
+            found(Reporter("track_circuit", n, n))
+    for ou in model.get("officeUnits", {}).values():
+        for dev in ou.get("devices", []):
+            b, _, n = dev.get("derived", {}).get("serves", "").partition(":")
+            if b != interlocking or n not in apps:
+                continue
+            g = dev.get("given", {})
+            if any(_states(g.get(f"Indication.{pin}", ""), interlocking, token) for pin in dev.get("relations", {}).get("bindings", {})):
+                found(Reporter(_class(n, apps), n))
+    tmpl = templates(model, interlocking, user)
+    for name in (x for t in tmpl.get("track_circuit", ()) for x in _matches(t, token)):          # INTERIM: OS circuits
+        for s, a in apps.items():
+            if a.get("given", {}).get("Appliance") == "switch" and a["given"].get("TC", "").strip() == name:
+                found(Reporter("track_circuit", s, name))
+    for name in (x for t in tmpl.get("lamp", ()) for x in _matches(t, token)):                   # INTERIM: field lamps
+        if _class(name, apps) == "lamp":
+            found(Reporter("lamp", name))
     return out
 
 
@@ -143,10 +174,9 @@ def circuit_of(model: dict[str, Any], token: str, user: Optional[dict] = None) -
     """The circuit a qualified track circuit token indicates (``Corporal:2NATK`` is ``Corporal:2NAT``), where one
     appliance of that interlocking reports it as a track circuit; None otherwise."""
     b, _, t = token.partition(":")
-    ix = model.get("interlockings", {}).get(b)
-    if ix is None:
+    if b not in model.get("interlockings", {}):
         return None
-    circuits = {r.circuit for r in reporters(ix, t, templates(model, b, user)) if r.circuit}
+    circuits = {r.circuit for r in reporters(model, b, t, user) if r.circuit}
     return f"{b}:{circuits.pop()}" if len(circuits) == 1 else None
 
 
@@ -178,7 +208,7 @@ def stations(model: dict[str, Any], user: Optional[dict] = None) -> Codeline:
             problems.append(Problem("codeline", where, f"{what} consumes {token}, but {b} is on no code line, so what it sends is unknown",
                                     (f"interlockings/{b}",)))
             return
-        reps = reporters(ixs[b], t, templates(model, b, user))
+        reps = reporters(model, b, t, user)
         if not reps:
             problems.append(Problem("unresolved", where, f"{what} consumes {token}, but no appliance of {b} reports {t}",
                                     (f"interlockings/{b}",)))
