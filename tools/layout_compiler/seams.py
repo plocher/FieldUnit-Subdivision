@@ -177,9 +177,21 @@ class Seams:
 # encoded driver's ``Kind.served`` are computed keys, so those symbols have no key field.
 KEYS = {("STRUCTURE", "CONTROL_POINT"): "CP Name", ("COLUMN", None): "Column", ("IODRIVER", None): "Address"}
 
+# A CMRInet driver states what it is in ``Kind`` (the owner, 2026-10-30): ``NODE``, keyed by its Address (its UA), or
+# one of its bits, ``IB`` or ``OB``, whose Kind is its direction. ``NodeType`` is an ordinary node setting.
+CMRI_BIT_KINDS = ("IB", "OB")
+
+
+def is_cmri_node(s: Symbol) -> bool:
+    return s.role == "IODRIVER" and s.get("IC") == "CMRI" and s.kind == "NODE"
+
+
+def is_cmri_bit(s: Symbol) -> bool:
+    return s.role == "IODRIVER" and s.get("IC") == "CMRI" and s.kind in CMRI_BIT_KINDS
+
 
 def key_field(s: Symbol) -> Optional[str]:
-    if s.role == "IODRIVER" and not s.get("NodeType") and (s.get("Bit") or s.get("IC") in ENCODING_OF_IC):
+    if s.role == "IODRIVER" and (is_cmri_bit(s) or s.get("IC") in ENCODING_OF_IC):
         return None
     return KEYS.get((s.role, s.kind)) or KEYS.get((s.role, None)) or "Name"
 
@@ -494,7 +506,7 @@ def _bus_owner(sm: Seams, s: Symbol) -> Optional[str]:
             continue
         if o.kind == "PROCESSOR":
             owners.append(key_of(o, sm.report))
-        elif o.role == "IODRIVER" and o.get("NodeType"):
+        elif is_cmri_node(o):
             t = next((tn for tn, t in sm.transports.items() if o.get("Address") in t.nodes and t.nodes[o.get("Address")].sym.ref == o.ref), None)
             owners.append(f"{t}/{o.get('Address')}" if t else None)
     owners = [o for o in owners if o]
@@ -503,7 +515,7 @@ def _bus_owner(sm: Seams, s: Symbol) -> Optional[str]:
 
 def _nodes(sm: Seams) -> None:
     for s in sm.source.where("IODRIVER"):
-        if not s.get("NodeType"):
+        if not is_cmri_node(s):
             continue
         ua = s.get("Address")
         if not ua:
@@ -534,17 +546,18 @@ def _nodes(sm: Seams) -> None:
 
 def _drivers(sm: Seams) -> None:
     for s in sm.source.where("IODRIVER"):
-        if s.get("NodeType"):
+        if is_cmri_node(s):
             continue
         ic = s.get("IC")
-        is_bit = bool(s.get("Bit"))
+        if ic == "CMRI" and not is_cmri_bit(s):
+            sm.report.missing("driver.kind", f"CMRInet driver {s.value!r}: {f'Kind {s.kind!r}' if s.kind else 'no Kind'}; NODE, IB or OB says whether it is the node or one of its bits", source=loc(s))
+            continue
+        is_bit = is_cmri_bit(s)
         if is_bit:
-            d_net = sm.source.net_of(s.ref, "D")
-            direction = next((p.pintype for p in (d_net.pins if d_net else ()) if p.ref == s.ref), "")
-            if direction not in ("input", "output"):
-                sm.report.error("bit.direction", f"CMRInet bit {s.value!r}: pin D is {direction!r}; input (IB) or output (OB) expected", source=loc(s))
+            if not s.get("Bit"):
+                sm.report.missing("bit.number", f"CMRInet {s.kind} bit {s.value!r}: no Bit; it has no key", source=loc(s))
                 continue
-            address = f"{'IB' if direction == 'input' else 'OB'}.{s.get('Bit')}"
+            address = f"{s.kind}.{s.get('Bit')}"                       # its direction is its Kind, never the pin's type
         else:
             address = s.get("Address")
             if ic in ENCODING_OF_IC:
@@ -650,7 +663,7 @@ def _columns(sm: Seams) -> None:
 def _driver_route(sm: Seams, p) -> Optional[tuple[Driver, str]]:
     """The driver whose pin this is, and the route owner/address/pin."""
     o = sm.source.symbols[p.ref]
-    if o.role != "IODRIVER" or o.get("NodeType"):
+    if o.role != "IODRIVER" or is_cmri_node(o):
         return None
     for proc in sm.processors.values():
         for d in proc.drivers.values():

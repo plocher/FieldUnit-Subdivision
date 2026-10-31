@@ -217,7 +217,7 @@
         },
         "nodes": {
           "type": "object",
-          "description": "CMRInet Nodes on this line, keyed by UA (their Address); the container is the relation (three-maps D12).",
+          "description": "CMRInet Nodes on this line, keyed by UA (their Address); the container is the relation (three-maps D12). A node and its bits are told apart by given.Kind: NODE for the node, IB or OB for a bit.",
           "propertyNames": {
             "type": "string",
             "pattern": "^[^:/\\s]+$"
@@ -229,7 +229,7 @@
       }
     },
     "cmrinetNode": {
-      "description": "A CMRInet Node: a driver on the line that provides a bus for its bits (ADR 0009 §3.5). given holds IC, NodeType, InputBytes and OutputBytes as drawn; the KiCad importer checks the declared bytes cover the bits used.",
+      "description": "A CMRInet Node: a driver on the line that provides a bus for its bits (ADR 0009 §3.5). given holds IC, Kind (NODE), NodeType (an ordinary node setting), InputBytes and OutputBytes as drawn; the KiCad importer checks the declared bytes cover the bits used.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -252,7 +252,7 @@
         },
         "bits": {
           "type": "object",
-          "description": "The bits in use, keyed IB.n or OB.n (computed from the Bit field and its pin's direction); each is a driver with one pin D.",
+          "description": "The bits in use, keyed IB.n or OB.n (computed from given.Kind, IB or OB, which is the bit's direction, and the Bit field); each is a driver with one pin D.",
           "propertyNames": {
             "type": "string",
             "pattern": "^(IB|OB)\\.\\d+$"

@@ -117,7 +117,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from kicad_services.sch_text import library_standard_properties, library_symbols  # noqa: E402
 from contract.lint_symbol_fields import MEMBERSHIP_PINS, library_bodies, lint_symbol  # noqa: E402
-from layout_compiler.seams import ENCODING_OF_IC, KEYS  # noqa: E402
+from layout_compiler.seams import CMRI_BIT_KINDS, ENCODING_OF_IC, KEYS  # noqa: E402
 
 KICAD_CLI_APP = "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
 PAGE_NAME = "library-overview.html"
@@ -446,10 +446,12 @@ def reporter_flags(s: Symbol) -> list[str]:
 def identity_field(s: Symbol) -> str | None:
     """G2: the field the KiCad importer keys the symbol by (`layout_compiler.seams.key_field`), or None where it reads
     none: a TRACK or POLICY row is identified by its id (a TRACK name is optional), the importer reads no SETTING, and
-    an encoded driver and a bit (a library symbol carries the Bit field, filled per instance) have computed keys."""
+    an encoded driver and a CMRInet bit (IC CMRI, Kind IB or OB) have computed keys; a CMRInet node (Kind NODE) is keyed
+    by its Address."""
     role = s.fields.get("Role", "")
-    if role in ("TRACK", "POLICY", "SETTING") or (role == "IODRIVER" and "NodeType" not in s.fields
-                                                  and ("Bit" in s.fields or s.fields.get("IC") in ENCODING_OF_IC)):
+    ic = s.fields.get("IC")
+    if role in ("TRACK", "POLICY", "SETTING") or (role == "IODRIVER" and ((ic == "CMRI" and s.fields.get("Kind") in CMRI_BIT_KINDS)
+                                                                          or ic in ENCODING_OF_IC)):
         return None
     return KEYS.get((role, s.fields.get("Kind"))) or KEYS.get((role, None)) or "Name"
 

@@ -750,13 +750,15 @@ class ConventionsTests(unittest.TestCase):
         joint = sym("IRJ", {"Role": "TRACK", "Kind": "IRJ"}, {1: ["A", "B"]})
         industry = sym("Industry", {"Role": "TRACK", "Kind": "INDUSTRY", "Name": "${Value}"}, {1: ["A"]})
         sign = sym("Rule251", {"Role": "POLICY", "Kind": "RULE_251"}, {1: ["A"]})
-        bit = sym("IB", {"Role": "IODRIVER", "IC": "CMRI", "Bit": ""}, {1: ["D"]})
-        cells = {s.name: c for k in overview.convention_kinds([house, bare, joint, industry, sign, bit])
+        bit = sym("IB", {"Role": "IODRIVER", "IC": "CMRI", "Kind": "IB", "Bit": ""}, {1: ["D"]})
+        node = sym("Node", {"Role": "IODRIVER", "IC": "CMRI", "Kind": "NODE", "NodeType": "C"}, {1: ["IOBus"]})
+        cells = {s.name: c for k in overview.convention_kinds([house, bare, joint, industry, sign, bit, node])
                  for s, c in zip(k.symbols, k.cells)}
         self.assertEqual(cells["House"]["Name"].flags, [])                  # keyed by CP Name, not Name
         self.assertIn("missing CP Name; the KiCad importer keys a STRUCTURE by it", cells["BareHouse"]["Name"].flags)
         for name in ("IRJ", "Rule251", "IB"):                               # a row's id, or a computed key
             self.assertEqual(cells[name]["Name"].flags, [], name)
+        self.assertIn("missing Address; the KiCad importer keys a IODRIVER by it", cells["Node"]["Name"].flags)   # Kind NODE, not NodeType
 
     def test_g3_never_asks_for_a_field_only_another_style_carries(self):
         plain = sym("TC", {"Role": "APPLIANCE", "Appliance": "track_circuit", "Name": "${Value}",
@@ -819,6 +821,22 @@ class LintMessagesTests(unittest.TestCase):
         self.assertEqual(lint_symbol("L", "S", lamp), [])
         self.assertIn("Control", overview.CONTRACT_FIELDS)
         self.assertIn("Indication", overview.CONTRACT_FIELDS)
+
+    def test_a_cmrinet_driver_states_what_it_is_in_kind(self):
+        """The owner (2026-10-30): IC CMRI carries Kind NODE, IB or OB; a node attaches by Address, a bit by Bit."""
+        from contract.lint_symbol_fields import lint_symbol
+
+        def driver(**props):
+            return {"properties": {"Role": "IODRIVER", "IC": "CMRI", "Pin.D": "binary", **props}, "pins": [("D", "1", "input")],
+                    "units": {1: ["D"]}, "locked": False, "value_autoplace": False}
+        self.assertEqual(lint_symbol("L", "Node", driver(Kind="NODE", Address="", NodeType="C")), [])
+        self.assertEqual(lint_symbol("L", "IB", driver(Kind="IB", Bit="")), [])
+        self.assertEqual(lint_symbol("L", "OB", driver(Kind="OB", Bit="")), [])
+        self.assertEqual(lint_symbol("L", "Bare", driver(Bit="")),
+                         [("error", "L:Bare: a CMRInet driver states what it is in Kind, one of NODE, IB, OB; this has none")])
+        self.assertEqual(lint_symbol("L", "Odd", driver(Kind="SENSOR", Bit="")),
+                         [("error", "L:Odd: a CMRInet driver states what it is in Kind, one of NODE, IB, OB; this has SENSOR")])
+        self.assertEqual(lint_symbol("L", "Node", driver(Kind="NODE", NodeType="C")), [("error", "L:Node: Address missing on a bus device")])
 
 
 if __name__ == "__main__":

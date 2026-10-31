@@ -25,13 +25,20 @@
     },
     "bit.direction": {
       "level": "error",
+      "lifecycle": "retired",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": "driver.kind"
+    },
+    "bit.duplicate": {
+      "level": "error",
       "lifecycle": "active",
       "since": "0.4.0",
       "feature": null,
       "replacedBy": null
     },
-    "bit.duplicate": {
-      "level": "error",
+    "bit.number": {
+      "level": "missing",
       "lifecycle": "active",
       "since": "0.4.0",
       "feature": null,
