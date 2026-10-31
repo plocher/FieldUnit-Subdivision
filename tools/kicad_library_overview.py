@@ -57,10 +57,14 @@ flagged, with its reasons inline and in its tooltip, by these rules.
 General (kept from the first audit):
 - G1 the symbols of one kind disagree in that column (Pins and Units compare as sets per unit; Other
   fields compares the field names, not their values; Tokens the field names);
-- G2 Name is absent while some kind of the same Role carries it;
+- G2 the key field the KiCad importer reads for the symbol's identity is absent (its `KEYS`: `CP Name`
+  on a house, `Address` on a driver, `Column` on a column, `Name` on the rest); a TRACK or POLICY
+  row is identified by its id (a TRACK name is optional), the importer reads no SETTING, and an
+  encoded driver or a bit has no key;
 - G3 an other field is absent while a symbol of the same family carries it (family: Role and
   Appliance, or the kind itself where there is no Appliance); lower_snake_case settings are
-  per-device and never compared, and a field the rulings below supersede is never asked for;
+  per-device and never compared, a field the rulings below supersede is never asked for, and a field
+  that only symbols of another Style carry belongs to that Style (`Members` on a virtual track circuit);
 - G4 a Pin.* field names no pin.
 
 The owner's token rulings (2026-10-28), which the libraries do not follow yet; the page shows the gap:
@@ -103,8 +107,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from kicad_services.sch_text import library_standard_properties, library_symbols  # noqa: E402
 from contract.lint_symbol_fields import MEMBERSHIP_PINS, library_bodies, lint_symbol  # noqa: E402
+from layout_compiler.seams import ENCODING_OF_IC, KEYS  # noqa: E402
 
 KICAD_CLI_APP = "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
 PAGE_NAME = "library-overview.html"
@@ -429,6 +435,17 @@ def reporter_flags(s: Symbol) -> list[str]:
     return []
 
 
+def identity_field(s: Symbol) -> str | None:
+    """G2: the field the KiCad importer keys the symbol by (`layout_compiler.seams.key_field`), or None where it reads
+    none: a TRACK or POLICY row is identified by its id (a TRACK name is optional), the importer reads no SETTING, and
+    an encoded driver and a bit (a library symbol carries the Bit field, filled per instance) have computed keys."""
+    role = s.fields.get("Role", "")
+    if role in ("TRACK", "POLICY", "SETTING") or (role == "IODRIVER" and "NodeType" not in s.fields
+                                                  and ("Bit" in s.fields or s.fields.get("IC") in ENCODING_OF_IC)):
+        return None
+    return KEYS.get((role, s.fields.get("Kind"))) or KEYS.get((role, None)) or "Name"
+
+
 def carriers_text(names: list[str], limit: int = 3) -> str:
     return ", ".join(names[:limit]) + (f" and {len(names) - limit} more" if len(names) > limit else "")
 
@@ -451,11 +468,10 @@ def convention_kinds(symbols: list[Symbol]) -> list[KindRow]:
         for s, row in zip(kind.symbols, kind.cells):
             role = s.fields.get("Role", "")
             gone = superseded(s)
-            # G2: Name absent here and carried by a kind of the same Role.
-            if "Name" not in s.fields:
-                by_role = [ref(o) for o in symbols if "Name" in o.fields and o.fields.get("Role", "") == role]
-                if by_role:
-                    row["Name"].flags.append(f"missing; Role {role} carries it on {carriers_text(by_role)}")
+            # G2: the key field the importer reads for its identity is absent.
+            key = identity_field(s)
+            if key and key not in s.fields:
+                row["Name"].flags.append(f"missing {key}; the KiCad importer keys a {role} by it")
             for f in ("Control", "Indication"):
                 if f in s.fields and f in gone:                # R1: the whole-symbol form on a lever
                     row[f].flags.append(gone[f])
@@ -470,7 +486,9 @@ def convention_kinds(symbols: list[Symbol]) -> list[KindRow]:
             # G3: a non-setting other field absent here, carried in the family, and not superseded here.
             mine = set(other_fields(s))
             family = [o for o in symbols if family_key(o) == family_key(s)]
-            wanted = {f for o in family for f in other_fields(o) if not _SNAKE_CASE.match(f)} - mine - set(gone)
+            style = s.fields.get("Style", "")
+            styled = lambda f: all(o.fields.get("Style", "") not in ("", style) for o in family if f in o.fields)
+            wanted = {f for o in family for f in other_fields(o) if not _SNAKE_CASE.match(f) and not styled(f)} - mine - set(gone)
             for f in sorted(wanted, key=str.lower):
                 row["Other fields"].flags.append(
                     f"missing {f}; carried by {carriers_text([ref(o) for o in family if f in o.fields])}")
@@ -1415,10 +1433,10 @@ Pins read name (number) electrical type = Pin.&lt;base&gt; value. A middle dot m
 </section>
 <section id="tab-conventions" hidden>
 <p class="meta">One group per kind (Role, Appliance, Kind, Style, IC as the symbols carry them), one row per symbol. A flagged
-cell (&#9873;) says why. G rules: the symbols of a kind disagree (G1); Name is missing while another kind of the same
-Role carries it (G2); another field is missing while its family carries it, settings and superseded fields excepted
-(G3); a Pin.* names no pin (G4). Token rulings of 2026-10-28: a PANEL lever states Control.&lt;pin&gt; or
-Indication.&lt;pin&gt; per function pin (R1); a model board lamp states one Indication (R2); an APPLIANCE carries no tokens
+cell (&#9873;) says why. G rules: the symbols of a kind disagree (G1); the key field the KiCad importer reads for its
+identity is missing (G2); another field is missing while its family carries it, settings, superseded fields and
+another Style's fields excepted (G3); a Pin.* names no pin (G4). Token rulings of 2026-10-28: a PANEL lever states Control.&lt;pin&gt; or
+Indication.&lt;pin&gt; per function pin (R1); a model board lamp states one Indication (R2); an APPLIANCE states what it reports
 (R3); Invert on a PANEL symbol is superseded (R4); a PANEL lamp pin states binary (R5); a retiring kind is not flagged
 (R6). Pins read base=drive; Units read
 unit [drive words]: pin bases. A dash is an absent field.</p>

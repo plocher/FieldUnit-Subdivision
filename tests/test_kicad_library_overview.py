@@ -724,6 +724,33 @@ class ConventionsTests(unittest.TestCase):
         self.assertTrue(kind.label.endswith("(retiring)"))
         self.assertEqual(kind.flagged, 0)                                   # level LAMP, IndicationToken, no Indication
 
+    def test_g2_asks_for_the_key_field_the_importer_reads(self):
+        house = sym("House", {"Role": "STRUCTURE", "Kind": "CONTROL_POINT", "CP Name": ""}, {1: ["MC"]})
+        bare = sym("BareHouse", {"Role": "STRUCTURE", "Kind": "CONTROL_POINT"}, {1: ["MC"]})
+        joint = sym("IRJ", {"Role": "TRACK", "Kind": "IRJ"}, {1: ["A", "B"]})
+        industry = sym("Industry", {"Role": "TRACK", "Kind": "INDUSTRY", "Name": "${Value}"}, {1: ["A"]})
+        sign = sym("Rule251", {"Role": "POLICY", "Kind": "RULE_251"}, {1: ["A"]})
+        bit = sym("IB", {"Role": "IODRIVER", "IC": "CMRI", "Bit": ""}, {1: ["D"]})
+        cells = {s.name: c for k in overview.convention_kinds([house, bare, joint, industry, sign, bit])
+                 for s, c in zip(k.symbols, k.cells)}
+        self.assertEqual(cells["House"]["Name"].flags, [])                  # keyed by CP Name, not Name
+        self.assertIn("missing CP Name; the KiCad importer keys a STRUCTURE by it", cells["BareHouse"]["Name"].flags)
+        for name in ("IRJ", "Rule251", "IB"):                               # a row's id, or a computed key
+            self.assertEqual(cells[name]["Name"].flags, [], name)
+
+    def test_g3_never_asks_for_a_field_only_another_style_carries(self):
+        plain = sym("TC", {"Role": "APPLIANCE", "Appliance": "track_circuit", "Name": "${Value}",
+                           "Indication": "${Name}K"}, {1: ["TC"]})
+        virtual = sym("TCV", {"Role": "APPLIANCE", "Appliance": "track_circuit", "Style": "virtual",
+                              "Name": "${Value}", "Indication": "${Name}K", "Members": "", "CP Name": ""}, {1: ["TC"]})
+        lamp = sym("Aux", {"Role": "APPLIANCE", "Appliance": "lamp", "Name": "${Value}", "Indication": "${Name}K",
+                           "CP Name": ""}, {1: ["MC"]})
+        call = sym("MCall", {"Role": "APPLIANCE", "Appliance": "lamp", "Style": "maintainer_call", "Name": "${Value}MC"},
+                   {1: ["MC"]})
+        cells = {s.name: c for k in overview.convention_kinds([plain, virtual, lamp, call]) for s, c in zip(k.symbols, k.cells)}
+        self.assertEqual(cells["TC"]["Other fields"].flags, [])                     # Members and CP Name: virtual's
+        self.assertTrue(any(f.startswith("missing CP Name") for f in cells["MCall"]["Other fields"].flags))  # unstyled lamp's
+
     def test_a_pin_field_naming_no_pin_is_flagged(self):
         pins = self.cell("TrackMCall", "Pins")
         self.assertEqual(pins.text, "Pin.MCK=level (no pin)")                     # MC is a seam pin: not listed
