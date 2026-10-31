@@ -658,9 +658,17 @@ class ConventionsTests(unittest.TestCase):
 
     def test_symbols_of_one_kind_that_disagree_are_flagged(self):
         for name in ("LampA", "LampB"):
-            self.assertTrue(any("disagree" in f for f in self.cell(name, "Pins").flags), name)       # binary vs level
-            self.assertTrue(any("disagree" in f for f in self.cell(name, "Units").flags), name)
-            self.assertFalse(self.cell(name, "Name").flags, name)                                    # both ${Value}
+            self.assertTrue(any("disagree" in f for f in self.cell(name, "Other fields").flags), name)  # Address, Invert
+            self.assertFalse(self.cell(name, "Name").flags, name)                                       # both ${Value}
+        panel = [sym(n, {"Role": "PANEL", "Appliance": "lamp", "Style": "board", "Name": "${Value}", "Indication": "",
+                         "Pin.LAMP": d}, {1: ["~{LAMP}"]}) for n, d in (("P1", "binary"), ("P2", "level"))]
+        kind = overview.convention_kinds(panel)[0]
+        self.assertTrue(all(any("disagree" in f for f in row["Pins"].flags) for row in kind.cells))   # binary vs level
+
+    def test_a_device_or_drivers_pins_and_units_are_its_hardware_and_not_compared(self):
+        for name in ("LampA", "LampB"):                                                             # binary vs level
+            self.assertFalse(any("disagree" in f for f in self.cell(name, "Pins").flags), name)
+            self.assertFalse(any("disagree" in f for f in self.cell(name, "Units").flags), name)
 
     def test_r1_a_panel_lever_states_a_token_per_function_pin(self):
         tokens = self.cell("LeverSwitch", "Tokens")

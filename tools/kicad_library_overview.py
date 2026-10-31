@@ -56,7 +56,9 @@ flagged, with its reasons inline and in its tooltip, by these rules.
 
 General (kept from the first audit):
 - G1 the symbols of one kind disagree in that column (Pins and Units compare as sets per unit; Other
-  fields compares the field names, not their values; Tokens the field names);
+  fields compares the field names, not their values; Tokens the field names); a DEVICE's or an
+  IODRIVER's Pins and Units are not compared, since the symbols of one such kind are versions of
+  the hardware and each states its own drive (owner, 2026-10-30);
 - G2 the key field the KiCad importer reads for the symbol's identity is absent (its `KEYS`: `CP Name`
   on a house, `Address` on a driver, `Column` on a column, `Name` on the rest); a TRACK or POLICY
   row is identified by its id (a TRACK name is optional), the importer reads no SETTING, and an
@@ -461,8 +463,11 @@ def convention_kinds(symbols: list[Symbol]) -> list[KindRow]:
              for k, members in sorted(groups.items())]
     ref = lambda s: f"{s.library}:{s.name}"
     for kind in kinds:
-        # G1: the symbols of one kind disagree in a column.
+        # G1: the symbols of one kind disagree in a column; a DEVICE's or IODRIVER's pins and units are its hardware.
+        hardware = kind.symbols[0].fields.get("Role") in ("DEVICE", "IODRIVER")
         for col in CONVENTION_COLUMNS:
+            if hardware and col in ("Pins", "Units"):
+                continue
             variants = {repr(row[col].key) for row in kind.cells}
             if len(variants) > 1:
                 for row in kind.cells:
