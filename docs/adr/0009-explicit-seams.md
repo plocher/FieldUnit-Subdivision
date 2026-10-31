@@ -135,6 +135,10 @@ Since we are using KiCad as a layout editor, we can use its hierarchical sheet r
 A layout-scope entity (a processor, a transport, a node) may be placed on more than one sheet; instances with
 one identity (same name and attributes (always excluding KiCad's REFDES)) are one entity. At least one instance declares; every instance that declares values for attributes must agree ; an empty attribute says nothing. This is also the rule for a wire and a field that both speak. ADR 0005 C10's duplicate-declaration error narrows to conflicting declarations.
 
+A sheet's interlocking is only the default scope for the symbols on it that state no `CP Name`[^cpname]. Explicit
+statements (`CP Name`, wires, references) override it, so several interlockings drawn on one sheet are unambiguous when
+each is stated, and that is not an error.
+
 ### 3.10 Keys the compiler reads
 
 Symbol attribute names that are used by the compiler:
@@ -189,7 +193,11 @@ Captions drawn in symbol bodies follow pin renames.
 | CMRInet Node on its line | `Driver-CMRInet-Node` connects a processor's `Transport` to an `IOBus` | the `Transport` field | UA unique per line |
 | Bit on its CMRInet Node | a `Driver-CMRInet-IB/OB` connects to an `IOBus` that originates at a `Driver-CMRInet-Node` | the one CMRInet Node on the sheet; the bit's `Node` field (the UA) when a sheet holds two, added to the library 2026-10-23 (Railroad `edits/2026-10-23-descriptions.py`), empty by default | bytes declared cover bits used |
 | Head device to its head | mast Value and `Head` letter, by name | same | vocabularies match (§3.6) |
-| Panel column to its house | `CP Name` on the column, by name | same | names resolve |
+| Panel column to its control point | `CP Name` on the column, naming its interlocking or one of its houses[^cpname] | an empty `CP Name`: the column's interlocking | names resolve |
+| Track leaves an interlocking | a `NEXT_CP` (to the next interlocking) or an `END_CTC` (to dark territory: an industry complex, a branch line)[^track] | none | a switch port or track row related to another interlocking's is an error (`reference.track`); another interlocking is reached only through its indications |
+
+A panel appliance's indication lamps (a switch's, a signal's, a maintainer call's) belong to its lever and so to the
+lever's column. A model board lamp never uses a column: its scope is the interlocking of the panel sheet it is drawn on.
 
 The first and second columns must resolve to the same thing in the "both" copy of the project, or the
 compiler reports the disagreement. The table is the test for the three copies.
@@ -242,3 +250,11 @@ nodes; a local processor as MQTT client, which Interchange now is); KiCad units 
 other transports; Studio's own notation.
 
 [^cmri-kind]: Amended 2026-10-30 (owner): CMRInet drivers state `Kind` `NODE`, `IB` or `OB` (Railroad 2ecf8a4). Before, the node was the driver with `NodeType` and a bit's direction came from its D pin's electrical type; the earlier text is at commit c3edd3c.
+
+[^cpname]: Rewritten in place on 2026-10-29 (the owner, 2026-10-28): a column's `CP Name` names its interlocking or one
+    of its houses and defaults to the interlocking; a sheet's interlocking is only a default scope; model board lamps
+    never use columns, while an appliance's indication lamps follow its lever's column. The earlier wording is at
+    commit `c3edd3c`.
+
+[^track]: Added 2026-10-29 (the owner, 2026-10-28 and 2026-10-29). Two track pins of one symbol on one wire
+    (`track.shorted`) is an import diagnostic, the KiCad importer's, not a rule here (ADR 0012 §3.3).

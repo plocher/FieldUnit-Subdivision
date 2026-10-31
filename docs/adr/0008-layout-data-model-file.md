@@ -79,7 +79,7 @@ R1 says the scope that declares a bus is a fact of the model (ADR 0005 S5: an at
 schema, layout{name, railroad, region, era, rulebook, transports{}, codelines{}, ioEncodings{}, processors{}}, interlockings{name}, officeUnits{name}, provenance
 ```
 
-The top level is the layout and the file's own head. The layout's own facts, its name, the prototype railroad and region, the era and the rulebook, are the `Railroad` symbol's (owner's ruling 2026-10-23). The layout scope holds the entities whose names are layout-wide (ADR 0009 §3.9): the transports, each with the processors that anchor it and, on a CMRInet line, its CMRInet Nodes keyed by UA; the code lines and the I/O encodings, each an encoding on a transport instance; and the processors, each with its drivers keyed by address. Each interlocking holds only railroad things: its one `codeline`; `fieldUnit.processor`; `houses{}` by control point name with milepost and maintainer call; the appliances and track (open until the trackplan piece of the compiler lands); `devices[]`, one row per device instance, with its bindings as routes; `geometry`. Each office unit holds its `style`, its `processor`, its `columns{}` by number, each naming its house or, where no `CP Name` is drawn yet, its interlocking, and its `devices[]`. Stations are derived (ADR 0009 §3.8) and absent.
+The top level is the layout and the file's own head. The layout's own facts, its name, the prototype railroad and region, the era and the rulebook, are the `Railroad` symbol's (owner's ruling 2026-10-23). The layout scope holds the entities whose names are layout-wide (ADR 0009 §3.9): the transports, each with the processors that anchor it and, on a CMRInet line, its CMRInet Nodes keyed by UA; the code lines and the I/O encodings, each an encoding on a transport instance; and the processors, each with its drivers keyed by address. Each interlocking holds only railroad things: its one `codeline`; `fieldUnit.processor`; `houses{}` by control point name with milepost and maintainer call; the appliances and track (open until the trackplan piece of the compiler lands); `devices[]`, one row per device instance, with its bindings as routes; `geometry`. Each office unit holds its `style`, its `processor`, its `columns{}` by number, each naming by `CP Name` its interlocking or one of its houses, and its interlocking when `CP Name` is empty[^cpname], and its `devices[]`. Stations are derived (ADR 0009 §3.8) and absent.
 
 | Option | For | Against |
 |---|---|---|
@@ -260,3 +260,6 @@ How the choices were made, in order:
 - The trackplan: appliances, track circuits, policies and the control point membership derived from signals; with it, the retirement of the `CP` field from the Trackplan library.
 
 [^tokens]: Amended 2026-10-29 (the owner): the token-field exception, which until then held only for a desk device's per-pin fields. The earlier wording is at `0a55b2f`.
+
+[^cpname]: Rewritten in place on 2026-10-29: a column's `CP Name` may name the interlocking itself, not only a house,
+    and an empty one means the interlocking (ADR 0009 §3.9, §3.12). The earlier wording is at commit `0a55b2f`.
