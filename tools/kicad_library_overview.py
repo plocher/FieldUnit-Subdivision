@@ -65,6 +65,8 @@ General (kept from the first audit):
   Appliance, or the kind itself where there is no Appliance); lower_snake_case settings are
   per-device and never compared, a field the rulings below supersede is never asked for, and a field
   that only symbols of another Style carry belongs to that Style (`Members` on a virtual track circuit);
+  a maintainer call is never asked for `CP Name`: its control point is the house whose MC wire
+  reaches it, so the field could only repeat or contradict the wire (owner, 2026-10-30);
 - G4 a Pin.* field names no pin.
 
 The owner's token rulings (2026-10-28), which the libraries do not follow yet; the page shows the gap:
@@ -489,6 +491,8 @@ def convention_kinds(symbols: list[Symbol]) -> list[KindRow]:
             style = s.fields.get("Style", "")
             styled = lambda f: all(o.fields.get("Style", "") not in ("", style) for o in family if f in o.fields)
             wanted = {f for o in family for f in other_fields(o) if not _SNAKE_CASE.match(f) and not styled(f)} - mine - set(gone)
+            if s.fields.get("Style") == "maintainer_call":            # its house is the one whose MC wire reaches it
+                wanted.discard("CP Name")
             for f in sorted(wanted, key=str.lower):
                 row["Other fields"].flags.append(
                     f"missing {f}; carried by {carriers_text([ref(o) for o in family if f in o.fields])}")

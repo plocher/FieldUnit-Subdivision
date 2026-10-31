@@ -749,7 +749,7 @@ class ConventionsTests(unittest.TestCase):
                    {1: ["MC"]})
         cells = {s.name: c for k in overview.convention_kinds([plain, virtual, lamp, call]) for s, c in zip(k.symbols, k.cells)}
         self.assertEqual(cells["TC"]["Other fields"].flags, [])                     # Members and CP Name: virtual's
-        self.assertTrue(any(f.startswith("missing CP Name") for f in cells["MCall"]["Other fields"].flags))  # unstyled lamp's
+        self.assertEqual(cells["MCall"]["Other fields"].flags, [])          # its house's MC wire, not CP Name
 
     def test_a_pin_field_naming_no_pin_is_flagged(self):
         pins = self.cell("TrackMCall", "Pins")
