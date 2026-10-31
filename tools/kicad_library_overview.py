@@ -56,7 +56,8 @@ flagged, with its reasons inline and in its tooltip, by these rules.
 
 General (kept from the first audit):
 - G1 the symbols of one kind disagree in that column (Pins and Units compare as sets per unit; Other
-  fields compares the field names, not their values; Tokens the field names); a DEVICE's or an
+  fields compares the field names, not their values, and never the lower_snake_case settings, as
+  in G3; Tokens the field names); a DEVICE's or an
   IODRIVER's Pins and Units are not compared, since the symbols of one such kind are versions of
   the hardware and each states its own drive (owner, 2026-10-30);
 - G2 the key field the KiCad importer reads for the symbol's identity is absent (its `KEYS`: `CP Name`
@@ -411,7 +412,8 @@ def symbol_cells(s: Symbol) -> dict[str, Cell]:
     cells["Units"] = Cell("; ".join(f"{u}{f' [{w}]' if w else ''}: {' '.join(n)}" for u, w, n in units),
                           tuple((u, w, tuple(sorted(n))) for u, w, n in units))
     other = other_fields(s)
-    cells["Other fields"] = Cell(", ".join(f"{f}={s.fields[f]}" if s.fields[f] else f for f in other), frozenset(other))
+    cells["Other fields"] = Cell(", ".join(f"{f}={s.fields[f]}" if s.fields[f] else f for f in other),
+                                 frozenset(f for f in other if not _SNAKE_CASE.match(f)))   # G1: settings are per-device
     return cells
 
 

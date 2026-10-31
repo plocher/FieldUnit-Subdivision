@@ -665,6 +665,12 @@ class ConventionsTests(unittest.TestCase):
         kind = overview.convention_kinds(panel)[0]
         self.assertTrue(all(any("disagree" in f for f in row["Pins"].flags) for row in kind.cells))   # binary vs level
 
+    def test_g1_never_compares_settings(self):
+        devices = [sym(n, {"Role": "DEVICE", "Appliance": "track_circuit", "Name": "${Value}", **f}, {1: ["IND"]})
+                   for n, f in (("Current", {}), ("Optical", {"hold_ms": "1500"}))]
+        kind = overview.convention_kinds(devices)[0]
+        self.assertFalse(any(row["Other fields"].flags for row in kind.cells))
+
     def test_a_device_or_drivers_pins_and_units_are_its_hardware_and_not_compared(self):
         for name in ("LampA", "LampB"):                                                             # binary vs level
             self.assertFalse(any("disagree" in f for f in self.cell(name, "Pins").flags), name)
