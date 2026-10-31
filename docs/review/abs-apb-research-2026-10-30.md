@@ -332,24 +332,34 @@ Keys already in the glossary and reused here: AAR56, AARLIST, CFR236 (extended),
 | CFR236 | 49 CFR 236 Subpart G definitions (current text) | ecfr.gov | modern definitions (block, home, approach, traffic locking, current of traffic) |
 | LUNDSTEN | Lundsten, C., "North American Signaling: ABS/APB" | lundsten.dk/us_signaling/abs_apb/ | modern pointer, "tumble-down" |
 | RAILPIX | RailPictures.net forum, photo 740533 | forums.railpictures.net/photo/740533 | SLO-Santa Margarita first SP CTC (unverified) |
+| OWNER | The owner's answers to the open questions, 2026-10-30, `docs/review/Answers-abs-apb.txt` | this repository | section 5; accepted as good enough for this research |
 
 Sources counted: 31 keys in the table above (including reused AAR56 and CFR236), plus PRR56, AARLIST, RS1944 reused from the glossary.
 
-## 5. Open questions for the owner
+## 5. Owner's answers (2026-10-30)
 
-1. Who invented APB at GRS (Howe, Hoyt, Cox)? Only W. K. Howe appeared, in a search snippet.
-2. Does the AAR text (Ch. XV, Block Signal Systems) define "head block", "intermediate" and "tumble-down"? Only the 1967 summary was read.
-3. What is SP's rule number and text for the stop-and-proceed indication on automatic signals, 1942-1985?
-4. Did SP have a 261-type rule and CTC rules in its own book, and with which numbers (1942, 1960, 1980)?
-5. What do SP number plates "reversed, showing yellow" mean (SP 1960 Form Z)?
-6. Is the unnamed 1942 SP CTC article about San Luis Obispo to Santa Margarita?
-7. Where on the SP Coast Division (South) was APB in service between CTC sections, and when was each piece converted to CTC?
-8. Did SP Coast double track (e.g., San Jose-Lick, College Park) run current-of-traffic D-251 or either-direction signalling by timetable, 1942-1985?
-9. Was APB ever applied per track on dispatcher-controlled double track, or always single-track ABS plus traffic locking (Erie style)?
-10. On SP CTC, did the dispatcher see intermediate block occupancy, or only OS circuits (1942 shows OS only; later machines may differ)?
-11. Did SP use separate distant signals (D-plate) at every CTC station-entering signal, or only where sighting was short?
-12. What does RGPR mean in the SP 1945 line circuits that "extend beyond C.T.C. limits"?
-13. What does the SP triangular marker plate at Lick (1939) designate: detector "P", or another meaning?
-14. Is the Standard Code D-251/D-261 double-track wording quoted in 1925 the same in the Code editions SP used?
-15. How did SP set direction on two-track CTC sections: traffic levers, or signal levers alone (San Jose 1939 used signal levers)?
-16. Do the owner's period documents give the AAR or US&S name for the relay that reports a whole station-to-station block clear to the CP?
+The owner answered the open questions in `Answers-abs-apb.txt` beside this note and ruled them good enough for the
+purpose of this research [OWNER]. They are not all from period documents. Where one conflicts with a source above,
+the conflict is noted; the owner's answer governs the ADR.
+
+1. APB inventor: Sedgwick N. Wight, GRS, about 1911; patent filed 1913.
+2. AAR Ch. XV terms: head block (the absolute signal at a siding end entering the block; a train passing it puts the opposing head block to stop), intermediate (the signals between, for following moves), tumble-down (opposing intermediates and head block fall to stop back to the next siding).
+3. SP stop-and-proceed on automatic signals: Rule 509 until GCOR (October 25, 1985), then 291. Conflicts with the SP 1960 aspect numbering read above (Rule 290 Stop) [SP1960].
+4. SP CTC rules: the 760 series (760 to 778); Rule 760 is SP's functional equivalent of a 261-type rule; ABS under 505. SP had a literal 261 only under GCOR from 1985.
+5. SP number plate "reversed, showing yellow": a train may pass the signal at stop without stopping, with caution, as a grade signal or special instruction.
+6. The unnamed 1942 article: possibly San Luis Obispo to Santa Margarita; not needed for this work.
+7. APB on the Coast Division: SLO to Santa Margarita was the first CTC (1942); APB stayed between CTC islands, North Salinas to South Santa Margarita and South San Luis Obispo to Ellwood, and a short piece Oxnard to Montalvo. The conversions are after SPCoast's era.
+8. SP double track near San Jose: College Park to Santa Clara either-direction under tower interlocking rules; San Jose to Lick an extended interlocking worked by the San Jose operator, by signal indication either way (CTC in the 1980s); the Peninsula north of Santa Clara D-251 current of traffic.
+9. APB per track on double track: never on SP. Each track was single-track ABS with traffic locking between controlled interlockings or towers; the traffic lock holds the opposing signals at stop, so no tumble-down is needed.
+10. What the SP CTC dispatcher saw: each OS circuit individually, and each station-to-station block as one combined occupancy indication, not its intermediate track circuits; code line capacity was the reason. Later electronic CTC showed intermediate blocks.
+11. SP distant signals with a D plate: only on the approach from unsignalled territory to CTC or interlocking limits. Within signalled territory the preceding automatic signal (standard number plate) is the approach signal. Conflicts with the separate distant signal 7 of [RS1942].
+12. RGPR: the relay repeating a signal mechanism at stop (red repeater).
+13. Lick's triangular plate: a signal worked by a protective device; at the end of double track, probably a spring switch.
+14. The 1925 D-251/D-261 wording: the same in the Code editions SP used.
+15. Direction on SP CTC, one or two tracks: set by the signal levers (with the switch levers) and the code button; no separate traffic lever. The field logic checks the block vacant and sets the directional locking.
+16. The relay reporting a whole station-to-station block clear: BPR, block repeater relay; with TR/TPR (track) and FR/FSR (traffic, traffic stick).
+
+Consequences for the facts above:
+- F2 holds and sharpens: a CP knows its own OS circuits; the block between two stations reaches the office as one indication (a block repeater), not as its track circuits.
+- F5 and G: inside signalled territory, the automatic signal in the rear of a CP home is that home's approach signal; a separate D-plate distant marks the approach from unsignalled territory.
+- C: on SP CTC the signal levers set direction; traffic levers belong to the tower-era either-direction installations.

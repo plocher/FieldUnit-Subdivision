@@ -1,0 +1,456 @@
+On SP CTC, did the dispatcher see intermediate block occupancy, or only OS circuits (1942 shows OS only; later machines may differ)?
+	On Southern Pacific (SP) Centralized Traffic Control (CTC),
+	the dispatcher could see intermediate block occupancy across
+	the entire station-to-station block, but they typically saw
+	it as a single, combined block indicator rather than
+	individual intermediate sections.
+
+	While the dispatcher saw every exact movement through
+	individual OS (Over-Switch / Detector) circuits at control
+	points, the space between sidings functioned a bit differently
+	on the classic Union Switch & Signal (US&S) model boards:
+
+	1. The OS Circuits (The Absolute Indication)
+
+	-  What they saw: Individual, exact track lights for each
+	   switch and interlocking layout.
+	-  Purpose: This showed the dispatcher precisely when a
+	   train was clearing a switch or entering a siding. It was
+	   paired with a single-stroke bell to audibly announce that
+	   a train was "on sheet" (OS).
+
+	2. The Station-to-Station Intermediate Blocks (The Combined Indication)
+
+	-  What they saw: On classic SP US&S CTC machines, the
+	   entire stretch of track between two controlled siding
+	   switches (which might contain multiple individual intermediate
+	   automatic blocks) was grouped together on the board into
+	   one or two "Approach" or "Track Occupancy" lamps.
+	-  The Logic: If a train entered any part of the intermediate
+	   territory between Siding A and Siding B, the entire
+	   intermediate track indicator lamp on the board would light
+	   up.
+	-  Why it was built this way: Classic code-line systems
+	   (like US&S Time Code) had limited bandwidth. Transmitting
+	   every single intermediate block's occupancy back to the
+	   office required a massive amount of code pulses and field
+	   equipment. Because the dispatcher couldn't change the
+	   intermediate signals anyway (they were fully automatic),
+	   knowing exactly which intermediate block the train was in
+	   wasn't strictly necessary—they just needed to know that the
+	   block between the two stations was occupied.
+	   As technology advanced into the late 20th century with
+	   electronic CTC and CRT display screens, individual
+	   intermediate block occupancy became much more common,
+	   but on classic SP hardware, it was heavily consolidated.
+
+Is the unnamed 1942 SP CTC article about San Luis Obispo to Santa Margarita?
+	Possibly.  Fore this effort, we don't care
+
+What does the SP triangular marker plate at Lick (1939) designate: detector "P", or another meaning?
+	On the Southern Pacific (SP) Railroad, a triangular marker
+	plate (or triangular number plate) designated a signal
+	actuated by a special protective device.
+
+	While it directly corresponds to what would later be broadly
+	known as a "P" (Protect) detector signal, under the 1939
+	SP rules, the shape of the plate itself was the identifier.
+
+	Depending on the location, these plates protected against
+	hazards such as slide detector fences, fire/bridge detectors,
+	high water detectors, or local mechanical configurations
+	like spring switches
+
+	Being the end of double track, Lick probably had a spring switch.
+
+Was APB ever applied per track on dispatcher-controlled double track, or always single-track ABS plus traffic locking (Erie style)?
+
+	On the Southern Pacific (SP), Absolute Permissive Block
+	(APB) was never applied per track on dispatcher-controlled
+	double track.  Instead, bidirectional operation on double-track
+	territories prior to full Centralized Traffic Control (CTC)
+	always utilized single-direction ABS circuitry paired with
+	traffic locking between controlled interlockings or towers.
+
+	Why APB Was Not Used on Double Track
+
+	By definition, APB is a single-track signaling solution
+	designed specifically to handle opposing train movements
+	between hand-operated sidings without direct dispatcher
+	intervention or controlled absolute signals at intermediate
+	locations.  It works via "tumbledown" circuitry.  When a
+	train enters a single-track block, it automatically knocks
+	down all opposing intermediate signals to red to the next
+	siding while keeping following signals permissive.  Applying
+	APB "per track" on double track would be structurally
+	redundant and behaviorally problematic:
+	 - The Role of the Dispatcher: In a "dispatcher-controlled"
+	 scenario, directionality is established by human authority
+	 (or interlockings), not by a train tripping automatic
+	 tumbledown logic.
+	 - Traffic Locking Overrides the Need for Tumbledown: Instead
+	 of relying on a train's physical entry to tumble down
+	 opposing signals, the SP used Traffic Locking (lever-controlled
+	 circuits between adjacent interlockings or operators).
+
+	How SP Signaled Bidirectional Double Track
+
+	When the SP wanted the ability to run trains in either
+	direction on both tracks of a double-track line (before
+	full CTC installations), they used one of two primary
+	methods:
+	1. Rule 251 (Current of Traffic): The standard
+	double-track setup.  One track was signaled exclusively
+	eastward, the other exclusively westward using standard
+	single-direction ABS.  Running against the current of traffic
+	required a Train Order and careful manual blocking.
+	2. Bidirectional ABS with Traffic Locking: To achieve
+	dispatcher-controlled bidirectional running on double track,
+	each of the two tracks was fundamentally treated as an
+	isolated piece of "single-track ABS" bounded by controlled
+	interlocking plants.  The operators or dispatchers used
+	traffic levers to determine the direction of traffic on a
+	given track.  Once a direction was locked in:
+	 - The signals governing the chosen direction behaved
+	 exactly like standard single-direction ABS (allowing
+	 permissive following moves).  - The opposing signals
+	 for that track were locked out completely at red.
+	 - A train could not accidentally trip an APB style
+	 "tumbledown" because the opposing signals were
+	 already suppressed by the traffic lock itself.
+
+	Eventually, these traffic-locked setups were modernized
+	into standard Rule 261 / Traffic Control System (TCS) /
+	Centralized Traffic Control (CTC), where the dispatcher
+	directly lined power switches and cleared absolute signals
+	at crossovers, eliminating the older standalone traffic-locking
+	arrangements.
+
+Did SP use separate distant signals (D-plate) at every CTC station-entering signal, or only where sighting was short?
+
+	No, Southern Pacific (SP) did not use separate distant
+	signals with a "D" plate at every CTC station-entering
+	signal.
+	Per Southern Pacific's official rulebooks, a Distant Signal
+	(identified by a letter "D" preceding the number on the
+	number plate) was strictly defined as a fixed signal used
+	outside of a block system.
+	Here is how SP's signaling logic applied to CTC station-entering
+	signals:
+	 -  From Non-Signaled (Dark) Territory: If a train was
+	 approaching the very beginning of CTC or interlocking
+	 limits from an unsignaled branch or line, SP installed a
+	 distant signal equipped with a "D" plate. This warned the
+	 crew that they were approaching a controlled absolute
+	 signal and needed to be prepared to comply with its
+	 indication.
+	 -  Within Signaled Territory (ABS or CTC): If the CTC
+	 station-entering signal was located within continuously
+	 signaled territory, a dedicated "D" plate was not used.
+	 Instead, the standard Automatic Block Signal (ABS) preceding
+	 the station served as the approach signal. These signals
+	 used a standard number plate (without a "D") and seamlessly
+	 provided the necessary advance warnings (such as Approach
+	 or Advance Approach) based on the state of the upcoming
+	 CTC station signal.
+
+	 In summary, "D" plates were only used as transitional
+	 warnings when moving from dark territory into signaled
+	 territory, rather than at every interior CTC station.
+
+Is the Standard Code D-251/D-261 double-track wording quoted in 1925 the same in the Code editions SP used?
+	Yes
+
+How did SP set direction on two-track CTC sections: traffic levers, or signal levers alone (San Jose 1939 used signal levers)?
+	On Southern Pacific (SP) Centralized Traffic Control (CTC)
+	sections—including multi-track or two-track territory—direction
+	of traffic was set by the signal levers (and switch levers),
+	rather than a separate, dedicated "traffic lever".
+
+	How SP CTC Control Worked
+
+	-  Signal Levers Determine Direction: On an SP CTC machine
+	console, each control point (OS section) used a multi-position
+	signal lever (typically having Left, Stop/Center, and Right
+	positions). Clearing a signal to the left (L) or right (R)
+	established and locked the direction of traffic for that
+	block segment.
+	-  No Separate Traffic Levers: Unlike some mechanical
+	interlockings or specific Eastern/Midwestern CTC systems
+	that used a distinct physical "traffic lever" or "crossing
+	lever" to pre-set or reverse the flow of traffic between
+	plants, SP's standard US&S and GRS-style CTC panels integrated
+	the traffic-locking logic directly into the interaction
+	between the signal lever, switch (turnout) lever, and the
+	field-signaling interlocking logic.
+	-  Code Button Execution: Moving the signal lever to L or
+	R selected the desired route, and pressing the Code button
+	sent the electrical command to the field. The remote
+	interlocking logic then checked that the blocks were vacant
+	and set the directional locking automatically.
+
+Do the owner's period documents give the AAR or US&S name for the relay that reports a whole station-to-station block clear to the CP?
+
+	In traditional North American railroad signaling standard
+	nomenclature (defined by the Association of American Railroads
+	/ AAR and systems designed by Union Switch & Signal / US&S),
+	the relay that reports a whole station-to-station block
+	clear to a Control Point is the BPR (Block Repeater Relay).
+
+	System Context & Breakdown
+
+	 -  BPR (Block Repeater Relay): This relay acts as a master
+	 repeater that checks all individual track circuits within
+	 a specific block segment stretching between stations. It
+	 stays energized only when the entire stretch is clear.
+	 -  The "Clear" Indication: When the whole station-to-station
+	 block is unoccupied, the BPR energizes, allowing the system
+	 to send a "block clear" code or steady signal current back
+	 to the Control Point (CP) or dispatcher's console.
+
+	Related Key Relay Names
+
+	If the system uses directional traffic locking or complex
+	Vital Serial Transmission (like coded track circuits), you
+	will frequently see it paired with:
+	 -  TR / TPR (Track Relay / Track Repeater Relay): Monitors localized track segments.
+	 -  FR / FSR (Traffic Relay / Traffic Stick Relay): Establishes the safe direction of train movement between the two stations. 
+
+What do SP number plates "reversed, showing yellow" mean (SP 1960 Form Z)?
+	In Southern Pacific (SP) railroad operations, when an
+	automatic block signal number plate is reversed, showing
+	yellow, it means that if the signal indicates "stop," a
+	train may proceed through the block with caution without
+	stopping.
+
+	Key Details & Context
+
+	 - Rule Function: Under standard automatic block signal
+	 rules, a "stop" indication requires a train to come to a
+	 complete stop before moving forward under a restricted
+	 speed or caution rule.
+	 - The Exception: The physical act of reversing the number
+	 plate to show its yellow side essentially converts the
+	 signal's absolute or stop-and-proceed requirement into a
+	 "permissive" grade signal or special instruction. This
+	 allows heavy or specific trains to maintain momentum and
+	 bypass the physical stop while still strictly adhering to
+	 caution and being prepared for an obstruction ahead.
+
+Did SP Coast double track (e.g., San Jose-Lick, College Park) run current-of-traffic D-251 or either-direction signalling by timetable, 1942-1985?
+
+	During the 1942–1985 era, the Southern Pacific Coast Division
+	handled its double-tracked segments near San Jose using a
+	hybrid approach depending on the specific bottleneck.
+
+	The Operational Breakdown
+
+	- College Park to Santa Clara (and San Jose Cahill Street
+	(https://www.google.com/search?kgmid=%2Fm%2F08s1g8)): This
+	segment operated with either-direction signaling (bidirectional
+	running) managed by interlocking towers. It did not use
+	standard D-251 current-of-traffic rules. Because this
+	2.6-mile stretch bottlenecked commute trains, heavy freights
+	off the Mulford line, and the Coast Starlight, it featured
+	multiple tracks (expanding to passenger and freight mains)
+	controlled closely by College Park Tower  and Santa Clara
+	Tower. Tower operators could line up routes and clear signals
+	for movements in either direction on any track via interlocking
+	rules.
+	- San Jose to Lick: This segment was controlled as an
+	extensive, extended interlocking plant. The San Jose operator
+	controlled the switches and absolute signals from just east
+	of Auzerais Street down to Lick. Because it was operated
+	under interlocking rules rather than automatic block signaling
+	(ABS) current-of-traffic, movements were governed entirely
+	by signal indication in either direction. This territory
+	was formally rebranded as Centralized Traffic Control (CTC)
+	in the early to mid-1980s.
+	- The Rest of the Peninsula Mainline (North of Santa Clara):
+	In contrast to the busy San Jose hubs, the standard
+	double-track mainline stretching up the Peninsula to San
+	Francisco primarily relied on Rule D-251 (Current of Traffic).
+	Trains ran right-handed under automatic block signals,
+	utilizing train orders or timetable authority if they needed
+	to run against the current of traffic.
+
+Does the AAR text (Ch. XV, Block Signal Systems) define "head block", "intermediate" and "tumble-down"? Only the 1967 summary was read.
+	Yes, the Association of American Railroads (AAR) American
+	Railway Signaling Principles and Practices (specifically
+	Chapter XV: Block Signal Systems) and standard signal
+	engineering reference material address and explain these
+	terms, though formal definitions vary between explicit
+	glossary entries and functional circuit descriptions:
+	 - Head Block (Signal): The absolute or governing signal
+	 located at the entrance of a siding or block section (often
+	 referred to in Absolute Permissive Block [APB] systems as
+	 the head-block signal governing opposing or following
+	 movements between sidings). When a train passes a head
+	 block signal, it causes the opposing head block signal to
+	 display a Stop aspect.
+	 - Intermediate (Signal): The signals located in the-between
+	 space (the section between sidings or head blocks) that
+	 divide a longer block into multiple shorter sections to
+	 govern following train movements.
+	 - Tumble-Down (Circuit / Action): The safety circuit and
+	 functional sequence in APB signaling where, as soon as a
+	 train enters a block past a siding, all opposing intermediate
+	 and head block signals automatically "tumble down" to a
+	 restrictive (Red / Stop) aspect all the way back to the
+	 next siding or interlocking to prevent opposing movements
+	 ("cornfield meets").
+
+What is SP's rule number and text for the stop-and-proceed indication on automatic signals, 1942-1985?
+	Between 1942 and 1985, the Southern Pacific Railroad (SP)
+	operated primarily under its classic Operating Department
+	rulebooks (including the famous 1943 edition and the 1969
+	"Black Book" revision).
+	During this era, the specific rule number governing the
+	Stop and Proceed indication on automatic signals was Rule
+	509.
+	The exact text and indication instructions for the rule
+	varied depending on whether it was a single-track or
+	double-track line:
+
+	Rule 509 Text & Indication
+
+	- Name & Aspect: Stop and Proceed (indicated by a red aspect
+	on a signal carrying a number plate).
+	- Core Indication: "Stop, then proceed at Restricted speed."
+
+	1. On Double Track (Two or More Tracks)
+
+	"When an automatic block signal indicates 'Stop', a train
+	or engine may, after stopping, proceed at restricted speed."
+
+	2. On Single Track
+
+	Because a red signal on a single-track line could indicate
+	an oncoming train heading right toward you, the rule text
+	was much stricter and required flagging ahead if communication
+	failed:
+	"When an automatic block signal indicates 'Stop', a train
+	or engine must stop. If the communication is available, the
+	conductor or engineer must contact the train dispatcher...
+	If communication fails, the train may proceed preceded by
+	a flagman to the next signal displaying a proceed indication."
+	(In later variations, once it was clear no opposing train
+	was in the block, it permitted proceeding at restricted
+	speed not exceeding 12 mph).
+
+	Transition in 1985
+
+	On October 25, 1985, Southern Pacific officially adopted
+	the first edition of the General Code of Operating Rules
+	(GCOR). At this precise date, the rule number changed from
+	Rule 509 to Rule 291 to conform to standard rule numbering
+	used by other major Western railroads.
+
+Did SP have a 261-type rule and CTC rules in its own book, and with which numbers (1942, 1960, 1980)?
+	Yes, the Southern Pacific Railroad (SP) did have Centralized
+	Traffic Control (CTC) rules in its own book, but it handled
+	the "Rule 261" concept differently than many other railroads.
+	Before adopting the standardized General Code of Operating
+	Rules (GCOR) in 1985, the Southern Pacific operated under
+	its own custom "Rules and Regulations of the Transportation
+	Department" (such as the famous 1943, 1960, and 1976
+	editions).
+	The breakdown of how SP mapped these specific rules reveals
+	a few key distinctions:
+
+	1. Centralized Traffic Control (CTC) Rules
+
+	Southern Pacific dedicated an entire distinct section of
+	its own rulebook to CTC.
+	- In SP's historic rulebooks, CTC was usually governed by
+	the 760-series rules (spanning Rules 760 through 778).
+	- These rules explicitly stated that within designated CTC
+	limits, block signal indications superseded the traditional
+	superiority of trains for both opposing and following
+	movements. They defined how engineers interacted with
+	absolute signals, how to request dual-control switches to
+	be thrown into "hand" operation, and how to obtain authority
+	to pass a red absolute signal.
+
+	2. The "Rule 261" Equivalence
+
+	On many railroads utilizing the AAR Standard Code of Operating
+	Rules, Rule 261 is the specific, universal rule that legally
+	authorizes trains to run in both directions on a track
+	entirely by signal indication (without train orders or track
+	warrants).
+	- SP's Rule Numbering: Because the Southern Pacific formatted
+	its own custom rulebook layout, it did not have a "Rule
+	261" that meant bidirectional signaling. In the classic SP
+	books, Rule 505 governed traditional Automatic Block Signal
+	(ABS) territory, while Rule 760 served as the direct
+	functional equivalent to Rule 261 by providing the signal-based
+	authority for CTC.
+	- The GCOR Era: This shifted on October 25, 1985, when the
+	Southern Pacific officially retired its individual rulebook
+	and became a charter member using the GCOR. From 1985 until
+	its merger into Union Pacific, SP did have an literal Rule
+	261, as it was built directly into the standard GCOR
+	formatting for bidirectional signaled tracks.
+
+What does RGPR mean in the SP 1945 line circuits that "extend beyond C.T.C. limits"?
+   RGPR stands for Relay repeating signal mechanism at stop (often referred to as the red/stop repeater relay).
+	What RGPR Does
+	- Repeats Stop Aspect: It is a repeating relay that detects and proves whether a specific signal mechanism is currently in the STOP (Red) position.
+	- Function Beyond C.T.C. Limits: Where C.T.C. (Centralized Traffic Control) lines interface or extend into Automatic Block Signaling (ABS) territory, the RGPR ensures that safety logic, approach locking, or indication circuits accurately know when the field signal is displaying a stop indication
+
+
+Who invented APB at GRS (Howe, Hoyt, Cox)? Only W. K. Howe appeared, in a search snippet.
+	- Sedgwick N. Wight invented the Absolute Permissive Block (APB) system while working for the General Railway Signal Company (GRS).  He came up with the innovation around 1911 and subsequently filed the system's patent on behalf of the company in 1913.
+
+Where on the SP Coast Division (South) was APB in service between CTC sections, and when was each piece converted to CTC?
+	On the single-track portions of the Southern Pacific (SP)
+	Coast Line, single-track Automatic Block Signaling (ABS)
+	functioned using the Absolute Permissive Block (APB) design
+	principle (the "tumbledown" method). This system prevented
+	opposing head-on train movements between sidings while
+	allowing following movements.
+
+	Over the decades, SP and later Union Pacific (UP) addressed
+	the main single-track bottlenecks by installing Centralized
+	Traffic Control (CTC) "islands", which left two major APB
+	segments in service between them for a long period of time.
+
+	1. Cuesta Grade Gaps (Salinas to Santa Margarita & San Luis Obispo to Ellwood)
+
+	The first true CTC installation on the Coast Division was
+	over the rugged Cuesta Grade between San Luis Obispo and
+	Santa Margarita, completed in 1942 to handle heavy World
+	War II traffic. This created CTC islands that split the
+	surrounding territory into distinct APB gaps:
+	 -  North Salinas to South Santa Margarita (120.1 miles):
+	    This long single-track section remained governed by
+	    APB/ABS (and later combined with Track Warrant Control)
+	    until Union Pacific systematically updated the line to
+	    full CTC in the early 2000s (predominantly between 2004
+	    and 2007) to improve capacity for Amtrak’s Coast Starlight
+	    and freight movements.
+	 -  South San Luis Obispo to Ellwood / Goleta (104.4 miles):
+	    This coastal single-track segment also operated under
+	    APB/ABS. Aside from a minor 1-mile CTC island installed
+	    at the Gaviota siding, this section stood as a classic
+	    searchlight-signaled APB gap until UP completely converted
+	    it to bi-directional CTC and upgraded the lineside
+	    infrastructure in the mid-to-late 2000s.
+
+	2. Oxnard to Montalvo
+
+	 -  The Segment: A short but historically unique 5-mile APB
+	    application existed on the Coast Line between Oxnard and
+	    Montalvo.
+	 -  SP's Special Rules: On this piece, SP specifically
+	    implemented APB rules that allowed the wayside signals to
+	    directly authorize train movements (superseding timetable
+	    and train order rights) to handle traffic transitioning
+	    from the yard at Oxnard and the junction with the Santa
+	    Paula Branch at Montalvo.
+	 -  Conversion: This bottleneck area was wrapped into wider
+	    regional Southern California signaling projects and fully
+	    modernized into standard CTC by the late 20th century under
+	    SP and Metrolink/UP coordination.
+
