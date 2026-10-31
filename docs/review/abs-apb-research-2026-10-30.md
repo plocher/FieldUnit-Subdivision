@@ -363,3 +363,29 @@ Consequences for the facts above:
 - F2 holds and sharpens: a CP knows its own OS circuits; the block between two stations reaches the office as one indication (a block repeater), not as its track circuits.
 - F5 and G: inside signalled territory, the automatic signal in the rear of a CP home is that home's approach signal; a separate D-plate distant marks the approach from unsignalled territory.
 - C: on SP CTC the signal levers set direction; traffic levers belong to the tower-era either-direction installations.
+
+## 6. Discrepancies resolved (owner, 2026-10-30)
+
+SP was frugal and its practice was not uniform: a rule says what it names, never that every location followed it
+[OWNER]. Read "only" and "always" above in that light.
+
+1. Distant signals (answer 11 against [RS1942]). No conflict. [RS1942] calls signal 7 "distant" for its job; by
+   the SP rulebook a Distant Signal (D plate) is one outside a block system, so signal 7 is an automatic signal with
+   a number plate doing the approach job. For the model: the approach signal of a home is derived (the signal in the
+   rear of the home along the track, in the direction of travel), never drawn; a D-plate distant is drawn only where
+   unsignalled track enters CTC or interlocking limits; extra heads that repeat route information are an aspect
+   matter of the signal's heads, not a kind of signal.
+2. Rule numbers (answers 3 and 4 against [SP1960]). No conflict: SP's aspect rules (281 to 298) define aspects,
+   Rule 509 the crew's action at an automatic signal at stop, the 760 series CTC; the numbering is SP's own. For the
+   model: rule numbers belong to a rulebook and era and stay out of the drawing and the data model; the policy Kinds
+   keep the Standard Code numbers (`RULE_251`, `RULE_261`, `RULE_105`, `RULE_93`); a road's own numbers come from a
+   rulebook reference table, built when something needs it.
+3. Relay names (answers 12 and 16). No conflict: BPR, RGPR, FR/FSR and TR/TPR are SP/US&S plan names consistent
+   with AAR letter naming. For the model: relay names never appear; the model states that a station-to-station
+   block is occupied and that it reaches the office as one indication. The names go to the glossary relay table,
+   marked as SP/US&S usage per the owner. The block indication's token name is for the ADR.
+4. Reversed number plate (answer 5). No conflict; the answer supplies the meaning [SP1960] lacked. It is an
+   operating condition set by a Form Z train order, kept out of the model; the drawn facts it rests on (an
+   automatic signal with a number plate) are already there.
+5. History (answers 1 and 7). Taken as answered: APB's inventor is Sedgwick N. Wight (GRS); the Coast Division APB
+   conversions fall after SPCoast's era. Neither affects the model.
