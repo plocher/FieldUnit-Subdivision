@@ -58,8 +58,9 @@ General (kept from the first audit):
 - G1 the symbols of one kind disagree in that column (Pins and Units compare as sets per unit; Other
   fields compares the field names, not their values, and never the lower_snake_case settings, as
   in G3; Tokens the field names); a DEVICE's or an
-  IODRIVER's Pins and Units are not compared, since the symbols of one such kind are versions of
-  the hardware and each states its own drive (owner, 2026-10-30);
+  IODRIVER's Pins and Units are not compared, nor a DEVICE's Address (a pixel head's place on its
+  chain), since the symbols of one such kind are versions of the hardware and each states its own
+  drive (owner, 2026-10-30);
 - G2 the key field the KiCad importer reads for the symbol's identity is absent (its `KEYS`: `CP Name`
   on a house, `Address` on a driver, `Column` on a column, `Name` on the rest); a TRACK or POLICY
   row is identified by its id (a TRACK name is optional), the importer reads no SETTING, and an
@@ -69,7 +70,8 @@ General (kept from the first audit):
   per-device and never compared, a field the rulings below supersede is never asked for, and a field
   that only symbols of another Style carry belongs to that Style (`Members` on a virtual track circuit);
   a maintainer call is never asked for `CP Name`: its control point is the house whose MC wire
-  reaches it, so the field could only repeat or contradict the wire (owner, 2026-10-30);
+  reaches it, so the field could only repeat or contradict the wire (owner, 2026-10-30); nor is a
+  DEVICE asked for `Address`, its hardware as in G1;
 - G4 a Pin.* field names no pin.
 
 The owner's token rulings (2026-10-28), which the libraries do not follow yet; the page shows the gap:
@@ -466,11 +468,13 @@ def convention_kinds(symbols: list[Symbol]) -> list[KindRow]:
     ref = lambda s: f"{s.library}:{s.name}"
     for kind in kinds:
         # G1: the symbols of one kind disagree in a column; a DEVICE's or IODRIVER's pins and units are its hardware.
-        hardware = kind.symbols[0].fields.get("Role") in ("DEVICE", "IODRIVER")
+        role = kind.symbols[0].fields.get("Role")
+        hardware = role in ("DEVICE", "IODRIVER")
         for col in CONVENTION_COLUMNS:
             if hardware and col in ("Pins", "Units"):
                 continue
-            variants = {repr(row[col].key) for row in kind.cells}
+            compared = lambda row: row[col].key - {"Address"} if role == "DEVICE" and col == "Other fields" else row[col].key
+            variants = {repr(compared(row)) for row in kind.cells}
             if len(variants) > 1:
                 for row in kind.cells:
                     row[col].flags.append(f"the {len(kind.symbols)} symbols of this kind disagree ({len(variants)} variants)")
@@ -500,6 +504,8 @@ def convention_kinds(symbols: list[Symbol]) -> list[KindRow]:
             wanted = {f for o in family for f in other_fields(o) if not _SNAKE_CASE.match(f) and not styled(f)} - mine - set(gone)
             if s.fields.get("Style") == "maintainer_call":            # its house is the one whose MC wire reaches it
                 wanted.discard("CP Name")
+            if role == "DEVICE":                                       # a DEVICE's Address is its hardware, as in G1
+                wanted.discard("Address")
             for f in sorted(wanted, key=str.lower):
                 row["Other fields"].flags.append(
                     f"missing {f}; carried by {carriers_text([ref(o) for o in family if f in o.fields])}")
