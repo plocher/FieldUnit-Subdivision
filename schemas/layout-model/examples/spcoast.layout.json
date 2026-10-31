@@ -14482,211 +14482,246 @@
               "IB.1": {
                 "given": {
                   "Bit": "1",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.2": {
                 "given": {
                   "Bit": "2",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.3": {
                 "given": {
                   "Bit": "3",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.4": {
                 "given": {
                   "Bit": "4",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.5": {
                 "given": {
                   "Bit": "5",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.6": {
                 "given": {
                   "Bit": "6",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.7": {
                 "given": {
                   "Bit": "7",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.8": {
                 "given": {
                   "Bit": "8",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.9": {
                 "given": {
                   "Bit": "9",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.10": {
                 "given": {
                   "Bit": "10",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.11": {
                 "given": {
                   "Bit": "11",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.12": {
                 "given": {
                   "Bit": "12",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.13": {
                 "given": {
                   "Bit": "13",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.14": {
                 "given": {
                   "Bit": "14",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "OB.1": {
                 "given": {
                   "Bit": "1",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.2": {
                 "given": {
                   "Bit": "2",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.3": {
                 "given": {
                   "Bit": "3",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.4": {
                 "given": {
                   "Bit": "4",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.5": {
                 "given": {
                   "Bit": "5",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.6": {
                 "given": {
                   "Bit": "6",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.7": {
                 "given": {
                   "Bit": "7",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.8": {
                 "given": {
                   "Bit": "8",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.9": {
                 "given": {
                   "Bit": "9",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.10": {
                 "given": {
                   "Bit": "10",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.11": {
                 "given": {
                   "Bit": "11",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.12": {
                 "given": {
                   "Bit": "12",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.13": {
                 "given": {
                   "Bit": "13",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.14": {
                 "given": {
                   "Bit": "14",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.15": {
                 "given": {
                   "Bit": "15",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.16": {
                 "given": {
                   "Bit": "16",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.17": {
                 "given": {
                   "Bit": "17",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.18": {
                 "given": {
                   "Bit": "18",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.19": {
                 "given": {
                   "Bit": "19",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.20": {
                 "given": {
                   "Bit": "20",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               }
             },
             "given": {
               "IC": "CMRI",
               "InputBytes": "2",
+              "Kind": "NODE",
               "NodeType": "C",
               "OutputBytes": "3"
             }
@@ -16465,7 +16500,7 @@
   },
   "provenance": {
     "libraries": {
-      "Railroad-Trackplan": "split-projects-final-112-g03131ca"
+      "Railroad-Trackplan": "split-projects-final-113-g2ecf8a4"
     },
     "referenceData": {
       "driverEncodings": "2026-10-23",
@@ -16475,7 +16510,7 @@
     },
     "rules": "0.1.0",
     "source": {
-      "describe": "split-projects-final-112-g03131ca",
+      "describe": "split-projects-final-113-g2ecf8a4",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad",
