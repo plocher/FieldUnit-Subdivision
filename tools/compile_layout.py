@@ -40,7 +40,7 @@ def main(argv=None) -> int:
     sm = seams.resolve(source.from_path(a.project))
     geo = geometry.read(sm)
     model = emit.emit(sm, geometry=geo)                               # the drawing's facts, then the reference derivation
-    diags = sorted(sm.report.diags, key=lambda d: (ORDER.get(d.severity, 9), d.code, d.where))
+    diags = sorted(sm.report.diags, key=lambda d: (ORDER.get(d.severity, 9), d.code, d.where, d.source))
     lines = [str(d) for d in diags if not (a.quiet and d.severity != "error")]
     if a.log:
         a.log.write_text("\n".join(str(d) for d in diags) + "\n", encoding="utf-8")

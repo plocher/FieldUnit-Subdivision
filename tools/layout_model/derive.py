@@ -60,7 +60,7 @@ JOINTS = frozenset({"IRJ", "IRJ_SIGNAL"})
 
 @lru_cache(maxsize=1)
 def registry() -> dict[str, dict[str, Any]]:
-    """The diagnostic registry (ADR 0012 §3.3): every code the derivation raises, with its level."""
+    """The rule-check registry (ADR 0012 §3.3): every code the derivation raises, with its level."""
     return json.loads(REGISTRY.read_text(encoding="utf-8"))["codes"]
 
 
@@ -160,6 +160,10 @@ class _Plan:
 
     def where(self, *parts: str) -> str:
         return "/".join(("interlockings", self.name) + parts)
+
+    def house_paths(self, cp: str) -> tuple[str, ...]:
+        """The model path of this interlocking's house named ``cp`` (names fold case), or none."""
+        return tuple(self.where("houses", h) for h in self.houses if h.casefold() == cp.casefold())
 
     def pin(self, name: str, side: str) -> str:
         return f"{qualify(name, self.name)}.{side}"
@@ -297,7 +301,7 @@ class _Plan:
             h = houses.get(cp.casefold())
             if h is None:
                 self.r.add("control_point.house", f"{self.name}: {what} names control point {cp!r}, which is no house of "
-                           f"{self.name} ({', '.join(sorted(self.houses)) or 'none'})", where)
+                           f"{self.name} ({', '.join(sorted(self.houses)) or 'none'})", where, (self.where(),))
                 continue
             stated[node], origin[node] = h, label
         for name, a in apps:
@@ -307,7 +311,8 @@ class _Plan:
                 if len(calls) == 1:
                     if stated.get(key(name), calls[0]) != calls[0]:
                         self.r.add("control_point.disagree", f"{self.name}: lamp {name} is wired to house {calls[0]} and states "
-                                   f"CP {stated[key(name)]!r}", self.where("appliances", name))
+                                   f"CP {stated[key(name)]!r}", self.where("appliances", name),
+                                   (self.where("houses", calls[0]), *self.house_paths(stated[key(name)])))
                     stated[key(name)], origin[key(name)] = calls[0], name
 
         if len(self.houses) == 1:
@@ -351,7 +356,7 @@ class _Plan:
         for n, a in apps:
             g = a.get("given", {})
             if g.get("Appliance") == "track_circuit" and g.get("Style") == "virtual":
-                for t in g.get("IndicationToken", "").split(","):
+                for t in g.get("Members", "").split(","):
                     r = circuit_regions.get(qualify(t.strip(), self.name)) if t.strip() else None
                     if r:
                         edges[r].add(key(n))
@@ -377,7 +382,8 @@ class _Plan:
                 continue                                                  # its mast reports for it
             if len(found) > 1:
                 self.r.add("control_point.chains", f"{self.name}: {what} is reached from "
-                           f"{' and '.join(f'{h} (by {via})' for h, via in sorted(found.items()))}; a CP Name on it settles which", where)
+                           f"{' and '.join(f'{h} (by {via})' for h, via in sorted(found.items()))}; a CP Name on it settles which", where,
+                           tuple(p for h in sorted(found) for p in self.house_paths(h)))
             elif not found:
                 self.r.add("control_point.unreached", f"{self.name}: no house reaches {what}: no CP Name on it and no chain to one", where)
         for n, a in switches.items():
@@ -386,7 +392,8 @@ class _Plan:
                 mine, theirs = self.cp.get(id(a)), self.cp.get(id(switches[lead]))
                 if mine and theirs and mine != theirs:
                     self.r.add("control_point.gang", f"{self.name}: switch {n} is on {mine} but its gang's {lead} is on {theirs}; "
-                               "one gang is one lever", self.where("appliances", n))
+                               "one gang is one lever", self.where("appliances", n),
+                               (self.where("appliances", lead),))
 
     # -------------------------------------------------------------------------------------------------- write
 
@@ -397,7 +404,7 @@ class _Plan:
             if g.get("Appliance") == "switch":
                 derived["osCircuit"] = next((c for p in ports_of(a) if (c := self.circuit(self.pin(name, p)))), None)
             if g.get("Appliance") == "track_circuit" and g.get("Style") == "virtual":
-                derived["members"] = [qualify(t.strip(), self.name) for t in g.get("IndicationToken", "").split(",") if t.strip()]
+                derived["members"] = [qualify(t.strip(), self.name) for t in g.get("Members", "").split(",") if t.strip()]
             cp = self.cp.get(id(a))
             derived["controlPoint"] = f"{self.name}:{cp}" if cp else None
             _set_derived(a, derived)
@@ -500,7 +507,7 @@ class _Plan:
                 other = letters_of_signal[m.group(1)].setdefault(letter, name)
                 if other != name:
                     self.r.add("mast.letters", f"{self.name}: signal {m.group(1)} has head {letter} on masts {other} and {name} "
-                               "(ADR 0003 rule 6)", where)
+                               "(ADR 0003 rule 6)", where, (self.where("appliances", other),))
 
     # ------------------------------------------------------------------------------------- references
 
@@ -526,9 +533,9 @@ class _Plan:
             if g.get("Appliance") == "switch" and g.get("TC") and foreign(g["TC"], self.name) and "," not in g["TC"]:
                 out.append(("circuit", g["TC"], frozenset(), f"switch {name}'s TC", self.where("appliances", name)))
             if g.get("Appliance") == "track_circuit" and g.get("Style") == "virtual":
-                for t in g.get("IndicationToken", "").split(","):
+                for t in g.get("Members", "").split(","):
                     if t.strip() and foreign(t.strip(), self.name):
-                        out.append(("circuit", t.strip(), frozenset(), f"virtual circuit {name}'s IndicationToken",
+                        out.append(("circuit", t.strip(), frozenset(), f"virtual circuit {name}'s Members",
                                     self.where("appliances", name)))
         return out
 
@@ -541,11 +548,14 @@ class _Reporter:
     def __init__(self) -> None:
         self.report = Report()
 
-    def add(self, code: str, text: str, where: str = "", about: str = "") -> None:
+    def add(self, code: str, text: str, where: str = "", parties: tuple[str, ...] = ()) -> None:
+        """A finding names every entity it is about (ADR 0012 §3.3): ``where``, the primary one, then the other
+        ``parties`` of a relationship."""
         entry = registry().get(code)
         if entry is None:
             raise KeyError(f"diagnostic code {code!r} is not in the registry {REGISTRY}")
-        self.report.add(entry["level"], code, text, where, about)
+        entities = tuple(dict.fromkeys(e for e in (where, *parties) if e))
+        self.report.add(entry["level"], code, text, where, entities)
 
 
 class _Derivation:
@@ -563,7 +573,7 @@ class _Derivation:
         the named interlocking (``codeline.circuit_of``)."""
         out = {}
         for row in plan.consumers():
-            circuit = codeline.circuit_of(self.m, row.get("relations", {}).get("indication", ""), self.ref.get("indicationTokens"))
+            circuit = codeline.circuit_of(self.m, row.get("relations", {}).get("indication", ""))
             if circuit and "TC" in track_pins(row.get("relations", {})):
                 out[f"{row.get('id', '')}.TC"] = circuit
         return out
@@ -585,8 +595,8 @@ class _Derivation:
         domain library's own computation, so the check and what a generator reads are one definition (the owner,
         2026-10-28). An interlocking not in the file is a warning, one on no code line missing, a token no appliance
         reports an error."""
-        for p in codeline.stations(self.m, self.ref.get("indicationTokens")).problems:
-            self.r.add(self.PROBLEM_CODES[p.kind], p.text, p.where)
+        for p in codeline.stations(self.m).problems:
+            self.r.add(self.PROBLEM_CODES[p.kind], p.text, p.where, p.parties)
 
     def run(self) -> None:
         for name, ix in self.m.get("interlockings", {}).items():
@@ -629,34 +639,44 @@ class _Derivation:
                            f"interlockings/{a}")
             elif count.get((b, a), 0) != n:
                 self.r.add("next_cp.pair", f"{a} has {n} NextCP{'s' * (n > 1)} to {b}, but {b} has {count.get((b, a), 0)} back to {a}",
-                           f"interlockings/{a}")
+                           f"interlockings/{a}", (f"interlockings/{b}",))
 
     # ----------------------------------------------------------------------------------------- references
 
+    def _appliance_path(self, b: str, n: str) -> tuple[str, ...]:
+        """The model path of interlocking ``b``'s appliance ``n``, when the file has it."""
+        plan = self.plans.get(b)
+        return (f"interlockings/{b}/appliances/{n}",) if plan is not None and n in plan.appliances else ()
+
     def resolve_references(self) -> None:
         """A qualified name for another interlocking's thing. On a switch port or a track row it is an error (the owner,
-        2026-10-28): track leaves an interlocking at a NextCP, and what one interlocking has of another's is only its
-        indications (a consumer row). A circuit named in a field (a switch's TC, a virtual circuit's members) names one
-        that exists: an interlocking not in the file is a warning, a circuit missing from one that is an error."""
+        2026-10-28): track leaves an interlocking at a NextCP or an END_CTC (ADR 0009 §3.12), and what one interlocking
+        has of another's is only its indications (a consumer row). A circuit named in a field (a switch's TC, a virtual
+        circuit's members) names one that exists: an interlocking not in the file is a warning, a circuit missing from
+        one that is an error. Each finding names the referring thing, then the interlocking and appliance it names when
+        the file has them."""
         for a, plan in self.plans.items():
             for kind, name, ports, what, where in plan.references():
                 b, _, n = name.partition(":")
+                target = (f"interlockings/{b}",) if b in self.plans else ()
                 if kind == "marker":
                     self.r.add("reference.marker", f"{a}: a track pin names {name}.TC, another interlocking's marker; a reference to it "
-                               "is a consumer row of its indication (relations.indication)", where)
+                               "is a consumer row of its indication (relations.indication)", where,
+                               target + self._appliance_path(b, n))
                     continue
                 if kind in ("switch", "track"):
                     self.r.add("reference.track", f"{a}: {what} {name} joins this interlocking's track to {b}'s; track leaves an "
-                               "interlocking at a NextCP, and another interlocking's state is only its indications", where)
+                               "interlocking at a NextCP or an END_CTC, and another interlocking's state is only its indications",
+                               where, target + self._appliance_path(b, n))
                     continue
                 if b not in self.plans:
                     self.r.add("reference.interlocking", f"{a}: {what} {name} names {b}, which is no interlocking in this file", where)
                     continue
-                target = self.plans[b]
-                circuits = {c for c in target.name_of.values() if c} | {
-                    f"{b}:{k}" for k, v in target.appliances.items() if v.get("given", {}).get("Appliance") == "track_circuit"}
+                plan_b = self.plans[b]
+                circuits = {c for c in plan_b.name_of.values() if c} | {
+                    f"{b}:{k}" for k, v in plan_b.appliances.items() if v.get("given", {}).get("Appliance") == "track_circuit"}
                 if name not in circuits:
-                    self.r.add("reference.unresolved", f"{a}: {what} {name} names {b}, which has no circuit {n}", where)
+                    self.r.add("reference.unresolved", f"{a}: {what} {name} names {b}, which has no circuit {n}", where, target)
 
     # -------------------------------------------------------------------------------------- office units
 
@@ -690,25 +710,29 @@ class _Derivation:
                 if folder and codeline.scope(self.m, folder) == "house":
                     if cp and house is None and ixn:
                         self.r.add("column.house", f"column {number}: CP Name {cp!r} names the interlocking, but {ixn}'s code line makes "
-                                   f"each house a station ({', '.join(sorted(self.m['interlockings'][ixn].get('houses', {})))}); name one", where)
+                                   f"each house a station ({', '.join(sorted(self.m['interlockings'][ixn].get('houses', {})))}); name one",
+                                   where, (f"interlockings/{ixn}",))
                     elif not cp:
                         self.r.add("column.cp_name", f"column {number}: no CP Name, and {folder}'s code line makes each house a station; "
-                                   "which house it is, is not stated", where)
+                                   "which house it is, is not stated", where, (f"interlockings/{folder}",))
                 if house:
                     by_house[house].append(number)
                 _set_derived(c, {"house": f"{house[0]}:{house[1]}" if house else None, "interlocking": ixn})
             for (ixn, cp), nums in by_house.items():
                 if len(nums) > 1 and codeline.scope(self.m, ixn) == "house":
                     self.r.add("station.columns", f"house {cp} of {ixn} has columns {', '.join(nums)} on a US&S 506 line: two station "
-                               "addresses", f"interlockings/{ixn}")
+                               "addresses", f"interlockings/{ixn}",
+                               (f"interlockings/{ixn}/houses/{cp}", *(f"officeUnits/{ou_name}/columns/{n}" for n in nums)))
 
     # ------------------------------------------------------------------------------------------- devices
 
     def devices(self) -> None:
         """A device serves the appliance its ``Name`` names in its scope, a head device the mast its IND wire reaches; a
         lamp consumes the tokens of its ``Indication`` expression, resolved in its scope (``lamp``). A lever's scope is
-        its column's interlocking, else its own ``relations.interlocking``; a lamp's is its own ``relations.interlocking``,
-        the panel sheet it is drawn on: a lamp has nothing to do with columns (the owner, 2026-10-28). A code lever
+        its column's interlocking, else its own ``relations.interlocking``. A model board lamp (Appliance ``lamp``, Style
+        ``board``) never uses a column: its scope is its own ``relations.interlocking``, the panel sheet it is drawn on
+        (ADR 0009 §3.12). An appliance's indication lamps are not lamp devices but ``Indication.X`` pins on its lever, so
+        they follow the lever's column (``desk``). Every ``lamp`` device is scoped as a board lamp today. A code lever
         serves the station, not an appliance."""
         for name, ix in self.m.get("interlockings", {}).items():
             for i, dev in enumerate(ix.get("devices", [])):
@@ -788,7 +812,7 @@ class _Derivation:
                 ix = self.m.get("interlockings", {}).get(b)
                 if ix is not None and not self._lever_target(ix, n):
                     self.r.add("lever.serves", f"{what} serves {d['serves']}, but {b} has no switch, lock, maintainer call or signal "
-                               f"lever {n}", where)
+                               f"lever {n}", where, (f"interlockings/{b}",))
 
     @staticmethod
     def _lever_target(ix: dict[str, Any], n: str) -> bool:
@@ -815,7 +839,8 @@ class _Derivation:
             what = " and ".join(f"{k} {'powered switch' if c == 'switch' else 'electric lock'}{'es' * (c == 'switch' and k > 1)}"
                                 f"{'s' * (c == 'lock' and k > 1)}" for c, k in counts.items() if k)
             self.r.add("interlocking.no_lever", f"{b}: {what} {'have' if len(bare) > 1 else 'has'} no desk lever in this file; "
-                       f"how the dispatcher works {'them' if len(bare) > 1 else 'it'} (an NX selection, another office unit) is not drawn yet ({', '.join(bare)})", plan.where(), about=plan.where("appliances", bare[0]))
+                       f"how the dispatcher works {'them' if len(bare) > 1 else 'it'} (an NX selection, another office unit) is not drawn yet ({', '.join(bare)})", plan.where(),
+                       tuple(plan.where("appliances", n) for n in bare))
 
     def lever_tokens(self, g: dict[str, str], bindings: dict[str, Any], b: str, what: str,
                      where: str) -> tuple[list[str], list[str]]:
@@ -860,9 +885,12 @@ class _Derivation:
                     by_head[(serves.partition(":")[2], g["Head"])].append((i, d))
             for (mast, letter), devs in sorted(by_head.items()):
                 where = f"interlockings/{name}/devices/{devs[0][0]}"
+                others = tuple(f"interlockings/{name}/devices/{i}" for i, _ in devs[1:])
+                mast_path = (f"interlockings/{name}/appliances/{mast}",) if mast in ix.get("appliances", {}) else ()
                 style = plan.get((mast, letter))
                 if style is None:
-                    self.r.add("head.plan", f"{name}: head devices for {mast} head {letter}, but the trackplan draws no such head", where)
+                    self.r.add("head.plan", f"{name}: head devices for {mast} head {letter}, but the trackplan draws no such head", where,
+                               others + mast_path)
                     continue
                 primary = [d for _, d in devs if style in styles(d["given"])]
                 lamps = [d for _, d in devs if style not in styles(d["given"]) and style in ("UQ", "LQ")
@@ -871,11 +899,11 @@ class _Derivation:
                     if d not in primary and d not in lamps:
                         self.r.add("head.vocabulary", f"{name}: the trackplan draws {mast} head {letter} as {style}, but its device is "
                                    f"{d['given'].get('Style')}. Fix: change the trackplan head, or bind a {style} device",
-                                   f"interlockings/{name}/devices/{i}")
+                                   f"interlockings/{name}/devices/{i}", mast_path)
                 wrong = [d for _, d in devs if d not in primary and d not in lamps]
                 if len(primary) > 1 or (not primary and not wrong):
                     self.r.add("head.vocabulary", f"{name}: {mast} head {letter} ({style}) has {len(primary)} devices of its style; "
-                               "one expected", where)
+                               "one expected", where, others + mast_path)
 
     # --------------------------------------------------------------------------------------------- reach
 
@@ -891,14 +919,15 @@ class _Derivation:
                 if kind and not any(e.get("given", {}).get("Kind") == kind and e.get("relations", {}).get("processor") == p
                                     for e in layout.get("ioEncodings", {}).values()):
                     self.r.add("driver.encoding", f"driver {ic} {address} on {p}: no {kind} I/O encoding rides a transport anchored on {p}",
-                               f"layout/processors/{p}/drivers/{address}")
+                               f"layout/processors/{p}/drivers/{address}", (f"layout/processors/{p}",))
         for name, ix in self.m.get("interlockings", {}).items():
             rel = ix.get("relations", {})
             e = layout.get("codelines", {}).get(rel.get("codeline")) if rel.get("codeline") else None
             t = e.get("relations", {}).get("transport") if e else None
             if t and rel.get("processor") and rel["processor"] not in layout.get("transports", {}).get(t, {}).get("relations", {}).get("anchors", []):
                 self.r.add("transport.reach", f"FieldUnit {name} reaches {t} through its code line {rel['codeline']}; its processor "
-                           f"{rel['processor']} anchors no {t} instance", f"interlockings/{name}")
+                           f"{rel['processor']} anchors no {t} instance", f"interlockings/{name}",
+                           (f"layout/processors/{rel['processor']}", f"layout/transports/{t}"))
 
 
 def _clean(d: dict[str, Any]) -> dict[str, Any]:

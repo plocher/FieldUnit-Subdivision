@@ -67,7 +67,7 @@
       }
     },
     "given": {
-      "description": "Every field a person stated on the entity, keyed as drawn, every value a string as KiCad states it (ADR 0011 §2). Left out: KiCad's housekeeping (Reference, Value, Footprint, Datasheet, Description, Sheetname, Sheetfile, ki_*), Role (it picks the collection), the library's Pin.* contract, the key field, and any empty field but a per-pin Control.<pin> or Indication.<pin>. Which keys apply is reference data, not this schema's; a reader that wants a number or a list parses the string.",
+      "description": "Every field a person stated on the entity, keyed as drawn, every value a string as KiCad states it (ADR 0011 §2). Left out: KiCad's housekeeping (Reference, Value, Footprint, Datasheet, Description, Sheetname, Sheetfile, ki_*), Role (it picks the collection), the library's Pin.* contract, the key field, and any empty field but a token field (Indication, Control.<pin>, Indication.<pin>). Which keys apply is reference data, not this schema's; a reader that wants a number or a list parses the string.",
       "type": "object",
       "propertyNames": {
         "type": "string",
@@ -87,9 +87,9 @@
         "pattern": "^(?!ki_)(?!Pin\\.)"
       },
       "patternProperties": {
-        "^(Control|Indication)\\.": {
+        "^(Control\\.|Indication(\\.|$))": {
           "type": "string",
-          "description": "A desk device's per-pin token (the owner, 2026-10-28): stated even when empty, since an empty one says the pin deliberately binds no token."
+          "description": "A token field on any entity, Indication or a per-pin Control.<pin> or Indication.<pin> (the owner, 2026-10-28 and 10-29): stated even when empty, since an empty one says there is deliberately no token; an absent one is not done yet."
         }
       },
       "additionalProperties": {
@@ -217,7 +217,7 @@
         },
         "nodes": {
           "type": "object",
-          "description": "CMRInet Nodes on this line, keyed by UA (their Address); the container is the relation (three-maps D12).",
+          "description": "CMRInet Nodes on this line, keyed by UA (their Address); the container is the relation (three-maps D12). A node and its bits are told apart by given.Kind: NODE for the node, IB or OB for a bit.",
           "propertyNames": {
             "type": "string",
             "pattern": "^[^:/\\s]+$"
@@ -229,7 +229,7 @@
       }
     },
     "cmrinetNode": {
-      "description": "A CMRInet Node: a driver on the line that provides a bus for its bits (ADR 0009 §3.5). given holds IC, NodeType, InputBytes and OutputBytes as drawn; the KiCad importer checks the declared bytes cover the bits used.",
+      "description": "A CMRInet Node: a driver on the line that provides a bus for its bits (ADR 0009 §3.5). given holds IC, Kind (NODE), NodeType (an ordinary node setting), InputBytes and OutputBytes as drawn; the KiCad importer checks the declared bytes cover the bits used.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -252,7 +252,7 @@
         },
         "bits": {
           "type": "object",
-          "description": "The bits in use, keyed IB.n or OB.n (computed from the Bit field and its pin's direction); each is a driver with one pin D.",
+          "description": "The bits in use, keyed IB.n or OB.n (computed from given.Kind, IB or OB, which is the bit's direction, and the Bit field); each is a driver with one pin D.",
           "propertyNames": {
             "type": "string",
             "pattern": "^(IB|OB)\\.\\d+$"
@@ -459,7 +459,7 @@
       }
     },
     "device": {
-      "description": "One row of devices[]: one device instance, without identity (ADR 0008 §4.5), so its Name lands in given. given holds Appliance, Style (as drawn, a comma list), Head, Address, Invert, IndicationToken and its fields.",
+      "description": "One row of devices[]: one device instance, without identity (ADR 0008 §4.5), so its Name lands in given. given holds Appliance, Style (as drawn, a comma list), Head, Address, Invert, Indication (a lamp's expression), its per-pin Control.<pin> and Indication.<pin>, and its other fields.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -1217,7 +1217,7 @@
                   "items": {
                     "$ref": "#/$defs/qualifiedName"
                   },
-                  "description": "A virtual track circuit's member circuits, its IndicationToken resolved."
+                  "description": "A virtual track circuit's member circuits, its Members resolved."
                 }
               }
             }

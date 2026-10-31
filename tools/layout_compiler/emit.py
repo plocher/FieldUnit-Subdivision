@@ -18,7 +18,7 @@ from tools.layout_model import derive as derivation
 from tools.layout_model.reference import REFERENCE_DATA
 
 from .geometry import Geometry
-from .seams import PIN_TOKENS, Seams
+from .seams import Seams, token_field
 from .source import Symbol
 from .seams import loc as seams_loc
 
@@ -33,7 +33,7 @@ def _clean(d: dict) -> dict:
 def _entity(given: Optional[dict] = None, relations: Optional[dict] = None, derived: Optional[dict] = None, **rest) -> dict:
     """An entity or a row: its three maps, each without empty values, then whatever else it holds (collections). An
     empty per-pin ``Control.<pin>`` or ``Indication.<pin>`` in ``given`` is kept: it states the pin binds no token."""
-    stated = {k: v for k, v in (given or {}).items() if v not in (None, "", [], {}) or k.startswith(PIN_TOKENS)}
+    stated = {k: v for k, v in (given or {}).items() if v not in (None, "", [], {}) or token_field(k)}
     return _clean({"given": stated, "relations": _clean(dict(relations or {})),
                    "derived": _clean(dict(derived or {})), **rest})
 
@@ -75,12 +75,20 @@ def emit(sm: Seams, source_path: Optional[Path] = None, geometry: Optional[Geome
     source built in memory has no sheets and passes none."""
     model, report = derivation.derive(facts(sm, geometry))
     if not sm.derived:
-        where = sources(sm)
-        sm.report.diags.extend(replace(d, source=seams_loc(where[d.about or d.where])) if (d.about or d.where) in where else d
-                               for d in report.diags)
+        sm.report.diags.extend(locate(report.diags, sources(sm)))
         _check_folders(sm, model)
         sm.derived = True
     return model
+
+
+def locate(diags, symbols: dict[str, Symbol]) -> list:
+    """Each rule-check finding with every entity it names located in the drawing (ADR 0012 §3.3: the importer's work,
+    not the finding's): ``source`` lists each party's symbol, in the finding's order, separated by ``; ``."""
+    out = []
+    for d in diags:
+        found = dict.fromkeys(seams_loc(symbols[e]) for e in (d.entities or (d.where,)) if e in symbols)
+        out.append(replace(d, source="; ".join(found)) if found else d)
+    return out
 
 
 def sources(sm: Seams) -> dict[str, Symbol]:
@@ -104,7 +112,12 @@ def sources(sm: Seams) -> dict[str, Symbol]:
             out[f"{base}/columns/{c.number}"] = c.sym
         for i, d in enumerate(ou.devices):
             out[f"{base}/devices/{i}"] = d.sym
+    for t in sm.transports.values():                                 # an entity drawn several times: its first placement
+        if t.instances:
+            out[f"layout/transports/{t.name}"] = next(iter(t.instances.values()))
     for p in sm.processors.values():
+        if p.syms:
+            out[f"layout/processors/{p.name}"] = p.syms[0]
         for a, d in p.drivers.items():
             out[f"layout/processors/{p.name}/drivers/{a}"] = d.sym
     return out
@@ -118,7 +131,7 @@ def _check_folders(sm: Seams, model: dict[str, Any]) -> None:
             ixn = model.get("officeUnits", {}).get(ou.name, {}).get("columns", {}).get(c.number, {}).get("derived", {}).get("interlocking")
             if ixn and c.sheet_folder and c.sheet_folder != ixn:
                 sm.report.error("column.folder", f"column {c.number}: house {c.given.get('CP Name')} is in {ixn}, the column is drawn "
-                                f"under {c.sheet_folder}", seams_loc(c.sym))
+                                f"under {c.sheet_folder}", source=seams_loc(c.sym))
 
 
 def facts(sm: Seams, geometry: Optional[Geometry] = None) -> dict[str, Any]:

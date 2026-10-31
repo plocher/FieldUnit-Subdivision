@@ -82,6 +82,20 @@ def jmri_plant():
     return from_symbols(list(src.symbols.values()), processor + nets)
 
 
+def cmri_plant(*bits, node_kind="NODE"):
+    """plant() plus a CMRInet transport wired to Alpha, node 30 on it and one bit symbol per (ref, Kind, Bit) on its
+    bus, each bit's D pin wired to nothing in particular. A pin's electrical type is left unstated: Kind decides."""
+    src = plant()
+    syms = [sym("T1", "Transport-CMRInet", "/X/", "CMRInet", Role="TRANSPORT", Kind="CMRI", Name="CMRInet"),
+            sym("N1", "Driver-CMRInet-Node", "/X/", "", Role="IODRIVER", IC="CMRI", Kind=node_kind, Address="30", NodeType="C",
+                InputBytes="2", OutputBytes="3")]
+    syms += [sym(ref, "Driver-CMRInet-" + (kind or "IB"), "/X/", "", Role="IODRIVER", IC="CMRI", Bit=bit, **({"Kind": kind} if kind else {}))
+             for ref, kind, bit in bits]
+    nets = [net("n1", ("IX1", "Processor"), ("P1", "Processor"), ("T1", "Processor")), net("t", ("N1", "Transport"), ("T1", "Transport")),
+            net("bus", ("N1", "IOBus"), *((ref, "IOBus") for ref, _, _ in bits))]
+    return from_symbols(list(src.symbols.values()) + syms, nets)
+
+
 class RuleTests(unittest.TestCase):
     def test_the_wire_states_the_processor(self):
         sm = seams.resolve(plant())
@@ -223,6 +237,31 @@ class RuleTests(unittest.TestCase):
         self.assertEqual([x.ref for d in sm.processors["Alpha"].drivers.values() for x in d.syms], ["J2", "J3"])
 
 
+    def test_a_cmrinet_node_and_its_bits_are_told_apart_by_kind(self):
+        """The owner (2026-10-30): Kind NODE is the node, keyed by its Address; Kind IB or OB is a bit, keyed IB.n or
+        OB.n by its Kind and Bit, never by the pin's electrical type; NodeType is an ordinary setting."""
+        sm = seams.resolve(cmri_plant(("B1", "IB", "3"), ("B2", "OB", "3"), ("B3", "OB", "17")))
+        self.assertEqual(sm.report.errors, [])
+        node = sm.transports["CMRInet"].nodes["30"]
+        self.assertEqual(set(node.bits), {"IB.3", "OB.3", "OB.17"})
+        self.assertEqual(node.given, {"IC": "CMRI", "Kind": "NODE", "NodeType": "C", "InputBytes": "2", "OutputBytes": "3"})
+        self.assertEqual(node.bits["OB.17"].given, {"IC": "CMRI", "Kind": "OB", "Bit": "17"})
+        self.assertEqual(layout_model.errors(emit.emit(sm)), [])
+
+    def test_a_cmrinet_driver_without_kind_is_missing(self):
+        """A CMRI driver with no Kind, or one other than NODE, IB or OB, is neither the node nor a bit: missing, unwritten."""
+        sm = seams.resolve(cmri_plant(("B1", None, "3"), ("B2", "SENSOR", "4"), ("B3", "IB", "5")))
+        self.assertEqual([d.severity for d in sm.report.by_code("driver.kind")], ["missing", "missing"])
+        self.assertEqual(set(sm.transports["CMRInet"].nodes["30"].bits), {"IB.5"})
+        sm = seams.resolve(cmri_plant(("B1", "IB", "3"), node_kind=""))
+        self.assertEqual(sm.transports["CMRInet"].nodes, {})
+        self.assertEqual(len(sm.report.by_code("driver.kind")), 1)
+
+    def test_a_cmrinet_bit_without_bit_has_no_key(self):
+        sm = seams.resolve(cmri_plant(("B1", "IB", ""), ("B2", "OB", "1")))
+        self.assertEqual([d.severity for d in sm.report.by_code("bit.number")], ["missing"])
+        self.assertEqual(set(sm.transports["CMRInet"].nodes["30"].bits), {"OB.1"})
+
     def test_emitted_model_validates(self):
         sm = seams.resolve(plant())
         model = emit.emit(sm)
@@ -276,10 +315,10 @@ class SPCoastRelationTable(unittest.TestCase):
         node = self.sm.transports["CMRInet"].nodes["30"]
         self.assertEqual((node.given["NodeType"], node.input_bytes, node.output_bytes), ("C", 2, 3))
         self.assertEqual(self.model["layout"]["transports"]["CMRInet"]["nodes"]["30"]["given"],
-                         {"IC": "CMRI", "NodeType": "C", "InputBytes": "2", "OutputBytes": "3"})
+                         {"IC": "CMRI", "Kind": "NODE", "NodeType": "C", "InputBytes": "2", "OutputBytes": "3"})
         self.assertEqual(sum(1 for a in node.bits if a.startswith("IB")), 14)
         self.assertEqual(sum(1 for a in node.bits if a.startswith("OB")), 20)
-        self.assertEqual(self.sm.report.by_code("node.bytes"), [])
+        self.assertEqual([d for d in self.sm.report.diags if d.code.startswith("node.bytes")], [])
 
     def test_columns_resolve_by_their_line_and_stations_follow(self):
         """The owner, 2026-10-28: a column's CP Name names a house or the interlocking; on Luchessa's US&S 506 line each

@@ -257,12 +257,12 @@ def read(sm: Seams, project_dir: Optional[Path] = None, libraries: Optional[dict
         if not sheets:
             continue                                                     # nothing drawn: absent is absent
         if len(sheets) > 1:
-            sm.report.error("geometry.sheets", f"{ix.name}: its trackplan spans {len(sheets)} sheets ({', '.join(sheets)}) and has no single frame (ADR 0010 §4.10)", loc(ix.sym))
+            sm.report.error("geometry.sheets", f"{ix.name}: its trackplan spans {len(sheets)} sheets ({', '.join(sheets)}) and has no single frame (ADR 0010 §4.10)", lsource=oc(ix.sym))
             continue
         sheet = sheets[0]
         file = src.sheet_files.get(sheet)
         if not file:
-            sm.report.error("geometry.sheet", f"{ix.name}: the export names no file for sheet {sheet}", loc(ix.sym))
+            sm.report.error("geometry.sheet", f"{ix.name}: the export names no file for sheet {sheet}", source=loc(ix.sym))
             continue
         model = project.sheet(file)
         geometry = _interlocking(sm, ix, trackplan, model, project, out)
@@ -286,11 +286,11 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
     for s in trackplan + [h.sym for h in houses]:
         pl = model.placements.get(s.ref)
         if pl is None:
-            report.error("geometry.placement", f"{ix.name}: {s.ref} ({s.lib_id}) is in the export but not on sheet {model.path.name}", loc(s))
+            report.error("geometry.placement", f"{ix.name}: {s.ref} ({s.lib_id}) is in the export but not on sheet {model.path.name}", source=loc(s))
             continue
         sym = project.symbol(pl.lib_id)
         if sym is None:
-            report.error("geometry.library", f"{ix.name}: no library symbol for {pl.lib_id} (KiCad's library tables name no file, or the file lacks it)", loc(s))
+            report.error("geometry.library", f"{ix.name}: no library symbol for {pl.lib_id} (KiCad's library tables name no file, or the file lacks it)", source=loc(s))
             continue
         placed[s.ref] = (pl, sym, {p.name: _rounded(kicad_place(pl, (p.x, p.y))) for p in sym.pins})
     if len(report.errors) > errors_before:
@@ -361,7 +361,7 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
             continue
         name = key_of(s, report)
         if not name:
-            report.missing("geometry.name", f"{ix.name}: an {s.lib_id} has no Name; its placement is not written", loc(s))
+            report.missing("geometry.name", f"{ix.name}: an {s.lib_id} has no Name; its placement is not written", source=loc(s))
             continue
         if is_consumer(ix.name, s) and s.uuid and src.net_of(s.ref, "TC"):
             consumer_markers.append({"row": s.uuid, **placement(s.ref)})   # a consumer is a row: its marker names it by id (D10)
@@ -375,7 +375,7 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         net = net_of(s.ref, "M")
         owner = next((p.ref for p in net.others(s.ref) if p.ref in masts), None) if net else None
         if owner is None:
-            report.missing("geometry.head", f"{ix.name}: head {s.ref} is on no mast's M pin; its placement is not written", loc(s))
+            report.missing("geometry.head", f"{ix.name}: head {s.ref} is on no mast's M pin; its placement is not written", source=loc(s))
             continue
         appliances[masts[owner]].setdefault("heads", {})[key_of(s, report)] = placement(s.ref)
 
@@ -386,7 +386,7 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         ends = [port_at.get(line[0]), port_at.get(line[-1])]
         for end, xy in zip(ends, (line[0], line[-1])):
             if end is None and xy not in model.junctions:
-                report.error("geometry.run_end", f"{ix.name}: a run of track ends at {xy} where no trackplan pin and no junction is", f"sheet {model.path.name}")
+                report.error("geometry.run_end", f"{ix.name}: a run of track ends at {xy} where no trackplan pin and no junction is", source=f"sheet {model.path.name}")
         row: dict[str, Any] = {"points": " ".join(f"{norm(p)['x']},{norm(p)['y']}" for p in line)}
         relations = {key: end_ref(*e) for key, e in zip(("from", "to"), ends) if e and end_ref(*e)}
         if relations:
@@ -402,7 +402,7 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
             mileposts[key_of(s, report)] = placement(s.ref)
             continue
         if not s.uuid:
-            report.missing("geometry.marker", f"{ix.name}: a {s.kind} has no KiCad UUID, so its marker names no row; not written", loc(s))
+            report.missing("geometry.marker", f"{ix.name}: a {s.kind} has no KiCad UUID, so its marker names no row; not written", source=loc(s))
             continue
         markers.append({"row": s.uuid, **placement(s.ref)})            # the marker joins its track row by id (D10)
 

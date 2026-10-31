@@ -596,7 +596,8 @@ def sym(name: str, fields: dict[str, str], units: dict[int, list[str]], library:
 # PANEL levers: a switch lever stating one of its four per-pin tokens on the wrong pin direction and one naming no
 # pin; a maintainer-call lever in the superseded whole-symbol form with a level lamp pin; a lock lever with its
 # deliberate UNUSED pin and Invert. A model board lamp with IndicationToken, a retiring PANEL lamp, a trackplan
-# maintainer call (APPLIANCE) carrying Indication, a plain APPLIANCE, and one field device kind drawn twice.
+# maintainer call (APPLIANCE) carrying Indication, a switch drawn with and without an OS circuit, and one field
+# device kind drawn twice.
 LEVER_SWITCH = sym("LeverSwitch", {"Role": "PANEL", "Appliance": "lever", "Style": "switch", "Name": "${Value}",
                                    "Control.NWS": "${Value}NWS", "Control.NWK": "${Value}NWK", "Indication.XX": "x",
                                    "Pin.NWS": "binary", "Pin.RWS": "binary", "Pin.NWK": "binary"},
@@ -616,13 +617,15 @@ OLD_LAMP = sym("OldLamp", {"Role": "PANEL", "Appliance": "lamp", "Style": "indic
 TRACK_MCALL = sym("TrackMCall", {"Role": "APPLIANCE", "Appliance": "lamp", "Style": "maintainer_call",
                                  "Name": "${Value}MC", "Indication": "${Name}K", "Pin.MCK": "level"},
                   {1: ["MC"]}, library="Trackplan")
-TRACK_SWITCH = sym("TrackSwitch", {"Role": "APPLIANCE", "Appliance": "switch", "Style": "powered", "Name": "${Value}"},
-                   {1: ["C", "N", "R"]})
+TRACK_SWITCH = sym("TrackSwitch", {"Role": "APPLIANCE", "Appliance": "switch", "Style": "powered", "Name": "${Value}",
+                                   "TC": "${VALUE}T1", "Indication": "${TC}K"}, {1: ["C", "N", "R"]})
+TRACK_SWITCH_NO_TC = sym("TrackSwitchNoTC", {"Role": "APPLIANCE", "Appliance": "switch", "Style": "powered",
+                                             "Name": "${Value}", "TC": "", "Indication": ""}, {1: ["C", "N", "R"]})
 LAMP_A = sym("LampA", {"Role": "DEVICE", "Appliance": "lamp", "Name": "${Value}", "Pin.LAMP": "binary", "Address": "",
                        "Invert": "LAMP"}, {1: ["~{LAMP}"]})
 LAMP_B = sym("LampB", {"Role": "DEVICE", "Appliance": "lamp", "Name": "${Value}", "Pin.LAMP": "level", "hold_ms": "5"},
              {1: ["~{LAMP}"]})
-ALL = [LEVER_SWITCH, LEVER_MCALL, LEVER_LOCK, BOARD_LAMP, OLD_LAMP, TRACK_MCALL, TRACK_SWITCH, LAMP_A, LAMP_B]
+ALL = [LEVER_SWITCH, LEVER_MCALL, LEVER_LOCK, BOARD_LAMP, OLD_LAMP, TRACK_MCALL, TRACK_SWITCH, TRACK_SWITCH_NO_TC, LAMP_A, LAMP_B]
 
 
 class ConventionsTests(unittest.TestCase):
@@ -655,9 +658,29 @@ class ConventionsTests(unittest.TestCase):
 
     def test_symbols_of_one_kind_that_disagree_are_flagged(self):
         for name in ("LampA", "LampB"):
-            self.assertTrue(any("disagree" in f for f in self.cell(name, "Pins").flags), name)       # binary vs level
-            self.assertTrue(any("disagree" in f for f in self.cell(name, "Units").flags), name)
-            self.assertFalse(self.cell(name, "Name").flags, name)                                    # both ${Value}
+            self.assertTrue(any("disagree" in f for f in self.cell(name, "Other fields").flags), name)  # Invert
+            self.assertFalse(self.cell(name, "Name").flags, name)                                       # both ${Value}
+        panel = [sym(n, {"Role": "PANEL", "Appliance": "lamp", "Style": "board", "Name": "${Value}", "Indication": "",
+                         "Pin.LAMP": d}, {1: ["~{LAMP}"]}) for n, d in (("P1", "binary"), ("P2", "level"))]
+        kind = overview.convention_kinds(panel)[0]
+        self.assertTrue(all(any("disagree" in f for f in row["Pins"].flags) for row in kind.cells))   # binary vs level
+
+    def test_g1_never_compares_a_devices_address(self):
+        heads = [sym(n, {"Role": "DEVICE", "Appliance": "head", "Style": "CL", "Head": "${Value}", **f}, {1: ["IND"]})
+                 for n, f in (("Pixel", {"Address": ""}), ("RGB", {}))]
+        kind = overview.convention_kinds(heads)[0]
+        self.assertFalse(any(row["Other fields"].flags for row in kind.cells))
+
+    def test_g1_never_compares_settings(self):
+        devices = [sym(n, {"Role": "DEVICE", "Appliance": "track_circuit", "Name": "${Value}", **f}, {1: ["IND"]})
+                   for n, f in (("Current", {}), ("Optical", {"hold_ms": "1500"}))]
+        kind = overview.convention_kinds(devices)[0]
+        self.assertFalse(any(row["Other fields"].flags for row in kind.cells))
+
+    def test_a_device_or_drivers_pins_and_units_are_its_hardware_and_not_compared(self):
+        for name in ("LampA", "LampB"):                                                             # binary vs level
+            self.assertFalse(any("disagree" in f for f in self.cell(name, "Pins").flags), name)
+            self.assertFalse(any("disagree" in f for f in self.cell(name, "Units").flags), name)
 
     def test_r1_a_panel_lever_states_a_token_per_function_pin(self):
         tokens = self.cell("LeverSwitch", "Tokens")
@@ -692,11 +715,18 @@ class ConventionsTests(unittest.TestCase):
         self.assertEqual(self.cell("BoardLamp", "Tokens").flags, [])        # no Indication.LAMP expected
         self.assertFalse(self.cell("BoardLamp", "Control").flags)
 
-    def test_r3_an_appliance_carries_no_tokens(self):
-        self.assertEqual(self.cell("TrackMCall", "Indication").flags,
-                         ["R3: unexpected; an APPLIANCE carries no tokens (it matches by Name)"])
-        self.assertFalse(self.cell("TrackMCall", "Control").flags)          # lacking them is never flagged
-        self.assertFalse(self.flags("TrackSwitch"))
+    def test_r3_an_appliance_states_what_it_reports(self):
+        self.assertFalse(self.flags("TrackSwitch"))                         # ${TC}K
+        self.assertFalse(self.flags("TrackSwitchNoTC"))                     # no OS circuit: stated empty, and G1 agrees
+        self.assertFalse(self.cell("TrackMCall", "Indication").flags)       # the maintainer call is not asked yet
+        appliance = lambda **f: sym("A", {"Role": "APPLIANCE", **f}, {1: ["TC"]})
+        self.assertEqual(overview.reporter_flags(appliance(Appliance="track_circuit")),
+                         ["R3: missing; an appliance states what it reports"])
+        self.assertEqual(overview.reporter_flags(appliance(Appliance="switch", TC="${VALUE}T1", Indication="")),
+                         ["R3: empty, but the switch has an OS circuit (TC)"])
+        self.assertEqual(overview.reporter_flags(appliance(Appliance="mast", Indication="x")),
+                         ["R3: unexpected; this appliance reports nothing"])
+        self.assertEqual(overview.reporter_flags(appliance(Appliance="lamp", Indication="${Name}K")), [])
 
     def test_r4_invert_on_a_panel_symbol_is_superseded_and_never_asked_for(self):
         self.assertTrue(any(f.startswith("Invert: R4: superseded") for f in self.cell("LeverLock", "Other fields").flags))
@@ -714,6 +744,35 @@ class ConventionsTests(unittest.TestCase):
         self.assertTrue(kind.label.endswith("(retiring)"))
         self.assertEqual(kind.flagged, 0)                                   # level LAMP, IndicationToken, no Indication
 
+    def test_g2_asks_for_the_key_field_the_importer_reads(self):
+        house = sym("House", {"Role": "STRUCTURE", "Kind": "CONTROL_POINT", "CP Name": ""}, {1: ["MC"]})
+        bare = sym("BareHouse", {"Role": "STRUCTURE", "Kind": "CONTROL_POINT"}, {1: ["MC"]})
+        joint = sym("IRJ", {"Role": "TRACK", "Kind": "IRJ"}, {1: ["A", "B"]})
+        industry = sym("Industry", {"Role": "TRACK", "Kind": "INDUSTRY", "Name": "${Value}"}, {1: ["A"]})
+        sign = sym("Rule251", {"Role": "POLICY", "Kind": "RULE_251"}, {1: ["A"]})
+        bit = sym("IB", {"Role": "IODRIVER", "IC": "CMRI", "Kind": "IB", "Bit": ""}, {1: ["D"]})
+        node = sym("Node", {"Role": "IODRIVER", "IC": "CMRI", "Kind": "NODE", "NodeType": "C"}, {1: ["IOBus"]})
+        cells = {s.name: c for k in overview.convention_kinds([house, bare, joint, industry, sign, bit, node])
+                 for s, c in zip(k.symbols, k.cells)}
+        self.assertEqual(cells["House"]["Name"].flags, [])                  # keyed by CP Name, not Name
+        self.assertIn("missing CP Name; the KiCad importer keys a STRUCTURE by it", cells["BareHouse"]["Name"].flags)
+        for name in ("IRJ", "Rule251", "IB"):                               # a row's id, or a computed key
+            self.assertEqual(cells[name]["Name"].flags, [], name)
+        self.assertIn("missing Address; the KiCad importer keys a IODRIVER by it", cells["Node"]["Name"].flags)   # Kind NODE, not NodeType
+
+    def test_g3_never_asks_for_a_field_only_another_style_carries(self):
+        plain = sym("TC", {"Role": "APPLIANCE", "Appliance": "track_circuit", "Name": "${Value}",
+                           "Indication": "${Name}K"}, {1: ["TC"]})
+        virtual = sym("TCV", {"Role": "APPLIANCE", "Appliance": "track_circuit", "Style": "virtual",
+                              "Name": "${Value}", "Indication": "${Name}K", "Members": "", "CP Name": ""}, {1: ["TC"]})
+        lamp = sym("Aux", {"Role": "APPLIANCE", "Appliance": "lamp", "Name": "${Value}", "Indication": "${Name}K",
+                           "CP Name": ""}, {1: ["MC"]})
+        call = sym("MCall", {"Role": "APPLIANCE", "Appliance": "lamp", "Style": "maintainer_call", "Name": "${Value}MC"},
+                   {1: ["MC"]})
+        cells = {s.name: c for k in overview.convention_kinds([plain, virtual, lamp, call]) for s, c in zip(k.symbols, k.cells)}
+        self.assertEqual(cells["TC"]["Other fields"].flags, [])                     # Members and CP Name: virtual's
+        self.assertEqual(cells["MCall"]["Other fields"].flags, [])          # its house's MC wire, not CP Name
+
     def test_a_pin_field_naming_no_pin_is_flagged(self):
         pins = self.cell("TrackMCall", "Pins")
         self.assertEqual(pins.text, "Pin.MCK=level (no pin)")                     # MC is a seam pin: not listed
@@ -721,7 +780,8 @@ class ConventionsTests(unittest.TestCase):
         self.assertEqual(pins.flags, ["Pin.MCK names no pin"])
 
     def test_other_fields_compare_in_the_family_and_settings_never(self):
-        self.assertTrue(any("missing Address" in f for f in self.cell("LampB", "Other fields").flags))
+        self.assertTrue(any("missing Invert" in f for f in self.cell("LampB", "Other fields").flags))
+        self.assertFalse(any("missing Address" in f for f in self.cell("LampB", "Other fields").flags))  # hardware
         self.assertFalse(any("hold_ms" in f for f in self.cell("LampA", "Other fields").flags))
 
     def test_page_has_the_conventions_tab_with_lint_messages(self):
@@ -761,6 +821,22 @@ class LintMessagesTests(unittest.TestCase):
         self.assertEqual(lint_symbol("L", "S", lamp), [])
         self.assertIn("Control", overview.CONTRACT_FIELDS)
         self.assertIn("Indication", overview.CONTRACT_FIELDS)
+
+    def test_a_cmrinet_driver_states_what_it_is_in_kind(self):
+        """The owner (2026-10-30): IC CMRI carries Kind NODE, IB or OB; a node attaches by Address, a bit by Bit."""
+        from contract.lint_symbol_fields import lint_symbol
+
+        def driver(**props):
+            return {"properties": {"Role": "IODRIVER", "IC": "CMRI", "Pin.D": "binary", **props}, "pins": [("D", "1", "input")],
+                    "units": {1: ["D"]}, "locked": False, "value_autoplace": False}
+        self.assertEqual(lint_symbol("L", "Node", driver(Kind="NODE", Address="", NodeType="C")), [])
+        self.assertEqual(lint_symbol("L", "IB", driver(Kind="IB", Bit="")), [])
+        self.assertEqual(lint_symbol("L", "OB", driver(Kind="OB", Bit="")), [])
+        self.assertEqual(lint_symbol("L", "Bare", driver(Bit="")),
+                         [("error", "L:Bare: a CMRInet driver states what it is in Kind, one of NODE, IB, OB; this has none")])
+        self.assertEqual(lint_symbol("L", "Odd", driver(Kind="SENSOR", Bit="")),
+                         [("error", "L:Odd: a CMRInet driver states what it is in Kind, one of NODE, IB, OB; this has SENSOR")])
+        self.assertEqual(lint_symbol("L", "Node", driver(Kind="NODE", NodeType="C")), [("error", "L:Node: Address missing on a bus device")])
 
 
 if __name__ == "__main__":

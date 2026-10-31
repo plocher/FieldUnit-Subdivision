@@ -59,8 +59,8 @@ Every wire in the seam drawing is one of four kinds, and a pin's name says which
 | `Interlocking` | `Processor`; `Codeline` | nothing | `Name` (§3.9) |
 | `House` | `Codeline`, with its unit;<br>`MC`, the maintainer call | nothing | `CP Name` (§3.9) |
 | `OfficeUnit` | `Processor` | nothing | Role `OFFICE_UNIT`;<br>Style `US&S`;<br>Columns, Railroad |
-| `Driver-*` (I2C, GPIO, JMRI, CMRInet bits) | `IOBus` | the device pins | Role `IODRIVER`;<br>`IC` names the chip or the encoding kind |
-| `Driver-CMRInet-Node` | `Transport` | `IOBus` | Role `IODRIVER`,<br>IC `CMRI`;<br>NodeType, Address (the UA),<br>InputBytes, OutputBytes |
+| `Driver-*` (I2C, GPIO, JMRI, CMRInet bits) | `IOBus` | the device pins | Role `IODRIVER`;<br>`IC` names the chip or the encoding kind;<br>a CMRInet bit: IC `CMRI`, Kind `IB` or `OB`, Bit |
+| `Driver-CMRInet-Node` | `Transport` | `IOBus` | Role `IODRIVER`,<br>IC `CMRI`, Kind `NODE`;<br>NodeType, Address (the UA),<br>InputBytes, OutputBytes[^cmri-kind] |
 | `Device-Head-*` | its device pins from a driver; `IND` from its mast | nothing | Role `DEVICE`, Appliance `head`;<br>Style fixed per symbol (§3.7) |
 | `PanelColumn`, panel devices, `Driver-I2C-MAX7313` | `IOBus` on the panel bus | | |
 
@@ -98,7 +98,7 @@ Example:  On the SPCoast example that uses an AAR encoded MQTT codeline, the MQT
 A CMRInet Node is accessed through its CMRInet Host, addressed by its UA, and provides a bus for its bits:
  - The Processor that will be the CMRInet Host defines a `CMRInet Transport` with the serial port and baud rate for the RS485 serial bus, and a `CMRInet v1.1 Encoding` for the protocol used on that bus.
  - The Field Hardware `IOBus` is anchored by a `Driver-CMRInet-Node` that connects to the `CMRInet Transport` and defines `Node Type 'C' UA:30` with its `IB[]` and `OB[]` arrays
- - `Driver-CMRInet-IB` and `-OB` represent individual bits in those `IB` and `OB` arrays. 
+ - `Driver-CMRInet-IB` and `-OB` represent individual bits in those `IB` and `OB` arrays. Each CMRInet driver states what it is in `Kind`: `NODE` for the node, `IB` or `OB` for a bit, which is also the bit's direction and the first part of its key (`IB.3`). `NodeType` is an ordinary node setting (its value, `C`), never the test for a node.
  - The compiler derives the bits in use and checks the byte sizes in the Node declaration, never invents it, and reports an undersized one. Spare
 bytes may be used by another interlocking. A node's identity is transport plus UA.
 
@@ -167,7 +167,7 @@ Symbol attribute names that are used by the compiler:
 `CMRInet Host` not `host`
 `columns` not `lines`
 `Driver` not `chip`
-`TimeCode`, `LocoNet`, `CMRInet`; `NodeType`;
+`TimeCode`, `LocoNet`, `CMRInet`; `NodeType`; Kind `NODE`, `IB`, `OB` on CMRInet drivers;
 Kind `MQTT-JMRI` on JMRI drivers IC; 
 `head devices`, not `casts`, in prose.
 Pins carry the relation's name; a provided pin is named for what it provides. 
@@ -240,3 +240,5 @@ Ratify §3 as the drawing contract the milestone D compiler reads, and §3.11 as
 A picture and words for the hosting variations the owner listed (a field processor polling its own CMRInet
 nodes; a local processor as MQTT client, which Interchange now is); KiCad units for a node's bits; LCC and
 other transports; Studio's own notation.
+
+[^cmri-kind]: Amended 2026-10-30 (owner): CMRInet drivers state `Kind` `NODE`, `IB` or `OB` (Railroad 2ecf8a4). Before, the node was the driver with `NodeType` and a bit's direction came from its D pin's electrical type; the earlier text is at commit c3edd3c.

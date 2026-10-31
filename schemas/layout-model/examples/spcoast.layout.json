@@ -20,7 +20,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Christopher South"
+            "CP Name": "Christopher South",
+            "Indication": "1NATK"
           },
           "relations": {
             "TC": [
@@ -36,7 +37,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Christopher North"
+            "CP Name": "Christopher North",
+            "Indication": "1SATK"
           },
           "relations": {
             "TC": [
@@ -52,7 +54,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Christopher North"
+            "CP Name": "Christopher North",
+            "Indication": "01TK"
           },
           "relations": {
             "TC": [
@@ -80,7 +83,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Christopher South"
+            "CP Name": "Christopher South",
+            "Indication": "2NATK"
           },
           "relations": {
             "TC": [
@@ -96,7 +100,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Christopher North"
+            "CP Name": "Christopher North",
+            "Indication": "2SATK"
           },
           "relations": {
             "TC": [
@@ -114,6 +119,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Christopher North",
+            "Indication": "813T1K",
             "Style": "lock",
             "TC": "813T1"
           },
@@ -137,6 +143,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Christopher North",
+            "Indication": "815T1K",
             "Style": "powered",
             "TC": "815T1"
           },
@@ -160,6 +167,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Christopher North",
+            "Indication": "815AT1K",
             "Style": "powered",
             "TC": "815AT1"
           },
@@ -263,6 +271,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Christopher South",
+            "Indication": "817T1K",
             "Style": "lock",
             "TC": "817T1"
           },
@@ -1512,6 +1521,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Corporal",
+            "Indication": "",
             "IndicationCeiling": "RESTRICTING/RESTRICTING",
             "Style": "manual_sensed"
           },
@@ -1545,7 +1555,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Corporal"
+            "CP Name": "Corporal",
+            "Indication": "1NATK"
           },
           "relations": {
             "TC": [
@@ -1560,7 +1571,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Corporal"
+            "CP Name": "Corporal",
+            "Indication": "1SATK"
           },
           "relations": {
             "TC": [
@@ -1576,7 +1588,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Corporal"
+            "CP Name": "Corporal",
+            "Indication": "01TK"
           },
           "relations": {
             "TC": [
@@ -1591,7 +1604,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Corporal"
+            "CP Name": "Corporal",
+            "Indication": "2NATK"
           },
           "relations": {
             "TC": [
@@ -1607,7 +1621,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Corporal"
+            "CP Name": "Corporal",
+            "Indication": "2SATK"
           },
           "relations": {
             "TC": [
@@ -1625,6 +1640,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Corporal",
+            "Indication": "829T1K",
             "Style": "lock",
             "TC": "829T1"
           },
@@ -1648,6 +1664,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Corporal",
+            "Indication": "",
             "IndicationCeiling": "STOP/RESTRICTING",
             "Style": "derail"
           },
@@ -1715,6 +1732,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Corporal",
+            "Indication": "831T1K",
             "Style": "powered",
             "TC": "831T1"
           },
@@ -2843,7 +2861,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy Caltrain"
+            "CP Name": "Gilroy Caltrain",
+            "Indication": "1NATK"
           },
           "relations": {
             "TC": [
@@ -2859,7 +2878,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy Caltrain"
+            "CP Name": "Gilroy Caltrain",
+            "Indication": "1SATK"
           },
           "relations": {
             "TC": [
@@ -2875,7 +2895,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy Caltrain"
+            "CP Name": "Gilroy Caltrain",
+            "Indication": "01TK"
           },
           "relations": {
             "TC": [
@@ -2891,7 +2912,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy Caltrain"
+            "CP Name": "Gilroy Caltrain",
+            "Indication": "02TK"
           },
           "relations": {
             "TC": [
@@ -2907,7 +2929,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy Caltrain"
+            "CP Name": "Gilroy Caltrain",
+            "Indication": "03TK"
           },
           "relations": {
             "TC": [
@@ -2925,6 +2948,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Gilroy Caltrain",
+            "Indication": "771T1K",
             "Style": "powered",
             "TC": "771T1"
           },
@@ -2948,6 +2972,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Gilroy Caltrain",
+            "Indication": "773T1K",
             "Style": "powered",
             "TC": "773T1"
           },
@@ -3068,6 +3093,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Gilroy Caltrain",
+            "Indication": "775T1K",
             "Style": "powered",
             "TC": "775T1"
           },
@@ -4199,7 +4225,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy North"
+            "CP Name": "Gilroy North",
+            "Indication": "1NATK"
           },
           "relations": {
             "TC": [
@@ -4215,7 +4242,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy North"
+            "CP Name": "Gilroy North",
+            "Indication": "1SATK"
           },
           "relations": {
             "TC": [
@@ -4231,7 +4259,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy North"
+            "CP Name": "Gilroy North",
+            "Indication": "01TK"
           },
           "relations": {
             "TC": [
@@ -4259,7 +4288,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy North"
+            "CP Name": "Gilroy North",
+            "Indication": "02TK"
           },
           "relations": {
             "TC": [
@@ -4276,6 +4306,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Gilroy North",
+            "Indication": "777T1K",
             "Style": "lock",
             "TC": "777T1"
           },
@@ -4379,6 +4410,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Gilroy South",
+            "Indication": "781T1K",
             "Style": "lock",
             "TC": "781T1"
           },
@@ -5310,7 +5342,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Carnadero"
+            "CP Name": "Carnadero",
+            "Indication": "1NATK"
           },
           "relations": {
             "TC": [
@@ -5326,7 +5359,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Luchessa"
+            "CP Name": "Luchessa",
+            "Indication": "1SATK"
           },
           "relations": {
             "TC": [
@@ -5342,7 +5376,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy"
+            "CP Name": "Gilroy",
+            "Indication": "01TK"
           },
           "relations": {
             "TC": [
@@ -5357,7 +5392,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Carnadero"
+            "CP Name": "Carnadero",
+            "Indication": "2NATK"
           },
           "relations": {
             "TC": [
@@ -5373,7 +5409,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Gilroy"
+            "CP Name": "Gilroy",
+            "Indication": "02TK"
           },
           "relations": {
             "TC": [
@@ -5389,7 +5426,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Carnadero"
+            "CP Name": "Carnadero",
+            "Indication": "3NATK"
           },
           "relations": {
             "TC": [
@@ -5407,6 +5445,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Luchessa",
+            "Indication": "783T1K",
             "Style": "powered",
             "TC": "783T1"
           },
@@ -5527,6 +5566,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Gilroy",
+            "Indication": "795T1K",
             "Style": "lock",
             "TC": "795T1"
           },
@@ -5550,6 +5590,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Gilroy",
+            "Indication": "",
             "IndicationCeiling": "STOP/RESTRICTING",
             "Style": "derail"
           },
@@ -5570,6 +5611,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Carnadero",
+            "Indication": "799T1K",
             "Style": "powered",
             "TC": "799T1"
           },
@@ -5585,24 +5627,24 @@
             ]
           }
         },
-        "NFLK": {
+        "NFL": {
           "derived": {
             "controlPoint": "Luchessa:Luchessa"
           },
           "given": {
             "Appliance": "lamp",
             "CP Name": "Luchessa",
-            "Style": "non_vital"
+            "Indication": "NFLK"
           }
         },
-        "SFLK": {
+        "SFL": {
           "derived": {
             "controlPoint": "Luchessa:Luchessa"
           },
           "given": {
             "Appliance": "lamp",
             "CP Name": "Luchessa",
-            "Style": "non_vital"
+            "Indication": "SFLK"
           }
         }
       },
@@ -6147,14 +6189,14 @@
             },
             "glyph": "Railroad-Trackplan:Switch_Powered"
           },
-          "NFLK": {
+          "NFL": {
             "at": {
               "x": 186.69,
               "y": 0.0
             },
             "glyph": "Railroad-Trackplan:AUXILIARY"
           },
-          "SFLK": {
+          "SFL": {
             "at": {
               "x": 193.04,
               "y": 0.0
@@ -6907,6 +6949,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Sargent",
+            "Indication": "",
             "IndicationCeiling": "RESTRICTING/RESTRICTING",
             "Style": "manual_sensed"
           },
@@ -6940,7 +6983,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Sargent"
+            "CP Name": "Sargent",
+            "Indication": "1NATK"
           },
           "relations": {
             "TC": [
@@ -6956,7 +7000,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Sargent"
+            "CP Name": "Sargent",
+            "Indication": "1SATK"
           },
           "relations": {
             "TC": [
@@ -6971,7 +7016,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Sargent"
+            "CP Name": "Sargent",
+            "Indication": "2SATK"
           },
           "relations": {
             "TC": [
@@ -6989,6 +7035,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Sargent",
+            "Indication": "835T1K",
             "Style": "lock",
             "TC": "835T1"
           },
@@ -7068,8 +7115,8 @@
           "given": {
             "Appliance": "lamp",
             "CP Name": "Sargent",
-            "Milepost": "83.4",
-            "Style": "non_vital"
+            "Indication": "HBAK",
+            "Milepost": "83.4"
           }
         }
       },
@@ -7632,6 +7679,7 @@
             "given": {
               "Appliance": "track_circuit",
               "CP Name": "Corporal",
+              "Indication": "Corporal:2NATK",
               "Name": "Corporal:2NAT"
             },
             "id": "1f225e38-5cdb-4b01-9ab6-8bbb0d92c42a",
@@ -7898,7 +7946,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "1BTK"
           },
           "relations": {
             "TC": [
@@ -7913,7 +7962,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "1CTK"
           },
           "relations": {
             "TC": [
@@ -7928,7 +7978,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "1DTK"
           },
           "relations": {
             "TC": [
@@ -7943,7 +7994,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "1ETK"
           },
           "relations": {
             "TC": [
@@ -7958,7 +8010,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "01TK"
           },
           "relations": {
             "TC": [
@@ -7973,7 +8026,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "2ATK"
           },
           "relations": {
             "TC": [
@@ -7988,7 +8042,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "2BTK"
           },
           "relations": {
             "TC": [
@@ -8003,7 +8058,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "2CTK"
           },
           "relations": {
             "TC": [
@@ -8018,7 +8074,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "2DTK"
           },
           "relations": {
             "TC": [
@@ -8033,7 +8090,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "2ETK"
           },
           "relations": {
             "TC": [
@@ -8048,7 +8106,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "02TK"
           },
           "relations": {
             "TC": [
@@ -8067,6 +8126,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "3T1K",
             "Style": "powered",
             "TC": "3T1"
           },
@@ -8089,7 +8149,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "3BTK"
           },
           "relations": {
             "TC": [
@@ -8104,7 +8165,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "3CTK"
           },
           "relations": {
             "TC": [
@@ -8119,7 +8181,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "3DTK"
           },
           "relations": {
             "TC": [
@@ -8134,7 +8197,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "3ETK"
           },
           "relations": {
             "TC": [
@@ -8149,7 +8213,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "03TK"
           },
           "relations": {
             "TC": [
@@ -8165,7 +8230,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "4BTK"
           },
           "relations": {
             "TC": [
@@ -8180,7 +8246,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "4CTK"
           },
           "relations": {
             "TC": [
@@ -8195,7 +8262,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "4DTK"
           },
           "relations": {
             "TC": [
@@ -8210,7 +8278,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "4ETK"
           },
           "relations": {
             "TC": [
@@ -8227,6 +8296,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "5T1K",
             "Style": "powered",
             "TC": "5T1"
           },
@@ -8248,7 +8318,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "5BTK"
           },
           "relations": {
             "TC": [
@@ -8263,7 +8334,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "5CTK"
           },
           "relations": {
             "TC": [
@@ -8278,7 +8350,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "5DTK"
           },
           "relations": {
             "TC": [
@@ -8293,7 +8366,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "5ETK"
           },
           "relations": {
             "TC": [
@@ -8308,7 +8382,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "6BTK"
           },
           "relations": {
             "TC": [
@@ -8323,7 +8398,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "6CTK"
           },
           "relations": {
             "TC": [
@@ -8338,7 +8414,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "6DTK"
           },
           "relations": {
             "TC": [
@@ -8353,7 +8430,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "6ETK"
           },
           "relations": {
             "TC": [
@@ -8370,6 +8448,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "7T1K",
             "Style": "powered",
             "TC": "7T1"
           },
@@ -8391,7 +8470,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "7BTK"
           },
           "relations": {
             "TC": [
@@ -8406,7 +8486,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "7CTK"
           },
           "relations": {
             "TC": [
@@ -8421,7 +8502,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "7DTK"
           },
           "relations": {
             "TC": [
@@ -8436,7 +8518,8 @@
           },
           "given": {
             "Appliance": "track_circuit",
-            "CP Name": "Watsonville"
+            "CP Name": "Watsonville",
+            "Indication": "7ETK"
           },
           "relations": {
             "TC": [
@@ -8453,6 +8536,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "9T1K",
             "Style": "powered",
             "TC": "9T1"
           },
@@ -8476,6 +8560,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "11T1K",
             "Style": "powered",
             "TC": "11T1"
           },
@@ -8499,6 +8584,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "13T1K",
             "Style": "powered",
             "TC": "13T1"
           },
@@ -8522,6 +8608,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "15T1K",
             "Style": "powered",
             "TC": "15T1"
           },
@@ -8545,6 +8632,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "17T1K",
             "Style": "powered",
             "TC": "17T1"
           },
@@ -8568,6 +8656,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "19T1K",
             "Style": "powered",
             "TC": "19T1"
           },
@@ -8591,6 +8680,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "21T1K",
             "Style": "powered",
             "TC": "21T1"
           },
@@ -8614,6 +8704,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "23T1K",
             "Style": "powered",
             "TC": "23T1"
           },
@@ -8637,6 +8728,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "25T1K",
             "Style": "powered",
             "TC": "25T1"
           },
@@ -8668,7 +8760,8 @@
             "Appliance": "track_circuit",
             "CP Name": "Watsonville",
             "Display": "0100T: [15T1,17T1,19T1,21T1,23T1,25T1]",
-            "IndicationToken": "15T1,17T1,19T1,21T1,23T1,25T1",
+            "Indication": "0100TK",
+            "Members": "15T1,17T1,19T1,21T1,23T1,25T1",
             "Style": "virtual"
           }
         },
@@ -8689,7 +8782,8 @@
             "Appliance": "track_circuit",
             "CP Name": "Watsonville",
             "Display": "0101T: [03T,3T1,5T1,7T1,9T1,11T1,13T1]",
-            "IndicationToken": "03T,3T1,5T1,7T1,9T1,11T1,13T1",
+            "Indication": "0101TK",
+            "Members": "03T,3T1,5T1,7T1,9T1,11T1,13T1",
             "Style": "virtual"
           }
         },
@@ -8701,6 +8795,7 @@
           "given": {
             "Appliance": "switch",
             "CP Name": "Watsonville",
+            "Indication": "837T1K",
             "Style": "powered",
             "TC": "837T1"
           },
@@ -8921,24 +9016,24 @@
             }
           }
         },
-        "NFLK": {
+        "NFL": {
           "derived": {
             "controlPoint": "Watsonville:Watsonville"
           },
           "given": {
             "Appliance": "lamp",
             "CP Name": "Watsonville",
-            "Style": "non_vital"
+            "Indication": "NFLK"
           }
         },
-        "SFLK": {
+        "SFL": {
           "derived": {
             "controlPoint": "Watsonville:Watsonville"
           },
           "given": {
             "Appliance": "lamp",
             "CP Name": "Watsonville",
-            "Style": "non_vital"
+            "Indication": "SFLK"
           }
         }
       },
@@ -10455,14 +10550,14 @@
             },
             "rotation": 180
           },
-          "NFLK": {
+          "NFL": {
             "at": {
               "x": 134.62,
               "y": 0.0
             },
             "glyph": "Railroad-Trackplan:AUXILIARY"
           },
-          "SFLK": {
+          "SFL": {
             "at": {
               "x": 140.97,
               "y": 0.0
@@ -13933,6 +14028,15 @@
         },
         "shape": [
           {
+            "at": {
+              "x": 0.0,
+              "y": -2.54
+            },
+            "size": 0.762,
+            "text": "${Name}",
+            "type": "text"
+          },
+          {
             "center": {
               "x": 0.0,
               "y": 0.0
@@ -13977,6 +14081,15 @@
           }
         },
         "shape": [
+          {
+            "at": {
+              "x": 0.0,
+              "y": -2.54
+            },
+            "size": 0.762,
+            "text": "${Name}",
+            "type": "text"
+          },
           {
             "center": {
               "x": 0.0,
@@ -14369,211 +14482,246 @@
               "IB.1": {
                 "given": {
                   "Bit": "1",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.2": {
                 "given": {
                   "Bit": "2",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.3": {
                 "given": {
                   "Bit": "3",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.4": {
                 "given": {
                   "Bit": "4",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.5": {
                 "given": {
                   "Bit": "5",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.6": {
                 "given": {
                   "Bit": "6",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.7": {
                 "given": {
                   "Bit": "7",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.8": {
                 "given": {
                   "Bit": "8",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.9": {
                 "given": {
                   "Bit": "9",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.10": {
                 "given": {
                   "Bit": "10",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.11": {
                 "given": {
                   "Bit": "11",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.12": {
                 "given": {
                   "Bit": "12",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.13": {
                 "given": {
                   "Bit": "13",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "IB.14": {
                 "given": {
                   "Bit": "14",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "IB"
                 }
               },
               "OB.1": {
                 "given": {
                   "Bit": "1",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.2": {
                 "given": {
                   "Bit": "2",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.3": {
                 "given": {
                   "Bit": "3",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.4": {
                 "given": {
                   "Bit": "4",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.5": {
                 "given": {
                   "Bit": "5",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.6": {
                 "given": {
                   "Bit": "6",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.7": {
                 "given": {
                   "Bit": "7",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.8": {
                 "given": {
                   "Bit": "8",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.9": {
                 "given": {
                   "Bit": "9",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.10": {
                 "given": {
                   "Bit": "10",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.11": {
                 "given": {
                   "Bit": "11",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.12": {
                 "given": {
                   "Bit": "12",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.13": {
                 "given": {
                   "Bit": "13",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.14": {
                 "given": {
                   "Bit": "14",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.15": {
                 "given": {
                   "Bit": "15",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.16": {
                 "given": {
                   "Bit": "16",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.17": {
                 "given": {
                   "Bit": "17",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.18": {
                 "given": {
                   "Bit": "18",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.19": {
                 "given": {
                   "Bit": "19",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               },
               "OB.20": {
                 "given": {
                   "Bit": "20",
-                  "IC": "CMRI"
+                  "IC": "CMRI",
+                  "Kind": "OB"
                 }
               }
             },
             "given": {
               "IC": "CMRI",
               "InputBytes": "2",
+              "Kind": "NODE",
               "NodeType": "C",
               "OutputBytes": "3"
             }
@@ -16352,7 +16500,7 @@
   },
   "provenance": {
     "libraries": {
-      "Railroad-Trackplan": "split-projects-final-107-g085cd97"
+      "Railroad-Trackplan": "split-projects-final-113-g2ecf8a4"
     },
     "referenceData": {
       "driverEncodings": "2026-10-23",
@@ -16362,7 +16510,7 @@
     },
     "rules": "0.1.0",
     "source": {
-      "describe": "split-projects-final-107-g085cd97",
+      "describe": "split-projects-final-113-g2ecf8a4",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad",

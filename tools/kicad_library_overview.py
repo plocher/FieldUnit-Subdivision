@@ -56,11 +56,22 @@ flagged, with its reasons inline and in its tooltip, by these rules.
 
 General (kept from the first audit):
 - G1 the symbols of one kind disagree in that column (Pins and Units compare as sets per unit; Other
-  fields compares the field names, not their values; Tokens the field names);
-- G2 Name is absent while some kind of the same Role carries it;
+  fields compares the field names, not their values, and never the lower_snake_case settings, as
+  in G3; Tokens the field names); a DEVICE's or an
+  IODRIVER's Pins and Units are not compared, nor a DEVICE's Address (a pixel head's place on its
+  chain), since the symbols of one such kind are versions of the hardware and each states its own
+  drive (owner, 2026-10-30);
+- G2 the key field the KiCad importer reads for the symbol's identity is absent (its `KEYS`: `CP Name`
+  on a house, `Address` on a driver, `Column` on a column, `Name` on the rest); a TRACK or POLICY
+  row is identified by its id (a TRACK name is optional), the importer reads no SETTING, and an
+  encoded driver or a bit has no key;
 - G3 an other field is absent while a symbol of the same family carries it (family: Role and
   Appliance, or the kind itself where there is no Appliance); lower_snake_case settings are
-  per-device and never compared, and a field the rulings below supersede is never asked for;
+  per-device and never compared, a field the rulings below supersede is never asked for, and a field
+  that only symbols of another Style carry belongs to that Style (`Members` on a virtual track circuit);
+  a maintainer call is never asked for `CP Name`: its control point is the house whose MC wire
+  reaches it, so the field could only repeat or contradict the wire (owner, 2026-10-30); nor is a
+  DEVICE asked for `Address`, its hardware as in G1;
 - G4 a Pin.* field names no pin.
 
 The owner's token rulings (2026-10-28), which the libraries do not follow yet; the page shows the gap:
@@ -72,8 +83,11 @@ The owner's token rulings (2026-10-28), which the libraries do not follow yet; t
 - R2 a model board lamp (a PANEL lamp whose only function pin is LAMP) states one whole-symbol
   `Indication` (an expression); its LAMP pin is a driver wire, so no `Indication.LAMP` is expected;
   `IndicationToken` is the superseded form.
-- R3 an APPLIANCE carries no tokens (it matches its panel appliance by Name): a `Control` or
-  `Indication` field on one is unexpected; lacking them is never flagged.
+- R3 an APPLIANCE states what it reports (owner, 2026-10-29): a track circuit and a field lamp
+  carry `Indication` (`${Name}K`); a switch carries `Indication` (`${TC}K`), present but empty when
+  its `TC` is empty, and for G1 the two forms agree; a missing one is flagged. A `Control` on any
+  APPLIANCE, and an `Indication` on any other (a mast, a head, a contact), is unexpected. The
+  maintainer call is not asked either way yet.
 - R4 `Invert` on a PANEL symbol is superseded (the inversion goes into the token, e.g.
   `Indication.WLK=!${Value}WLK`); its absence is never flagged. DEVICE and IODRIVER keep `Invert`.
 - R5 a PANEL lamp pin (an input function pin) states `binary`; a level or PWM driver may still drive
@@ -100,8 +114,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from kicad_services.sch_text import library_standard_properties, library_symbols  # noqa: E402
 from contract.lint_symbol_fields import MEMBERSHIP_PINS, library_bodies, lint_symbol  # noqa: E402
+from layout_compiler.seams import CMRI_BIT_KINDS, ENCODING_OF_IC, KEYS  # noqa: E402
 
 KICAD_CLI_APP = "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
 PAGE_NAME = "library-overview.html"
@@ -378,6 +394,8 @@ def tokens_cell(s: Symbol) -> Cell:
 def symbol_cells(s: Symbol) -> dict[str, Cell]:
     """The convention cells of one symbol, before any comparison: the values as written."""
     cells = {f: Cell(s.fields[f] if f in s.fields else ABSENT, s.fields.get(f)) for f in TOKEN_FIELDS}
+    if reporter(s) == "switch" and "Indication" in s.fields:     # R3: ${TC}K and an empty TC's "" are one form
+        cells["Indication"].key = "stated"
     cells["Tokens"] = tokens_cell(s)
     drive = lambda b: s.fields.get("Pin." + b)                 # None: the pin has no Pin.* (a trackplan appliance's pins)
     bases = [b for b, _ in function_pins(s)]
@@ -396,8 +414,46 @@ def symbol_cells(s: Symbol) -> dict[str, Cell]:
     cells["Units"] = Cell("; ".join(f"{u}{f' [{w}]' if w else ''}: {' '.join(n)}" for u, w, n in units),
                           tuple((u, w, tuple(sorted(n))) for u, w, n in units))
     other = other_fields(s)
-    cells["Other fields"] = Cell(", ".join(f"{f}={s.fields[f]}" if s.fields[f] else f for f in other), frozenset(other))
+    cells["Other fields"] = Cell(", ".join(f"{f}={s.fields[f]}" if s.fields[f] else f for f in other),
+                                 frozenset(f for f in other if not _SNAKE_CASE.match(f)))   # G1: settings are per-device
     return cells
+
+
+def reporter(s: Symbol) -> str | None:
+    """R3: which kind of reporter an APPLIANCE is ("switch" or "name"), "" for one that reports nothing,
+    None for the maintainer call (not asked yet) and anything not an APPLIANCE."""
+    if s.fields.get("Role") != "APPLIANCE" or s.fields.get("Style") == "maintainer_call":
+        return None
+    return {"switch": "switch", "track_circuit": "name", "lamp": "name"}.get(s.fields.get("Appliance", ""), "")
+
+
+def reporter_flags(s: Symbol) -> list[str]:
+    """R3: an appliance states what it reports; only presence is checked, never the value."""
+    kind, ind = reporter(s), s.fields.get("Indication")
+    if kind is None:
+        return []
+    if kind == "":
+        return ["R3: unexpected; this appliance reports nothing"] if ind is not None else []
+    if ind is None:
+        return ["R3: missing; an appliance states what it reports"]
+    if kind == "switch" and not ind and s.fields.get("TC"):
+        return ["R3: empty, but the switch has an OS circuit (TC)"]
+    if kind == "name" and not ind:
+        return ["R3: empty; a track circuit or field lamp reports its own token"]
+    return []
+
+
+def identity_field(s: Symbol) -> str | None:
+    """G2: the field the KiCad importer keys the symbol by (`layout_compiler.seams.key_field`), or None where it reads
+    none: a TRACK or POLICY row is identified by its id (a TRACK name is optional), the importer reads no SETTING, and
+    an encoded driver and a CMRInet bit (IC CMRI, Kind IB or OB) have computed keys; a CMRInet node (Kind NODE) is keyed
+    by its Address."""
+    role = s.fields.get("Role", "")
+    ic = s.fields.get("IC")
+    if role in ("TRACK", "POLICY", "SETTING") or (role == "IODRIVER" and ((ic == "CMRI" and s.fields.get("Kind") in CMRI_BIT_KINDS)
+                                                                          or ic in ENCODING_OF_IC)):
+        return None
+    return KEYS.get((role, s.fields.get("Kind"))) or KEYS.get((role, None)) or "Name"
 
 
 def carriers_text(names: list[str], limit: int = 3) -> str:
@@ -413,25 +469,30 @@ def convention_kinds(symbols: list[Symbol]) -> list[KindRow]:
              for k, members in sorted(groups.items())]
     ref = lambda s: f"{s.library}:{s.name}"
     for kind in kinds:
-        # G1: the symbols of one kind disagree in a column.
+        # G1: the symbols of one kind disagree in a column; a DEVICE's or IODRIVER's pins and units are its hardware.
+        role = kind.symbols[0].fields.get("Role")
+        hardware = role in ("DEVICE", "IODRIVER")
         for col in CONVENTION_COLUMNS:
-            variants = {repr(row[col].key) for row in kind.cells}
+            if hardware and col in ("Pins", "Units"):
+                continue
+            compared = lambda row: row[col].key - {"Address"} if role == "DEVICE" and col == "Other fields" else row[col].key
+            variants = {repr(compared(row)) for row in kind.cells}
             if len(variants) > 1:
                 for row in kind.cells:
                     row[col].flags.append(f"the {len(kind.symbols)} symbols of this kind disagree ({len(variants)} variants)")
         for s, row in zip(kind.symbols, kind.cells):
             role = s.fields.get("Role", "")
             gone = superseded(s)
-            # G2: Name absent here and carried by a kind of the same Role.
-            if "Name" not in s.fields:
-                by_role = [ref(o) for o in symbols if "Name" in o.fields and o.fields.get("Role", "") == role]
-                if by_role:
-                    row["Name"].flags.append(f"missing; Role {role} carries it on {carriers_text(by_role)}")
+            # G2: the key field the importer reads for its identity is absent.
+            key = identity_field(s)
+            if key and key not in s.fields:
+                row["Name"].flags.append(f"missing {key}; the KiCad importer keys a {role} by it")
             for f in ("Control", "Indication"):
                 if f in s.fields and f in gone:                # R1: the whole-symbol form on a lever
                     row[f].flags.append(gone[f])
-                if f in s.fields and role == "APPLIANCE":      # R3: an appliance matches its panel appliance by Name
-                    row[f].flags.append("R3: unexpected; an APPLIANCE carries no tokens (it matches by Name)")
+            row["Indication"].flags += reporter_flags(s)          # R3: an appliance states what it reports
+            if "Control" in s.fields and role == "APPLIANCE":
+                row["Control"].flags.append("R3: unexpected; an APPLIANCE reports, it takes no control")
             if is_board_lamp(s) and "Indication" not in s.fields:
                 row["Indication"].flags.append("R2: missing; a model board lamp states one Indication expression")
             for f in ("IndicationToken", "Invert"):             # R2, R4: superseded fields carried
@@ -440,7 +501,13 @@ def convention_kinds(symbols: list[Symbol]) -> list[KindRow]:
             # G3: a non-setting other field absent here, carried in the family, and not superseded here.
             mine = set(other_fields(s))
             family = [o for o in symbols if family_key(o) == family_key(s)]
-            wanted = {f for o in family for f in other_fields(o) if not _SNAKE_CASE.match(f)} - mine - set(gone)
+            style = s.fields.get("Style", "")
+            styled = lambda f: all(o.fields.get("Style", "") not in ("", style) for o in family if f in o.fields)
+            wanted = {f for o in family for f in other_fields(o) if not _SNAKE_CASE.match(f) and not styled(f)} - mine - set(gone)
+            if s.fields.get("Style") == "maintainer_call":            # its house is the one whose MC wire reaches it
+                wanted.discard("CP Name")
+            if role == "DEVICE":                                       # a DEVICE's Address is its hardware, as in G1
+                wanted.discard("Address")
             for f in sorted(wanted, key=str.lower):
                 row["Other fields"].flags.append(
                     f"missing {f}; carried by {carriers_text([ref(o) for o in family if f in o.fields])}")
@@ -1385,10 +1452,10 @@ Pins read name (number) electrical type = Pin.&lt;base&gt; value. A middle dot m
 </section>
 <section id="tab-conventions" hidden>
 <p class="meta">One group per kind (Role, Appliance, Kind, Style, IC as the symbols carry them), one row per symbol. A flagged
-cell (&#9873;) says why. G rules: the symbols of a kind disagree (G1); Name is missing while another kind of the same
-Role carries it (G2); another field is missing while its family carries it, settings and superseded fields excepted
-(G3); a Pin.* names no pin (G4). Token rulings of 2026-10-28: a PANEL lever states Control.&lt;pin&gt; or
-Indication.&lt;pin&gt; per function pin (R1); a model board lamp states one Indication (R2); an APPLIANCE carries no tokens
+cell (&#9873;) says why. G rules: the symbols of a kind disagree (G1); the key field the KiCad importer reads for its
+identity is missing (G2); another field is missing while its family carries it, settings, superseded fields and
+another Style's fields excepted (G3); a Pin.* names no pin (G4). Token rulings of 2026-10-28: a PANEL lever states Control.&lt;pin&gt; or
+Indication.&lt;pin&gt; per function pin (R1); a model board lamp states one Indication (R2); an APPLIANCE states what it reports
 (R3); Invert on a PANEL symbol is superseded (R4); a PANEL lamp pin states binary (R5); a retiring kind is not flagged
 (R6). Pins read base=drive; Units read
 unit [drive words]: pin bases. A dash is an absent field.</p>

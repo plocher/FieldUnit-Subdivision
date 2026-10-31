@@ -90,7 +90,7 @@ def track_relations(ix) -> dict[str, list[str]]:
 
 def diags(sm, *prefixes: str) -> list[tuple[str, str]]:
     """The diagnostics as a table of (code, symbol reference): structured fields, never the message text."""
-    return sorted((d.code, d.where.split(" ")[0].rsplit("/", 1)[-1]) for d in sm.report.diags if d.code.startswith(prefixes))
+    return sorted(((d.code, (d.where or d.source).split(" ")[0].rsplit("/", 1)[-1]) for d in sm.report.diags if d.code.startswith(prefixes)))
 
 
 # One switch inside three signal joints of house East: the Sargent shape.
@@ -372,11 +372,11 @@ MC1  | MaintainerCall  | APPLIANCE | Appliance=lamp Style=maintainer_call Name=M
         self.assertEqual(ix["houses"]["West"]["relations"], {"maintainerCall": "X:MC1"})
 
     def test_a_virtual_circuit_lists_its_members_and_follows_them(self):
-        given = TWO_HOUSES + "V1 | Track Circuit_Virtual | APPLIANCE | Appliance=track_circuit Style=virtual Name=0100T IndicationToken=1SAT,01T\n"
+        given = TWO_HOUSES + "V1 | Track Circuit_Virtual | APPLIANCE | Appliance=track_circuit Style=virtual Name=0100T Members=1SAT,01T\n"
         sm, ix = compile_(given, TWO_HOUSES_NETS)
         self.assertEqual(sm.report.errors, [])
         self.assertEqual(ix["appliances"]["0100T"], {
-            "given": {"Appliance": "track_circuit", "Style": "virtual", "IndicationToken": "1SAT,01T"},
+            "given": {"Appliance": "track_circuit", "Style": "virtual", "Members": "1SAT,01T"},
             "derived": {"members": ["X:1SAT", "X:01T"], "controlPoint": "X:North"}})
 
     def test_the_output_validates(self):
@@ -389,11 +389,11 @@ class Attributes(unittest.TestCase):
     def test_an_appliance_states_its_milepost(self):
         given = """
 H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
-L1   | AUXILIARY       | APPLIANCE | Appliance=lamp Style=non_vital Name=HBA Milepost=83.4
-L2   | AUXILIARY       | APPLIANCE | Appliance=lamp Style=non_vital Name=NFLK Milepost=north
+L1   | AUXILIARY       | APPLIANCE | Appliance=lamp Name=HBA Milepost=83.4
+L2   | AUXILIARY       | APPLIANCE | Appliance=lamp Name=NFLK Milepost=north
 """
         sm, ix = compile_(given, "")
-        self.assertEqual(ix["appliances"]["HBA"], {"given": {"Appliance": "lamp", "Style": "non_vital", "Milepost": "83.4"},
+        self.assertEqual(ix["appliances"]["HBA"], {"given": {"Appliance": "lamp", "Milepost": "83.4"},
                                                    "derived": {"controlPoint": "X:East"}})
         self.assertEqual(diags(sm, "milepost"), [("milepost.number", "L2")])
 
@@ -401,10 +401,21 @@ L2   | AUXILIARY       | APPLIANCE | Appliance=lamp Style=non_vital Name=NFLK Mi
         """A field nothing reads is kept, never dropped (the owner, 2026-10-26; ADR 0011 §2)."""
         given = """
 H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
-L1   | AUXILIARY       | APPLIANCE | Appliance=lamp Style=non_vital Name=NFLK Display="North flasher" Column=7
+L1   | AUXILIARY       | APPLIANCE | Appliance=lamp Name=NFLK Display="North flasher" Column=7
 """
         sm, ix = compile_(given, "")
-        self.assertEqual(ix["appliances"]["NFLK"]["given"], {"Appliance": "lamp", "Style": "non_vital", "Display": "North flasher", "Column": "7"})
+        self.assertEqual(ix["appliances"]["NFLK"]["given"], {"Appliance": "lamp", "Display": "North flasher", "Column": "7"})
+
+    def test_an_empty_indication_is_stated_and_any_other_empty_field_is_absent(self):
+        """An empty token field says there is deliberately no token; an absent one is not done yet (ADR 0008 §4.7)."""
+        given = """
+H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
+L1   | AUXILIARY       | APPLIANCE | Appliance=lamp Name=HBA Indication= Milepost=
+L2   | AUXILIARY       | APPLIANCE | Appliance=lamp Name=NFL
+"""
+        sm, ix = compile_(given, "")
+        self.assertEqual(ix["appliances"]["HBA"]["given"], {"Appliance": "lamp", "Indication": ""})
+        self.assertEqual(ix["appliances"]["NFL"]["given"], {"Appliance": "lamp"})
 
 
 class Ends(unittest.TestCase):
@@ -465,7 +476,7 @@ class References(unittest.TestCase):
 H1   | House            | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
 J1   | IRJ              | TRACK     | Kind=IRJ
 SW1  | Switch_Lock      | APPLIANCE | Appliance=switch Style=lock Name=Y:5
-L1   | AUXILIARY        | APPLIANCE | Appliance=lamp Style=non_vital Name=Y:SFLK
+L1   | AUXILIARY        | APPLIANCE | Appliance=lamp Name=Y:SFLK
 """
         sm, ix = compile_(given, "a | J1.A SW1.R\n")
         self.assertEqual(ix["track"]["joints"][0]["relations"], {"A": ["Y:5.R"]})
@@ -511,6 +522,22 @@ class Locations(unittest.TestCase):
         self.assertTrue(str(d).endswith("at /X/M3 Railroad-Trackplan:Mast_Dwarf ''"))
         (d,) = [d for d in sm.report.by_code("next_cp.interlocking")]
         self.assertTrue(d.where.startswith("interlockings/X/track/ends/") and d.source.startswith("/X/NX1 "))
+
+    def test_an_import_diagnostic_is_located_in_the_drawing_not_the_model(self):
+        """ADR 0012 §3.3: an import diagnostic's location is in KiCad terms, in ``source``; it has no model path."""
+        sm, _ = compile_(ONE_SWITCH, ONE_SWITCH_NETS.replace("n    | SW1.N J2.A\nr    | SW1.R J3.A", "n    | SW1.N SW1.R J2.A J3.A"))
+        (d,) = sm.report.by_code("track.shorted")
+        self.assertEqual((d.where, d.entities), ("", ()))
+        self.assertEqual(d.source, "/X/SW1 Railroad-Trackplan:Switch_Lock ''")
+
+    def test_the_importer_locates_every_party_of_a_relationship(self):
+        """ADR 0012 §3.3: a rule check names every entity it is about; the importer locates each in the drawing."""
+        sm, _ = compile_(ONE_SWITCH.replace("Name=836SB", "Name=836SAB"), ONE_SWITCH_NETS)
+        (d,) = sm.report.by_code("mast.letters")
+        self.assertEqual(d.entities, ("interlockings/X/appliances/836SAB", "interlockings/X/appliances/836SA"))
+        self.assertEqual(d.source, "/X/M3 Railroad-Trackplan:Mast_Dwarf ''; /X/M2 Railroad-Trackplan:Mast_Single ''")
+        self.assertTrue(str(d).endswith("[interlockings/X/appliances/836SAB]  at /X/M3 Railroad-Trackplan:Mast_Dwarf ''; "
+                                        "/X/M2 Railroad-Trackplan:Mast_Single ''"))
 
 
 @unittest.skipUnless(SPCOAST_AVAILABLE, f"SPCoast project not present or kicad-cli missing: {NETLIST or PROJECT}")
