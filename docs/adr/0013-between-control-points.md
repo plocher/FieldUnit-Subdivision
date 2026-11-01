@@ -196,6 +196,12 @@ Corporal. The blocks library checks that the signs of one block agree with each 
 
 Recommendation: A. Under `RULE_261` the direction is set at run time by the line signals (§10). It is not a model fact.
 
+**A `RULE_251` sign inside interlocking limits** states the current of traffic on that track, and nothing more
+(owner, 2026-10-31). Watsonville's arrival and departure tracks are switch 837's two legs, between the home joints of
+838NCD and 838NAB and the switch. Each leg carries a 251 sign with its direction of travel (Railroad `31954c5`). Such
+a sign makes no block, because its piece holds a switch (§4), and it marks neither a block limit nor the end of CTC.
+The same agreement check applies: the sign's direction against the signals that govern on that track.
+
 ## 9. Three layers (decision 6)
 
 | Layer | What it holds | Who chooses |
@@ -393,11 +399,7 @@ its detectors at block boundaries for the same reason.)
    boundary circuit, current and direction of traffic.
 6. Luchessa's and Watsonville's `NFLK` and `SFLK` (board `TRAFFIC` lamps): whether they become a block's direction
    indication.
-7. Watsonville's `RULE_251` sign on `03T` lies inside interlocking limits by §4 (`03T` joins `3T1` across a plain
-   joint). Check the drawing.
-8. Off-layout ends (Lick, Hollister): a block with one end on the layout is reported at info.
-9. The POC drawing: S4 and S5 (832NA, 832SA) carry an empty instance Kind, and S6 and S7 (834NA, 834SA) carry
-   `ABSOLUTE` on `PERMISSIVE` symbols. An instance must not override a symbol's fixed Kind.
+7. Off-layout ends (Lick, Hollister): a block with one end on the layout is reported at info.
 
 ## 15. Out of scope
 
