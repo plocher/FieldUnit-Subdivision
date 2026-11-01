@@ -46,8 +46,8 @@
   <text x="604" y="128" fill="#2a7">834NA</text>
   <text x="304" y="204" fill="#2a7">832SA</text>
   <text x="538" y="204" fill="#2a7">834SA</text>
-  <text x="138" y="128" fill="#2a7">830 home</text>
-  <text x="822" y="204" fill="#2a7" text-anchor="end">836 home</text>
+  <text x="138" y="128" fill="#2a7">830NAB home</text>
+  <text x="822" y="204" fill="#2a7" text-anchor="end">836SA home</text>
   <text x="138" y="204" fill="#2a7">830SAB, 828SA leave</text>
   <text x="822" y="128" fill="#2a7" text-anchor="end">836NAB leaves</text>
 
@@ -62,9 +62,9 @@
     <line x1="822" y1="262" x2="605" y2="262"/>
   </g>
   <g fill="#c60" text-anchor="middle">
-    <text x="246" y="282">E/P for 830SAB, 828SA</text>
-    <text x="480" y="282">E/P for 832SA</text>
-    <text x="713" y="282">E/P for 834SA</text>
+    <text x="246" y="282">832SA → 830SAB, 828SA</text>
+    <text x="480" y="282">834SA → 832SA</text>
+    <text x="713" y="282">836SA → 834SA</text>
   </g>
   <!-- line signals for N masts: produced ahead (left), read behind (right): drawn above -->
   <g stroke="#06c" stroke-width="2" marker-end="url(#ab)">
@@ -73,16 +73,16 @@
     <line x1="605" y1="76" x2="822" y2="76"/>
   </g>
   <g fill="#06c" text-anchor="middle">
-    <text x="246" y="68">E/P for 832NA</text>
-    <text x="480" y="68">E/P for 834NA</text>
-    <text x="713" y="68">E/P for 836NAB</text>
+    <text x="246" y="68">830NAB → 832NA</text>
+    <text x="480" y="68">832NA → 834NA</text>
+    <text x="713" y="68">834NA → 836NAB</text>
   </g>
 
   <!-- legend -->
   <g font-size="12" fill="#333">
-    <text x="20" y="318">Each arrow is one line signal: two values, E (ENERGIZED) and P (PROCEED), from the location that produces it to the mast that reads it.</text>
+    <text x="20" y="318">Each arrow is one line signal, named for a mast and sent to the previous signal in that mast's direction of travel: E (ENERGIZED) and P (PROCEED).</text>
     <text x="20" y="336">A mast reads the line signal from the location it governs toward: E released = stop; E without P = approach; E and P = clear.</text>
     <text x="20" y="354">POC wiring: 832T, 834T and locations 830, 832, 834 on Corporal's processor; 836T and 836 on Sargent's.</text>
-    <text x="20" y="372">So only the 834-836 segment crosses processors: one line signal each way, four wires plus ground, or a topic pair each way.</text>
+    <text x="20" y="372">So only the 834-836 segment crosses processors: one line signal each way: four wires plus ground, or one topic each.</text>
   </g>
 </svg>

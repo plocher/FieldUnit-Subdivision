@@ -211,8 +211,10 @@ A **signal location** is a block boundary: one joint with its pair of masts (the
 circuits on each side, and a line signal in and out on each side. A control point is a signal location with one side
 toward the block.
 
-Between neighbouring signal locations there is one line signal for each direction. It runs from the location that
-produces it to the mast that reads it, and carries two values:
+Between neighbouring signal locations there is one line signal for each direction. **A line signal is named for a
+mast, and goes to the previous signal in that mast's direction of travel.** It tells that previous signal how far it
+may let the next train go, so following traffic does not run into the train ahead. In the picture, `834NA` goes to
+Sargent's 836NAB, and `836SA` (Sargent's home) goes to 834SA. It carries two values:
 
 - **E, energized:** the producer's conditions for permission are all true (§10.3, §10.4).
 - **P, proceed:** the producer's mast in that direction indicates anything but stop. It is read only while E is
@@ -234,8 +236,8 @@ Each indication is further limited by the mast's own conditions (its route and i
 
 ### 10.3 What a signal location produces
 
-At a signal location L between neighbours U and W, take the mast M at L that governs toward W. L sends to U, back
-toward the trains that M faces:
+At a signal location L between neighbours U and W, take the mast M at L that governs toward W. Its line signal goes
+to U, where the previous signal in M's direction of travel stands:
 
 - **E** is asserted when the circuits between U and L are clear, AND either E from W is asserted or M's passed memory
   is set.
@@ -260,8 +262,8 @@ Toward its block, at Corporal:
 
 | | Rule |
 |---|---|
-| **E out** (to 832, read by 832NA) | 832T clear AND levers 830 and 828 indicated not toward the block AND neither leaving signal running time |
-| **P out** | Corporal's home facing the block does not indicate stop |
+| **E out** (line signal `830NAB`, to 832NA) | 832T clear AND levers 830 and 828 indicated not toward the block AND neither leaving signal running time |
+| **P out** | Corporal's home, 830NAB, does not indicate stop |
 | **E in** (from 832) | Required by the route equations of 830SAB and 828SA |
 | **P in** | Selects approach or clear for 830SAB and 828SA |
 
@@ -300,17 +302,23 @@ Electrical form, for wired line signals (layout):
   stop. This is R14's asserted-low rule.
 - A producer stuck at 0 V reads as permissive. The model does not guard against it (R15). A pulsed signal, like coded
   track, is a possible layout option.
-- On I2C expander pins, one line signal each way across a segment is four wires plus ground. On MQTT it is a pair of
-  topics each way, carrying E and P.
+- On I2C expander pins, one line signal each way across a segment is four wires plus ground.
+- On MQTT each line signal is one topic, named for its mast: `<root>/linesignal/<mast>`, for example
+  `ctc/SPCoast/linesignal/834NA`. E and P travel in one message, so they never disagree: `E P`, `E (P)` or `(E)`
+  (P means nothing while E is released). The message is retained, so a consumer that restarts reads the current value.
+  The producer's last will is `(E)`, so the broker releases E when the producer drops off: the pull-up's job. The root
+  is layout data, as the code line's is. Mast names that govern into a block are unique on the layout, because the
+  dispatcher or a tower operator sees them and they take milepost numbers (ADR 0003), so the topic needs no
+  qualifier. On multiple track the mast letter tells the tracks apart (834SA and 834SB).
 
 The derivation knows which processor runs each signal location (R13) and lists every line signal whose producer and
 consumer are on different processors. With the POC wiring (832T, 834T, 830, 832 and 834 on Corporal's processor; 836T
 and 836 on Sargent's), only the 834–836 segment crosses:
 
-| Produced by | Read by | E asserted when | P |
-|---|---|---|---|
-| Sargent | Corporal's processor, 834SA | 836T clear AND 836NAB at stop and not running time | the 836 home not at stop |
-| Corporal's processor, location 834 | Sargent, 836NAB | 836T clear AND (E from 832 asserted OR 834NA's memory set)[^segment] | 834NA not at stop |
+| Line signal (topic) | Produced by | Goes to | E asserted when | P asserted when |
+|---|---|---|---|---|
+| `836SA`, southbound | Sargent | 834SA, on Corporal's processor | 836T clear AND 836NAB at stop and not running time | 836SA not at stop |
+| `834NA`, northbound | location 834, on Corporal's processor | Sargent's 836NAB | 836T clear AND (E from 832 asserted OR 834NA's memory set)[^segment] | 834NA not at stop |
 
 Proposed: a crossing line signal with no transport drawn is an error, and relaying through the office host (one
 station's indication forwarded to another as a control) is allowed only where drawn. Relaying puts field safety on
