@@ -117,11 +117,16 @@ Kinds, the policy sign, and what ends the block.
 
 A mast states `Kind`:
 
-| Kind | Meaning | Most restrictive indication |
+| Kind | Meaning | What the crew does at its most restrictive aspect |
 |---|---|---|
 | `CONTROLLED` | The dispatcher controls it. It belongs in a control point. | Stop |
 | `ABSOLUTE` | Automatic and absolute (an APB head block) | Stop |
-| `PERMISSIVE` | Automatic and permissive, with a number plate | Stop and proceed |
+| `PERMISSIVE` | Automatic and permissive, with a number plate | Stop, then proceed at restricted speed |
+
+Kind never changes what the signal displays. Every mast shows the same red at its most restrictive, and the field
+unit's logic is the same for all three. The number plate is a fixed part of the aspect, and the rulebook gives that
+aspect a different indication: Stop and Proceed instead of Stop. Only the crew's behaviour changes. A semaphore could
+show only clear, approach and stop, so a plated stop meant stop, then go slow.
 
 - **Representation.** The library has symbols whose Kind is fixed, with graphics that suggest it: Signal Mast Single
   `CONTROLLED`, `ABSOLUTE` and `PERMISSIVE`, and Signal Mast Double and Dwarf `CONTROLLED`. A fixed Kind is part of
