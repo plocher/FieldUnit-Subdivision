@@ -3,8 +3,8 @@
 - Status: **proposed** 2026-10-31. Decisions 1 to 4 and 6 to 10 were ruled by the owner on 2026-10-30 and 2026-10-31,
   worked through on a POC drawing. The ask: rule on decisions 5 and 11.[^rev1]
 - Amends: ADR 0009 §3.10 (a mast states Kind; TRACK Kind `IRJ_SIGNALS`; track circuit Style `boundary`; done in the
-  same change), ADR 0009 §3.12's row "track leaves an interlocking" (interlocking track only; on
-  `docs/adr-cp-name`), ADR 0012 §5 (the blocks library's scope) and §5.5 (the proxy retires, §11.3).
+  same change), ADR 0009 §3.12's row "track leaves an interlocking" (interlocking track only;
+  merged in #58), ADR 0012 §5 (the blocks library's scope) and §5.5 (the proxy retires, §16).
 - Builds on: `docs/review/abs-apb-research-2026-10-30.md` with the owner's answers of 2026-10-30, and
   `docs/review/traffic-locking-research-2026-10-31.md` (first-party sources on traffic locking and line circuits).
   The POC drawing: Railroad `2a1696e` (Corporal and Sargent sheets of the SPCoast project).
@@ -162,7 +162,7 @@ The block's track is drawn from one control point to the next, across sheets whe
 continues the run. Pairing comes from netlist connectivity. Inside CTC a NEXT_CP is no longer needed. It stays for an
 interlocking whose neighbour is not drawn.
 
-Consequence for ADR 0009 §3.12's row "track leaves an interlocking only at a NEXT_CP or an END_CTC" (PR #58): it
+Consequence for ADR 0009 §3.12's row "track leaves an interlocking only at a NEXT_CP or an END_CTC" (merged in #58): it
 covers interlocking track only. Block track belongs to the layout. Dark track beyond an END_CTC is outside both.
 
 ### 7.2 The block's one indication
@@ -414,7 +414,7 @@ its detectors at block boundaries for the same reason.)
 
 - ADR 0009 §3.10: a mast states Kind; TRACK Kind `IRJ_SIGNALS`; track circuit Style `boundary` (this change), and the
   symbol-field lint accepts a mast's Kind and requires it.
-- ADR 0009 §3.12, PR #58: the track rule covers interlocking track only.
+- ADR 0009 §3.12 (merged in #58): the track rule covers interlocking track only, amended in place when this ADR is ruled.
 - ADR 0012 §5: the blocks library covers the track between control points, and serves line signals. §5.5: the proxy
   and its TBD retire, since a signal never stands in for another; the approach signal of a home is derived.
 - The KiCad importer: a hierarchical label continues a track run (`geometry.run_end` fires on one today);
