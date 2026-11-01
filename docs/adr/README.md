@@ -9,6 +9,7 @@ One list of what is decided and what waits for the owner. Each proposed ADR open
 |---|---|---|
 | [0002](0002-symbol-contract.md) | What each KiCad symbol records | Frozen 2026-10-03: too complicated to approve as-is. Rewritten to rules after the cleanup pass (#30), then approved. |
 | [0003](0003-name-grammar.md) | One grammar for the names of appliances, signals and track circuits | Frozen 2026-10-03, same reason; the owner's in-progress edits are committed as they stood. Rewritten to rules after #30. |
+| [0013](0013-between-control-points.md) | Between control points: the station-to-station block, a mast's Kind, the two-mast joint, drawn block track with a virtual circuit as its one indication, three layers, line signals (E and P) between signal locations with the rules that produce them, names by signal location, boundary track circuits. Amends 0009 §3.10 and §3.12, 0012 §5. | Decision 5 (meaning of a 251 sign's direction) and decision 11 (a crossing line signal with no drawn transport is an error) |
 
 ## Accepted
 

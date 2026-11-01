@@ -8,7 +8,8 @@ Per symbol, by Role:
   field (the head letter, written per instance); Style fixed by the symbol; exactly one input pin of
   kind indication and every other pin one output kind; `Pin.*` per pin; settings lower_snake_case.
   The aspect is derived from style and indication, never a pin.
-- APPLIANCE: Appliance present; no Kind.
+- APPLIANCE: Appliance present; no Kind, except a mast, which states Kind CONTROLLED, ABSOLUTE or PERMISSIVE
+  (owner, 2026-10-31; ADR 0009 §3.10, ADR 0013).
 - DEVICE, PANEL: Appliance present; no Kind; one `Pin.<base>` per function pin (Column excepted) and
   no `Pin.*` without a pin; the capability is one primary word from the vocabulary (binary, level,
   position, color, pixel, message); direction is the KiCad electrical type, which must be input,
@@ -54,6 +55,7 @@ STRUCTURAL = {"TRACK", "POLICY", "STRUCTURE", "COLUMN", "OFFICE_UNIT", "TRANSPOR
 FUNCTIONAL = {"APPLIANCE", "DEVICE", "PANEL", "IODRIVER", "SETTING"}
 RETIRED_FIELDS = {"ControlToken", "Vital", "NormalIs", "Chain", "Index", "Kind"}
 ATTACHMENT_ADDRESS = {"CMRI": "Bit", "MQTT": None}  # by IC; every other bus device attaches by Address (ADR 0005 S4)
+MAST_KINDS = ("CONTROLLED", "ABSOLUTE", "PERMISSIVE")    # what a mast is: dispatcher-controlled, or automatic and absolute or permissive (owner, 2026-10-31)
 CMRI_KINDS = ("NODE", "IB", "OB")                   # what a CMRInet driver is: the node or one of its bits (owner, 2026-10-30)
 NOT_SETTINGS = {"Role", "Name", "Kind", "Appliance", "Style", "IC", "Address", "UA", "Bit", "Node", "Head", "Invert", "IndicationToken", "Members", "Color", "CP Name", "Control", "Indication", "TC",
                 "Transport", "NodeType", "InputBytes", "OutputBytes",
@@ -100,7 +102,10 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
     if role not in FUNCTIONAL:
         err(f"Role {role!r} is not known")
         return out
-    if "Kind" in props and role != "IODRIVER":                        # a JMRI driver's Kind is its object class (owner, 2026-10-24)
+    mast = role == "APPLIANCE" and props.get("Appliance") == "mast"
+    if mast and props.get("Kind") not in MAST_KINDS:                 # a mast states what it is (owner, 2026-10-31)
+        err(f"a mast states Kind, one of {', '.join(MAST_KINDS)}; this has {props.get('Kind') or 'none'}")
+    elif "Kind" in props and role != "IODRIVER" and not mast:        # a JMRI driver's Kind is its object class (owner, 2026-10-24)
         err("Kind is retired")
     if role in {"APPLIANCE", "DEVICE", "PANEL"} and not props.get("Appliance"):
         err("Appliance missing")
@@ -186,7 +191,7 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
             err("carries Pin.* but serves no function")
     all_bases = {base(n) for n, _, _ in pins}
     for f in props:
-        if f in RETIRED_FIELDS and not (f == "Kind" and role == "IODRIVER"):
+        if f in RETIRED_FIELDS and not (f == "Kind" and (role == "IODRIVER" or mast)):
             err(f"field {f} is retired")
         elif f.startswith(PIN_TOKENS) and role == "PANEL":          # a per-pin token (2026-10-28): its pin must exist
             if f.split(".", 1)[1] not in all_bases:
