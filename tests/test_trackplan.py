@@ -665,7 +665,9 @@ class SPCoastTrackplan(unittest.TestCase):
 
     def test_every_track_row_has_its_own_id(self):
         ids = [r["id"] for ix in self.model["interlockings"].values() for k in ("joints", "ends", "policies") for r in ix.get("track", {}).get(k, [])]
-        self.assertEqual(len(ids), 56 + 36 + 18 + 5 + 3 + 3 + 29)
+        # IRJ, IRJ_SIGNAL, IRJ_SIGNALS; NEXT_CP, END_CTC, BUMPER, INDUSTRY; policies with the one plate: the Corporal to
+        # Sargent block drawn across sheets (Railroad 56ff2e1, 2a1696e, 31954c5) replaced that NextCP pair and its END_CTCs.
+        self.assertEqual(len(ids), 54 + 36 + 2 + 16 + 3 + 3 + 5 + 30)
         self.assertEqual(len(set(ids)), len(ids))
 
     def test_every_appliance_has_its_control_point_and_no_chain_is_broken(self):
@@ -676,7 +678,7 @@ class SPCoastTrackplan(unittest.TestCase):
     def test_every_next_cp_names_where_it_leads_and_is_answered(self):
         ends = [(i, e["given"].get("Interlocking")) for i, ix in self.model["interlockings"].items() for e in ix["track"].get("ends", [])
                 if e["given"]["Kind"] == "NEXT_CP"]
-        self.assertEqual(len(ends), 18)
+        self.assertEqual(len(ends), 16)          # the Corporal to Sargent pair is gone: the block is drawn (Railroad 56ff2e1, 2a1696e)
         self.assertEqual([e for e in ends if not e[1]], [])
         self.assertEqual(sorted(b for a, b in ends if a == "Christopher"), ["Corporal", "Corporal", "Luchessa", "Luchessa"])
         self.assertEqual(self.sm.report.by_code("next_cp.pair"), [])
@@ -703,8 +705,8 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(self.ix("Luchessa")["track"]["links"], [{"derived": {"ports": ["Luchessa:795.R", "Luchessa:795D.R"], "circuit": "Luchessa:795T1"}}])
 
     def test_every_track_relation_is_named_back_in_its_interlocking(self):
-        """The owner, 2026-10-27: symmetric adjacency on the drawing, a consumer row (Sargent's of Corporal:2NATK)
-        included. A reference to another interlocking's switch (``Y:5.R``) would have no row here to name it back."""
+        """The owner, 2026-10-27: symmetric adjacency on the drawing, consumer rows included. A reference to another
+        interlocking's switch (``Y:5.R``) would have no row here to name it back."""
         for name, ix in self.model["interlockings"].items():
             rel = {}
             for n, a in ix.get("appliances", {}).items():
@@ -716,14 +718,14 @@ class SPCoastTrackplan(unittest.TestCase):
             self.assertEqual([(a, b) for a, b in own if a not in rel.get(b, [])], [], name)
             self.assertEqual([a for a, bs in rel.items() if any(b.rsplit(".", 1)[0] == a.rsplit(".", 1)[0] for b in bs)], [], name)
 
-    def test_sargents_consumer_of_corporals_2natk_is_the_only_reference_and_resolves(self):
+    def test_no_cross_interlocking_consumer_is_drawn_today(self):
+        """Sargent's consumer of Corporal:2NATK went with the block POC (Railroad 56ff2e1, 2a1696e): the track between
+        Corporal and Sargent is drawn, not paired, so no interlocking draws a marker named for another's circuit, no
+        reference is raised, and no track relation names a thing outside the file's interlockings."""
         refs = {n: ix["track"].get("consumers", []) for n, ix in self.model["interlockings"].items()}
-        self.assertEqual({n: [c["relations"]["indication"] for c in cs] for n, cs in refs.items() if cs}, {"Sargent": ["Corporal:2NATK"]})
-        self.assertIn("2NATK", codeline.stations(self.model).stations[("Corporal", None)].indications)
-        self.assertEqual([d for d in self.sm.report.diags if d.code.startswith("reference") and "/consumers/" in d.where], [])
-        joint = next(j for j in self.ix("Sargent")["track"]["joints"] if j["given"]["Kind"] == "IRJ")
-        self.assertIn(f"{refs['Sargent'][0]['id']}.TC", joint["relations"]["A"])
-        self.assertEqual(joint["derived"]["circuits"]["A"], "Corporal:2NAT")
+        self.assertEqual({n: cs for n, cs in refs.items() if cs}, {})
+        self.assertNotIn("2NATK", codeline.stations(self.model).stations[("Corporal", None)].indications)
+        self.assertEqual([d for d in self.sm.report.diags if d.code.startswith("reference")], [])
         foreign = [b for ix in self.model["interlockings"].values() for k in ("joints", "ends", "policies")
                    for r in ix["track"].get(k, []) for v in r.get("relations", {}).values() if isinstance(v, list) for b in v
                    if ":" in b and not b.startswith(tuple(f"{n}:" for n in self.model["interlockings"]))]

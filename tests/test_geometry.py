@@ -227,17 +227,22 @@ class SPCoastGeometry(unittest.TestCase):
         self.assertEqual(geometry.check_transform(self.geo, self.sm), [])
 
     def test_sargent_as_adr_0010_section_5_reads_it(self):
+        """Sargent's sheet since the block POC (Railroad 56ff2e1, 2a1696e, 31954c5): the 834 signal location with its
+        two masts and plate, 836T, and the block track leaving through ToCorporalMT in place of the consumer of
+        Corporal:2NAT; the frame moved with the drawing."""
         g = self.geo.interlockings["Sargent"]
-        self.assertEqual(g["appliances"]["835"], {"at": {"x": 90.17, "y": 33.02}, "glyph": "Railroad-Trackplan:Switch_Lock", "mirror": "y"})
+        self.assertEqual(g["appliances"]["835"], {"at": {"x": 78.74, "y": 33.02}, "glyph": "Railroad-Trackplan:Switch_Lock", "mirror": "y"})
         self.assertEqual(set(g["appliances"]["836NAB"]["heads"]), {"A", "B"})
         self.assertEqual(g["appliances"]["836SA"]["rotation"], 180)
-        self.assertNotIn("Corporal:2NAT", g["appliances"])                       # a consumer row: a marker by id
-        self.assertEqual(g["houses"], {"Sargent": {"at": {"x": 91.44, "y": 0.0}, "glyph": "Railroad-Trackplan:House"}})
-        self.assertEqual(len(g["appliances"]), 10)
-        self.assertEqual(len(g["track"]), 4)
+        self.assertNotIn("Corporal:2NAT", g["appliances"])                       # no consumer is drawn; 836T is Sargent's own
+        self.assertEqual(g["houses"], {"Sargent": {"at": {"x": 80.01, "y": 0.0}, "glyph": "Railroad-Trackplan:House"}})
+        self.assertEqual(len(g["appliances"]), 12)
+        self.assertEqual(len(g["track"]), 6)
         runs = self.model["interlockings"]["Sargent"]["geometry"]["track"]                   # a run's circuit is derived
-        self.assertEqual(sorted(t["derived"]["circuit"] for t in runs), ["Corporal:2NAT", "Sargent:1NAT", "Sargent:1SAT", "Sargent:2SAT"])
-        self.assertEqual(len(g["markers"]), 13)
+        self.assertEqual(sorted(t["derived"]["circuit"] for t in runs if "derived" in t), ["Sargent:1NAT", "Sargent:2SAT", "Sargent:836T"])
+        self.assertEqual(sorted(t["relations"]["from"] for t in runs if "derived" not in t),            # dark here: the three label runs
+                         ["Sargent:1.N", "Sargent:1.R", "label:ToCorporalMT"])
+        self.assertEqual(len(g["markers"]), 12)
         rows = self.rows("Sargent")
         self.assertEqual(sum(1 for m in g["markers"] if rows[m["row"]]["given"].get("Kind") == "INDUSTRY"), 2)
         self.assertNotIn("mileposts", g)
