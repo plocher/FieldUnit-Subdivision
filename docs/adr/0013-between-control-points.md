@@ -283,7 +283,7 @@ its detectors at block boundaries for the same reason.)
 | Each station's code line kind | given and relation | the code line's `Kind`; the interlocking's `codeline` (`codeline.encoding`) |
 | What a station is (house or interlocking) | reference data | `reference.STATION` |
 | Each station's capacity: controls and office indications per field station, in steps | reference data | `reference.CODE_LINE_CAPACITY` (by code line type; set by the physical machine) |
-| Steps a station already uses | computed on demand | one token is one step: the token count from `tools/railroad/codeline.py` |
+| Steps a station already uses | computed on demand | its appliances (`tools/railroad/codeline.py`) times their steps (`reference.CODE_LINE_STEPS`) |
 | The indications a station already sends | computed on demand | `tools/railroad/codeline.py` (`stations`) |
 | Drawn line wires: H, D, traffic-locking | relation | **how they are drawn is open** (gap 3) |
 | The transports each processor reaches | given and relation | ADR 0008 (`anchors`; a code line's transport) |
@@ -598,7 +598,7 @@ Each Part 2 input, the Part 1 section that states it, and its form.
 | What a station is (house or interlocking) | §18.3 | §11 | reference data |
 | A station's capacity | §18.3 | §11 | reference data (`reference.CODE_LINE_CAPACITY`) |
 | The indications a station already sends | §18.3 | §11 | computed on demand (`codeline.py`) |
-| The steps those tokens take | §18.3 | §11 | one token is one step (owner, 2026-11-01) |
+| The steps each appliance class takes | §18.3 | §11 | reference data (`reference.CODE_LINE_STEPS`, by code line type) |
 | Indication tokens for levers (`NGK`, `SGK`, `TEK`) and circuits (`K`) | §16.2 | §11 | reference data (`reference.INDICATION_TOKENS`) |
 | Drawn line wires: H, D, traffic-locking, block clear | §16.3, §18 | §11 | relation: **gap 3** |
 | The transports each processor reaches | §18.4 | §11 | given and relation |
@@ -615,10 +615,11 @@ Each Part 2 input, the Part 1 section that states it, and its form.
    likely home. Its contents are TBD.
 3. **How line wires are drawn:** H and D between processors' driver pins, a traffic-locking line, a block-clear line
    for a member read on another processor. A symbol or seam for them, like the code line's.
-4. Closed 2026-11-01: one token is one step (the owner). A switch takes two steps each way (`NWS`, `RWS`; `NWK`,
-   `RWK`), a signal lever three indications (`NGK`, `SGK`, `TEK`), a circuit or a maintainer call one. The token
-   meanings, the both-asserted pairs among them, are FieldUnit's (`docs/AAR_SIGNALING_PRIMER.md`, GLOSSARY §10.3).
-   FieldUnit's GLOSSARY §6 still reads "A token is not a step"; it is to be reconciled there.
+4. Closed 2026-11-01: a token is symbolic and a step is a pulse on the line (FieldUnit GLOSSARY §6). The code line
+   type maps each appliance class to steps (`reference.CODE_LINE_STEPS`). On US&S 506 a switch takes two steps each
+   way; a signal lever two controls (`NGS`, `SGS`, `HS`: STOP is neither step up) and three indications; a circuit or
+   a maintainer call one. An electric lock's control steps are not known yet. The token meanings are FieldUnit's
+   (`docs/AAR_SIGNALING_PRIMER.md`, GLOSSARY §10.3).
 5. **Mixed code lines.** A block whose two end control points are on code lines of different kinds has no carrier
    rule in §18.
 6. **Glossary.** No entries for automatic signal, signal location, HD line, station-to-station block, boundary
@@ -627,6 +628,8 @@ Each Part 2 input, the Part 1 section that states it, and its form.
 7. Luchessa's and Watsonville's `NFLK` and `SFLK` (board `TRAFFIC` lamps): whether they become the block's traffic
    indication (the office `FR`).
 8. Off-layout ends (Lick, Hollister): a block with one end on the layout is reported at info.
+9. **Hold signals.** An intermediate signal the dispatcher can hold at stop to divide an established block. A held
+   signal location takes a control, so it is a code line station. Not modeled yet.
 
 ## 22. Out of scope
 
@@ -653,7 +656,8 @@ Each Part 2 input, the Part 1 section that states it, and its form.
 - `derive.py`: the mast checks of §5; the circuits a boundary circuit counts toward; NEXT_CP pairing retires inside
   CTC. No transport or carrier checks.
 - The schema: a double joint's masts with their sides; a mast's Kind.
-- Reference data: code line capacity (added, `reference.CODE_LINE_CAPACITY`) and the operations settings (gap 2).
+- Reference data: code line capacity and steps (added, `reference.CODE_LINE_CAPACITY`, `CODE_LINE_STEPS`) and the
+  operations settings (gap 2).
 - FieldUnit: implements Part 2, including the office `FR` and codegen's carrier choice.
 
 [^rev]: Rewritten 2026-11-01 from the owner's rulings of that day and the second pass of the adversarial review. The
