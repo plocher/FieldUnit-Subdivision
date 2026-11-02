@@ -1,4 +1,4 @@
-"""Code line capacity and steps reference data (ADR 0013 §11, §18.3): a station's need is counted in steps, not tokens."""
+"""Code line capacity and steps reference data (ADR 0013 §11, §21): a station's need is counted in steps, not tokens."""
 import unittest
 
 from tools.layout_model.reference import REFERENCE_DATA, code_line_capacity, code_line_steps

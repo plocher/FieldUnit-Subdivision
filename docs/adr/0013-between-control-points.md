@@ -532,7 +532,7 @@ Each consumer input, the Part 1 section that states it, and its form:
 | Each station's code line kind, capacity, and steps | §11 | §11 | given, relation, and reference data |
 | Drawn line wires | §18 | §11 | relation: **gap 3** |
 | The transports each processor reaches | §18 | §11 | given and relation |
-| The MQTT topic root | §18.3 | ADR 0009 §3.10 | given (AAR encoding `Topic`) |
+| The MQTT topic root | §18.2 | ADR 0009 §3.10 | given (AAR encoding `Topic`) |
 | The rule and the current of traffic | §14 | §8 | given (sign Kind, Direction); derived per block |
 | The operations settings | §14, §17 | none | reference data: **gap 2** |
 | The layout's railroad, era and rulebook (the key for gap 2) | §14 | ADR 0008 | given |
