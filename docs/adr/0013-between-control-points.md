@@ -469,7 +469,7 @@ processor; `836T` and location `836` on Sargent's processor), the boundary betwe
 | `836SA` (southbound) | Sargent (`836`) | `834SA` (on Corporal's processor) | `H` (`836T` clear AND `836NAB` not active/in time) and `D` (`836SA` Approach or better) |
 | `834NA` (northbound) | Location `834` (on Corporal's processor) | Sargent's `836NAB` | `H` (`834NA` conditions + `836T` clear) and `D` (`834NA` Approach or better) |
 
-### 18.2 Three things `FieldUnit` codegen should watch at a processor split
+### 18.2 Four things `FieldUnit` codegen should watch at a processor split
 
 1. **Picking up `834SA`'s `SR` across a processor boundary:**
    - Mast `834SA` runs on Corporal's processor, but its governed circuit (`836T`) is wired to Sargent's processor.
@@ -495,6 +495,15 @@ processor; `836T` and location `836` on Sargent's processor), the boundary betwe
    - **MQTT `HD` topic:** One retained topic per `HD` line, `<root>/hdline/<mast>` (for example
      `ctc/SPCoast/hdline/834NA`, where `<root>` is the AAR encoding's `Topic`), carrying `H D`, `H (D)`, or `(H)` in a
      single payload with a last-will message of `(H)`.
+4. **Settle the `HD` chain before evaluating controls:**
+   - When a train clears the last circuit of a block (`836T` at Sargent), the receding-direction stick (`834SA`'s `SR`)
+     releases only when `836SA`'s `H out` re-asserts (`836T` clear and `836NAB` not controlled toward the block).
+   - On relays, `836T` picking up re-asserts `836SA` `H out` and drops `834SA`'s `SR` in milliseconds (AAR Dwg 8066
+     Sheet 2 also makes `3RFR` slow pick-up so the approach signal's `SR` releases before traffic reverses).
+   - In a software scan loop, if `836T` clearing and a queued northward control for `836NAB` land in the same scan and
+     the control is evaluated first, `836SA` `H out` stays released (switching directly from held-low-by-`836T` to
+     held-low-by-`836NAB`) and `834SA`'s `SR` never sees the release pulse. After any circuit or `H in` change,
+     `FieldUnit` should settle the `HD` chain before evaluating a control transaction.
 
 ## 19. Other consumer notes
 
