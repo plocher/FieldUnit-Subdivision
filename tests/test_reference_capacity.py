@@ -10,8 +10,8 @@ class CodeLineCapacity(unittest.TestCase):
         need = sum(steps[c]["indications"] for c in ("switch", "signal", "track_circuit", "maintainer_call"))
         self.assertEqual(need, code_line_capacity("USS506")["indications"])
 
-    def test_a_signal_levers_three_controls_take_two_steps(self):
-        self.assertEqual(code_line_steps("USS506")["signal"]["controls"], 2)
+    def test_a_signal_levers_three_controls_take_three_steps(self):
+        self.assertEqual(code_line_steps("USS506")["signal"]["controls"], 3)
 
     def test_unknown_steps_are_none(self):
         self.assertIsNone(code_line_steps("USS506")["lock"]["controls"])

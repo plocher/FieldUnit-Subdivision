@@ -617,7 +617,7 @@ Each Part 2 input, the Part 1 section that states it, and its form.
    for a member read on another processor. A symbol or seam for them, like the code line's.
 4. Closed 2026-11-01: a token is symbolic and a step is a pulse on the line (FieldUnit GLOSSARY §6). The code line
    type maps each appliance class to steps (`reference.CODE_LINE_STEPS`). On US&S 506 a switch takes two steps each
-   way; a signal lever two controls (`NGS`, `SGS`, `HS`: STOP is neither step up) and three indications; a circuit or
+   way; a signal lever three controls (`NGS`, `SGS`, `HS`: the explicit stop has its own step) and three indications; a circuit or
    a maintainer call one. An electric lock's control steps are not known yet. The token meanings are FieldUnit's
    (`docs/AAR_SIGNALING_PRIMER.md`, GLOSSARY §10.3).
 5. **Mixed code lines.** A block whose two end control points are on code lines of different kinds has no carrier

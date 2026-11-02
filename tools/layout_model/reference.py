@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Optional
 
 # Versioned so provenance can name it.
-REFERENCE_DATA = {"encodingTransportPairing": "2026-10-23", "driverEncodings": "2026-10-23", "indicationTokens": "2026-10-27.2", "stations": "2026-10-27", "codeLineCapacity": "2026-11-01", "codeLineSteps": "2026-11-01"}
+REFERENCE_DATA = {"encodingTransportPairing": "2026-10-23", "driverEncodings": "2026-10-23", "indicationTokens": "2026-10-27.2", "stations": "2026-10-27", "codeLineCapacity": "2026-11-01", "codeLineSteps": "2026-11-01.2"}
 # An encoding's Kind pairs with its transport's Kind (ADR 0009 §3.10).
 TRANSPORT_OF_ENCODING = {"AAR": "MQTT", "USS506": "TIMECODE", "BITS": "TIMECODE", "JMRI": "MQTT", "CMRI": "CMRI"}
 # A driver whose IC is an encoding needs that I/O encoding on its processor (ADR 0009 §3.3, §3.6, §3.12 "IC native or encoded").
@@ -93,12 +93,12 @@ def code_line_capacity(encoding: Optional[str], user: Optional[dict[str, dict]] 
 
 # The function steps each appliance class takes on a code line type, controls and office indications (the owner,
 # 2026-11-01). A switch takes two each way: its pair says normal, reverse or neither ("don't change" as a control, "in
-# motion" as an indication); both up is invalid. A signal lever's three controls (NGS, SGS, HS) take two steps: every
-# code sets the lever, so STOP is neither step up. None is not known yet, never assumed.
+# motion" as an indication); both up is invalid. A signal lever's three controls (NGS, SGS, HS) take three steps: HS,
+# the explicit stop, has its own (the owner, 2026-11-01). None is not known yet, never assumed.
 CODE_LINE_STEPS: dict[str, dict[str, dict[str, Optional[int]]]] = {
     "USS506": {
         "switch": {"controls": 2, "indications": 2},
-        "signal": {"controls": 2, "indications": 3},
+        "signal": {"controls": 3, "indications": 3},
         "lock": {"controls": None, "indications": 2},
         "track_circuit": {"controls": 0, "indications": 1},
         "maintainer_call": {"controls": 1, "indications": 1},
