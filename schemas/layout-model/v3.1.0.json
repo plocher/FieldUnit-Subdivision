@@ -1229,6 +1229,19 @@
                     "$ref": "#/$defs/qualifiedName"
                   },
                   "description": "A virtual track circuit's member circuits, its Members resolved."
+                },
+                "circuits": {
+                  "type": "object",
+                  "description": "A mast on a double signal joint (IRJ_SIGNALS, ADR 0013 §6): governed is the circuit on the side its SIGNAL pin names, approach the circuit on the other side, the shape a single signal joint's row carries (ADR 0012 §8). A side on dark track is absent.",
+                  "additionalProperties": false,
+                  "properties": {
+                    "governed": {
+                      "$ref": "#/$defs/qualifiedName"
+                    },
+                    "approach": {
+                      "$ref": "#/$defs/qualifiedName"
+                    }
+                  }
                 }
               }
             }
@@ -1251,7 +1264,7 @@
       ]
     },
     "trackSymbol": {
-      "description": "A track row (a joint, an end, a policy sign): its id, its name where it has one (an industry), given (Kind as the libraries spell it, CP, Direction, Interlocking), each side's wire as relations.<side> and each side's circuit as derived.circuits.<side>. Sides are named for what they do (ADR 0012 §8): a signal joint's approach and governed; a policy sign's and a NextCP's track; a plain joint's A and B; CTC, DARK, EoT as drawn.",
+      "description": "A track row (a joint, an end, a policy sign): its id, its name where it has one (an industry), given (Kind as the libraries spell it, CP, Direction, Interlocking), each side's wire as relations.<side> and each side's circuit as derived.circuits.<side>. Sides are named for what they do (ADR 0012 §8): a signal joint's approach and governed; a policy sign's and a NextCP's track; a plain joint's A and B, and a double signal joint's (IRJ_SIGNALS, ADR 0013 §6: approach and governed are relative to each of its masts, derived on the mast); CTC, DARK, EoT as drawn.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -1300,6 +1313,19 @@
                 "mast": {
                   "$ref": "#/$defs/qualifiedName",
                   "description": "A signal joint's mast, by its SIGNAL wire."
+                },
+                "masts": {
+                  "type": "object",
+                  "description": "A double signal joint's masts (IRJ_SIGNALS, ADR 0013 §6): A the mast on its SIGNAL_A wire, which governs into side A; B the mast on SIGNAL_B, into side B. A side with no mast is absent.",
+                  "additionalProperties": false,
+                  "properties": {
+                    "A": {
+                      "$ref": "#/$defs/qualifiedName"
+                    },
+                    "B": {
+                      "$ref": "#/$defs/qualifiedName"
+                    }
+                  }
                 }
               },
               "propertyNames": {
@@ -1351,7 +1377,7 @@
       "additionalProperties": false,
       "properties": {
         "joints": {
-          "description": "IRJ and IRJ_SIGNAL: insulated joints, each between the circuits on its two sides; a signal joint's governed side is where the route it protects begins.",
+          "description": "IRJ, IRJ_SIGNAL and IRJ_SIGNALS: insulated joints, each between the circuits on its two sides; a signal joint's governed side is where the route it protects begins; a double signal joint (ADR 0013 §6) has a mast on each side, relations.masts.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/trackSymbol"

@@ -17,6 +17,11 @@ names every other track pin its wire reaches, so the relation is symmetric):
   component are an error. A component with neither is dark track. From them: each row's ``derived.circuits``, a
   switch's ``osCircuit``, a run's ``derived.circuit`` (geometry's ends name the pins), and ``track.links``: switch
   ports that meet with no joint or end between.
+- **A mast's sides on a double signal joint** (ADR 0013 §6): a joint of Kind ``IRJ_SIGNALS`` keeps its sides ``A``
+  and ``B`` and states ``relations.masts`` (``{"A": mast, "B": mast}``); each mast's ``governed`` side is the side its
+  pin names and its ``approach`` the other, written on the mast as ``derived.circuits`` in the shape a single joint's
+  row carries (``{"governed": circuit, "approach": circuit}``, ADR 0012 §8). A double joint belongs to no control
+  point: ADR 0013 §4 puts block track outside every interlocking and §5 has automatic masts state no CP Name.
 - **Control points** by propagation from the houses (the owner, 2026-10-26; ADR 0012 §4).
 - **Consumers of another station's indications** (the owner, 2026-10-27): a ``track.consumers`` row is a one-sided
   reference, ``relations.indication`` the token it consumes (``Corporal:2NATK``); a track circuit's token names the
@@ -55,7 +60,8 @@ SWITCH_PORTS = ("C", "N", "R")
 DERAIL_PORTS = ("C", "R")
 TRACK_LISTS = ("joints", "ends", "policies")
 ROW_LISTS = TRACK_LISTS + ("consumers",)          # every row with an id; a consumer has track but no circuits of its own
-JOINTS = frozenset({"IRJ", "IRJ_SIGNAL"})
+JOINTS = frozenset({"IRJ", "IRJ_SIGNAL", "IRJ_SIGNALS"})
+DOUBLE_SIDES = {"A": "B", "B": "A"}             # a double joint's side to the other (ADR 0013 §6)
 
 
 @lru_cache(maxsize=1)
@@ -397,12 +403,29 @@ class _Plan:
 
     # -------------------------------------------------------------------------------------------------- write
 
+    def mast_sides(self) -> dict[str, dict[str, Optional[str]]]:
+        """Each mast on a double signal joint to its governed and approach circuits (ADR 0013 §6): governed is the
+        circuit on the side its SIGNAL pin names, approach the circuit on the other side."""
+        out: dict[str, dict[str, Optional[str]]] = {}
+        for row in self.track.get("joints", []):
+            if row.get("given", {}).get("Kind") != "IRJ_SIGNALS":
+                continue
+            prefix = self.row_prefix(row)
+            for side, mast in row.get("relations", {}).get("masts", {}).items():
+                if mast and not foreign(mast, self.name) and side in DOUBLE_SIDES:
+                    out[mast.partition(":")[2]] = {"governed": self.circuit(f"{prefix}.{side}"),
+                                                   "approach": self.circuit(f"{prefix}.{DOUBLE_SIDES[side]}")}
+        return out
+
     def write(self) -> None:
+        sides = self.mast_sides()
         for name, a in self.appliances.items():
             g = a.get("given", {})
             derived: dict[str, Any] = {}
             if g.get("Appliance") == "switch":
                 derived["osCircuit"] = next((c for p in ports_of(a) if (c := self.circuit(self.pin(name, p)))), None)
+            if g.get("Appliance") == "mast" and name in sides:
+                derived["circuits"] = sides[name]
             if g.get("Appliance") == "track_circuit" and g.get("Style") == "virtual":
                 derived["members"] = [qualify(t.strip(), self.name) for t in g.get("Members", "").split(",") if t.strip()]
             cp = self.cp.get(id(a))
@@ -482,6 +505,9 @@ class _Plan:
         for row in self.track.get("joints", []):
             if row.get("relations", {}).get("mast"):
                 masts_of[row["relations"]["mast"]] += 1
+            for mast in row.get("relations", {}).get("masts", {}).values():    # a double joint counts for each of its masts
+                if mast:
+                    masts_of[mast] += 1
         letters_of_signal: dict[str, dict[str, str]] = defaultdict(dict)
         for name, a in self.appliances.items():
             g = a.get("given", {})

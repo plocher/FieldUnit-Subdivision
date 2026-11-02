@@ -45,7 +45,7 @@ def switch_like():
 
 
 # The sides of each track row as the model names them (ADR 0012 §8; three-maps D15); a policy sign's is track.
-SIDES = {"IRJ_SIGNAL": {"approach", "governed"}, "IRJ": {"A", "B"}, "NEXT_CP": {"track"}, "END_CTC": {"CTC", "DARK"},
+SIDES = {"IRJ_SIGNAL": {"approach", "governed"}, "IRJ": {"A", "B"}, "IRJ_SIGNALS": {"A", "B"}, "NEXT_CP": {"track"}, "END_CTC": {"CTC", "DARK"},
          "INDUSTRY": {"EoT"}, "BUMPER": {"EoT"}}
 
 

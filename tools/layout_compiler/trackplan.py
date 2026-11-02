@@ -10,11 +10,17 @@ symbols with the same test (``TRACKPLAN_ROLES``) and names a run's ends through 
 A track pin's wire is ``relations.<side>``: every other track pin its net reaches (three-maps D5; the owner,
 2026-10-27): a switch port, a track circuit marker's TC or a named row's side by qualified name, an unnamed row's side
 by the row's ``id`` (``pin_ref``, the one form a run's ends use too). A track pin is a switch's port, a marker's TC and
-every pin of a joint, an end or a policy sign but a signal joint's SIGNAL (``is_track_pin``); a pin never names its own
-symbol, so the relation is symmetric and the track can be walked through ``relations`` alone. The KiCad importer
-translates pin names into sides here (``side_of``, three-maps D15; ADR 0012 §8): a signal joint's ``A`` is
+every pin of a joint, an end or a policy sign but a signal joint's SIGNAL pins (``is_track_pin``); a pin never names
+its own symbol, so the relation is symmetric and the track can be walked through ``relations`` alone. The KiCad
+importer translates pin names into sides here (``side_of``, three-maps D15; ADR 0012 §8): a signal joint's ``A`` is
 ``governed`` and its ``B`` ``approach``; a policy sign's and a NextCP's one pin is ``track``. A row is identified by
 ``id``, its symbol's KiCad UUID (D10), and an end of track may also carry a name (an industry).
+
+A joint with a mast on each side is Kind ``IRJ_SIGNALS`` (ADR 0013 §6, 2026-11-02): pins ``A`` and ``B`` keep their
+names, since approach and governed are relative to a mast, not to the joint; ``SIGNAL_A`` carries the mast that
+governs into side A and ``SIGNAL_B`` the one into side B, stated as ``relations.masts`` (``{"A": mast, "B": mast}``,
+qualified names). Nothing is read from rotation or from which mast is drawn first. Each mast's own approach and
+governed sides are the reference derivation's.
 
 A name qualified with another interlocking's scope is a one-sided reference: it is no appliance here, and nothing is
 written back to the thing it names (the owner, 2026-10-27). A track circuit marker so named (Sargent's ``Corporal:2NAT``)
@@ -26,7 +32,7 @@ is named by its port (``Corporal:1.C``), which the reference derivation reports 
 An off-track symbol so named that nothing is wired to is a warning, ``reference.unwritten``.
 
 Diagnostics here are about the drawing as drawn: a symbol with no name or no UUID, two symbols with one name, two masts
-on one signal joint (the file has one ``relations.mast``), two track pins of one symbol on one wire
+on one SIGNAL pin of a signal joint (the file has one mast per pin), two track pins of one symbol on one wire
 (``track.shorted``). Nothing here reads a coordinate, a net name, a reference or
 ``Value``; every name is read through ``key_of``.
 """
@@ -44,8 +50,9 @@ TRACKPLAN_ROLES = frozenset({"APPLIANCE", "TRACK", "POLICY"})
 # A switch's track ports, the one vocabulary of both pieces (geometry's ``to: "Luchessa:783.R"``, ADR 0010 §4.6).
 SWITCH_PORTS = ("C", "N", "R")
 DERAIL_PORTS = ("C", "R")
-JOINTS = frozenset({"IRJ", "IRJ_SIGNAL"})
+JOINTS = frozenset({"IRJ", "IRJ_SIGNAL", "IRJ_SIGNALS"})
 ENDS = frozenset({"END_CTC", "NEXT_CP", "BUMPER", "INDUSTRY"})
+SIGNAL_PINS = frozenset({"SIGNAL", "SIGNAL_A", "SIGNAL_B"})       # a signal joint's pins that carry a mast, never track
 
 
 def on_trackplan(s: Symbol) -> bool:
@@ -82,9 +89,10 @@ def port_ref(interlocking: str, name: str, port: str) -> str:
 
 def is_track_pin(s: Symbol, pin: str) -> bool:
     """A pin that carries track: a switch's (or derail's) port, a track circuit marker's TC, and every pin of a joint,
-    an end or a policy sign but a signal joint's SIGNAL, which carries its mast. A milepost is no row and carries none."""
+    an end or a policy sign but a signal joint's SIGNAL pins, which carry its masts. A milepost is no row and carries
+    none."""
     if s.role in ("TRACK", "POLICY"):
-        return s.kind != "MILEPOST" and pin != "SIGNAL"
+        return s.kind != "MILEPOST" and pin not in SIGNAL_PINS
     if is_switch(s):
         return pin in ports_of(s)
     return s.role == "APPLIANCE" and s.get("Appliance") == "track_circuit" and pin == "TC"
@@ -225,13 +233,12 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
             named_track[name] = s
             row["name"] = qualify(name, ix.name)
         for p in src.pins_of(s.ref):
-            if p != "SIGNAL":
+            if is_track_pin(s, p):
                 relations[side_of(s, p)] = pin_refs(s, p)
         if s.kind == "IRJ_SIGNAL":
-            masts = [o for o, p in others(s, "SIGNAL") if o.get("Appliance") == "mast" and key_of(o)]
-            if len(masts) > 1:
-                report.error("joint.masts", f"{ix.name}: one signal joint carries masts {', '.join(sorted(key_of(m) for m in masts))}", source=loc(s))
-            relations["mast"] = qualify(key_of(masts[0]), ix.name) if len(masts) == 1 else None
+            relations["mast"] = _mast_on(s, "SIGNAL", others, report, ix.name)
+        elif s.kind == "IRJ_SIGNALS":                                    # a mast on each side (ADR 0013 §6)
+            relations["masts"] = {side: m for side in ("A", "B") if (m := _mast_on(s, f"SIGNAL_{side}", others, report, ix.name))}
         row = _maps(row)
         kind = "policies" if s.role == "POLICY" else "joints" if s.kind in JOINTS else "ends"
         {"policies": policies, "joints": joints, "ends": ends}[kind].append(row)
@@ -241,6 +248,16 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
             report.info("track.kind", f"{ix.name}: TRACK Kind {s.kind!r} is not one the KiCad importer reads; written with the ends", source=loc(s))
     plan.track = {k: v for k, v in {"joints": joints, "ends": ends, "policies": policies, "consumers": consumers}.items() if v}
     return plan
+
+
+def _mast_on(joint: Symbol, pin: str, others, report, interlocking: str) -> Optional[str]:
+    """The one mast on a signal joint's SIGNAL pin, by qualified name; two there are an error (one pin, one mast), none
+    is absent."""
+    masts = [o for o, p in others(joint, pin) if o.get("Appliance") == "mast" and key_of(o)]
+    if len(masts) > 1:
+        report.error("joint.masts", f"{interlocking}: one signal joint carries masts {', '.join(sorted(key_of(m) for m in masts))} on its {pin} pin",
+                     source=loc(joint))
+    return qualify(key_of(masts[0]), interlocking) if len(masts) == 1 else None
 
 
 def _indication(s: Symbol, name: str, report) -> str:

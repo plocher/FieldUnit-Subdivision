@@ -454,6 +454,51 @@ NX2  | NextCP          | TRACK     | Kind=NEXT_CP
         self.assertEqual(sorted_rows(rows(ix, "ends")), sorted_rows([{"given": {"Kind": "NEXT_CP", "Interlocking": "Lick"}}, {"given": {"Kind": "NEXT_CP"}}]))
 
 
+# A signal location in a block (ADR 0013 §6): one double joint with a mast on each side, 832T on side A and 834T on B.
+DOUBLE_JOINT = """
+H1   | House                         | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
+TC1  | Track Circuit                 | APPLIANCE | Appliance=track_circuit Name=832T
+TC2  | Track Circuit                 | APPLIANCE | Appliance=track_circuit Name=834T
+J1   | IRJ-Signals                   | TRACK     | Kind=IRJ_SIGNALS
+M1   | Signal Mast Single PERMISSIVE | APPLIANCE | Appliance=mast Style=single Kind=PERMISSIVE Name=832NA
+M2   | Signal Mast Single PERMISSIVE | APPLIANCE | Appliance=mast Style=single Kind=PERMISSIVE Name=832SA
+"""
+DOUBLE_JOINT_NETS = """
+a    | J1.A TC1.TC
+b    | J1.B TC2.TC
+sa   | J1.SIGNAL_A M1.SIGNAL
+sb   | J1.SIGNAL_B M2.SIGNAL
+"""
+
+
+class DoubleJoint(unittest.TestCase):
+    """ADR 0013 §6: IRJ_SIGNALS joins the joints. Its sides keep their names A and B; SIGNAL_A and SIGNAL_B carry its
+    masts, stated as relations.masts, and are no track pins. Nothing is read from rotation."""
+
+    def test_a_double_joint_states_a_mast_on_each_side_and_its_sides_are_a_and_b(self):
+        sm, ix = compile_(DOUBLE_JOINT, DOUBLE_JOINT_NETS)
+        self.assertEqual(sm.report.errors, [])
+        self.assertEqual(rows(ix, "joints"), [{"given": {"Kind": "IRJ_SIGNALS"},
+                                               "relations": {"A": ["X:832T.TC"], "B": ["X:834T.TC"], "masts": {"A": "X:832NA", "B": "X:832SA"}},
+                                               "derived": {"circuits": {"A": "X:832T", "B": "X:834T"}}}])
+        self.assertEqual(diags(sm, "joint", "track.kind", "mast"), [])
+        self.assertEqual(layout_model.errors(emit.emit(sm)), [])
+
+    def test_each_mast_derives_its_governed_side_from_its_pin_and_its_approach_from_the_other(self):
+        _, ix = compile_(DOUBLE_JOINT, DOUBLE_JOINT_NETS)
+        self.assertEqual(ix["appliances"]["832NA"]["derived"]["circuits"], {"governed": "X:832T", "approach": "X:834T"})
+        self.assertEqual(ix["appliances"]["832SA"]["derived"]["circuits"], {"governed": "X:834T", "approach": "X:832T"})
+
+    def test_two_masts_on_one_signal_pin_are_an_error_and_a_side_with_none_is_absent(self):
+        sm, ix = compile_(DOUBLE_JOINT, DOUBLE_JOINT_NETS.replace("sa   | J1.SIGNAL_A M1.SIGNAL", "sa   | J1.SIGNAL_A M1.SIGNAL M2.SIGNAL")
+                          .replace("sb   | J1.SIGNAL_B M2.SIGNAL\n", ""))
+        self.assertEqual(diags(sm, "joint"), [("joint.masts", "J1")])
+        self.assertNotIn("masts", rows(ix, "joints")[0]["relations"])
+        sm, ix = compile_(DOUBLE_JOINT, DOUBLE_JOINT_NETS.replace("sb   | J1.SIGNAL_B M2.SIGNAL\n", ""))
+        self.assertEqual(diags(sm, "joint"), [])
+        self.assertEqual(rows(ix, "joints")[0]["relations"]["masts"], {"A": "X:832NA"})
+
+
 class Checks(unittest.TestCase):
     """What only the drawing shows, as one scenario: (code, the symbol it names)."""
 
@@ -625,6 +670,19 @@ class SPCoastTrackplan(unittest.TestCase):
                    for r in ix["track"].get(k, []) for v in r.get("relations", {}).values() if isinstance(v, list) for b in v
                    if ":" in b and not b.startswith(tuple(f"{n}:" for n in self.model["interlockings"]))]
         self.assertEqual(foreign, [])
+
+    def test_the_poc_signal_locations_are_double_joints_with_a_mast_on_each_side(self):
+        """ADR 0013 §2 and §6 (Railroad 2a1696e, 31954c5): 832 on Corporal's sheet, 834 on Sargent's; each mast's governed
+        side is the side its pin names. 834T is drawn on Corporal's sheet, so Sargent's side A carries no circuit of
+        Sargent's (where block track with no CP Name lives in the file is open; issue #61)."""
+        double = {n: [j for j in self.ix(n)["track"]["joints"] if j["given"]["Kind"] == "IRJ_SIGNALS"] for n in ("Corporal", "Sargent")}
+        self.assertEqual({n: [j["relations"]["masts"] for j in js] for n, js in double.items()},
+                         {"Corporal": [{"A": "Corporal:832NA", "B": "Corporal:832SA"}], "Sargent": [{"A": "Sargent:834NA", "B": "Sargent:834SA"}]})
+        self.assertEqual(double["Corporal"][0]["derived"]["circuits"], {"A": "Corporal:832T", "B": "Corporal:834T"})
+        self.assertEqual(self.ix("Corporal")["appliances"]["832NA"]["derived"]["circuits"], {"governed": "Corporal:832T", "approach": "Corporal:834T"})
+        self.assertEqual(self.ix("Corporal")["appliances"]["832SA"]["derived"]["circuits"], {"governed": "Corporal:834T", "approach": "Corporal:832T"})
+        self.assertEqual(self.ix("Sargent")["appliances"]["834SA"]["derived"]["circuits"]["governed"], "Sargent:836T")
+        self.assertEqual(self.sm.report.by_code("mast.joint") + self.sm.report.by_code("track.kind"), [])
 
     def test_no_circuit_carries_two_names(self):
         self.assertEqual(self.sm.report.by_code("circuit.names") + self.sm.report.by_code("circuit.name.disagree"), [])

@@ -226,6 +226,35 @@ class Checks(unittest.TestCase):
         self.assertEqual(only(diags, "switch"), [("switch.tc_block", "835")])
 
 
+class DoubleJoint(unittest.TestCase):
+    """ADR 0013 §6: a joint of Kind IRJ_SIGNALS with relations.masts counts as the signal joint of each mast; each mast's
+    governed circuit is the side its pin names, its approach the other."""
+
+    def block(self, masts: dict) -> dict:
+        ix = interlocking("832T | appliance | Appliance=track_circuit\n834T | appliance | Appliance=track_circuit\n"
+                          "832NA | appliance | Appliance=mast Style=single Kind=PERMISSIVE\n"
+                          "832SA | appliance | Appliance=mast Style=single Kind=PERMISSIVE\n"
+                          "J1 | joints | Kind=IRJ_SIGNALS\n", "a | J1.A 832T.TC\nb | J1.B 834T.TC\n", "East")
+        row(ix, "J1").setdefault("relations", {})["masts"] = masts
+        return layout(X=ix)
+
+    def test_a_mast_on_a_double_joint_stands_on_a_joint_and_has_its_sides(self):
+        out, diags = run(self.block({"A": "X:832NA", "B": "X:832SA"}))
+        self.assertEqual(only(diags, "mast", "joint"), [])
+        apps = out["interlockings"]["X"]["appliances"]
+        self.assertEqual(apps["832NA"]["derived"]["circuits"], {"governed": "X:832T", "approach": "X:834T"})
+        self.assertEqual(apps["832SA"]["derived"]["circuits"], {"governed": "X:834T", "approach": "X:832T"})
+        self.assertEqual(row(out["interlockings"]["X"], "J1")["derived"], {"circuits": {"A": "X:832T", "B": "X:834T"}})
+        self.assertEqual(layout_model.errors(out), [])
+
+    def test_a_side_with_no_mast_leaves_that_mast_on_no_joint_and_one_mast_on_both_sides_is_on_two(self):
+        out, diags = run(self.block({"A": "X:832NA"}))
+        self.assertEqual(only(diags, "mast"), [("mast.joint", "832SA")])
+        self.assertNotIn("circuits", out["interlockings"]["X"]["appliances"]["832SA"].get("derived", {}))
+        _, diags = run(self.block({"A": "X:832NA", "B": "X:832NA"}))
+        self.assertEqual(only(diags, "mast"), [("mast.joint", "832SA"), ("mast.joints", "832NA")])
+
+
 # Two houses, the Christopher shape: switches 813 and 815 (with 815A in its gang) on North, 817 on South; siding 01T
 # between 813's R and 817's R; 815's R meets 815A's R at a plain joint. Each signal states its house on the joint or on
 # the mast; approach circuit 1NAT states North though South's signal bounds it.
