@@ -42,6 +42,14 @@ Map H, D, the SR, `FR` and `FSR` onto the relay model in GLOSSARY §10.6 and §1
 `FSR` for FieldUnit's fleet stick relay; the AAR uses it for the traffic stick relay (ADR 0013 gap 6). Where the
 relay model and `src/` differ, list each difference as a code defect.
 
+## Known defect to file
+
+- `src/WireCodec.h` writes and expects only `NGS`/`SGS` and `NGK`/`SGK` (lines 927-928, 1042-1043). The direction
+  letters belong to the railroad and era: an E/W railroad sends `WGS`/`EGS` and `WGK`/`EGK`. The codec should accept
+  either pair (N or W is LEFT, S or E is RIGHT, as ADR 0003 D1 reads mast names) (owner, 2026-11-01). Which letters a
+  layout uses comes from its drawing: a per-railroad trackplan library (`Railroad-Trackplan-SP`,
+  `Railroad-Trackplan-CBQ`) with the same symbol names, not a reference-data table.
+
 ## Open on the Subdivision side
 
 ADR 0013's open decisions A to F, and its gaps 1 to 5 (indication budget, operations settings, how line wires are
