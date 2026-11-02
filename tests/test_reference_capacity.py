@@ -14,8 +14,10 @@ class CodeLineCapacity(unittest.TestCase):
         self.assertEqual(code_line_steps("USS506")["signal"]["controls"], 3)
 
     def test_unknown_steps_are_none(self):
-        self.assertIsNone(code_line_steps("USS506")["lock"]["controls"])
         self.assertIsNone(code_line_steps("GRS_H"))
+
+    def test_an_electric_lock_lever_takes_one_control_step(self):
+        self.assertEqual(code_line_steps("USS506")["lock"]["controls"], 1)
 
     def test_506c_carries_35_indications(self):
         self.assertEqual(code_line_capacity("USS506C")["indications"], 35)

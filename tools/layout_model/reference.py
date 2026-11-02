@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Optional
 
 # Versioned so provenance can name it.
-REFERENCE_DATA = {"encodingTransportPairing": "2026-10-23", "driverEncodings": "2026-10-23", "indicationTokens": "2026-10-27.2", "stations": "2026-10-27", "codeLineCapacity": "2026-11-01", "codeLineSteps": "2026-11-01.2"}
+REFERENCE_DATA = {"encodingTransportPairing": "2026-10-23", "driverEncodings": "2026-10-23", "indicationTokens": "2026-10-27.2", "stations": "2026-10-27", "codeLineCapacity": "2026-11-01", "codeLineSteps": "2026-11-01.3"}
 # An encoding's Kind pairs with its transport's Kind (ADR 0009 §3.10).
 TRANSPORT_OF_ENCODING = {"AAR": "MQTT", "USS506": "TIMECODE", "BITS": "TIMECODE", "JMRI": "MQTT", "CMRI": "CMRI"}
 # A driver whose IC is an encoding needs that I/O encoding on its processor (ADR 0009 §3.3, §3.6, §3.12 "IC native or encoded").
@@ -99,7 +99,7 @@ CODE_LINE_STEPS: dict[str, dict[str, dict[str, Optional[int]]]] = {
     "USS506": {
         "switch": {"controls": 2, "indications": 2},
         "signal": {"controls": 3, "indications": 3},
-        "lock": {"controls": None, "indications": 2},
+        "lock": {"controls": 1, "indications": 2},             # a two-position lever, like a maintainer call
         "track_circuit": {"controls": 0, "indications": 1},
         "maintainer_call": {"controls": 1, "indications": 1},
     },
