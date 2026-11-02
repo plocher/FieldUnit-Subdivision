@@ -88,8 +88,8 @@
   <!-- block-level traffic: one note -->
   <rect x="20" y="390" width="920" height="54" fill="#fff6e0" stroke="#a70"/>
   <g font-size="12" fill="#333">
-    <text x="30" y="408" font-weight="bold">Traffic locking, Corporal to Sargent: enforced in the vital field by the HD chain.</text>
-    <text x="30" y="424">The OfficeUnit is non-vital and never blocks controls. The FieldUnit rejects any unsafe control (FieldUnit ADR 0002 Rule 2).</text>
-    <text x="30" y="440">While a train is in the block or an opposing signal is active/in time, H in is released, locking out the opposing leaving signal.</text>
+    <text x="30" y="408" font-weight="bold">Interlocking-to-block seam (§13): outbound requested, cleared, in_time, home_proceed; inbound segment_clear (H), next_proceed (D), traffic_free (F).</text>
+    <text x="30" y="424">Safety invariants I1–I4 (§14.1) govern every railroad profile in reference data (SP_1942, CBQ_1946, ERIE_NW_1942).</text>
+    <text x="30" y="440">Carriers (§18.1): in-memory (C) and wired H/D (B) are vital; codeline indication eavesdropping (A, D) is a non-vital R15 compression.</text>
   </g>
 </svg>

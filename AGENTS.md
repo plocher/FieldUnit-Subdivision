@@ -147,11 +147,16 @@ with the data model if Studio would need it, with the importer if only reading K
 
 ## Working agreements (owner, 2026-10-01 to 03)
 
-- **Order of authority.** (1) The relay model of the interlocking logic and AAR practice: the design
-  principle (`FieldUnit/docs/GLOSSARY.md` section 10.6). (2) FieldUnit `src/`: where it differs from
-  (1), the code has a defect. (3) KiCad-derived interlocking models. (4) Legacy sketches and
-  XML-harvested profiles: evidence only, never a reference. Never rewrite a principle to match weaker
-  code; file the difference as a code defect.
+- **Order of authority.** (1) The relay model and AAR/AREMA practice, in two documents by scope:
+  `FieldUnit/docs/GLOSSARY.md` section 10.6 inside an interlocking plant, and
+  `docs/adr/0013-between-control-points.md` Part 2 between interlocking plants, bounded by the
+  functional interlocking–block seam (ADR 0013 §13) so neither restates the other. (2) FieldUnit
+  `src/`: where it differs from (1), the code has a defect; any claim about `FieldUnit` behaviour
+  in a Subdivision ADR requires a `src/` citation or an `(unverified)` mark. (3) KiCad-derived
+  interlocking and layout models. (4) Legacy sketches and XML-harvested profiles: evidence only,
+  never a reference. Never rewrite a principle to match weaker code; file the difference as a code
+  defect. Cite only primary sources that were opened; mark indirect citations with `via [...]` and
+  unopened ones with `(unverified)`.
 - **Vocabulary.** `FieldUnit/docs/GLOSSARY.md` is the source of truth. Use its terms exactly. Its
   section 11 lists retired terms. Decisions live in `docs/adr/`; `docs/adr/README.md` is the index.
 - **Facts, not symbols.** A rule that reads "is there a symbol on this sheet" is a placeholder for a
