@@ -22,6 +22,9 @@ names every other track pin its wire reaches, so the relation is symmetric):
   pin names and its ``approach`` the other, written on the mast as ``derived.circuits`` in the shape a single joint's
   row carries (``{"governed": circuit, "approach": circuit}``, ADR 0012 §8). A double joint belongs to no control
   point: ADR 0013 §4 puts block track outside every interlocking and §5 has automatic masts state no CP Name.
+- **A mast states Kind** (ADR 0013 §5): ``CONTROLLED``, ``ABSOLUTE`` or ``PERMISSIVE``, a stated fact. A mast with
+  none, or with another word, is reported ``mast.kind`` at missing; nothing is inferred from a CP Name or a plate.
+  The §5 check that a non-``CONTROLLED`` mast's route passes no powered switch is not here yet.
 - **Control points** by propagation from the houses (the owner, 2026-10-26; ADR 0012 §4).
 - **Consumers of another station's indications** (the owner, 2026-10-27): a ``track.consumers`` row is a one-sided
   reference, ``relations.indication`` the token it consumes (``Corporal:2NATK``); a track circuit's token names the
@@ -62,6 +65,7 @@ TRACK_LISTS = ("joints", "ends", "policies")
 ROW_LISTS = TRACK_LISTS + ("consumers",)          # every row with an id; a consumer has track but no circuits of its own
 JOINTS = frozenset({"IRJ", "IRJ_SIGNAL", "IRJ_SIGNALS"})
 DOUBLE_SIDES = {"A": "B", "B": "A"}             # a double joint's side to the other (ADR 0013 §6)
+MAST_KINDS = frozenset({"CONTROLLED", "ABSOLUTE", "PERMISSIVE"})   # what a mast states it is (ADR 0013 §5)
 
 
 @lru_cache(maxsize=1)
@@ -516,6 +520,9 @@ class _Plan:
                 self.r.add("switch.track", f"{self.name}: switch {name} has no track on any port", where)
             if g.get("Appliance") != "mast":
                 continue
+            if g.get("Kind") not in MAST_KINDS:
+                self.r.add("mast.kind", f"{self.name}: mast {name} states {'no Kind' if not g.get('Kind') else 'Kind ' + repr(g['Kind'])}; "
+                           "a mast is CONTROLLED, ABSOLUTE or PERMISSIVE (ADR 0013 §5)", where)
             n = masts_of.get(qualify(name, self.name), 0)
             if n == 0:
                 self.r.add("mast.joint", f"{self.name}: mast {name} stands on no signal joint", where)

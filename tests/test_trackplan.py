@@ -100,9 +100,9 @@ SW1  | Switch_Lock      | APPLIANCE | Appliance=switch Style=lock Name=835 TC=83
 J1   | IRJ-Signal       | TRACK     | Kind=IRJ_SIGNAL CP_Name=East
 J2   | IRJ-Signal       | TRACK     | Kind=IRJ_SIGNAL CP_Name=East
 J3   | IRJ-Signal       | TRACK     | Kind=IRJ_SIGNAL CP_Name=East
-M1   | Mast_Double      | APPLIANCE | Appliance=mast Style=double Name=836NAB
-M2   | Mast_Single      | APPLIANCE | Appliance=mast Style=single Name=836SA
-M3   | Mast_Dwarf       | APPLIANCE | Appliance=mast Style=dwarf Name=836SB
+M1   | Mast_Double      | APPLIANCE | Appliance=mast Style=double Kind=CONTROLLED Name=836NAB
+M2   | Mast_Single      | APPLIANCE | Appliance=mast Style=single Kind=CONTROLLED Name=836SA
+M3   | Mast_Dwarf       | APPLIANCE | Appliance=mast Style=dwarf Kind=CONTROLLED Name=836SB
 HA   | Signal Head - CPL | APPLIANCE | Appliance=head Style=CPL Name=A
 HB   | Signal Head - CPL | APPLIANCE | Appliance=head Style=CPL Name=B
 HC   | Signal Head - CL  | APPLIANCE | Appliance=head Style=CL Name=A
@@ -683,6 +683,20 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(self.ix("Corporal")["appliances"]["832SA"]["derived"]["circuits"], {"governed": "Corporal:834T", "approach": "Corporal:832T"})
         self.assertEqual(self.ix("Sargent")["appliances"]["834SA"]["derived"]["circuits"]["governed"], "Sargent:836T")
         self.assertEqual(self.sm.report.by_code("mast.joint") + self.sm.report.by_code("track.kind"), [])
+
+    def test_a_mast_states_its_kind_or_is_reported_missing(self):
+        """ADR 0013 §5. The library's mast symbols carry a fixed Kind (Railroad 1695d48), but that commit touched no placed
+        field: the eleven masts of the POC sheets (Corporal, Sargent) state theirs, and the 29 on the five older sheets
+        state none until their placements are updated from the library; each is reported missing, never inferred."""
+        masts = {(i, n): a["given"].get("Kind") for i, ix in self.model["interlockings"].items() for n, a in ix.get("appliances", {}).items()
+                 if a["given"]["Appliance"] == "mast"}
+        stated = {k: v for k, v in masts.items() if v}
+        self.assertEqual({i for i, _ in stated}, {"Corporal", "Sargent"})
+        self.assertEqual((len(stated), set(stated.values())), (11, {"CONTROLLED", "PERMISSIVE"}))
+        missing = self.sm.report.by_code("mast.kind")
+        self.assertEqual(len(missing), len(masts) - len(stated))
+        self.assertEqual(len(missing), 29)
+        self.assertEqual({d.severity for d in missing}, {"missing"})
 
     def test_no_circuit_carries_two_names(self):
         self.assertEqual(self.sm.report.by_code("circuit.names") + self.sm.report.by_code("circuit.name.disagree"), [])

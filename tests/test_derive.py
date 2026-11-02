@@ -102,9 +102,9 @@ def row(ix: dict, rid: str) -> dict:
 # One switch inside three signal joints of house East: the Sargent shape.
 ONE_SWITCH = """
 835    | appliance | Appliance=switch Style=lock TC=835T1 Indication=835T1K
-836NAB | appliance | Appliance=mast Style=double
-836SA  | appliance | Appliance=mast Style=single
-836SB  | appliance | Appliance=mast Style=dwarf
+836NAB | appliance | Appliance=mast Style=double Kind=CONTROLLED
+836SA  | appliance | Appliance=mast Style=single Kind=CONTROLLED
+836SB  | appliance | Appliance=mast Style=dwarf Kind=CONTROLLED
 1NAT   | appliance | Appliance=track_circuit Indication=1NATK
 1SAT   | appliance | Appliance=track_circuit Indication=1SATK
 2SAT   | appliance | Appliance=track_circuit Indication=2SATK
@@ -207,6 +207,18 @@ class Checks(unittest.TestCase):
         _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("rel.mast=X:836SB", "rel.mast=X:836SA"), ONE_SWITCH_WIRES, "East")))
         self.assertEqual(only(diags, "mast"), [("mast.joint", "836SB"), ("mast.joints", "836SA")])
 
+    def test_a_mast_states_what_it_is_or_is_missing(self):
+        """ADR 0013 §5: Kind CONTROLLED, ABSOLUTE or PERMISSIVE is a stated fact; none, or another word, is missing."""
+        _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("Style=dwarf Kind=CONTROLLED", "Style=dwarf"), ONE_SWITCH_WIRES, "East")))
+        self.assertEqual(only(diags, "mast"), [("mast.kind", "836SB")])
+        _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("Style=dwarf Kind=CONTROLLED", "Style=dwarf Kind=AUTOMATIC"), ONE_SWITCH_WIRES, "East")))
+        self.assertEqual(only(diags, "mast"), [("mast.kind", "836SB")])
+        self.assertEqual(derive.derive(layout(X=interlocking(ONE_SWITCH.replace("Style=dwarf Kind=CONTROLLED", "Style=dwarf"), ONE_SWITCH_WIRES, "East")))[1]
+                         .by_code("mast.kind")[0].severity, "missing")
+        for kind in ("CONTROLLED", "ABSOLUTE", "PERMISSIVE"):
+            _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("Style=dwarf Kind=CONTROLLED", f"Style=dwarf Kind={kind}"), ONE_SWITCH_WIRES, "East")))
+            self.assertEqual(only(diags, "mast"), [], kind)
+
     def test_a_mast_named_for_heads_it_does_not_carry_and_one_letter_on_two_masts(self):
         ix = interlocking(ONE_SWITCH, ONE_SWITCH_WIRES, "East")
         ix["appliances"]["836NAB"]["heads"] = {"A": {"given": {"Style": "CPL"}}, "C": {"given": {"Style": "CPL"}}}
@@ -263,9 +275,9 @@ TWO_HOUSES = """
 815   | appliance | Appliance=switch Style=powered TC=815T1 Indication=815T1K CP_Name=North
 815A  | appliance | Appliance=switch Style=powered TC=815AT1 Indication=815AT1K
 817   | appliance | Appliance=switch Style=powered TC=817T1 Indication=817T1K CP_Name=South
-814SA | appliance | Appliance=mast Style=single
-816NA | appliance | Appliance=mast Style=single CP_Name=South
-818NA | appliance | Appliance=mast Style=single
+814SA | appliance | Appliance=mast Style=single Kind=CONTROLLED
+816NA | appliance | Appliance=mast Style=single Kind=CONTROLLED CP_Name=South
+818NA | appliance | Appliance=mast Style=single Kind=CONTROLLED
 1SAT  | appliance | Appliance=track_circuit Indication=1SATK
 01T   | appliance | Appliance=track_circuit CP_Name=North Indication=01TK
 2NAT  | appliance | Appliance=track_circuit Indication=2NATK
@@ -732,7 +744,7 @@ class NoLever(unittest.TestCase):
 
 class Heads(unittest.TestCase):
     def check(self, mast: str, style: str, devices: list[tuple[str, str]]) -> list[tuple[str, str]]:
-        ix = interlocking(f"{mast} | appliance | Appliance=mast Style=single\n", "", "East")
+        ix = interlocking(f"{mast} | appliance | Appliance=mast Style=single Kind=CONTROLLED\n", "", "East")
         ix["appliances"][mast]["heads"] = {mast[-1]: {"given": {"Appliance": "head", "Style": style}}}
         ix["devices"] = [{"given": {"Appliance": a, "Style": s, "Head": mast[-1]}, "relations": {"mast": f"X:{mast}"}} for a, s in devices]
         return only(run(layout(X=ix))[1], "head")
