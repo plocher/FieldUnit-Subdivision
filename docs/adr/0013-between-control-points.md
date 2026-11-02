@@ -623,8 +623,10 @@ Each Part 2 input, the Part 1 section that states it, and its form.
 5. **Mixed code lines.** A block whose two end control points are on code lines of different kinds has no carrier
    rule in §18.
 6. **Glossary.** No entries for automatic signal, signal location, HD line, station-to-station block, boundary
-   circuit, current of traffic, traffic, `SR` as the directional stick, traffic-locking line. `FSR` collides: the
-   GLOSSARY (§10.5) uses it for FieldUnit's fleet stick relay; the AAR uses it for the traffic stick relay.
+   circuit, current of traffic, traffic, `SR` as the directional stick, traffic-locking line. `FSR` is not a collision:
+   AAR names are not unique, and a name may mean different things in different domains (the owner, 2026-11-01). The
+   GLOSSARY (§10.5) uses it for FieldUnit's fleet stick relay; traffic-lever schemes use it for the traffic stick
+   relay. SP used no traffic levers.
 7. Luchessa's and Watsonville's `NFLK` and `SFLK` (board `TRAFFIC` lamps): whether they become the block's traffic
    indication (the office `FR`).
 8. Off-layout ends (Lick, Hollister): a block with one end on the layout is reported at info.
