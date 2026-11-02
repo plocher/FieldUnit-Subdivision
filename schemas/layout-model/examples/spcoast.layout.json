@@ -754,7 +754,7 @@
               "x": 153.67,
               "y": 13.97
             },
-            "glyph": "Railroad-Trackplan:Mast_Double",
+            "glyph": "Railroad-Trackplan:Signal Mast Double CONTROLLED",
             "heads": {
               "A": {
                 "at": {
@@ -777,7 +777,7 @@
               "x": 154.94,
               "y": 46.99
             },
-            "glyph": "Railroad-Trackplan:Mast_Single",
+            "glyph": "Railroad-Trackplan:Signal Mast Single CONTROLLED",
             "heads": {
               "C": {
                 "at": {
@@ -793,7 +793,7 @@
               "x": 29.21,
               "y": 54.61
             },
-            "glyph": "Railroad-Trackplan:Mast_Double",
+            "glyph": "Railroad-Trackplan:Signal Mast Double CONTROLLED",
             "heads": {
               "A": {
                 "at": {
@@ -819,7 +819,7 @@
               "x": 30.48,
               "y": 21.59
             },
-            "glyph": "Railroad-Trackplan:Mast_Single",
+            "glyph": "Railroad-Trackplan:Signal Mast Single CONTROLLED",
             "heads": {
               "C": {
                 "at": {
@@ -1014,7 +1014,7 @@
             "points": "156.21,50.8 189.23,50.8",
             "relations": {
               "from": "a2e8602c-de0a-45b1-a380-358d49c0ab54.approach",
-              "to": "56fd1057-c834-4e85-8d19-58c52142a94f.track"
+              "to": "50484897-801f-4038-8eff-f57b4a449b83.track"
             }
           },
           {
@@ -1023,7 +1023,7 @@
             },
             "points": "0.0,50.8 27.94,50.8",
             "relations": {
-              "from": "06dfa718-4ab0-4e3d-8823-d3748ec83c8b.track",
+              "from": "3a0ea897-79d8-43b6-902d-a12292c46006.track",
               "to": "80308d0f-f2c8-4ac0-b5db-842ea84e779f.approach"
             }
           },
@@ -1044,7 +1044,7 @@
             "points": "154.94,17.78 189.23,17.78",
             "relations": {
               "from": "37bafa86-889e-4b37-9ae3-00b8cee5ace7.approach",
-              "to": "4cdd4b1b-c6f2-4def-b845-a59bfa431d38.track"
+              "to": "fb70db2c-9caf-4a09-9169-4188cb5c1c2b.track"
             }
           },
           {
@@ -1053,7 +1053,7 @@
             },
             "points": "0.0,17.78 29.21,17.78",
             "relations": {
-              "from": "ffb4dff7-f8b1-4878-90ca-9b06478b1748.track",
+              "from": "fffcdaf7-87f9-4635-839d-92d2d1377cc6.track",
               "to": "51dc0b81-3000-475d-9a0e-465bcf77b816.approach"
             }
           },
@@ -1549,22 +1549,6 @@
             "house": "Corporal:Corporal"
           }
         },
-        "1NAT": {
-          "derived": {
-            "controlPoint": "Corporal:Corporal"
-          },
-          "given": {
-            "Appliance": "track_circuit",
-            "CP Name": "Corporal",
-            "Indication": "1NATK"
-          },
-          "relations": {
-            "TC": [
-              "89d46d4f-a3c1-4b2c-a64f-c3c0bb576e64.approach",
-              "ddd56695-5907-4c47-9faa-18723057031a.A"
-            ]
-          }
-        },
         "1SAT": {
           "derived": {
             "controlPoint": "Corporal:Corporal"
@@ -1598,23 +1582,6 @@
             ]
           }
         },
-        "2NAT": {
-          "derived": {
-            "controlPoint": "Corporal:Corporal"
-          },
-          "given": {
-            "Appliance": "track_circuit",
-            "CP Name": "Corporal",
-            "Indication": "2NATK"
-          },
-          "relations": {
-            "TC": [
-              "d75ebcfa-92df-4ee6-b8e7-0b656fd40f1b.track",
-              "ddd56695-5907-4c47-9faa-18723057031a.B",
-              "f8985365-28b1-449d-b06d-02d5d3a00b10.track"
-            ]
-          }
-        },
         "2SAT": {
           "derived": {
             "controlPoint": "Corporal:Corporal"
@@ -1630,6 +1597,42 @@
               "903e6628-4d4c-4198-810d-2e454dfab397.approach",
               "f253c3b0-fd0e-4c21-94e6-094d82fe6fcb.track"
             ]
+          }
+        },
+        "828NA": {
+          "derived": {
+            "controlPoint": "Corporal:Corporal"
+          },
+          "given": {
+            "Appliance": "mast",
+            "Kind": "CONTROLLED",
+            "Style": "dwarf"
+          },
+          "heads": {
+            "A": {
+              "given": {
+                "Appliance": "head",
+                "Style": "CPL"
+              }
+            }
+          }
+        },
+        "828SA": {
+          "derived": {
+            "controlPoint": "Corporal:Corporal"
+          },
+          "given": {
+            "Appliance": "mast",
+            "Kind": "CONTROLLED",
+            "Style": "single"
+          },
+          "heads": {
+            "A": {
+              "given": {
+                "Appliance": "head",
+                "Style": "CPL"
+              }
+            }
           }
         },
         "829": {
@@ -1684,6 +1687,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "double"
           },
           "heads": {
@@ -1707,6 +1711,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "double"
           },
           "heads": {
@@ -1750,11 +1755,16 @@
         },
         "832NA": {
           "derived": {
+            "circuits": {
+              "approach": "Corporal:834T",
+              "governed": "Corporal:832T"
+            },
             "controlPoint": "Corporal:Corporal"
           },
           "given": {
             "Appliance": "mast",
-            "Style": "dwarf"
+            "Kind": "PERMISSIVE",
+            "Style": "single"
           },
           "heads": {
             "A": {
@@ -1767,10 +1777,15 @@
         },
         "832SA": {
           "derived": {
+            "circuits": {
+              "approach": "Corporal:832T",
+              "governed": "Corporal:834T"
+            },
             "controlPoint": "Corporal:Corporal"
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "PERMISSIVE",
             "Style": "single"
           },
           "heads": {
@@ -1780,6 +1795,64 @@
                 "Style": "CPL"
               }
             }
+          }
+        },
+        "832T": {
+          "derived": {
+            "controlPoint": "Corporal:Corporal"
+          },
+          "given": {
+            "Appliance": "track_circuit",
+            "Indication": "832TK"
+          },
+          "relations": {
+            "TC": [
+              "8c90c799-1604-4d15-9e46-b198f17ea87f.track",
+              "89d46d4f-a3c1-4b2c-a64f-c3c0bb576e64.approach",
+              "Corporal:833T.A",
+              "ddd56695-5907-4c47-9faa-18723057031a.A"
+            ]
+          }
+        },
+        "833T": {
+          "derived": {
+            "circuits": {
+              "A": "Corporal:832T",
+              "B": "Corporal:834T"
+            },
+            "controlPoint": "Corporal:Corporal"
+          },
+          "given": {
+            "Appliance": "track_circuit",
+            "Indication": "833TK",
+            "Style": "boundary"
+          },
+          "relations": {
+            "A": [
+              "8c90c799-1604-4d15-9e46-b198f17ea87f.track",
+              "89d46d4f-a3c1-4b2c-a64f-c3c0bb576e64.approach",
+              "Corporal:832T.TC",
+              "ddd56695-5907-4c47-9faa-18723057031a.A"
+            ],
+            "B": [
+              "Corporal:834T.TC",
+              "ddd56695-5907-4c47-9faa-18723057031a.B"
+            ]
+          }
+        },
+        "834T": {
+          "derived": {
+            "controlPoint": "Corporal:Corporal"
+          },
+          "given": {
+            "Appliance": "track_circuit",
+            "Indication": "834TK"
+          },
+          "relations": {
+            "TC": [
+              "Corporal:833T.B",
+              "ddd56695-5907-4c47-9faa-18723057031a.B"
+            ]
           }
         }
       },
@@ -2117,13 +2190,6 @@
             },
             "glyph": "Railroad-Trackplan:MaintainerCall"
           },
-          "1NAT": {
-            "at": {
-              "x": 106.68,
-              "y": 35.56
-            },
-            "glyph": "Railroad-Trackplan:Track Circuit"
-          },
           "1SAT": {
             "at": {
               "x": 10.16,
@@ -2138,19 +2204,46 @@
             },
             "glyph": "Railroad-Trackplan:Track Circuit"
           },
-          "2NAT": {
-            "at": {
-              "x": 130.81,
-              "y": 35.56
-            },
-            "glyph": "Railroad-Trackplan:Track Circuit"
-          },
           "2SAT": {
             "at": {
               "x": 10.16,
               "y": 35.56
             },
             "glyph": "Railroad-Trackplan:Track Circuit"
+          },
+          "828NA": {
+            "at": {
+              "x": 74.93,
+              "y": 15.24
+            },
+            "glyph": "Railroad-Trackplan:Signal Mast Dwarf CONTROLLED",
+            "heads": {
+              "A": {
+                "at": {
+                  "x": 73.66,
+                  "y": 12.7
+                },
+                "glyph": "Railroad-Trackplan:Signal Head - CPL"
+              }
+            }
+          },
+          "828SA": {
+            "at": {
+              "x": 17.78,
+              "y": 39.37
+            },
+            "glyph": "Railroad-Trackplan:Signal Mast Single CONTROLLED",
+            "heads": {
+              "A": {
+                "at": {
+                  "x": 24.13,
+                  "y": 41.91
+                },
+                "glyph": "Railroad-Trackplan:Signal Head - CPL",
+                "rotation": 180
+              }
+            },
+            "rotation": 180
           },
           "829": {
             "at": {
@@ -2172,7 +2265,7 @@
               "x": 92.71,
               "y": 31.75
             },
-            "glyph": "Railroad-Trackplan:Mast_Double",
+            "glyph": "Railroad-Trackplan:Signal Mast Double CONTROLLED",
             "heads": {
               "A": {
                 "at": {
@@ -2195,7 +2288,7 @@
               "x": 17.78,
               "y": 55.88
             },
-            "glyph": "Railroad-Trackplan:Mast_Double",
+            "glyph": "Railroad-Trackplan:Signal Mast Double CONTROLLED",
             "heads": {
               "A": {
                 "at": {
@@ -2226,15 +2319,15 @@
           },
           "832NA": {
             "at": {
-              "x": 74.93,
-              "y": 15.24
+              "x": 118.11,
+              "y": 31.75
             },
-            "glyph": "Railroad-Trackplan:Mast_Dwarf",
+            "glyph": "Railroad-Trackplan:Signal Mast Single PERMISSIVE",
             "heads": {
               "A": {
                 "at": {
-                  "x": 73.66,
-                  "y": 12.7
+                  "x": 111.76,
+                  "y": 29.21
                 },
                 "glyph": "Railroad-Trackplan:Signal Head - CPL"
               }
@@ -2242,14 +2335,14 @@
           },
           "832SA": {
             "at": {
-              "x": 17.78,
+              "x": 118.11,
               "y": 39.37
             },
-            "glyph": "Railroad-Trackplan:Mast_Single",
+            "glyph": "Railroad-Trackplan:Signal Mast Single PERMISSIVE",
             "heads": {
               "A": {
                 "at": {
-                  "x": 24.13,
+                  "x": 124.46,
                   "y": 41.91
                 },
                 "glyph": "Railroad-Trackplan:Signal Head - CPL",
@@ -2257,6 +2350,27 @@
               }
             },
             "rotation": 180
+          },
+          "832T": {
+            "at": {
+              "x": 106.68,
+              "y": 35.56
+            },
+            "glyph": "Railroad-Trackplan:Track Circuit"
+          },
+          "833T": {
+            "at": {
+              "x": 116.84,
+              "y": 35.56
+            },
+            "glyph": "Railroad-Trackplan:Track Circuit IR Boundary"
+          },
+          "834T": {
+            "at": {
+              "x": 130.81,
+              "y": 35.56
+            },
+            "glyph": "Railroad-Trackplan:Track Circuit"
           }
         },
         "houses": {
@@ -2362,10 +2476,19 @@
           },
           {
             "at": {
-              "x": 116.84,
+              "x": 106.68,
               "y": 35.56
             },
-            "glyph": "Railroad-Trackplan:IRJ",
+            "glyph": "Railroad-Trackplan:Rule261-DoT-BiDirectional",
+            "rotation": 180,
+            "row": "8c90c799-1604-4d15-9e46-b198f17ea87f"
+          },
+          {
+            "at": {
+              "x": 118.11,
+              "y": 39.37
+            },
+            "glyph": "Railroad-Trackplan:IRJ-Signals",
             "row": "ddd56695-5907-4c47-9faa-18723057031a"
           },
           {
@@ -2385,42 +2508,16 @@
             "glyph": "Railroad-Trackplan:Industry",
             "rotation": 180,
             "row": "73f3ec3e-c470-4054-a05c-1fe6fc3d1df5"
-          },
-          {
-            "at": {
-              "x": 143.51,
-              "y": 35.56
-            },
-            "glyph": "Railroad-Trackplan:NextCP",
-            "row": "d75ebcfa-92df-4ee6-b8e7-0b656fd40f1b"
-          },
-          {
-            "at": {
-              "x": 143.51,
-              "y": 35.56
-            },
-            "glyph": "Railroad-Trackplan:Rule261-DoT-BiDirectional",
-            "row": "f8985365-28b1-449d-b06d-02d5d3a00b10"
           }
         ],
         "track": [
-          {
-            "derived": {
-              "circuit": "Corporal:1NAT"
-            },
-            "points": "93.98,35.56 116.84,35.56",
-            "relations": {
-              "from": "89d46d4f-a3c1-4b2c-a64f-c3c0bb576e64.approach",
-              "to": "ddd56695-5907-4c47-9faa-18723057031a.A"
-            }
-          },
           {
             "derived": {
               "circuit": "Corporal:1SAT"
             },
             "points": "0.0,52.07 16.51,52.07",
             "relations": {
-              "from": "b654ee68-d6ee-44f3-998b-9b0d055435df.track",
+              "from": "1249c134-4620-40e4-9d44-016a33836a0d.track",
               "to": "4a4a8a59-1f6a-4701-9675-e1f591439b8d.approach"
             }
           },
@@ -2436,21 +2533,11 @@
           },
           {
             "derived": {
-              "circuit": "Corporal:2NAT"
-            },
-            "points": "119.38,35.56 143.51,35.56",
-            "relations": {
-              "from": "ddd56695-5907-4c47-9faa-18723057031a.B",
-              "to": "f8985365-28b1-449d-b06d-02d5d3a00b10.track"
-            }
-          },
-          {
-            "derived": {
               "circuit": "Corporal:2SAT"
             },
             "points": "0.0,35.56 16.51,35.56",
             "relations": {
-              "from": "48c00702-a00e-4db6-aa21-1664705b08b0.track",
+              "from": "f253c3b0-fd0e-4c21-94e6-094d82fe6fcb.track",
               "to": "903e6628-4d4c-4198-810d-2e454dfab397.approach"
             }
           },
@@ -2492,6 +2579,40 @@
             "relations": {
               "from": "Corporal:831.C",
               "to": "89d46d4f-a3c1-4b2c-a64f-c3c0bb576e64.governed"
+            }
+          },
+          {
+            "derived": {
+              "circuit": "Corporal:832T"
+            },
+            "points": "93.98,35.56 116.84,35.56",
+            "relations": {
+              "from": "89d46d4f-a3c1-4b2c-a64f-c3c0bb576e64.approach",
+              "to": "ddd56695-5907-4c47-9faa-18723057031a.A"
+            }
+          },
+          {
+            "derived": {
+              "circuit": "Corporal:834T"
+            },
+            "points": "119.38,35.56 143.51,35.56",
+            "relations": {
+              "from": "ddd56695-5907-4c47-9faa-18723057031a.B",
+              "to": "label:ToSargentMT"
+            }
+          },
+          {
+            "points": "124.46,1.27 124.46,2.54",
+            "relations": {
+              "from": "label:Beet Loader 1",
+              "to": "Corporal:1.R"
+            }
+          },
+          {
+            "points": "124.46,17.78 124.46,19.05",
+            "relations": {
+              "from": "label:Beet Loader 2",
+              "to": "Corporal:1.N"
             }
           }
         ]
@@ -2559,25 +2680,6 @@
           {
             "derived": {
               "circuits": {
-                "track": "Corporal:2NAT"
-              }
-            },
-            "given": {
-              "Interlocking": "Sargent",
-              "Kind": "NEXT_CP"
-            },
-            "id": "d75ebcfa-92df-4ee6-b8e7-0b656fd40f1b",
-            "relations": {
-              "track": [
-                "Corporal:2NAT.TC",
-                "ddd56695-5907-4c47-9faa-18723057031a.B",
-                "f8985365-28b1-449d-b06d-02d5d3a00b10.track"
-              ]
-            }
-          },
-          {
-            "derived": {
-              "circuits": {
                 "track": "Corporal:2SAT"
               }
             },
@@ -2623,29 +2725,6 @@
           {
             "derived": {
               "circuits": {
-                "A": "Corporal:1NAT",
-                "B": "Corporal:2NAT"
-              }
-            },
-            "given": {
-              "Kind": "IRJ"
-            },
-            "id": "ddd56695-5907-4c47-9faa-18723057031a",
-            "relations": {
-              "A": [
-                "89d46d4f-a3c1-4b2c-a64f-c3c0bb576e64.approach",
-                "Corporal:1NAT.TC"
-              ],
-              "B": [
-                "Corporal:2NAT.TC",
-                "d75ebcfa-92df-4ee6-b8e7-0b656fd40f1b.track",
-                "f8985365-28b1-449d-b06d-02d5d3a00b10.track"
-              ]
-            }
-          },
-          {
-            "derived": {
-              "circuits": {
                 "A": "Corporal:829T1",
                 "B": "Corporal:831T1"
               }
@@ -2666,25 +2745,29 @@
           {
             "derived": {
               "circuits": {
-                "approach": "Corporal:1NAT",
-                "governed": "Corporal:831T1"
-              },
-              "controlPoint": "Corporal:Corporal"
+                "A": "Corporal:832T",
+                "B": "Corporal:834T"
+              }
             },
             "given": {
-              "CP Name": "Corporal",
-              "Kind": "IRJ_SIGNAL"
+              "Kind": "IRJ_SIGNALS"
             },
-            "id": "89d46d4f-a3c1-4b2c-a64f-c3c0bb576e64",
+            "id": "ddd56695-5907-4c47-9faa-18723057031a",
             "relations": {
-              "approach": [
-                "Corporal:1NAT.TC",
-                "ddd56695-5907-4c47-9faa-18723057031a.A"
+              "A": [
+                "8c90c799-1604-4d15-9e46-b198f17ea87f.track",
+                "89d46d4f-a3c1-4b2c-a64f-c3c0bb576e64.approach",
+                "Corporal:832T.TC",
+                "Corporal:833T.A"
               ],
-              "governed": [
-                "Corporal:831.C"
+              "B": [
+                "Corporal:833T.B",
+                "Corporal:834T.TC"
               ],
-              "mast": "Corporal:830NAB"
+              "masts": {
+                "A": "Corporal:832NA",
+                "B": "Corporal:832SA"
+              }
             }
           },
           {
@@ -2734,7 +2817,7 @@
                 "31c609a5-fe13-4a8c-a17c-b91fcce56c6b.track",
                 "Corporal:829D.C"
               ],
-              "mast": "Corporal:832NA"
+              "mast": "Corporal:828NA"
             }
           },
           {
@@ -2759,7 +2842,33 @@
               "governed": [
                 "Corporal:829.C"
               ],
-              "mast": "Corporal:832SA"
+              "mast": "Corporal:828SA"
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "approach": "Corporal:832T",
+                "governed": "Corporal:831T1"
+              },
+              "controlPoint": "Corporal:Corporal"
+            },
+            "given": {
+              "CP Name": "Corporal",
+              "Kind": "IRJ_SIGNAL"
+            },
+            "id": "89d46d4f-a3c1-4b2c-a64f-c3c0bb576e64",
+            "relations": {
+              "approach": [
+                "8c90c799-1604-4d15-9e46-b198f17ea87f.track",
+                "Corporal:832T.TC",
+                "Corporal:833T.A",
+                "ddd56695-5907-4c47-9faa-18723057031a.A"
+              ],
+              "governed": [
+                "Corporal:831.C"
+              ],
+              "mast": "Corporal:830NAB"
             }
           }
         ],
@@ -2797,25 +2906,6 @@
           {
             "derived": {
               "circuits": {
-                "track": "Corporal:2NAT"
-              }
-            },
-            "given": {
-              "Direction": "BOTH",
-              "Kind": "RULE_261"
-            },
-            "id": "f8985365-28b1-449d-b06d-02d5d3a00b10",
-            "relations": {
-              "track": [
-                "Corporal:2NAT.TC",
-                "d75ebcfa-92df-4ee6-b8e7-0b656fd40f1b.track",
-                "ddd56695-5907-4c47-9faa-18723057031a.B"
-              ]
-            }
-          },
-          {
-            "derived": {
-              "circuits": {
                 "track": "Corporal:2SAT"
               }
             },
@@ -2847,6 +2937,26 @@
               "track": [
                 "2d2a9ef0-9b47-40e3-b3ba-013a10286b2a.governed",
                 "Corporal:829D.C"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Corporal:832T"
+              }
+            },
+            "given": {
+              "Direction": "BOTH",
+              "Kind": "RULE_261"
+            },
+            "id": "8c90c799-1604-4d15-9e46-b198f17ea87f",
+            "relations": {
+              "track": [
+                "89d46d4f-a3c1-4b2c-a64f-c3c0bb576e64.approach",
+                "Corporal:832T.TC",
+                "Corporal:833T.A",
+                "ddd56695-5907-4c47-9faa-18723057031a.A"
               ]
             }
           }
@@ -3466,7 +3576,7 @@
               "x": 110.49,
               "y": 11.43
             },
-            "glyph": "Railroad-Trackplan:Mast_Double",
+            "glyph": "Railroad-Trackplan:Signal Mast Double CONTROLLED",
             "heads": {
               "A": {
                 "at": {
@@ -3489,7 +3599,7 @@
               "x": 143.51,
               "y": 26.67
             },
-            "glyph": "Railroad-Trackplan:Mast_Dwarf",
+            "glyph": "Railroad-Trackplan:Signal Mast Dwarf CONTROLLED",
             "heads": {
               "C": {
                 "at": {
@@ -3505,7 +3615,7 @@
               "x": 143.51,
               "y": 43.18
             },
-            "glyph": "Railroad-Trackplan:Mast_Dwarf",
+            "glyph": "Railroad-Trackplan:Signal Mast Dwarf CONTROLLED",
             "heads": {
               "D": {
                 "at": {
@@ -3521,7 +3631,7 @@
               "x": 142.24,
               "y": 59.69
             },
-            "glyph": "Railroad-Trackplan:Mast_Dwarf",
+            "glyph": "Railroad-Trackplan:Signal Mast Dwarf CONTROLLED",
             "heads": {
               "E": {
                 "at": {
@@ -3537,7 +3647,7 @@
               "x": 21.59,
               "y": 19.05
             },
-            "glyph": "Railroad-Trackplan:Mast_Double",
+            "glyph": "Railroad-Trackplan:Signal Mast Double CONTROLLED",
             "heads": {
               "A": {
                 "at": {
@@ -3741,7 +3851,7 @@
             "points": "111.76,15.24 163.83,15.24",
             "relations": {
               "from": "d5ab4695-dde4-44bd-a42b-83dffd322517.approach",
-              "to": "3cc417e7-1bc4-41da-b94e-57e5f30a189d.track"
+              "to": "946ad0dc-88dc-44cb-a260-02b893893ce5.track"
             }
           },
           {
@@ -3750,7 +3860,7 @@
             },
             "points": "0.0,15.24 20.32,15.24",
             "relations": {
-              "from": "d4ac0b2e-148c-49a1-a54a-9de437a417ac.track",
+              "from": "54cdb686-7b86-4869-aff4-74c66a26d8a8.track",
               "to": "0181f7d5-f132-4376-a96f-1f31ec01f1a2.approach"
             }
           },
@@ -3760,7 +3870,7 @@
             },
             "points": "143.51,63.5 163.83,63.5",
             "relations": {
-              "from": "40e4c2ff-067c-49e8-8e36-7955aa2ca5a8.track",
+              "from": "37df07ea-ec58-47c2-b85d-9e8ebbf6d84a.approach",
               "to": "00a0aac7-9dc5-481c-9a54-4b8b1c1c7667.EoT"
             }
           },
@@ -3770,7 +3880,7 @@
             },
             "points": "144.78,46.99 163.83,46.99",
             "relations": {
-              "from": "59b77b14-8ecf-40c6-ae4a-91f87789d6d0.track",
+              "from": "5c92a95e-63ba-402a-9085-3443c8a4607d.approach",
               "to": "930a119b-3f7e-4e76-98ef-6582a7af706e.EoT"
             }
           },
@@ -3780,7 +3890,7 @@
             },
             "points": "144.78,30.48 163.83,30.48",
             "relations": {
-              "from": "82044d38-084d-4c9f-8f2a-e2ddc7f28735.track",
+              "from": "73922a59-4f81-4d5c-9f30-e00035472018.approach",
               "to": "abf604d8-e63c-4d03-b737-ead2ff401e5b.EoT"
             }
           },
@@ -4799,7 +4909,7 @@
               "x": 115.57,
               "y": 20.32
             },
-            "glyph": "Railroad-Trackplan:Mast_Double",
+            "glyph": "Railroad-Trackplan:Signal Mast Double CONTROLLED",
             "heads": {
               "A": {
                 "at": {
@@ -4822,7 +4932,7 @@
               "x": 53.34,
               "y": 3.81
             },
-            "glyph": "Railroad-Trackplan:Mast_Dwarf",
+            "glyph": "Railroad-Trackplan:Signal Mast Dwarf CONTROLLED",
             "heads": {
               "C": {
                 "at": {
@@ -4838,7 +4948,7 @@
               "x": 21.59,
               "y": 27.94
             },
-            "glyph": "Railroad-Trackplan:Mast_Double",
+            "glyph": "Railroad-Trackplan:Signal Mast Double CONTROLLED",
             "heads": {
               "A": {
                 "at": {
@@ -4864,7 +4974,7 @@
               "x": 83.82,
               "y": 11.43
             },
-            "glyph": "Railroad-Trackplan:Mast_Dwarf",
+            "glyph": "Railroad-Trackplan:Signal Mast Dwarf CONTROLLED",
             "heads": {
               "C": {
                 "at": {
@@ -5012,7 +5122,7 @@
             "points": "116.84,24.13 143.51,24.13",
             "relations": {
               "from": "80312d76-4212-441b-8f6c-e68bc04d67f9.approach",
-              "to": "f3925ced-b75d-49d3-a0df-6e939bf00ded.track"
+              "to": "72f8e310-52ab-4aff-bbca-2616e18ede56.track"
             }
           },
           {
@@ -5021,7 +5131,7 @@
             },
             "points": "0.0,24.13 20.32,24.13",
             "relations": {
-              "from": "9cdbf8a5-965f-4bb0-80ac-128c2624047f.track",
+              "from": "8df20930-74d7-4da1-b515-79aa607fb2e1.track",
               "to": "0249d114-5932-4beb-90a3-c46d0bf4b9a5.approach"
             }
           },
@@ -6073,7 +6183,7 @@
               "x": 30.48,
               "y": 46.99
             },
-            "glyph": "Railroad-Trackplan:Mast_Double",
+            "glyph": "Railroad-Trackplan:Signal Mast Double CONTROLLED",
             "heads": {
               "A": {
                 "at": {
@@ -6099,7 +6209,7 @@
               "x": 49.53,
               "y": 30.48
             },
-            "glyph": "Railroad-Trackplan:Mast_Dwarf",
+            "glyph": "Railroad-Trackplan:Signal Mast Dwarf CONTROLLED",
             "heads": {
               "C": {
                 "at": {
@@ -6117,7 +6227,7 @@
               "x": 93.98,
               "y": 55.88
             },
-            "glyph": "Railroad-Trackplan:Mast_Single",
+            "glyph": "Railroad-Trackplan:Signal Mast Single CONTROLLED",
             "heads": {
               "A": {
                 "at": {
@@ -6133,7 +6243,7 @@
               "x": 176.53,
               "y": 39.37
             },
-            "glyph": "Railroad-Trackplan:Mast_Double",
+            "glyph": "Railroad-Trackplan:Signal Mast Double CONTROLLED",
             "heads": {
               "B": {
                 "at": {
@@ -6156,7 +6266,7 @@
               "x": 176.53,
               "y": 22.86
             },
-            "glyph": "Railroad-Trackplan:Mast_Single",
+            "glyph": "Railroad-Trackplan:Signal Mast Single CONTROLLED",
             "heads": {
               "D": {
                 "at": {
@@ -6994,22 +7104,6 @@
             ]
           }
         },
-        "1SAT": {
-          "derived": {
-            "controlPoint": "Sargent:Sargent"
-          },
-          "given": {
-            "Appliance": "track_circuit",
-            "CP Name": "Sargent",
-            "Indication": "1SATK"
-          },
-          "relations": {
-            "TC": [
-              "2ed485d8-9399-4b83-8285-6cf2e67c0af8.B",
-              "57f8967a-3010-441d-bea9-0eb783a0fa60.approach"
-            ]
-          }
-        },
         "2SAT": {
           "derived": {
             "controlPoint": "Sargent:Sargent"
@@ -7025,6 +7119,48 @@
               "78a1df40-a370-4f05-8c58-e8cee9c8b009.approach",
               "de274dbe-41d8-4795-9866-fbb0950c5f2c.CTC"
             ]
+          }
+        },
+        "834NA": {
+          "derived": {
+            "circuits": {
+              "approach": "Sargent:836T"
+            },
+            "controlPoint": "Sargent:Sargent"
+          },
+          "given": {
+            "Appliance": "mast",
+            "Kind": "PERMISSIVE",
+            "Style": "single"
+          },
+          "heads": {
+            "A": {
+              "given": {
+                "Appliance": "head",
+                "Style": "CPL"
+              }
+            }
+          }
+        },
+        "834SA": {
+          "derived": {
+            "circuits": {
+              "governed": "Sargent:836T"
+            },
+            "controlPoint": "Sargent:Sargent"
+          },
+          "given": {
+            "Appliance": "mast",
+            "Kind": "PERMISSIVE",
+            "Style": "single"
+          },
+          "heads": {
+            "A": {
+              "given": {
+                "Appliance": "head",
+                "Style": "CPL"
+              }
+            }
           }
         },
         "835": {
@@ -7057,6 +7193,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "double"
           },
           "heads": {
@@ -7080,6 +7217,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "single"
           },
           "heads": {
@@ -7097,6 +7235,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "dwarf"
           },
           "heads": {
@@ -7106,6 +7245,22 @@
                 "Style": "UQ"
               }
             }
+          }
+        },
+        "836T": {
+          "derived": {
+            "controlPoint": "Sargent:Sargent"
+          },
+          "given": {
+            "Appliance": "track_circuit",
+            "Indication": "836TK"
+          },
+          "relations": {
+            "TC": [
+              "2ed485d8-9399-4b83-8285-6cf2e67c0af8.B",
+              "57f8967a-3010-441d-bea9-0eb783a0fa60.approach",
+              "db6785fb-b68d-4a4c-8fb5-1bcfbfd8d672.track"
+            ]
           }
         },
         "HBA": {
@@ -7385,7 +7540,7 @@
         "appliances": {
           "1": {
             "at": {
-              "x": 40.64,
+              "x": 29.21,
               "y": 16.51
             },
             "glyph": "Railroad-Trackplan:Switch_Manual_Sensed",
@@ -7393,35 +7548,62 @@
           },
           "1MC": {
             "at": {
-              "x": 91.44,
+              "x": 80.01,
               "y": 0.0
             },
             "glyph": "Railroad-Trackplan:MaintainerCall"
           },
           "1NAT": {
             "at": {
-              "x": 106.68,
-              "y": 33.02
-            },
-            "glyph": "Railroad-Trackplan:Track Circuit"
-          },
-          "1SAT": {
-            "at": {
-              "x": 50.8,
+              "x": 95.25,
               "y": 33.02
             },
             "glyph": "Railroad-Trackplan:Track Circuit"
           },
           "2SAT": {
             "at": {
-              "x": 48.26,
+              "x": 36.83,
               "y": 16.51
             },
             "glyph": "Railroad-Trackplan:Track Circuit"
           },
+          "834NA": {
+            "at": {
+              "x": 15.24,
+              "y": 29.21
+            },
+            "glyph": "Railroad-Trackplan:Signal Mast Single PERMISSIVE",
+            "heads": {
+              "A": {
+                "at": {
+                  "x": 8.89,
+                  "y": 26.67
+                },
+                "glyph": "Railroad-Trackplan:Signal Head - CPL"
+              }
+            }
+          },
+          "834SA": {
+            "at": {
+              "x": 15.24,
+              "y": 36.83
+            },
+            "glyph": "Railroad-Trackplan:Signal Mast Single PERMISSIVE",
+            "heads": {
+              "A": {
+                "at": {
+                  "x": 21.59,
+                  "y": 39.37
+                },
+                "glyph": "Railroad-Trackplan:Signal Head - CPL",
+                "rotation": 180
+              }
+            },
+            "rotation": 180
+          },
           "835": {
             "at": {
-              "x": 90.17,
+              "x": 78.74,
               "y": 33.02
             },
             "glyph": "Railroad-Trackplan:Switch_Lock",
@@ -7429,21 +7611,21 @@
           },
           "836NAB": {
             "at": {
-              "x": 91.44,
+              "x": 80.01,
               "y": 29.21
             },
-            "glyph": "Railroad-Trackplan:Mast_Double",
+            "glyph": "Railroad-Trackplan:Signal Mast Double CONTROLLED",
             "heads": {
               "A": {
                 "at": {
-                  "x": 85.09,
+                  "x": 73.66,
                   "y": 26.67
                 },
                 "glyph": "Railroad-Trackplan:Signal Head - CPL"
               },
               "B": {
                 "at": {
-                  "x": 87.63,
+                  "x": 76.2,
                   "y": 26.67
                 },
                 "glyph": "Railroad-Trackplan:Signal Head - CPL"
@@ -7452,14 +7634,14 @@
           },
           "836SA": {
             "at": {
-              "x": 59.69,
+              "x": 48.26,
               "y": 36.83
             },
-            "glyph": "Railroad-Trackplan:Mast_Single",
+            "glyph": "Railroad-Trackplan:Signal Mast Single CONTROLLED",
             "heads": {
               "A": {
                 "at": {
-                  "x": 66.04,
+                  "x": 54.61,
                   "y": 39.37
                 },
                 "glyph": "Railroad-Trackplan:Signal Head - CL",
@@ -7470,14 +7652,14 @@
           },
           "836SB": {
             "at": {
-              "x": 59.69,
+              "x": 48.26,
               "y": 20.32
             },
-            "glyph": "Railroad-Trackplan:Mast_Dwarf",
+            "glyph": "Railroad-Trackplan:Signal Mast Dwarf CONTROLLED",
             "heads": {
               "B": {
                 "at": {
-                  "x": 60.96,
+                  "x": 49.53,
                   "y": 22.86
                 },
                 "glyph": "Railroad-Trackplan:Signal Head - Semaphore-UQ",
@@ -7486,10 +7668,17 @@
             },
             "rotation": 180
           },
+          "836T": {
+            "at": {
+              "x": 36.83,
+              "y": 33.02
+            },
+            "glyph": "Railroad-Trackplan:Track Circuit"
+          },
           "HBA": {
             "at": {
-              "x": 40.64,
-              "y": 38.1
+              "x": 36.83,
+              "y": 44.45
             },
             "glyph": "Railroad-Trackplan:AUXILIARY"
           }
@@ -7497,7 +7686,7 @@
         "houses": {
           "Sargent": {
             "at": {
-              "x": 91.44,
+              "x": 80.01,
               "y": 0.0
             },
             "glyph": "Railroad-Trackplan:House"
@@ -7507,22 +7696,6 @@
           {
             "at": {
               "x": 0.0,
-              "y": 33.02
-            },
-            "glyph": "Railroad-Trackplan:NextCP",
-            "row": "bf713624-211c-41d9-a4bf-fb1f8e4b8aa4"
-          },
-          {
-            "at": {
-              "x": 0.0,
-              "y": 33.02
-            },
-            "glyph": "Railroad-Trackplan:Rule261-DoT-BiDirectional",
-            "row": "d9e20e6c-3e58-468f-bbb0-e91fd802a003"
-          },
-          {
-            "at": {
-              "x": 11.43,
               "y": 0.0
             },
             "glyph": "Railroad-Trackplan:Industry",
@@ -7530,7 +7703,7 @@
           },
           {
             "at": {
-              "x": 11.43,
+              "x": 0.0,
               "y": 16.51
             },
             "glyph": "Railroad-Trackplan:Industry",
@@ -7538,23 +7711,23 @@
           },
           {
             "at": {
-              "x": 16.51,
-              "y": 33.02
+              "x": 15.24,
+              "y": 36.83
             },
-            "glyph": "Railroad-Trackplan:Track Circuit",
-            "row": "1f225e38-5cdb-4b01-9ab6-8bbb0d92c42a"
-          },
-          {
-            "at": {
-              "x": 25.4,
-              "y": 33.02
-            },
-            "glyph": "Railroad-Trackplan:IRJ",
+            "glyph": "Railroad-Trackplan:IRJ-Signals",
             "row": "2ed485d8-9399-4b83-8285-6cf2e67c0af8"
           },
           {
             "at": {
-              "x": 40.64,
+              "x": 15.24,
+              "y": 36.83
+            },
+            "glyph": "Railroad-Trackplan:Signal Mast Plate-G",
+            "row": "6aeb0c0d-23a0-471f-9253-b15f938e2320"
+          },
+          {
+            "at": {
+              "x": 29.21,
               "y": 16.51
             },
             "glyph": "Railroad-Trackplan:IRJ-END_CTC",
@@ -7562,7 +7735,16 @@
           },
           {
             "at": {
-              "x": 55.88,
+              "x": 36.83,
+              "y": 33.02
+            },
+            "glyph": "Railroad-Trackplan:Rule261-DoT-BiDirectional",
+            "rotation": 180,
+            "row": "db6785fb-b68d-4a4c-8fb5-1bcfbfd8d672"
+          },
+          {
+            "at": {
+              "x": 44.45,
               "y": 16.51
             },
             "glyph": "Railroad-Trackplan:Rule105-RestrictedSpeed",
@@ -7570,7 +7752,7 @@
           },
           {
             "at": {
-              "x": 60.96,
+              "x": 49.53,
               "y": 16.51
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
@@ -7579,7 +7761,7 @@
           },
           {
             "at": {
-              "x": 60.96,
+              "x": 49.53,
               "y": 33.02
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
@@ -7588,7 +7770,7 @@
           },
           {
             "at": {
-              "x": 90.17,
+              "x": 78.74,
               "y": 33.02
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
@@ -7596,7 +7778,7 @@
           },
           {
             "at": {
-              "x": 120.65,
+              "x": 109.22,
               "y": 33.02
             },
             "glyph": "Railroad-Trackplan:NextCP",
@@ -7604,7 +7786,7 @@
           },
           {
             "at": {
-              "x": 120.65,
+              "x": 109.22,
               "y": 33.02
             },
             "glyph": "Railroad-Trackplan:Rule261-DoT-BiDirectional",
@@ -7614,42 +7796,53 @@
         "track": [
           {
             "derived": {
-              "circuit": "Corporal:2NAT"
-            },
-            "points": "0.0,33.02 25.4,33.02",
-            "relations": {
-              "from": "d9e20e6c-3e58-468f-bbb0-e91fd802a003.track",
-              "to": "2ed485d8-9399-4b83-8285-6cf2e67c0af8.A"
-            }
-          },
-          {
-            "derived": {
               "circuit": "Sargent:1NAT"
             },
-            "points": "92.71,33.02 120.65,33.02",
+            "points": "81.28,33.02 109.22,33.02",
             "relations": {
               "from": "2c47f3de-619c-47c1-9a14-67eedbf2a085.approach",
-              "to": "2163767a-737a-439c-b63b-60546168da26.track"
-            }
-          },
-          {
-            "derived": {
-              "circuit": "Sargent:1SAT"
-            },
-            "points": "27.94,33.02 58.42,33.02",
-            "relations": {
-              "from": "2ed485d8-9399-4b83-8285-6cf2e67c0af8.B",
-              "to": "57f8967a-3010-441d-bea9-0eb783a0fa60.approach"
+              "to": "290c1958-fb66-4f1a-90eb-13e1a5cce1e5.track"
             }
           },
           {
             "derived": {
               "circuit": "Sargent:2SAT"
             },
-            "points": "43.18,16.51 58.42,16.51",
+            "points": "31.75,16.51 46.99,16.51",
             "relations": {
               "from": "de274dbe-41d8-4795-9866-fbb0950c5f2c.CTC",
               "to": "78a1df40-a370-4f05-8c58-e8cee9c8b009.approach"
+            }
+          },
+          {
+            "derived": {
+              "circuit": "Sargent:836T"
+            },
+            "points": "16.51,33.02 46.99,33.02",
+            "relations": {
+              "from": "2ed485d8-9399-4b83-8285-6cf2e67c0af8.B",
+              "to": "57f8967a-3010-441d-bea9-0eb783a0fa60.approach"
+            }
+          },
+          {
+            "points": "0.0,0.0 0.0,1.27",
+            "relations": {
+              "from": "Sargent:1.R",
+              "to": "label:Beet Loader 1"
+            }
+          },
+          {
+            "points": "0.0,16.51 0.0,17.78",
+            "relations": {
+              "from": "Sargent:1.N",
+              "to": "label:Beet Loader 2"
+            }
+          },
+          {
+            "points": "0.0,33.02 13.97,33.02",
+            "relations": {
+              "from": "label:ToCorporalMT",
+              "to": "2ed485d8-9399-4b83-8285-6cf2e67c0af8.A"
             }
           }
         ]
@@ -7674,25 +7867,6 @@
         "processor": "Sargent"
       },
       "track": {
-        "consumers": [
-          {
-            "given": {
-              "Appliance": "track_circuit",
-              "CP Name": "Corporal",
-              "Indication": "Corporal:2NATK",
-              "Name": "Corporal:2NAT"
-            },
-            "id": "1f225e38-5cdb-4b01-9ab6-8bbb0d92c42a",
-            "relations": {
-              "indication": "Corporal:2NATK",
-              "TC": [
-                "2ed485d8-9399-4b83-8285-6cf2e67c0af8.A",
-                "bf713624-211c-41d9-a4bf-fb1f8e4b8aa4.track",
-                "d9e20e6c-3e58-468f-bbb0-e91fd802a003.track"
-              ]
-            }
-          }
-        ],
         "ends": [
           {
             "derived": {
@@ -7712,25 +7886,6 @@
               ],
               "DARK": [
                 "Sargent:1.C"
-              ]
-            }
-          },
-          {
-            "derived": {
-              "circuits": {
-                "track": "Corporal:2NAT"
-              }
-            },
-            "given": {
-              "Interlocking": "Corporal",
-              "Kind": "NEXT_CP"
-            },
-            "id": "bf713624-211c-41d9-a4bf-fb1f8e4b8aa4",
-            "relations": {
-              "track": [
-                "1f225e38-5cdb-4b01-9ab6-8bbb0d92c42a.TC",
-                "2ed485d8-9399-4b83-8285-6cf2e67c0af8.A",
-                "d9e20e6c-3e58-468f-bbb0-e91fd802a003.track"
               ]
             }
           },
@@ -7782,29 +7937,6 @@
           {
             "derived": {
               "circuits": {
-                "A": "Corporal:2NAT",
-                "B": "Sargent:1SAT"
-              }
-            },
-            "given": {
-              "Kind": "IRJ"
-            },
-            "id": "2ed485d8-9399-4b83-8285-6cf2e67c0af8",
-            "relations": {
-              "A": [
-                "1f225e38-5cdb-4b01-9ab6-8bbb0d92c42a.TC",
-                "bf713624-211c-41d9-a4bf-fb1f8e4b8aa4.track",
-                "d9e20e6c-3e58-468f-bbb0-e91fd802a003.track"
-              ],
-              "B": [
-                "57f8967a-3010-441d-bea9-0eb783a0fa60.approach",
-                "Sargent:1SAT.TC"
-              ]
-            }
-          },
-          {
-            "derived": {
-              "circuits": {
                 "approach": "Sargent:1NAT",
                 "governed": "Sargent:835T1"
               },
@@ -7825,30 +7957,6 @@
                 "Sargent:835.C"
               ],
               "mast": "Sargent:836NAB"
-            }
-          },
-          {
-            "derived": {
-              "circuits": {
-                "approach": "Sargent:1SAT",
-                "governed": "Sargent:835T1"
-              },
-              "controlPoint": "Sargent:Sargent"
-            },
-            "given": {
-              "CP Name": "Sargent",
-              "Kind": "IRJ_SIGNAL"
-            },
-            "id": "57f8967a-3010-441d-bea9-0eb783a0fa60",
-            "relations": {
-              "approach": [
-                "2ed485d8-9399-4b83-8285-6cf2e67c0af8.B",
-                "Sargent:1SAT.TC"
-              ],
-              "governed": [
-                "Sargent:835.N"
-              ],
-              "mast": "Sargent:836SA"
             }
           },
           {
@@ -7875,28 +7983,56 @@
               ],
               "mast": "Sargent:836SB"
             }
-          }
-        ],
-        "policies": [
+          },
           {
             "derived": {
               "circuits": {
-                "track": "Corporal:2NAT"
+                "approach": "Sargent:836T",
+                "governed": "Sargent:835T1"
+              },
+              "controlPoint": "Sargent:Sargent"
+            },
+            "given": {
+              "CP Name": "Sargent",
+              "Kind": "IRJ_SIGNAL"
+            },
+            "id": "57f8967a-3010-441d-bea9-0eb783a0fa60",
+            "relations": {
+              "approach": [
+                "2ed485d8-9399-4b83-8285-6cf2e67c0af8.B",
+                "db6785fb-b68d-4a4c-8fb5-1bcfbfd8d672.track",
+                "Sargent:836T.TC"
+              ],
+              "governed": [
+                "Sargent:835.N"
+              ],
+              "mast": "Sargent:836SA"
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "B": "Sargent:836T"
               }
             },
             "given": {
-              "Direction": "BOTH",
-              "Kind": "RULE_261"
+              "Kind": "IRJ_SIGNALS"
             },
-            "id": "d9e20e6c-3e58-468f-bbb0-e91fd802a003",
+            "id": "2ed485d8-9399-4b83-8285-6cf2e67c0af8",
             "relations": {
-              "track": [
-                "1f225e38-5cdb-4b01-9ab6-8bbb0d92c42a.TC",
-                "2ed485d8-9399-4b83-8285-6cf2e67c0af8.A",
-                "bf713624-211c-41d9-a4bf-fb1f8e4b8aa4.track"
-              ]
+              "B": [
+                "57f8967a-3010-441d-bea9-0eb783a0fa60.approach",
+                "db6785fb-b68d-4a4c-8fb5-1bcfbfd8d672.track",
+                "Sargent:836T.TC"
+              ],
+              "masts": {
+                "A": "Sargent:834NA",
+                "B": "Sargent:834SA"
+              }
             }
-          },
+          }
+        ],
+        "policies": [
           {
             "derived": {
               "circuits": {
@@ -7933,6 +8069,34 @@
                 "de274dbe-41d8-4795-9866-fbb0950c5f2c.CTC",
                 "Sargent:2SAT.TC"
               ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Sargent:836T"
+              }
+            },
+            "given": {
+              "Direction": "BOTH",
+              "Kind": "RULE_261"
+            },
+            "id": "db6785fb-b68d-4a4c-8fb5-1bcfbfd8d672",
+            "relations": {
+              "track": [
+                "2ed485d8-9399-4b83-8285-6cf2e67c0af8.B",
+                "57f8967a-3010-441d-bea9-0eb783a0fa60.approach",
+                "Sargent:836T.TC"
+              ]
+            }
+          },
+          {
+            "given": {
+              "Kind": "RULE_290_G"
+            },
+            "id": "6aeb0c0d-23a0-471f-9253-b15f938e2320",
+            "relations": {
+              "mast": "Sargent:834SA"
             }
           }
         ]
@@ -8113,8 +8277,7 @@
             "TC": [
               "4ff0a280-f62c-4928-afcb-b3114c00e7b5.A",
               "14dfa959-b581-4e8a-956a-1356ba4cee8d.track",
-              "3478e3b9-eb36-424c-bb66-b3db1669812d.approach",
-              "ead0e363-bdf9-41ae-a5a4-0242233bfca2.track"
+              "3478e3b9-eb36-424c-bb66-b3db1669812d.approach"
             ]
           }
         },
@@ -8218,7 +8381,6 @@
           },
           "relations": {
             "TC": [
-              "07f6d3a8-9813-41bb-8931-a7fd64646ece.track",
               "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
               "293515f7-9155-4100-a639-23f6d051ab4e.approach"
             ]
@@ -8804,9 +8966,11 @@
               "fa08f12d-ce74-4c72-a82e-c48292c8ba79.governed"
             ],
             "N": [
-              "293515f7-9155-4100-a639-23f6d051ab4e.governed"
+              "293515f7-9155-4100-a639-23f6d051ab4e.governed",
+              "fca5a466-c177-4fdb-9d8a-0b69eee686af.track"
             ],
             "R": [
+              "01961bf3-bd4b-4d88-9e90-b0d8e55468d3.track",
               "3478e3b9-eb36-424c-bb66-b3db1669812d.governed"
             ]
           }
@@ -10353,7 +10517,7 @@
               "x": 24.13,
               "y": 20.32
             },
-            "glyph": "Railroad-Trackplan:Mast_Double",
+            "glyph": "Railroad-Trackplan:Signal Mast Double CONTROLLED",
             "heads": {
               "A": {
                 "at": {
@@ -10376,7 +10540,7 @@
               "x": 30.48,
               "y": 33.02
             },
-            "glyph": "Railroad-Trackplan:Mast_Double",
+            "glyph": "Railroad-Trackplan:Signal Mast Double CONTROLLED",
             "heads": {
               "C": {
                 "at": {
@@ -10399,7 +10563,7 @@
               "x": 3.81,
               "y": 27.94
             },
-            "glyph": "Railroad-Trackplan:Mast_Double",
+            "glyph": "Railroad-Trackplan:Signal Mast Double CONTROLLED",
             "heads": {
               "A": {
                 "at": {
@@ -10425,7 +10589,7 @@
               "x": 68.58,
               "y": 20.32
             },
-            "glyph": "Railroad-Trackplan:Mast_Dwarf",
+            "glyph": "Railroad-Trackplan:Signal Mast Dwarf CONTROLLED",
             "heads": {
               "A": {
                 "at": {
@@ -10441,7 +10605,7 @@
               "x": 78.74,
               "y": 33.02
             },
-            "glyph": "Railroad-Trackplan:Mast_Dwarf",
+            "glyph": "Railroad-Trackplan:Signal Mast Dwarf CONTROLLED",
             "heads": {
               "B": {
                 "at": {
@@ -10457,7 +10621,7 @@
               "x": 86.36,
               "y": 40.64
             },
-            "glyph": "Railroad-Trackplan:Mast_Dwarf",
+            "glyph": "Railroad-Trackplan:Signal Mast Dwarf CONTROLLED",
             "heads": {
               "C": {
                 "at": {
@@ -10473,7 +10637,7 @@
               "x": 93.98,
               "y": 48.26
             },
-            "glyph": "Railroad-Trackplan:Mast_Dwarf",
+            "glyph": "Railroad-Trackplan:Signal Mast Dwarf CONTROLLED",
             "heads": {
               "D": {
                 "at": {
@@ -10489,7 +10653,7 @@
               "x": 101.6,
               "y": 55.88
             },
-            "glyph": "Railroad-Trackplan:Mast_Dwarf",
+            "glyph": "Railroad-Trackplan:Signal Mast Dwarf CONTROLLED",
             "heads": {
               "E": {
                 "at": {
@@ -10505,7 +10669,7 @@
               "x": 109.22,
               "y": 63.5
             },
-            "glyph": "Railroad-Trackplan:Mast_Dwarf",
+            "glyph": "Railroad-Trackplan:Signal Mast Dwarf CONTROLLED",
             "heads": {
               "F": {
                 "at": {
@@ -10521,7 +10685,7 @@
               "x": 115.57,
               "y": 71.12
             },
-            "glyph": "Railroad-Trackplan:Mast_Dwarf",
+            "glyph": "Railroad-Trackplan:Signal Mast Dwarf CONTROLLED",
             "heads": {
               "G": {
                 "at": {
@@ -10537,7 +10701,7 @@
               "x": 228.6,
               "y": 91.44
             },
-            "glyph": "Railroad-Trackplan:Mast_Dwarf",
+            "glyph": "Railroad-Trackplan:Signal Mast Dwarf CONTROLLED",
             "heads": {
               "A": {
                 "at": {
@@ -10594,6 +10758,14 @@
           },
           {
             "at": {
+              "x": 20.32,
+              "y": 24.13
+            },
+            "glyph": "Railroad-Trackplan:Rule251-DoT-Left",
+            "row": "fca5a466-c177-4fdb-9d8a-0b69eee686af"
+          },
+          {
+            "at": {
               "x": 22.86,
               "y": 24.13
             },
@@ -10602,19 +10774,20 @@
           },
           {
             "at": {
+              "x": 25.4,
+              "y": 36.83
+            },
+            "glyph": "Railroad-Trackplan:Rule251-DoT-Right",
+            "mirror": "x",
+            "row": "01961bf3-bd4b-4d88-9e90-b0d8e55468d3"
+          },
+          {
+            "at": {
               "x": 29.21,
               "y": 36.83
             },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "row": "3478e3b9-eb36-424c-bb66-b3db1669812d"
-          },
-          {
-            "at": {
-              "x": 30.48,
-              "y": 24.13
-            },
-            "glyph": "Railroad-Trackplan:Rule251-DoT-Left",
-            "row": "07f6d3a8-9813-41bb-8931-a7fd64646ece"
           },
           {
             "at": {
@@ -10695,14 +10868,6 @@
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
             "row": "745b5ac7-b6b4-4f7f-9b19-edc6003d829b"
-          },
-          {
-            "at": {
-              "x": 88.9,
-              "y": 87.63
-            },
-            "glyph": "Railroad-Trackplan:Rule251-DoT-Right",
-            "row": "ead0e363-bdf9-41ae-a5a4-0242233bfca2"
           },
           {
             "at": {
@@ -11141,7 +11306,7 @@
             },
             "points": "31.75,36.83 36.83,36.83 54.61,54.61 87.63,87.63 92.71,87.63",
             "relations": {
-              "from": "14dfa959-b581-4e8a-956a-1356ba4cee8d.track",
+              "from": "3478e3b9-eb36-424c-bb66-b3db1669812d.approach",
               "to": "4ff0a280-f62c-4928-afcb-b3114c00e7b5.A"
             }
           },
@@ -11788,7 +11953,6 @@
               "A": [
                 "14dfa959-b581-4e8a-956a-1356ba4cee8d.track",
                 "3478e3b9-eb36-424c-bb66-b3db1669812d.approach",
-                "ead0e363-bdf9-41ae-a5a4-0242233bfca2.track",
                 "Watsonville:02T.TC"
               ],
               "B": [
@@ -11917,7 +12081,6 @@
             "id": "78d813b1-144a-4e54-8d3d-0a64f49eb2d6",
             "relations": {
               "A": [
-                "07f6d3a8-9813-41bb-8931-a7fd64646ece.track",
                 "293515f7-9155-4100-a639-23f6d051ab4e.approach",
                 "Watsonville:03T.TC"
               ],
@@ -12545,10 +12708,10 @@
               "approach": [
                 "4ff0a280-f62c-4928-afcb-b3114c00e7b5.A",
                 "14dfa959-b581-4e8a-956a-1356ba4cee8d.track",
-                "ead0e363-bdf9-41ae-a5a4-0242233bfca2.track",
                 "Watsonville:02T.TC"
               ],
               "governed": [
+                "01961bf3-bd4b-4d88-9e90-b0d8e55468d3.track",
                 "Watsonville:837.R"
               ],
               "mast": "Watsonville:838NCD"
@@ -12593,11 +12756,11 @@
             "id": "293515f7-9155-4100-a639-23f6d051ab4e",
             "relations": {
               "approach": [
-                "07f6d3a8-9813-41bb-8931-a7fd64646ece.track",
                 "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
                 "Watsonville:03T.TC"
               ],
               "governed": [
+                "fca5a466-c177-4fdb-9d8a-0b69eee686af.track",
                 "Watsonville:837.N"
               ],
               "mast": "Watsonville:838NAB"
@@ -12738,27 +12901,6 @@
               "track": [
                 "4ff0a280-f62c-4928-afcb-b3114c00e7b5.A",
                 "3478e3b9-eb36-424c-bb66-b3db1669812d.approach",
-                "ead0e363-bdf9-41ae-a5a4-0242233bfca2.track",
-                "Watsonville:02T.TC"
-              ]
-            }
-          },
-          {
-            "derived": {
-              "circuits": {
-                "track": "Watsonville:02T"
-              }
-            },
-            "given": {
-              "Direction": "RIGHT",
-              "Kind": "RULE_251"
-            },
-            "id": "ead0e363-bdf9-41ae-a5a4-0242233bfca2",
-            "relations": {
-              "track": [
-                "4ff0a280-f62c-4928-afcb-b3114c00e7b5.A",
-                "14dfa959-b581-4e8a-956a-1356ba4cee8d.track",
-                "3478e3b9-eb36-424c-bb66-b3db1669812d.approach",
                 "Watsonville:02T.TC"
               ]
             }
@@ -12784,19 +12926,36 @@
           {
             "derived": {
               "circuits": {
-                "track": "Watsonville:03T"
+                "track": "Watsonville:837T1"
               }
             },
             "given": {
               "Direction": "LEFT",
               "Kind": "RULE_251"
             },
-            "id": "07f6d3a8-9813-41bb-8931-a7fd64646ece",
+            "id": "fca5a466-c177-4fdb-9d8a-0b69eee686af",
             "relations": {
               "track": [
-                "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
-                "293515f7-9155-4100-a639-23f6d051ab4e.approach",
-                "Watsonville:03T.TC"
+                "293515f7-9155-4100-a639-23f6d051ab4e.governed",
+                "Watsonville:837.N"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:837T1"
+              }
+            },
+            "given": {
+              "Direction": "RIGHT",
+              "Kind": "RULE_251"
+            },
+            "id": "01961bf3-bd4b-4d88-9e90-b0d8e55468d3",
+            "relations": {
+              "track": [
+                "3478e3b9-eb36-424c-bb66-b3db1669812d.governed",
+                "Watsonville:837.R"
               ]
             }
           }
@@ -12974,8 +13133,8 @@
         "shape": [
           {
             "at": {
-              "x": -10.16,
-              "y": 0.0
+              "x": -1.27,
+              "y": -1.27
             },
             "justify": "right",
             "size": 1.016,
@@ -13103,6 +13262,54 @@
           }
         ]
       },
+      "Railroad-Trackplan:IRJ-Signals": {
+        "ports": {
+          "A": {
+            "x": -1.27,
+            "y": -3.81
+          },
+          "B": {
+            "x": 1.27,
+            "y": -3.81
+          },
+          "SIGNAL_A": {
+            "x": 0.0,
+            "y": -7.62
+          },
+          "SIGNAL_B": {
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        "shape": [
+          {
+            "at": {
+              "x": 0.0,
+              "y": -3.81
+            },
+            "rotation": 900.0,
+            "size": 0.635,
+            "text": "SIGNAL",
+            "type": "text"
+          },
+          {
+            "points": "0.0,0.0 0.0,-1.27",
+            "type": "polyline"
+          },
+          {
+            "points": "0.0,-7.62 0.0,-6.35",
+            "type": "polyline"
+          },
+          {
+            "points": "1.905,-5.08 0.635,-5.08 0.635,-2.54 1.905,-2.54",
+            "type": "polyline"
+          },
+          {
+            "points": "-1.905,-5.08 -0.635,-5.08 -0.635,-2.54 -1.905,-2.54",
+            "type": "polyline"
+          }
+        ]
+      },
       "Railroad-Trackplan:IRJ_Diag": {
         "ports": {
           "A": {
@@ -13147,99 +13354,6 @@
               "width": 0.2032
             },
             "type": "circle"
-          }
-        ]
-      },
-      "Railroad-Trackplan:Mast_Double": {
-        "ports": {
-          "H1": {
-            "x": -6.35,
-            "y": -2.54
-          },
-          "H2": {
-            "x": -3.81,
-            "y": -2.54
-          },
-          "SIGNAL": {
-            "x": 0.0,
-            "y": 0.0
-          }
-        },
-        "shape": [
-          {
-            "points": "0.0,-2.54 -2.54,-2.54",
-            "stroke": {
-              "width": 0.254
-            },
-            "type": "polyline"
-          },
-          {
-            "points": "0.0,-3.81 0.0,-1.27",
-            "stroke": {
-              "width": 0.3048
-            },
-            "type": "polyline"
-          },
-          {
-            "points": "-3.81,-2.54 -2.54,-2.54",
-            "type": "polyline"
-          }
-        ]
-      },
-      "Railroad-Trackplan:Mast_Dwarf": {
-        "ports": {
-          "H": {
-            "x": -1.27,
-            "y": -2.54
-          },
-          "SIGNAL": {
-            "x": 0.0,
-            "y": 0.0
-          }
-        },
-        "shape": [
-          {
-            "points": "0.0,-3.81 0.0,-1.27",
-            "stroke": {
-              "width": 0.3048
-            },
-            "type": "polyline"
-          },
-          {
-            "points": "-1.27,-2.54 0.0,-2.54",
-            "type": "polyline"
-          }
-        ]
-      },
-      "Railroad-Trackplan:Mast_Single": {
-        "ports": {
-          "H": {
-            "x": -6.35,
-            "y": -2.54
-          },
-          "SIGNAL": {
-            "x": 0.0,
-            "y": 0.0
-          }
-        },
-        "shape": [
-          {
-            "points": "0.0,-2.54 -5.08,-2.54",
-            "stroke": {
-              "width": 0.254
-            },
-            "type": "polyline"
-          },
-          {
-            "points": "0.0,-3.81 0.0,-1.27",
-            "stroke": {
-              "width": 0.3048
-            },
-            "type": "polyline"
-          },
-          {
-            "points": "-6.35,-2.54 -5.08,-2.54",
-            "type": "polyline"
           }
         ]
       },
@@ -13680,6 +13794,185 @@
           }
         ]
       },
+      "Railroad-Trackplan:Signal Mast Double CONTROLLED": {
+        "ports": {
+          "H1": {
+            "x": -6.35,
+            "y": -2.54
+          },
+          "H2": {
+            "x": -3.81,
+            "y": -2.54
+          },
+          "SIGNAL": {
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        "shape": [
+          {
+            "points": "0.0,-2.54 -2.54,-2.54",
+            "stroke": {
+              "width": 0.254
+            },
+            "type": "polyline"
+          },
+          {
+            "points": "0.0,-3.81 0.0,-1.27",
+            "stroke": {
+              "width": 0.3048
+            },
+            "type": "polyline"
+          },
+          {
+            "points": "-3.81,-2.54 -2.54,-2.54",
+            "type": "polyline"
+          }
+        ]
+      },
+      "Railroad-Trackplan:Signal Mast Dwarf CONTROLLED": {
+        "ports": {
+          "H": {
+            "x": -1.27,
+            "y": -2.54
+          },
+          "SIGNAL": {
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        "shape": [
+          {
+            "points": "0.0,-3.81 0.0,-1.27",
+            "stroke": {
+              "width": 0.3048
+            },
+            "type": "polyline"
+          },
+          {
+            "points": "-1.27,-2.54 0.0,-2.54",
+            "type": "polyline"
+          }
+        ]
+      },
+      "Railroad-Trackplan:Signal Mast Plate-G": {
+        "ports": {
+          "To": {
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        "shape": [
+          {
+            "at": {
+              "x": 2.54,
+              "y": 7.62
+            },
+            "size": 1.016,
+            "text": "G",
+            "type": "text"
+          },
+          {
+            "end": {
+              "x": 3.81,
+              "y": 8.89
+            },
+            "start": {
+              "x": 1.27,
+              "y": 6.35
+            },
+            "type": "rectangle"
+          }
+        ]
+      },
+      "Railroad-Trackplan:Signal Mast Single CONTROLLED": {
+        "ports": {
+          "H": {
+            "x": -6.35,
+            "y": -2.54
+          },
+          "SIGNAL": {
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        "shape": [
+          {
+            "points": "0.0,-2.54 -5.08,-2.54",
+            "stroke": {
+              "width": 0.254
+            },
+            "type": "polyline"
+          },
+          {
+            "points": "0.0,-3.81 0.0,-1.27",
+            "stroke": {
+              "width": 0.3048
+            },
+            "type": "polyline"
+          },
+          {
+            "points": "-6.35,-2.54 -5.08,-2.54",
+            "type": "polyline"
+          }
+        ]
+      },
+      "Railroad-Trackplan:Signal Mast Single PERMISSIVE": {
+        "ports": {
+          "H": {
+            "x": -6.35,
+            "y": -2.54
+          },
+          "SIGNAL": {
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        "shape": [
+          {
+            "at": {
+              "x": -2.54,
+              "y": -5.08
+            },
+            "size": 0.635,
+            "text": "###",
+            "type": "text"
+          },
+          {
+            "end": {
+              "x": -3.81,
+              "y": -6.35
+            },
+            "start": {
+              "x": -1.27,
+              "y": -3.81
+            },
+            "type": "rectangle"
+          },
+          {
+            "points": "0.0,-2.54 -5.08,-2.54",
+            "stroke": {
+              "width": 0.254
+            },
+            "type": "polyline"
+          },
+          {
+            "points": "0.0,-3.81 0.0,-1.27",
+            "stroke": {
+              "width": 0.3048
+            },
+            "type": "polyline"
+          },
+          {
+            "points": "-2.54,-2.54 -2.54,-3.81",
+            "type": "polyline"
+          },
+          {
+            "points": "-6.35,-2.54 -5.08,-2.54",
+            "type": "polyline"
+          }
+        ]
+      },
       "Railroad-Trackplan:Switch_Lock": {
         "ports": {
           "C": {
@@ -14048,6 +14341,44 @@
             "radius": 1.27,
             "stroke": {
               "width": 0.2032
+            },
+            "type": "circle"
+          }
+        ]
+      },
+      "Railroad-Trackplan:Track Circuit IR Boundary": {
+        "ports": {
+          "A": {
+            "x": 0.0,
+            "y": 0.0
+          },
+          "B": {
+            "x": 2.54,
+            "y": 0.0
+          }
+        },
+        "shape": [
+          {
+            "at": {
+              "x": 3.81,
+              "y": -2.54
+            },
+            "size": 0.762,
+            "text": "${Name}",
+            "type": "text"
+          },
+          {
+            "center": {
+              "x": 1.27,
+              "y": 0.0
+            },
+            "fill": {
+              "color": "#ffff00",
+              "type": "color"
+            },
+            "radius": 0.635,
+            "stroke": {
+              "width": 0.0762
             },
             "type": "circle"
           }
@@ -16500,9 +16831,11 @@
   },
   "provenance": {
     "libraries": {
-      "Railroad-Trackplan": "split-projects-final-113-g2ecf8a4"
+      "Railroad-Trackplan": "split-projects-final-117-g31954c5"
     },
     "referenceData": {
+      "codeLineCapacity": "2026-11-01",
+      "codeLineSteps": "2026-11-01.3",
       "driverEncodings": "2026-10-23",
       "encodingTransportPairing": "2026-10-23",
       "indicationTokens": "2026-10-27.2",
@@ -16510,7 +16843,7 @@
     },
     "rules": "0.1.0",
     "source": {
-      "describe": "split-projects-final-113-g2ecf8a4",
+      "describe": "split-projects-final-117-g31954c5",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad",
