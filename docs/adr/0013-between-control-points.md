@@ -195,6 +195,11 @@ station that sends it, `Corporal:831T` on the model board. By R12 that consumer 
 model states the members and the station named. Check: the qualifying station is at one end of the block. A layout
 without a consumer for the block's virtual circuit sends nothing for it.
 
+When a member of `Corporal:831T` (`836T`) is wired to the neighbouring interlocking's processor (Sargent), `831T` is a
+cross-interlocking consumer of `Sargent:836TK` (ADR 0011). By R12, that causes Sargent to include `836TK` in its
+codeline indications (where the code line has capacity, §18.1), so Corporal can compute `831TK` without inferring
+occupancy from `H` and `D` (which `834SA`'s `SR` masks while a southbound train occupies `836T`).
+
 ## 8. The current of traffic under `RULE_251` (decision 7)
 
 | Sign | Kind | `Direction` |
@@ -451,50 +456,61 @@ File or `derive.py`.
      approach signal in rear shows `CLEAR` rather than `APPROACH_MEDIUM`. That matches standard three-aspect signaling
      and avoids a third line value unless four-aspect coding is needed later.
 
-## 18. Cross-processor carriers and the POC 834–836 split
+## 18. Four deployment variations, what is drawn, and the POC 834–836 split
 
-### 18.1 When signal locations span processors
+### 18.1 Four deployment variations and what is drawn for each
 
-Where one program runs all field logic (the central-application pattern over CMRInet, JMRI MQTT, LocoNet, or LCC I/O),
-every `HD` line and track circuit is in memory on one processor and nothing crosses.
+Across all four variations, **the trackplan drawing is identical**: the block track is drawn from one control point to
+the next (with a hierarchical label where it crosses sheets, §7.1), with its `IRJ-Signals` / `IRJ-Signal` joints, its
+`PERMISSIVE` (or `ABSOLUTE`) masts and heads, its track circuits (`832T`, `834T`, `836T`), any `boundary` detector
+(`833T`), its `RULE_251` or `RULE_261` sign, and the block's `virtual` track circuit (`831T`) where the model board
+displays the block.
 
-In the distributed pattern (separate `FieldUnit` processors on a US&S 506 or AAR MQTT code line), the `blocks` library
-(§11) tells `FieldUnit` codegen which processor runs each signal location and which processor reads each track
-circuit. In the POC between Corporal and Sargent (`832T`, `834T`, and locations `830`, `832`, `834` on Corporal's
-processor; `836T` and location `836` on Sargent's processor), the boundary between processors falls between location
-`834` and circuit `836T`:
+Only the hardware / processor / codeline bindings differ:
 
-| HD line | Produced by | Consumed by | What crosses |
+| Variation | What is drawn on the sheets | How `FieldUnit` exchanges state across the block |
+|---|---|---|
+| **A. AAR codeline only between distributed `FieldUnit`s (preferred distributed form)** | Each interlocking connects to the shared AAR `Codeline` encoding and to its own field `Processor`. Each block track circuit and intermediate head device connects to a driver on whichever field `Processor` physically serves it. **No extra `HD` line symbols, topics, or cross-processor wires are drawn.** | **Codeline indication eavesdropping.** Each `FieldUnit` subscribes to the neighbouring station's codeline `Indication` messages on the shared code line. Because the far station's leaving/home signal indications (`NGK`, `SGK`, `TEK`) and remote block circuit indications (`TK`, included automatically by R12 when consumed by the neighbour's block or virtual circuit) are broadcast as codeline indications, each processor has every fact needed to evaluate its `HD` chain, `SR` sticks, and virtual block circuit (`831T`) locally—negating any separate `HD` lineset or `<root>/hdline/<mast>` topic. |
+| **B. Physical `H`/`D` wire pairs between distributed `FieldUnit`s** | Each interlocking has its own field `Processor`. At the segment that crosses between two processors, four I/O driver pins (two open-drain outputs and two pull-up inputs on each processor: `H` and `D` each way, active-low per R14) are wired between the two processors' drivers (gap 3). Each mast's governed track circuit is wired to the processor that runs that mast's signal location. | **Wired `HD` cascade.** Each processor evaluates its local `HD` segments and drives the physical `H` and `D` wires across the boundary. A broken wire, unpowered producer, or processor in reset reads as released (`Stop`). |
+| **C. Unified field logic system (CMRInet Host, JMRI, or `spcoast_virtual_plant`)** | Every interlocking's `Processor` pin connects to the **same** `Processor` entity (e.g., the CMRInet Host), and all field I/O drivers (`Driver-CMRInet-Node` `IB`/`OB`, JMRI drivers) attach to that processor's bus. **No cross-processor wires or extra topics are drawn.** | **In-memory.** The `blocks` library (§11) resolves every circuit and signal location in the block to the same processor, so `FieldUnit` evaluates every `HD` link, `SR` stick, and virtual circuit (`831T`) directly in memory. |
+| **D. US&S 506 code line with a 1- or 2-circuit ABS/APB link** | Both interlockings connect to a `USS506` (7 indication steps per station) or `USS506C` (35 steps) `Codeline` encoding. Track circuits and head devices connect to their local field `Processor`'s drivers. | **Codeline eavesdropping up to step capacity; wired `HD` beyond it.** A standard 1-switch, 1-signal, 1-OS, 1-MC station uses 6 of its 7 indication steps, leaving 1 free step (`reference.CODE_LINE_CAPACITY`, `CODE_LINE_STEPS`). For a **1-circuit block** (one station sends its `TK` in its free step) or a **2-circuit block** (each end station sends its side's `TK` in its 1 free step), each `FieldUnit` eavesdrops on the other station's 506 indication code (`NGK`, `SGK`, `TEK`, `TK`) on the two-wire code line with **no extra field wires** (same mechanism as Variation A). Only when a block has more circuits than the two stations' free 506 indication steps must intermediate segments use Variation B (wired `H`/`D`) or an MQTT `HD` topic. |
+
+### 18.2 How codeline indication eavesdropping works on the POC 834–836 split (Variations A and D)
+
+In the POC between Corporal and Sargent (`832T`, `834T`, and locations `830`, `832`, `834` on Corporal's processor;
+`836T` and location `836` on Sargent's processor), the boundary between processors falls between location `834` and
+circuit `836T`:
+
+| Direction | Needed by consumer | Provided by codeline eavesdropping (Variations A & D) | Provided by wired `HD` / topic (Variation B) |
 |---|---|---|---|
-| `836SA` (southbound) | Sargent (`836`) | `834SA` (on Corporal's processor) | `H` (`836T` clear AND `836NAB` not active/in time) and `D` (`836SA` Approach or better) |
-| `834NA` (northbound) | Location `834` (on Corporal's processor) | Sargent's `836NAB` | `H` (`834NA` conditions + `836T` clear) and `D` (`834NA` Approach or better) |
+| Sargent $\to$ Corporal | `834SA` (needs `836SA`'s `H`, `D`, and `836T` for `834SA`'s `SR`) and `Corporal:831T` (needs `836T`) | Sargent's codeline indications `836NGK` (leaving `836NAB`), `836SGK` (home `836SA`), `836TEK` (time), and `836TK` (circuit `836T`). Corporal computes `836SA` `H` = `!836TK && !836NGK && !836TEK`, `D` = `836SGK`, sets `834SA`'s `SR` directly from `836TK`, and computes `831TK` = `832T || 834T || 836TK`. | `836SA` `H` and `D` on two wires (or `<root>/hdline/836SA`); `834SA`'s `SR` uses the local `834T` approach-circuit guard (§18.3 item 1). |
+| Corporal $\to$ Sargent | Sargent's leaving signal `836NAB` (needs `834NA`'s `H` and `D`) | Corporal's codeline indications `830SGK`, `830TEK`, `828SGK`, `828TEK`, `830NGK`, `832TK`, and `834TK`. Sargent has the complete occupancy progression (`832TK`, `834TK`, `836T`) and Corporal's signal state to evaluate `834NA`'s `H` and `D` locally. | `834NA` `H` and `D` on two wires (or `<root>/hdline/834NA`), with Sargent ANDing its local `836T` into `H`. |
 
-### 18.2 Four things `FieldUnit` codegen should watch at a processor split
+### 18.3 Four implementation details `FieldUnit` codegen should watch
 
 1. **Picking up `834SA`'s `SR` across a processor boundary:**
-   - Mast `834SA` runs on Corporal's processor, but its governed circuit (`836T`) is wired to Sargent's processor.
-   - Corporal's processor cannot set `834SA`'s `SR` from "`836SA` `H` dropped while `834SA` showed Proceed" alone,
-     because `836SA` `H` also drops when Sargent clears `836NAB` into an idle block.
-   - `FieldUnit` has three clean options:
-     - **(a) Require a mast's governed circuit to be readable by its processor** (either wired to that processor, or
-       received as a circuit indication such as `836TK` on an AAR MQTT broker);
-     - **(b) Use the approach-circuit guard (R15 compression):** set `M`'s `SR` when `M` shows Proceed, **`M`'s local
-       approach circuit (`834T`) is occupied**, and `H` from ahead (`836SA`) drops (which also prevents an opposing
-       train in pure APB mode from falsely setting an opposing `SR`); or
-     - **(c) Evaluate `834SA`'s `SR` on Sargent's processor** where `836T` is read.
+   - Under **Variations A, C, and D (1–2 circuits)**, Corporal's processor has `836T` occupancy directly (in memory or
+     via `Sargent:836TK` on the code line), so `834SA`'s `SR` picks up by the standard §15.3 rule (`836T` occupied while
+     `834SA` shows Proceed).
+   - Under **Variation B** (where only `H` and `D` cross on wires and `836T` is not on Corporal's processor), Corporal
+     cannot set `834SA`'s `SR` from "`836SA` `H` dropped while `834SA` showed Proceed" alone, because `836SA` `H` also
+     drops when Sargent clears `836NAB` into an idle block. There, `FieldUnit` can either require each mast's governed
+     circuit to be wired to its location's processor, or use the **approach-circuit guard (R15 compression)**: set `M`'s
+     `SR` when `M` shows Proceed, **`M`'s local approach circuit (`834T`) is occupied**, and `H` from ahead (`836SA`)
+     drops (which also guards pure APB mode).
 2. **Computing the virtual block circuit (`Corporal:831T = [832T, 834T, 836T]`):**
-   - As noted in §7.2, `Corporal:831T` cannot be derived from Corporal's incoming `HD` line (`832SA`), because while a
-     southbound train is in `836T`, `834SA`'s `SR` masks `836T` occupancy so Corporal receives `H` and `D` asserted.
-   - Therefore, for Corporal to send `831TK`, Corporal's processor either needs `836T`'s occupancy (via MQTT or a
-     wire), or the model board lamp can consume each station's local portion (`Corporal:831T` + `Sargent:836T`), or the
-     office can combine the member indications.
-3. **Electrical and MQTT carrier forms:**
-   - **Wired `H` and `D` (active-low, R14):** Each value is one open-drain wire pulled to 0 V when asserted and held
-     at +V by a consumer pull-up when released, so a broken wire, unpowered producer, or processor in reset reads as
-     Stop (four wires plus common ground for a bidirectional segment on I2C expander pins).
-   - **MQTT `HD` topic:** One retained topic per `HD` line, `<root>/hdline/<mast>` (for example
-     `ctc/SPCoast/hdline/834NA`, where `<root>` is the AAR encoding's `Topic`), carrying `H D`, `H (D)`, or `(H)` in a
-     single payload with a last-will message of `(H)`.
+   - Under **Variations A, C, and D**, Corporal has `836TK` from Sargent's codeline indications (or in memory) and sends
+     `831TK` directly.
+   - When a 506 station has no free step for a multi-circuit block, either all members of `831T` are wired to the
+     sending station's processor, or the model board lamp consumes each station's local portion (`Corporal:831T` +
+     `Sargent:836T`).
+3. **Electrical and dedicated-topic carrier forms (when codeline eavesdropping is not used):**
+   - **Wired `H` and `D` (Variation B, active-low per R14):** Each value is one open-drain wire pulled to 0 V when
+     asserted and held at +V by a consumer pull-up when released (four wires plus common ground for a bidirectional
+     segment on I2C expander pins).
+   - **Dedicated MQTT `HD` topic (optional alternative to Variation A):** One retained topic per `HD` line,
+     `<root>/hdline/<mast>` (for example `ctc/SPCoast/hdline/834NA`, where `<root>` is the AAR encoding's `Topic`),
+     carrying `H D`, `H (D)`, or `(H)` in a single payload with a last-will message of `(H)`.
 4. **Settle the `HD` chain before evaluating controls:**
    - When a train clears the last circuit of a block (`836T` at Sargent), the receding-direction stick (`834SA`'s `SR`)
      releases only when `836SA`'s `H out` re-asserts (`836T` clear and `836NAB` not controlled toward the block).
@@ -525,14 +541,14 @@ Each consumer input, the Part 1 section that states it, and its form:
 | A mast's approach and governed sides; the direction it governs | §15 | §6 | derived (from the pins) |
 | A control point's leaving signals into the block and home facing it | §15.4, §16 | §4, §12 | derived (`routes` library) |
 | A leaving signal's lever and lever direction | §15.4 | §9 | derived (from the name, ADR 0003) |
-| The block's virtual circuit: name and members | §7.2, §18.2 | §7.2, §9 | given |
+| The block's virtual circuit: name and members | §7.2, §18.1, §18.3 | §7.2, §9 | given |
 | The circuits a boundary circuit counts toward | §19.1 | §10 | derived |
 | The processor that reads each circuit | §18 | §11 | relation |
 | The processor that runs each signal location | §18 | §11 | relation |
-| Each station's code line kind, capacity, and steps | §11 | §11 | given, relation, and reference data |
-| Drawn line wires | §18 | §11 | relation: **gap 3** |
-| The transports each processor reaches | §18 | §11 | given and relation |
-| The MQTT topic root | §18.2 | ADR 0009 §3.10 | given (AAR encoding `Topic`) |
+| Each station's code line kind, capacity, and steps | §11, §18.1 | §11 | given, relation, and reference data |
+| Drawn line wires | §18.1 | §11 | relation: **gap 3** |
+| The transports each processor reaches | §18.1 | §11 | given and relation |
+| The MQTT topic root | §18.3 | ADR 0009 §3.10 | given (AAR encoding `Topic`) |
 | The rule and the current of traffic | §14 | §8 | given (sign Kind, Direction); derived per block |
 | The operations settings | §14, §17 | none | reference data: **gap 2** |
 | The layout's railroad, era and rulebook (the key for gap 2) | §14 | ADR 0008 | given |

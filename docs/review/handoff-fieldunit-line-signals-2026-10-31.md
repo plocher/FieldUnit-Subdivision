@@ -33,7 +33,7 @@ KiCad.
 | The HD line: `H`, `D`, the directional stick `SR`, the signal location and control point rules, what `Kind` means to a crew | §15 |
 | How the vital field and the HD chain enforce traffic locking (`R18`: non-vital office never gates controls; vital field rejects unsafe transactions); one train, traced | §16 |
 | Relay model options and selective compressions for FieldUnit (`HSR` knockdown vs. sticky direction, tumble-down trigger, CB&Q same-location opposing cut, two-value diverging compression) | §17 |
-| Cross-processor carriers, the POC 834–836 split, and the four things codegen should watch (including settling the `HD` chain before evaluating controls) | §18 |
+| Four deployment variations (A: AAR codeline eavesdropping, B: wired `H`/`D`, C: unified processor, D: US&S 506 1–2 circuit eavesdropping), what is drawn for each, the POC 834–836 split, and the four things codegen should watch (including settling the `HD` chain before evaluating controls) | §18 |
 | Boundary track circuit occupancy (make-before-break) | §19 |
 | Traceability of every consumer input to Part 1 | §20 |
 | Gaps (operations settings in reference data, how line wires are drawn) | §21 |
@@ -44,7 +44,7 @@ KiCad.
    FieldUnit's fleet stick relay while traffic-lever schemes use `FSR` for the traffic stick relay (ADR 0013 §21 gap 5:
    AAR names are not unique across domains). Where the relay model and `src/` differ, list each difference as a code
    defect.
-2. Address the discrete scan-order requirement in ADR 0013 §18.2 item 4: after any track circuit or `H in` change,
+2. Address the discrete scan-order requirement in ADR 0013 §18.3 item 4: after any track circuit or `H in` change,
    settle the `HD` chain before evaluating a control transaction, so a receding direction's `SR` always sees the release
    pulse when the last circuit of a block clears.
 
@@ -74,5 +74,5 @@ One consolidated list, not a narrative:
 1. The `H`/`D`/`SR` to relay model mapping (including scan-order settling of the `HD` chain before controls), confirmed
    or corrected, with GLOSSARY section references.
 2. Each difference between the relay model and `src/`, as a defect.
-3. The decisions FieldUnit needs from the owner (such as which §17 and §18.2 options to adopt), one line each with a
+3. The decisions FieldUnit needs from the owner (such as which §17 and §18 options to adopt), one line each with a
    default.
