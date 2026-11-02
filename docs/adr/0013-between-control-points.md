@@ -412,10 +412,10 @@ goes back to `U`, where the previous signal in `M`'s direction of travel stands:
 - **`D`** is asserted when `M` indicates Approach or better (more favorable than Stop, Stop and Proceed, or
   Restricting; under `sameLocationOpposingCut: true`, `M`'s `HR` also checks the opposing mast's `HR` and `SR` at `L`
   dropped, `[CBQ1946 p. 613]`).
-- **`M`'s `SR` (directional stick relay)** picks up when a train passes `M` in `M`'s governing direction (the circuit
-  beyond `M` becomes occupied while `M` is cleared to proceed, before `M`'s slow-release `HR` drops) and sticks
-  through its own front contact and `M`'s `HR` back contact until `H` from `W` is asserted again (`[CBQ1946 pp. 615–616]`,
-  `[RS1927Spray pp. 269–270]`, opened).
+- **`M`'s `SR` (directional stick relay; `ESR`/`WSR` in `GLOSSARY.md` §10.5)** picks up when a train passes `M` in
+  `M`'s governing direction (the circuit beyond `M` becomes occupied while `M` is cleared to proceed, before `M`'s
+  slow-release `HR` drops) and sticks through its own front contact and `M`'s `HR` back contact until `H` from `W` is
+  asserted again (`[CBQ1946 pp. 615–616]`, `[RS1927Spray pp. 269–270]`, opened).
 
 The same rule runs symmetrically for the opposing mast at `L`. At location 832, with `M` = `832SA`:
 
@@ -591,12 +591,13 @@ Each consumer input, the Part 1 section that states it, and its form:
    way; a signal lever three controls (`NGS`, `SGS`, `HS`: the explicit stop has its own step) and three indications;
    a circuit or a maintainer call one; an electric lock one control (a two-position lever) and two indications. The
    token meanings are FieldUnit's (`docs/AAR_SIGNALING_PRIMER.md`, GLOSSARY §10.3).
-5. Closed 2026-11-01: **Glossary.** Added entries in `FieldUnit/docs/GLOSSARY.md` for `automatic signal`, `signal
-   location`, `HD line`, `station-to-station block`, `boundary track circuit`, `current of traffic`, `traffic` /
-   `direction of traffic`, `SR` (directional stick), `BPR`, `FR`/`FSR` (traffic), and `RGPR`, plus "powered switch or
-   derail" in `interlocking limits` (§4) and retired synonyms `line signal` and `passed memory` (§11). `FSR` is not a
-   collision: AAR names are not unique across domains (owner, 2026-11-01); the GLOSSARY (§10.5) uses `FSR` for
-   FieldUnit's fleet stick relay, while traffic-lever schemes use it for the traffic stick relay.
+5. **Glossary.** `FieldUnit/docs/GLOSSARY.md` §4 ("powered switch or derail" in `interlocking limits`), entries for
+   `automatic signal`, `signal location`, `HD line`, `station-to-station block`, `boundary track circuit`, `current of
+   traffic`, and `traffic` / `direction of traffic`, plus a one-line cross-reference in §10.5 (`ESR`, `WSR`) noting that
+   ADR 0013 writes the automatic signal location's directional stick as `SR`, and a one-line seam mapping in §10.6
+   (tracked in `FieldUnit` ADR 0007, `FieldUnit/docs/adr/0007-interlocking-block-seam.md`). `FSR` is not a collision:
+   AAR names are not unique across domains (owner, 2026-11-01); the GLOSSARY (§10.5) uses `FSR` for FieldUnit's fleet
+   stick relay, while traffic-lever schemes use it for the traffic stick relay.
 6. Luchessa's and Watsonville's `NFLK` and `SFLK` (board `TRAFFIC` lamps): whether they become a block's direction-of-traffic
    indication.
 7. Off-layout ends (Lick, Hollister): a block with one end on the layout is reported at info.
@@ -621,8 +622,9 @@ Each consumer input, the Part 1 section that states it, and its form:
 - ADR 0012 §5: the `blocks` library covers the track between control points and serves directed `HD` links and seam
   ports. §5.5: the proxy and its TBD retire, since a signal never stands in for another; the approach signal of a home
   is derived.
-- FieldUnit `docs/GLOSSARY.md` §4, §7, §8, §9, §10.3, §10.5, §11, §12: "powered switch or derail" in `interlocking
-  limits` and the ADR 0013 glossary entries (done).
+- FieldUnit `docs/GLOSSARY.md`: "powered switch or derail" in `interlocking limits` (§4), the ADR 0013 glossary entries,
+  a one-line cross-reference in §10.5 (`ESR`, `WSR`) that ADR 0013 writes the directional stick as `SR`, and a one-line
+  seam mapping in §10.6 (`FieldUnit` ADR 0007).
 - The KiCad importer: a hierarchical label continues a track run (`geometry.run_end` fires on one today);
   `IRJ-Signals` with per-mast sides; `joint.masts` retires for two masts on opposite sides; Style `boundary` (today
   the boundary symbol, with no `TC` pin, is skipped without a word).
@@ -632,7 +634,8 @@ Each consumer input, the Part 1 section that states it, and its form:
 - Reference data: code line capacity and steps (`reference.CODE_LINE_CAPACITY`, `CODE_LINE_STEPS`) and the `blockRules`
   profiles (gap 2).
 - FieldUnit: exposes the four outbound seam facts (`requested`, `cleared`, `in_time`, `home_proceed`) and consumes the
-  three inbound seam facts (`segment_clear`, `next_proceed`, `traffic_free`) of §13.
+  three inbound seam facts (`segment_clear`, `next_proceed`, `traffic_free`) of §13 (`FieldUnit` ADR 0007,
+  `FieldUnit/docs/adr/0007-interlocking-block-seam.md`).
 
 ## 24. Record
 

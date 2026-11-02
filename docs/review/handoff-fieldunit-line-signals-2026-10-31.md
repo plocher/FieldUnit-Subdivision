@@ -66,21 +66,23 @@ At each end of a station-to-station block, the interlocking and the block exchan
 
 ## Open on the Subdivision side
 
-ADR 0013 §21 gaps 2 and 3 (`blockRules` profiles in `tools/layout_model/reference.py`, and the library graphics for
-`Device-HD-Out` / `Device-HD-In` in `Railroad-Field.kicad_sym`). Gaps 1, 4, and 5 (`reference.CODE_LINE_CAPACITY`,
-`reference.CODE_LINE_STEPS`, and the `FieldUnit/docs/GLOSSARY.md` entries) are closed.
+ADR 0013 §21 gaps 2, 3, and 5 (`blockRules` profiles in `tools/layout_model/reference.py`, the library graphics for
+`Device-HD-Out` / `Device-HD-In` in `Railroad-Field.kicad_sym`, and the `FieldUnit/docs/GLOSSARY.md` updates tracked in
+`FieldUnit` ADR 0007). Gaps 1 and 4 (`reference.CODE_LINE_CAPACITY` and `reference.CODE_LINE_STEPS`) are closed.
 
 ## Out of scope for this handoff
 
 - The KiCad importer and `derive.py` changes (Subdivision's; ADR 0013 §23).
 - A common hardware set for a signal location (connector, wiring, PCB): a layout reference design.
 
-## Asked back (seam checklist)
+## Asked back (seam checklist) — answered in `FieldUnit` ADR 0007
 
-One consolidated per-fact list for the seven seam ports of §13 (`requested`, `cleared`, `in_time`, `home_proceed`;
-`segment_clear`, `next_proceed`, `traffic_free`) plus the invariants `I1`–`I4`:
+Answered in `FieldUnit` `docs/adr/0007-interlocking-block-seam.md`. The ask was one consolidated per-fact list for the
+seven seam ports of §13 (`requested`, `cleared`, `in_time`, `home_proceed`; `segment_clear`, `next_proceed`,
+`traffic_free`) plus the invariants `I1`–`I4`:
 
 1. For each seam port: what `FieldUnit/src/` exposes today, under what name, and whether it is available today,
-   available but misnamed, or a code defect (such as missing `DR` / issue #18).
+   available but misnamed, or a code defect (such as the missing `DR` in `GLOSSARY.md` §10.6 "Code today", related to
+   `FieldUnit` issue #19 on `approaching()` doing two jobs).
 2. Any decisions `FieldUnit` needs from the owner to wire the seam ports and preserve `I1`–`I4`, one line each with a
    default.
