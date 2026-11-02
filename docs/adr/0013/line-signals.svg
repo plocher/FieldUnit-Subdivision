@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" font-family="Helvetica, Arial, sans-serif" font-size="13">
+  <rect width="960" height="460" fill="#ffffff"/>
+  <text x="480" y="24" text-anchor="middle" font-size="16" font-weight="bold">Corporal to Sargent: signal locations, HD lines and traffic (the POC)</text>
+  <text x="480" y="44" text-anchor="middle" fill="#555">Milepost increases to the right. S masts govern toward Sargent, N masts toward Corporal.</text>
+
+  <!-- control points -->
+  <rect x="20" y="120" width="110" height="60" fill="#e8eef8" stroke="#345" />
+  <text x="75" y="145" text-anchor="middle" font-weight="bold">CP Corporal</text>
+  <text x="75" y="163" text-anchor="middle" fill="#345">830 (and 828)</text>
+  <rect x="830" y="120" width="110" height="60" fill="#e8eef8" stroke="#345" />
+  <text x="885" y="145" text-anchor="middle" font-weight="bold">CP Sargent</text>
+  <text x="885" y="163" text-anchor="middle" fill="#345">836</text>
+
+  <!-- track -->
+  <line x1="130" y1="150" x2="830" y2="150" stroke="#000" stroke-width="3"/>
+  <!-- joints -->
+  <g stroke="#000" stroke-width="2">
+    <line x1="130" y1="138" x2="130" y2="162"/>
+    <line x1="363" y1="138" x2="363" y2="162"/>
+    <line x1="597" y1="138" x2="597" y2="162"/>
+    <line x1="830" y1="138" x2="830" y2="162"/>
+  </g>
+  <!-- circuits -->
+  <text x="246" y="140" text-anchor="middle" font-weight="bold">832T</text>
+  <text x="480" y="140" text-anchor="middle" font-weight="bold">834T</text>
+  <text x="713" y="140" text-anchor="middle" font-weight="bold">836T</text>
+  <rect x="345" y="144" width="36" height="12" fill="none" stroke="#b05" stroke-dasharray="3,2"/>
+  <text x="363" y="178" text-anchor="middle" fill="#b05">833T boundary</text>
+
+  <!-- signal location labels -->
+  <text x="363" y="104" text-anchor="middle" font-weight="bold">signal location 832</text>
+  <text x="597" y="104" text-anchor="middle" font-weight="bold">signal location 834</text>
+
+  <!-- masts: N above (pointing left), S below (pointing right) -->
+  <g fill="#2a7">
+    <polygon points="363,118 351,124 363,130"/>
+    <polygon points="597,118 585,124 597,130"/>
+    <polygon points="130,118 118,124 130,130"/>
+    <polygon points="363,170 375,176 363,182" transform="translate(0,22)"/>
+    <polygon points="597,170 609,176 597,182" transform="translate(0,22)"/>
+    <polygon points="830,170 842,176 830,182" transform="translate(-0,22)"/>
+    <polygon points="830,118 818,124 830,130" transform="translate(12,0)"/>
+    <polygon points="130,170 142,176 130,182" transform="translate(-12,22)"/>
+  </g>
+  <text x="370" y="128" fill="#2a7">832NA</text>
+  <text x="604" y="128" fill="#2a7">834NA</text>
+  <text x="304" y="204" fill="#2a7">832SA</text>
+  <text x="538" y="204" fill="#2a7">834SA</text>
+  <text x="138" y="128" fill="#2a7">830NAB home</text>
+  <text x="822" y="204" fill="#2a7" text-anchor="end">836SA home</text>
+  <text x="138" y="204" fill="#2a7">830SAB, 828SA leave</text>
+  <text x="822" y="128" fill="#2a7" text-anchor="end">836NAB leaves</text>
+
+  <!-- HD lines for S masts: produced ahead (right), read behind (left): drawn below -->
+  <defs>
+    <marker id="ar" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 z" fill="#c60"/></marker>
+    <marker id="ab" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 z" fill="#06c"/></marker>
+  </defs>
+  <g stroke="#c60" stroke-width="2" marker-end="url(#ar)">
+    <line x1="355" y1="262" x2="140" y2="262"/>
+    <line x1="589" y1="262" x2="371" y2="262"/>
+    <line x1="822" y1="262" x2="605" y2="262"/>
+  </g>
+  <g fill="#c60" text-anchor="middle">
+    <text x="246" y="282">832SA → 830SAB, 828SA</text>
+    <text x="480" y="282">834SA → 832SA</text>
+    <text x="713" y="282">836SA → 834SA</text>
+  </g>
+  <!-- HD lines for N masts: produced ahead (left), read behind (right): drawn above -->
+  <g stroke="#06c" stroke-width="2" marker-end="url(#ab)">
+    <line x1="140" y1="76" x2="355" y2="76"/>
+    <line x1="371" y1="76" x2="589" y2="76"/>
+    <line x1="605" y1="76" x2="822" y2="76"/>
+  </g>
+  <g fill="#06c" text-anchor="middle">
+    <text x="246" y="68">830NAB → 832NA</text>
+    <text x="480" y="68">832NA → 834NA</text>
+    <text x="713" y="68">834NA → 836NAB</text>
+  </g>
+
+  <!-- legend -->
+  <g font-size="12" fill="#333">
+    <text x="20" y="318">One arrow = one HD line, named for a mast, sent to the previous signal in that mast's direction: H feeds its HR, D feeds its DR.</text>
+    <text x="20" y="336">A mast reads the HD line from the location it governs toward: H released = stop; H without D = approach; H and D = clear.</text>
+    <text x="20" y="354">POC wiring: 832T, 834T and locations 830, 832, 834 on Corporal's processor; 836T and 836 on Sargent's.</text>
+    <text x="20" y="372">So only the 834-836 segment crosses processors: one HD line each way: four wires plus ground, or one topic each.</text>
+  </g>
+  <!-- block-level traffic: one note -->
+  <rect x="20" y="390" width="920" height="54" fill="#fff6e0" stroke="#a70"/>
+  <g font-size="12" fill="#333">
+    <text x="30" y="408" font-weight="bold">Interlocking-to-block seam (§13): outbound requested, cleared, in_time, home_proceed; inbound segment_clear (H), next_proceed (D), traffic_free (F).</text>
+    <text x="30" y="424">Safety invariants I1–I4 (§14.1) govern every railroad profile in reference data (SP_1942, CBQ_1946, ERIE_NW_1942).</text>
+    <text x="30" y="440">Carriers (§18.1): in-memory (C) and wired H/D (B) are vital; codeline indication eavesdropping (A, D) is a non-vital R15 compression.</text>
+  </g>
+</svg>
