@@ -14,10 +14,16 @@ import copy
 import math
 import re
 import shutil
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
+TOOLS = Path(__file__).resolve().parents[1] / "tools"
+if str(TOOLS) not in sys.path:                       # kicad_services imports itself as a top-level package
+    sys.path.insert(0, str(TOOLS))
+
+from kicad_services.schematic_reader import SchematicPlacementReader  # noqa: E402
 from tools import layout_model
 from tools.kicad_services import sch_text
 from tools.kicad_services.types import LibrarySymbol, SchematicPlacement, SymbolGraphic, SymbolPin
@@ -132,6 +138,42 @@ class RunRules(unittest.TestCase):
         self.assertEqual(geometry._ordered([(1.0, 1.0), (5.0, 1.0)]), [(1.0, 1.0), (5.0, 1.0)])
 
 
+class LabelRules(unittest.TestCase):
+    """ADR 0013 §7.1: a hierarchical label continues a run. The reader states each label as drawn, its name and anchor;
+    geometry states a run's end on one as ``label:<Name>`` and nothing else."""
+
+    SHEET = """(kicad_sch (version 20250114) (generator "eeschema") (generator_version "9.0") (uuid "0")
+  (paper "A4")
+  (lib_symbols)
+  (wire (pts (xy 10 20) (xy 30 20)) (stroke (width 0) (type default)) (uuid "1"))
+  (hierarchical_label "ToSargentMT" (shape bidirectional) (at 30 20 0) (effects (font (size 1.27 1.27)) (justify left)) (uuid "2"))
+  (hierarchical_label "Beet Loader 1" (shape input) (at 30 40 180) (uuid "3"))
+)
+"""
+
+    def test_the_reader_states_every_hierarchical_label_with_its_name_and_anchor(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "t.kicad_sch"
+            path.write_text(self.SHEET, encoding="utf-8")
+            model = SchematicPlacementReader().read(path)
+        self.assertEqual([(lb.name, lb.x, lb.y, lb.rotation, lb.shape) for lb in model.hierarchical_labels],
+                         [("ToSargentMT", 30.0, 20.0, 0.0, "bidirectional"), ("Beet Loader 1", 30.0, 40.0, 180.0, "input")])
+        self.assertEqual(model.wires, [((10.0, 20.0), (30.0, 20.0))])            # a label is no wire and no junction
+        self.assertEqual(model.junctions, set())
+
+    def test_a_label_end_is_the_labels_name_and_the_schema_takes_it(self):
+        self.assertEqual(geometry.LABEL_END + "ToSargentMT", "label:ToSargentMT")
+        run = {"points": "0.0,0.0 10.0,0.0", "relations": {"from": "Luchessa:783.R", "to": "label:Beet Loader 1"}}
+        self.assertEqual(layout_model.errors({**layout_model.loads(layout_model.dumps(_minimal_file(run)))}), [])
+
+
+def _minimal_file(run: dict) -> dict:
+    """The least Layout Data Model File that holds one run of geometry, for the schema check."""
+    return {"schema": layout_model.SCHEMA_ID, "layout": {"name": "T"},
+            "interlockings": {"X": {"geometry": {"appliances": {}, "houses": {}, "track": [run], "markers": []}}},
+            "provenance": {"sourceType": "test", "writer": {"name": "tests", "version": "0"}}}
+
+
 @unittest.skipUnless(SPCOAST_AVAILABLE, f"SPCoast project not present or kicad-cli missing: {NETLIST or PROJECT}")
 class SPCoastGeometry(unittest.TestCase):
     """The piece on the drawing: no error, the frame's facts as ADR 0010 §5 reads them, DoD2, DoD3, the pin check."""
@@ -238,6 +280,19 @@ class SPCoastGeometry(unittest.TestCase):
         lu = [t for t in self.model["interlockings"]["Luchessa"]["geometry"]["track"] if t.get("derived", {}).get("circuit") == "Luchessa:1NAT"]
         sides = sorted(e.rsplit(".", 1)[1] for t in lu for e in t["relations"].values())
         self.assertEqual(sides, ["approach", "track"])                           # from the signal joint's approach side to the NextCP
+
+    def test_a_run_that_ends_on_a_hierarchical_label_states_the_labels_name(self):
+        """ADR 0013 §7.1 (Railroad 56ff2e1, 2a1696e): 834T leaves Corporal's sheet through ToSargentMT and reaches Sargent's
+        through ToCorporalMT; the Beet Loader labels carry dark track between the two sheets. Each such run ends on the
+        label's name, no coordinate and nothing from the other sheet; the circuit it carries is the derivation's."""
+        ends = {name: sorted(e for t in ix["geometry"]["track"] for e in t.get("relations", {}).values() if e.startswith("label:"))
+                for name, ix in self.model["interlockings"].items()}
+        self.assertEqual(ends["Corporal"], ["label:Beet Loader 1", "label:Beet Loader 2", "label:ToSargentMT"])
+        self.assertEqual(ends["Sargent"], ["label:Beet Loader 1", "label:Beet Loader 2", "label:ToCorporalMT"])
+        self.assertEqual({n: e for n, e in ends.items() if n not in ("Corporal", "Sargent")}, {n: [] for n in ends if n not in ("Corporal", "Sargent")})
+        out = next(t for t in self.model["interlockings"]["Corporal"]["geometry"]["track"] if t.get("relations", {}).get("to") == "label:ToSargentMT")
+        self.assertEqual([k for k in out["relations"] if out["relations"][k].startswith("label:")], ["to"])   # the name only
+        self.assertEqual(self.sm.report.by_code("geometry.run_end"), [])
 
     def test_every_glyph_named_is_written_and_nothing_else(self):
         named = {row["glyph"] for g in self.geo.interlockings.values() for row in geometry._every_placement(g)}

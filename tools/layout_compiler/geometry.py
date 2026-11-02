@@ -16,6 +16,11 @@ What is on the trackplan is decided by Role (§4.1): ``APPLIANCE``, ``TRACK``, `
 library, symbol name or position (``trackplan.TRACKPLAN_ROLES``). A wire is track when it ends on a pin of a
 trackplan symbol or is chained onto one that does. Which circuit a run carries is derived from what its ends meet by
 the reference derivation (``tools/layout_model/derive.py``), never read here.
+
+A run may end on a hierarchical label (ADR 0013 §7.1, 2026-11-02: block track is drawn from one control point to the
+next, across sheets where needed, and a hierarchical label continues the run). That end states the label's name as
+drawn, ``label:<Name>`` (``LABEL_END``), and nothing more: not where the label is, not what is on the other sheet.
+Which circuit continues through it is the netlist's, carried by the circuits already; geometry copies none of it.
 """
 from __future__ import annotations
 
@@ -31,6 +36,7 @@ from .trackplan import TRACKPLAN_ROLES, is_consumer, is_switch, pin_ref, unit_of
 
 COORDINATE_DECIMALS = 2     # placements and runs sit on the drawing's grid (§4.2)
 GLYPH_DECIMALS = 4          # a glyph's primitives have up to four
+LABEL_END = "label:"        # a run's end on a hierarchical label: ``label:<Name>`` (ADR 0013 §7.1)
 
 Point = tuple[float, float]
 
@@ -381,14 +387,23 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
 
     house_rows = {h.cp_name: placement(h.sym.ref) for h in houses if h.sym.ref in placed}
 
+    label_at: dict[Point, str] = {_rounded((lb.x, lb.y)): lb.name for lb in model.hierarchical_labels}
+
+    def run_end(xy: Point) -> Optional[str]:
+        """What a run's end states: the pin it meets (``end_ref``), or the hierarchical label it ends on (§7.1)."""
+        if xy in port_at:
+            return end_ref(*port_at[xy])
+        if xy in label_at:
+            return LABEL_END + label_at[xy]
+        return None
+
     track: list[dict[str, Any]] = []
     for line in runs:
-        ends = [port_at.get(line[0]), port_at.get(line[-1])]
-        for end, xy in zip(ends, (line[0], line[-1])):
-            if end is None and xy not in model.junctions:
-                report.error("geometry.run_end", f"{ix.name}: a run of track ends at {xy} where no trackplan pin and no junction is", source=f"sheet {model.path.name}")
+        for xy in (line[0], line[-1]):
+            if xy not in port_at and xy not in label_at and xy not in model.junctions:
+                report.error("geometry.run_end", f"{ix.name}: a run of track ends at {xy} where no trackplan pin, no hierarchical label and no junction is", source=f"sheet {model.path.name}")
         row: dict[str, Any] = {"points": " ".join(f"{norm(p)['x']},{norm(p)['y']}" for p in line)}
-        relations = {key: end_ref(*e) for key, e in zip(("from", "to"), ends) if e and end_ref(*e)}
+        relations = {key: ref for key, xy in zip(("from", "to"), (line[0], line[-1])) if (ref := run_end(xy))}
         if relations:
             row["relations"] = relations
         track.append(row)

@@ -134,6 +134,18 @@ class SchematicPlacement:
 
 
 @dataclass(frozen=True)
+class SchematicLabel:
+    """One hierarchical label on a schematic, as drawn: its name and the page point it is anchored at. The sheet
+    pin it pairs with on the parent sheet is not read; connectivity is the netlist's."""
+
+    name: str
+    x: float
+    y: float
+    rotation: float = 0.0
+    shape: str = ""
+
+
+@dataclass(frozen=True)
 class SchematicTitleBlock:
     """Title-block metadata extracted from one KiCad schematic."""
 
@@ -153,3 +165,4 @@ class SchematicPlacementModel:
     title_block: SchematicTitleBlock = field(default_factory=SchematicTitleBlock)
     wires: list[tuple[tuple[float, float], ...]] = field(default_factory=list)   # each wire's vertices as drawn
     junctions: set[tuple[float, float]] = field(default_factory=set)
+    hierarchical_labels: list[SchematicLabel] = field(default_factory=list)   # each hierarchical label as drawn
