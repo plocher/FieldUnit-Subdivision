@@ -56,7 +56,7 @@ Ruled. Stated as rules.
 11. **Where things live.** Generators decide transports and carriers (ADR 0012's split). `derive.py` raises no
     transport errors (§18.5).
 12. **Facts the model carries for Part 2:** blocks with their ends, signal locations, members and the processor that
-    reads each circuit; each station's code line kind; each station's indication budget; the indications already
+    reads each circuit; each station's code line kind; each station's capacity in steps (reference data); the indications already
     used; drawn line wires (§11).
 13. **Names by signal location:** automatic masts and the circuits between them are numbered for their signal
     location (§9).
@@ -282,7 +282,8 @@ its detectors at block boundaries for the same reason.)
 | The processor that runs each signal location | relation | the bindings of its masts' heads (R13), joined on demand |
 | Each station's code line kind | given and relation | the code line's `Kind`; the interlocking's `codeline` (`codeline.encoding`) |
 | What a station is (house or interlocking) | reference data | `reference.STATION` |
-| Each station's indication budget: free indication bits per code | reference data, with the bus kinds (ADR 0012 §6) | **not present**: `reference.py` has no budget (gap 1) |
+| Each station's capacity: controls and office indications per field station, in steps | reference data | `reference.CODE_LINE_CAPACITY` (by code line type; set by the physical machine) |
+| Steps a station already uses | computed on demand | one token is one step: the token count from `tools/railroad/codeline.py` |
 | The indications a station already sends | computed on demand | `tools/railroad/codeline.py` (`stations`) |
 | Drawn line wires: H, D, traffic-locking | relation | **how they are drawn is open** (gap 3) |
 | The transports each processor reaches | given and relation | ADR 0008 (`anchors`; a code line's transport) |
@@ -595,9 +596,9 @@ Each Part 2 input, the Part 1 section that states it, and its form.
 | The processor that runs each signal location | §18.6 | §11 | relation |
 | Each station's code line kind | §18 | §11 | given and relation |
 | What a station is (house or interlocking) | §18.3 | §11 | reference data |
-| A station's indication budget | §18.3 | §11 | reference data: **gap 1** |
+| A station's capacity | §18.3 | §11 | reference data (`reference.CODE_LINE_CAPACITY`) |
 | The indications a station already sends | §18.3 | §11 | computed on demand (`codeline.py`) |
-| The indication bits those tokens take (steps per token) | §18.3 | none | **gap 4** |
+| The steps those tokens take | §18.3 | §11 | one token is one step (owner, 2026-11-01) |
 | Indication tokens for levers (`NGK`, `SGK`, `TEK`) and circuits (`K`) | §16.2 | §11 | reference data (`reference.INDICATION_TOKENS`) |
 | Drawn line wires: H, D, traffic-locking, block clear | §16.3, §18 | §11 | relation: **gap 3** |
 | The transports each processor reaches | §18.4 | §11 | given and relation |
@@ -608,15 +609,16 @@ Each Part 2 input, the Part 1 section that states it, and its form.
 
 ## 21. Gaps
 
-1. **Indication budget.** Free indication bits per code, by code line kind, are not in the reference data
-   (`tools/layout_model/reference.py` has none). GLOSSARY §6 gives 7 indications for 506 and 506A and 35 for 506C;
-   AAR MQTT has no limit. To be added with the bus kinds (ADR 0012 §6).
+1. Closed 2026-11-01: capacity by code line type is reference data (`reference.CODE_LINE_CAPACITY`). A station's
+   free steps are its capacity less its token count.
 2. **Operations settings** (§14): their names and where they live. The rulebook reference data of ADR 0012 §6 is the
    likely home. Its contents are TBD.
 3. **How line wires are drawn:** H and D between processors' driver pins, a traffic-locking line, a block-clear line
    for a member read on another processor. A symbol or seam for them, like the code line's.
-4. **Tokens to bits.** `codeline.py` computes tokens; a 506 budget counts steps. The code chart that maps tokens to
-   steps is not in the model (GLOSSARY §6: "A token is not a step").
+4. Closed 2026-11-01: one token is one step (the owner). A switch takes two steps each way (`NWS`, `RWS`; `NWK`,
+   `RWK`), a signal lever three indications (`NGK`, `SGK`, `TEK`), a circuit or a maintainer call one. The token
+   meanings, the both-asserted pairs among them, are FieldUnit's (`docs/AAR_SIGNALING_PRIMER.md`, GLOSSARY §10.3).
+   FieldUnit's GLOSSARY §6 still reads "A token is not a step"; it is to be reconciled there.
 5. **Mixed code lines.** A block whose two end control points are on code lines of different kinds has no carrier
    rule in §18.
 6. **Glossary.** No entries for automatic signal, signal location, HD line, station-to-station block, boundary
@@ -651,7 +653,7 @@ Each Part 2 input, the Part 1 section that states it, and its form.
 - `derive.py`: the mast checks of §5; the circuits a boundary circuit counts toward; NEXT_CP pairing retires inside
   CTC. No transport or carrier checks.
 - The schema: a double joint's masts with their sides; a mast's Kind.
-- Reference data: the indication budget (gap 1) and the operations settings (gap 2).
+- Reference data: code line capacity (added, `reference.CODE_LINE_CAPACITY`) and the operations settings (gap 2).
 - FieldUnit: implements Part 2, including the office `FR` and codegen's carrier choice.
 
 [^rev]: Rewritten 2026-11-01 from the owner's rulings of that day and the second pass of the adversarial review. The
