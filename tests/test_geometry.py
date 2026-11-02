@@ -292,7 +292,19 @@ class SPCoastGeometry(unittest.TestCase):
         self.assertEqual({n: e for n, e in ends.items() if n not in ("Corporal", "Sargent")}, {n: [] for n in ends if n not in ("Corporal", "Sargent")})
         out = next(t for t in self.model["interlockings"]["Corporal"]["geometry"]["track"] if t.get("relations", {}).get("to") == "label:ToSargentMT")
         self.assertEqual([k for k in out["relations"] if out["relations"][k].startswith("label:")], ["to"])   # the name only
+        self.assertEqual(out["derived"], {"circuit": "Corporal:834T"})            # from the far end, the joint's B side
         self.assertEqual(self.sm.report.by_code("geometry.run_end"), [])
+
+    def test_where_a_boundary_pin_sits_on_a_joints_pin_the_run_names_the_joint(self):
+        """ADR 0013 §10 (Railroad 2a1696e): 833T's A and B sit on the double joint's A and B at 832. A run's end names the
+        track row there, the joint's side, never the boundary's pin; the boundary is in geometry as an appliance."""
+        g = self.model["interlockings"]["Corporal"]
+        joint = next(j for j in g["track"]["joints"] if j["given"]["Kind"] == "IRJ_SIGNALS")["id"]
+        ends = sorted(e for t in g["geometry"]["track"] for e in t.get("relations", {}).values())
+        self.assertIn(f"{joint}.A", ends)
+        self.assertIn(f"{joint}.B", ends)
+        self.assertEqual([e for e in ends if e.startswith("Corporal:833T")], [])
+        self.assertEqual(g["geometry"]["appliances"]["833T"]["glyph"], "Railroad-Trackplan:Track Circuit IR Boundary")
 
     def test_every_glyph_named_is_written_and_nothing_else(self):
         named = {row["glyph"] for g in self.geo.interlockings.values() for row in geometry._every_placement(g)}

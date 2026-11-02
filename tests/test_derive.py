@@ -259,6 +259,22 @@ class DoubleJoint(unittest.TestCase):
         self.assertEqual(row(out["interlockings"]["X"], "J1")["derived"], {"circuits": {"A": "X:832T", "B": "X:834T"}})
         self.assertEqual(layout_model.errors(out), [])
 
+    def test_a_boundary_track_circuit_counts_toward_the_circuit_on_each_pin_and_names_none(self):
+        """ADR 0013 §10: derived.circuits on the boundary, A then B; the markers name the circuits, never the boundary."""
+        m = self.block({"A": "X:832NA", "B": "X:832SA"})
+        ix = m["interlockings"]["X"]
+        ix["appliances"]["833T"] = {"given": {"Appliance": "track_circuit", "Style": "boundary"},
+                                    "relations": {"A": ["J1.A", "X:832T.TC"], "B": ["J1.B", "X:834T.TC"]}}
+        out, diags = run(m)
+        self.assertEqual(only(diags, "circuit"), [])
+        self.assertEqual(out["interlockings"]["X"]["appliances"]["833T"]["derived"]["circuits"], {"A": "X:832T", "B": "X:834T"})
+        self.assertEqual(row(out["interlockings"]["X"], "J1")["derived"]["circuits"], {"A": "X:832T", "B": "X:834T"})
+        del ix["appliances"]["834T"]
+        out, diags = run(m)
+        self.assertEqual(only(diags, "circuit"), [])
+        self.assertEqual(out["interlockings"]["X"]["appliances"]["833T"]["derived"]["circuits"], {"A": "X:832T"})
+        self.assertEqual(layout_model.errors(out), [])
+
     def test_a_plate_requires_a_permissive_mast(self):
         """ADR 0013 §5: a plate on no mast, on a mast the file lacks, or on one that is not PERMISSIVE is an error."""
         def plated(mast: str | None, kind: str = "PERMISSIVE") -> list[tuple[str, str]]:

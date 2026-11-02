@@ -499,6 +499,39 @@ class DoubleJoint(unittest.TestCase):
         self.assertEqual(rows(ix, "joints")[0]["relations"]["masts"], {"A": "X:832NA"})
 
 
+class Boundary(unittest.TestCase):
+    """ADR 0013 §10: a boundary track circuit is a detector at a joint, Appliance track_circuit with Style boundary, its
+    A and B on the two nets there. It is an appliance with relations.A and .B; it names no circuit (the marker on each
+    net does), and its derived circuits are what it counts toward, in A, B order."""
+
+    BOUNDARY = "TC3  | Track Circuit IR Boundary | APPLIANCE | Appliance=track_circuit Style=boundary Name=833T Indication=833TK\n"
+    NETS = DOUBLE_JOINT_NETS.replace("a    | J1.A TC1.TC", "a    | J1.A TC1.TC TC3.A").replace("b    | J1.B TC2.TC", "b    | J1.B TC2.TC TC3.B")
+
+    def test_a_boundary_is_an_appliance_on_the_two_nets_at_its_joint_and_names_no_circuit(self):
+        sm, ix = compile_(DOUBLE_JOINT + self.BOUNDARY, self.NETS)
+        self.assertEqual(sm.report.errors, [])
+        self.assertEqual(ix["appliances"]["833T"], {
+            "given": {"Appliance": "track_circuit", "Style": "boundary", "Indication": "833TK"},
+            "relations": {"A": sorted([at(sm, "J1", "A"), "X:832T.TC"]), "B": sorted([at(sm, "J1", "B"), "X:834T.TC"])},
+            "derived": {"circuits": {"A": "X:832T", "B": "X:834T"}, "controlPoint": "X:East"}})
+        self.assertEqual(list(ix["appliances"]["833T"]["derived"]["circuits"]), ["A", "B"])
+        self.assertEqual(rows(ix, "joints")[0]["derived"]["circuits"], {"A": "X:832T", "B": "X:834T"})   # the markers name them
+        self.assertEqual(rows(ix, "joints")[0]["relations"]["A"], sorted([at(sm, "J1", "A").replace(at(sm, "J1", "A"), "X:832T.TC"), "X:833T.A"]))
+        self.assertEqual(diags(sm, "circuit", "track"), [])
+        self.assertEqual(layout_model.errors(emit.emit(sm)), [])
+
+    def test_a_boundary_with_no_marker_on_a_side_leaves_that_side_dark_rather_than_naming_it(self):
+        sm, ix = compile_(DOUBLE_JOINT.replace("TC2  | Track Circuit                 | APPLIANCE | Appliance=track_circuit Name=834T\n", "") + self.BOUNDARY,
+                          self.NETS.replace(" TC2.TC", ""))
+        self.assertEqual(ix["appliances"]["833T"]["derived"]["circuits"], {"A": "X:832T"})
+        self.assertEqual(rows(ix, "joints")[0]["derived"]["circuits"], {"A": "X:832T"})
+        self.assertEqual(diags(sm, "circuit"), [])
+
+    def test_both_pins_on_one_wire_are_shorted(self):
+        sm, _ = compile_(DOUBLE_JOINT + self.BOUNDARY, self.NETS.replace(" TC3.B", "").replace(" TC3.A", " TC3.A TC3.B"))
+        self.assertEqual(diags(sm, "track.shorted"), [("track.shorted", "TC3")])
+
+
 class Plates(unittest.TestCase):
     """ADR 0013 §5: a plate (RULE_290_G, RULE_290_R) is a POLICY whose To pin sits on a mast's SIGNAL net. Its row
     states the mast and no track side; that the mast is PERMISSIVE is the derivation's check."""
@@ -711,6 +744,10 @@ class SPCoastTrackplan(unittest.TestCase):
                   for p in ix["track"].get("policies", []) if p["given"]["Kind"].startswith("RULE_290")]
         self.assertEqual(plates, [("Sargent", "RULE_290_G", "Sargent:834SA")])      # the one plate drawn: on a PERMISSIVE mast
         self.assertEqual(self.sm.report.by_code("plate.mast"), [])
+        boundary = self.ix("Corporal")["appliances"]["833T"]                   # the detector at 832, on 832T and 834T
+        self.assertEqual((boundary["given"]["Style"], boundary["derived"]["circuits"]), ("boundary", {"A": "Corporal:832T", "B": "Corporal:834T"}))
+        self.assertIn("Corporal:833T.A", double["Corporal"][0]["relations"]["A"])
+        self.assertEqual(self.sm.report.by_code("circuit.names"), [])             # the boundary names no circuit
         self.assertEqual(self.sm.report.by_code("mast.joint") + self.sm.report.by_code("track.kind"), [])
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):

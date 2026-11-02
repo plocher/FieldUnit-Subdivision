@@ -32,7 +32,7 @@ from typing import Any, Optional
 
 from .seams import Seams, key_of, loc
 from .source import Symbol
-from .trackplan import TRACKPLAN_ROLES, is_consumer, is_switch, pin_ref, unit_of
+from .trackplan import TRACKPLAN_ROLES, is_boundary, is_consumer, is_switch, pin_ref, unit_of
 
 COORDINATE_DECIMALS = 2     # placements and runs sit on the drawing's grid (§4.2)
 GLYPH_DECIMALS = 4          # a glyph's primitives have up to four
@@ -313,9 +313,11 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         pl, sym, _ = placed[ref]
         return _rounded(kicad_place(pl, anchor_of({p.name: (p.x, p.y) for p in sym.pins})))
 
-    # ports and runs on the page, before the frame is known
+    # ports and runs on the page, before the frame is known. Where two pins share a point (a boundary track circuit
+    # sits with its A and B on a joint's A and B, ADR 0013 §10), the track row's or the switch's pin is the one a run's
+    # end names: the row is the track, the boundary is what else is there.
     port_at: dict[Point, tuple[str, str]] = {}
-    for ref, (pl, sym, pins) in placed.items():
+    for ref, (pl, sym, pins) in sorted(placed.items(), key=lambda kv: symbols[kv[0]].role == "TRACK" or is_switch(symbols[kv[0]])):
         if symbols[ref].role in TRACKPLAN_ROLES:
             for pin, xy in pins.items():
                 port_at[xy] = (ref, pin)
@@ -354,10 +356,11 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         return src.net_of(ref, pin)
 
     def end_ref(ref: str, pin: str) -> Optional[str]:
-        """What a run's end meets (three-maps D5): a switch's port or a track row's side, in the one form the rows'
-        relations use (``trackplan.pin_ref``). A run's end is never a track circuit marker's TC."""
+        """What a run's end meets (three-maps D5): a switch's port, a track row's side or a boundary track circuit's
+        pin (ADR 0013 §10), in the one form the rows' relations use (``trackplan.pin_ref``). A run's end is never a
+        track circuit marker's TC."""
         s = symbols[ref]
-        return pin_ref(ix.name, s, pin) if is_switch(s) or s.role in ("TRACK", "POLICY") else None
+        return pin_ref(ix.name, s, pin) if is_switch(s) or is_boundary(s) or s.role in ("TRACK", "POLICY") else None
 
     appliances: dict[str, Any] = {}
     masts: dict[str, str] = {}

@@ -25,6 +25,9 @@ names every other track pin its wire reaches, so the relation is symmetric):
 - **A mast states Kind** (ADR 0013 §5): ``CONTROLLED``, ``ABSOLUTE`` or ``PERMISSIVE``, a stated fact. A mast with
   none, or with another word, is reported ``mast.kind`` at missing; nothing is inferred from a CP Name or a plate.
   The §5 check that a non-``CONTROLLED`` mast's route passes no powered switch is not here yet.
+- **A boundary track circuit** (ADR 0013 §10; ``Appliance track_circuit``, Style ``boundary``) states ``relations.A``
+  and ``.B``, the two nets at its joint. It names no circuit: the marker on each net does. Its ``derived.circuits``
+  are the circuits on its pins, in A, B order: what it counts toward.
 - **A plate requires a PERMISSIVE mast** (ADR 0013 §5): a policy row of Kind ``RULE_290_G`` or ``RULE_290_R`` states
   ``relations.mast``; one on no mast, or on a mast that is not ``PERMISSIVE``, is ``plate.mast`` at error.
 - **Control points** by propagation from the houses (the owner, 2026-10-26; ADR 0012 §4).
@@ -223,7 +226,7 @@ class _Plan:
         for name, a in self.appliances.items():
             g = a.get("given", {})
             pins = track_pins(a.get("relations", {}))
-            if g.get("Appliance") == "track_circuit" and "TC" in pins:
+            if g.get("Appliance") == "track_circuit" and "TC" in pins and g.get("Style") != "boundary":   # a boundary names none (ADR 0013 §10)
                 root = self.union.find(self.pin(name, "TC"))
                 named[root]["marker"].add(qualify(name, self.name))
                 namer[root] = a
@@ -433,6 +436,8 @@ class _Plan:
                 derived["osCircuit"] = next((c for p in ports_of(a) if (c := self.circuit(self.pin(name, p)))), None)
             if g.get("Appliance") == "mast" and name in sides:
                 derived["circuits"] = sides[name]
+            if g.get("Appliance") == "track_circuit" and g.get("Style") == "boundary":          # what it counts toward (ADR 0013 §10)
+                derived["circuits"] = {p: self.circuit(self.pin(name, p)) for p in ("A", "B")}
             if g.get("Appliance") == "track_circuit" and g.get("Style") == "virtual":
                 derived["members"] = [qualify(t.strip(), self.name) for t in g.get("Members", "").split(",") if t.strip()]
             cp = self.cp.get(id(a))
@@ -723,7 +728,8 @@ class _Derivation:
                     continue
                 plan_b = self.plans[b]
                 circuits = {c for c in plan_b.name_of.values() if c} | {
-                    f"{b}:{k}" for k, v in plan_b.appliances.items() if v.get("given", {}).get("Appliance") == "track_circuit"}
+                    f"{b}:{k}" for k, v in plan_b.appliances.items()
+                    if v.get("given", {}).get("Appliance") == "track_circuit" and v["given"].get("Style") != "boundary"}
                 if name not in circuits:
                     self.r.add("reference.unresolved", f"{a}: {what} {name} names {b}, which has no circuit {n}", where, target)
 

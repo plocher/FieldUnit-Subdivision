@@ -22,6 +22,11 @@ governs into side A and ``SIGNAL_B`` the one into side B, stated as ``relations.
 qualified names). Nothing is read from rotation or from which mast is drawn first. Each mast's own approach and
 governed sides are the reference derivation's.
 
+A boundary track circuit is ``Appliance track_circuit`` with Style ``boundary`` (ADR 0013 §10, 2026-11-02): a detector at
+a joint, with pins ``A`` and ``B`` on the two nets there. Both are track pins, stated as ``relations.A`` and ``.B`` like a
+marker's ``TC``; it never names, splits or ends a circuit (the marker on each net does), and which circuits it counts
+toward is the reference derivation's.
+
 A plate is a POLICY of Kind ``RULE_290_G`` or ``RULE_290_R`` (ADR 0013 §5, 2026-11-02) whose pin ``To`` sits on a
 mast's SIGNAL net: its row's relation is ``mast``, the mast on that net, and it has no track side; that the mast is
 ``PERMISSIVE`` is the reference derivation's check.
@@ -58,6 +63,7 @@ JOINTS = frozenset({"IRJ", "IRJ_SIGNAL", "IRJ_SIGNALS"})
 ENDS = frozenset({"END_CTC", "NEXT_CP", "BUMPER", "INDUSTRY"})
 SIGNAL_PINS = frozenset({"SIGNAL", "SIGNAL_A", "SIGNAL_B"})       # a signal joint's pins that carry a mast, never track
 PLATES = frozenset({"RULE_290_G", "RULE_290_R"})                   # a POLICY on a mast's SIGNAL net, not on the track (ADR 0013 §5)
+BOUNDARY_PINS = ("A", "B")                                         # a boundary track circuit's two track pins (ADR 0013 §10)
 
 
 def on_trackplan(s: Symbol) -> bool:
@@ -73,6 +79,18 @@ def ports_of(s: Symbol) -> tuple[str, ...]:
     if not is_switch(s):
         return ()
     return DERAIL_PORTS if s.get("Style") == "derail" else SWITCH_PORTS
+
+
+def is_boundary(s: Symbol) -> bool:
+    """A boundary track circuit: a detector at a joint, on the two nets there (ADR 0013 §10)."""
+    return s.role == "APPLIANCE" and s.get("Appliance") == "track_circuit" and s.get("Style") == "boundary"
+
+
+def circuit_pins(s: Symbol) -> tuple[str, ...]:
+    """A track circuit appliance's track pins: a marker's ``TC``, a boundary's ``A`` and ``B``, a virtual circuit's none."""
+    if s.role != "APPLIANCE" or s.get("Appliance") != "track_circuit":
+        return ()
+    return BOUNDARY_PINS if is_boundary(s) else () if s.get("Style") == "virtual" else ("TC",)
 
 
 # A track symbol's pin, translated to the side it is (ADR 0012 §8; three-maps D15). Any other pin keeps its name.
@@ -102,7 +120,7 @@ def is_track_pin(s: Symbol, pin: str) -> bool:
         return s.kind != "MILEPOST" and pin not in SIGNAL_PINS
     if is_switch(s):
         return pin in ports_of(s)
-    return s.role == "APPLIANCE" and s.get("Appliance") == "track_circuit" and pin == "TC"
+    return pin in circuit_pins(s)
 
 
 def is_consumer(interlocking: str, s: Symbol) -> bool:
@@ -190,7 +208,7 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
             continue
         appliance = s.get("Appliance")
         if ":" in name:                                                   # a reference to another interlocking's appliance
-            wired = [p for p in (ports_of(s) if is_switch(s) else ("TC",) if appliance == "track_circuit" else ()) if net(s, p)]
+            wired = [p for p in (ports_of(s) or circuit_pins(s)) if net(s, p)]
             if _foreign(name, ix.name) and not wired:
                 report.warning("reference.unwritten", f"{ix.name}: the {appliance or s.lib_id} {name} names another interlocking's "
                                "thing but nothing here uses it; not written", source=loc(s))
@@ -214,7 +232,8 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
             for p in ports_of(s):
                 relations[p] = pin_refs(s, p)
         elif appliance == "track_circuit":
-            relations["TC"] = pin_refs(s, "TC")
+            for p in circuit_pins(s):                                   # a marker's TC; a boundary's A and B (ADR 0013 §10)
+                relations[p] = pin_refs(s, p)
         elif appliance in ("lamp", "contact"):
             houses = [cp for cp, h in ix.houses.items() if h.maintainer_call == qualify(name, ix.name)]
             relations["house"] = f"{ix.name}:{houses[0]}" if len(houses) == 1 else None      # its MC wire (D8)
