@@ -36,7 +36,7 @@ At each end of a station-to-station block, the interlocking and the block exchan
 | **Interlocking $\to$ Block** (outbound) | `requested` | A leaving signal at this end has an active direction request into the block | `RGZ` / `HSR` |
 | **Interlocking $\to$ Block** (outbound) | `cleared` | A leaving signal at this end is cleared into the block (indicates Approach or better) | `HR` front / `!RGPR` |
 | **Interlocking $\to$ Block** (outbound) | `in_time` | A leaving signal into the block is running approach or time locking | `ASR` back / `TER` |
-| **Interlocking $\to$ Block** (outbound) | `home_proceed` | The home signal facing the block indicates Approach or better | `HR` front / `AGGPR` |
+| **Interlocking $\to$ Block** (outbound) | `home_proceed` | The home signal facing the block indicates Approach or better | `HR` front (`GLOSSARY.md` §10.6); `AGGPR` (`[CBQ1946 p. 615]`, opened) |
 | **Block $\to$ Interlocking** (inbound) | `segment_clear` | The entrance circuit and ahead/stick conditions permit the leaving signal to show at least Approach | `H` (feeds leaving signal `HR`) |
 | **Block $\to$ Interlocking** (inbound) | `next_proceed` | The next signal in the block indicates Approach or better, permitting the leaving signal to upgrade to Clear | `D` (feeds leaving signal `DR`) |
 | **Block $\to$ Interlocking** (inbound) | `traffic_free` | The block and far end are free of opposing traffic (never bypassed by an intermediate directional stick) | `F` / `FR` / `FSR` (equals `segment_clear` under `SP_1942`) |

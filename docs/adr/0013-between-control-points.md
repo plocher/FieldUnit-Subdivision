@@ -1,6 +1,6 @@
 # 0013. Between control points: blocks, automatic signals, the interlocking–block seam and traffic
 
-- Status: **accepted by the owner 2026-11-01** (rev 4: three-part structure with the functional interlocking–block seam in §13, Gherkin safety invariants before the 3-column reference-data profile table in §14, and vital vs. non-vital carrier markings in §18).[^rev]
+- Status: **accepted by the owner 2026-11-02** (rev 4: three-part structure with the functional interlocking–block seam in §13, Gherkin safety invariants before the 3-column reference-data profile table in §14, and vital vs. non-vital carrier markings in §18).[^rev]
 - Amends: ADR 0009 §3.10 (a mast states Kind; TRACK Kind `IRJ_SIGNALS`; track circuit Style `boundary`; done in the
   same change), ADR 0009 §3.12's row "track leaves an interlocking" (interlocking track only; merged in #58), ADR 0012
   §5 (the blocks library's scope) and §5.5 (the proxy retires, §23), FieldUnit `docs/GLOSSARY.md` §4 ("powered switch or derail").
@@ -9,7 +9,7 @@
   `docs/review/adr-0013-adversarial-review-2026-10-31.md`. The POC drawing: Railroad
   `2a1696e` (Corporal and Sargent sheets of the SPCoast project).
 
-## Decisions (all ratified 2026-11-01)
+## Decisions (ratified 2026-10-30 to 2026-11-02)
 
 1. **Three parts, one ADR, bounded at the interlocking–block seam.** Part 1 states the normative model facts and
    domain-library derivations owned by Subdivision. Part 2 states the between-interlockings prototype behavior, safety
@@ -301,7 +301,7 @@ interlocking into the block; three inbound from the block into the interlocking)
 | **Interlocking $\to$ Block** (outbound) | `requested` | A leaving signal at this end has an active direction request into the block | `RGZ` / `HSR` (`[CBQ1946 p. 614]`; `GLOSSARY.md` §10.5) |
 | **Interlocking $\to$ Block** (outbound) | `cleared` | A leaving signal at this end is cleared into the block (indicates Approach or better) | `HR` front / `!RGPR` (`[CBQ1946 p. 614]`; `[RS1945]` via `[ABSAPB]`) |
 | **Interlocking $\to$ Block** (outbound) | `in_time` | A leaving signal into the block is running approach or time locking | `ASR` back / `TER` (`[RS1942]` DT-10 via `[ABSAPB]`; `GLOSSARY.md` §10.5) |
-| **Interlocking $\to$ Block** (outbound) | `home_proceed` | The home signal facing the block indicates Approach or better | `HR` front / `AGGPR` (`[CBQ1946 p. 615]`; `GLOSSARY.md` §10.6) |
+| **Interlocking $\to$ Block** (outbound) | `home_proceed` | The home signal facing the block indicates Approach or better | `HR` front (`GLOSSARY.md` §10.6); `AGGPR` (`[CBQ1946 p. 615]`, opened) |
 | **Block $\to$ Interlocking** (inbound) | `segment_clear` | The entrance circuit and ahead/stick conditions permit the leaving signal to show at least Approach | `H` (feeds leaving signal `HR`, `[CBQ1946 p. 615]`) |
 | **Block $\to$ Interlocking** (inbound) | `next_proceed` | The next signal in the block indicates Approach or better, permitting the leaving signal to upgrade to Clear | `D` (feeds leaving signal `DR`, `[CBQ1946 p. 615]`; `GLOSSARY.md` §10.6) |
 | **Block $\to$ Interlocking** (inbound) | `traffic_free` | The block and far end are free of opposing traffic (never bypassed by an intermediate directional stick) | `F` / `FR` / `FSR` (`[CBQ1946 p. 614]`; `[ERIE1942]`, `[NW1949]` via `[TLRES]`; equals `segment_clear` under `SP_1942`) |
@@ -314,29 +314,34 @@ A leaving signal into the block requires `segment_clear` and `traffic_free` in i
 
 ### 14.1 Four railroad-independent safety invariants
 
-Every between-interlockings profile in reference data must satisfy four railroad-independent invariants. In the
-conformance suite (ADR 0012 §3), these are executable Gherkin scenarios run against every shipped profile:
+Every between-interlockings profile in reference data must satisfy four railroad-independent invariants (`I3` is the
+transient receding-stick case of `I1`). When gap 2 closes, these become executable Gherkin scenarios in the conformance
+suite (ADR 0012 §3) run against every shipped profile over a declared fixture block:
 
 ```gherkin
 Feature: Between-interlockings block safety invariants
   Every signaling profile for a station-to-station block must preserve opposing
   exclusion, traffic retention, receding stick release, and following separation.
 
+  Background:
+    Given a Rule 261 single-track block between control points "West" and "East"
+    And track circuits "1T" and "2T" in order from "West" to "East"
+    And intermediate signal location "2" between "1T" and "2T" with masts "2E" (toward "East") and "2W" (toward "West")
+
   Scenario: I1 Opposing exclusion
-    Given a single-track or Rule 261 station-to-station block between "Corporal" and "Sargent"
-    When "Corporal" has a leaving signal cleared into the block
-    Then no opposing leaving signal at "Sargent" has both "segment_clear" and "traffic_free" asserted
+    When "West" has a leaving signal "cleared" into the block
+    Then no opposing leaving signal at "East" has both "segment_clear" and "traffic_free" asserted
 
   Scenario: I2 Traffic retention while occupied or in time
-    Given traffic is established from "Corporal" toward "Sargent"
-    And any track circuit of the block is occupied, or a leaving signal at "Corporal" is "cleared" or "in_time"
-    Then "traffic_free" at "Sargent" remains released
+    Given traffic is established from "West" toward "East"
+    And any track circuit of the block is occupied, or a leaving signal at "West" is "cleared" or "in_time"
+    Then "traffic_free" at "East" remains released
 
-  Scenario: I3 Receding directional stick release
-    Given a northbound train has passed intermediate "832NA" and set "832NA"'s SR
-    And "Corporal" has "requested" southward while "832T" is still occupied
-    When the northbound train clears "832T" into "Corporal"
-    Then either "832NA"'s SR releases before "Corporal" clears southward, or "traffic_free" at "Sargent" remains released
+  Scenario: I3 Receding directional stick release (transient case of I1)
+    Given a westbound train has passed intermediate "2W" and set "2W"'s SR
+    And "West" has "requested" eastbound while "1T" is still occupied
+    When the westbound train clears "1T" into "West"
+    Then either "2W"'s SR releases before "West" clears eastbound, or "traffic_free" at "East" remains released
 
   Scenario: I4 Following separation and approach aspect
     Given an intermediate or leaving signal governing toward the next signal ahead
@@ -352,7 +357,7 @@ Feature: Between-interlockings block safety invariants
 | Model | Blocks, signal locations, seam ports, directed `HD` links, and which processor reads or drives each | Railroad-neutral, derived (Part 1) |
 | Layout | How `H`, `D`, `F` and occupancy cross between processors, and whether the carrier is `vital` or `non_vital` | The layout owner's hardware drawing (§18) |
 
-Prototype railroads differed along six axes captured in `reference.py` under `blockRules`:
+Prototype railroads differed along six axes, to be captured in `reference.py` under `blockRules` (gap 2):
 
 | Axis (`blockRules`) | `SP_1942` (SP CTC, 1942–1985) | `CBQ_1946` (CB&Q CTC, 1946) | `ERIE_NW_1942` (Erie 1942 / N&W 1949) |
 |---|---|---|---|
@@ -362,11 +367,12 @@ Prototype railroads differed along six axes captured in `reference.py` under `bl
 | `idleDirection` | `"none"` (both `HD` lines energized at rest, `[RS1942]`, `[RS1945]` via `[ABSAPB]`) | `"last"` (retains last established direction, `[CBQ1946 p. 616]`, opened) | `"none"` (normally de-energized traffic circuit, `[ERIE1942]` via `[TLRES]`) |
 | `intermediatesAtRest` | `"clear"` (clear both ways while idle, `[RS1942]` via `[ABSAPB]`) | `"established_only"` (clear in last direction, stop opposing, `[CBQ1946 p. 614]`, opened) | `"clear"` (single-track ABS intermediates, `[RS1932]` via `[ABSAPB]`; `ERIE1942` `(unverified)`) |
 | `sameLocationOpposingCut` | `true` ("signals check each other at stop", `[RS1947]` via `[ABSAPB]`) | `true` (opposing `HR` and `SR` back contacts, `[CBQ1946 p. 613]`, opened) | `(unverified)` |
-| **Invariants passed** | **Passes `I1`, `I2`, `I3`, `I4`** (under `"cleared"`, outbound `H` stays asserted while a train in `832T` holds the opposing leaving signal at Stop, so `832NA`'s `SR` releases as `832T` clears) | **Passes `I1`, `I2`, `I3`, `I4`** (under `"requested"`, `traffic_free` is carried by `field_fr` and is never bypassed by a stale `SR`) | **Passes `I1`, `I2`, `I3`, `I4`** (`traffic_line` carries `traffic_free` end-to-end without `SR` bypass) |
+| **Invariants (by trace; not yet executed, gap 2)** | **Holds by trace for `I1`–`I4`** (under `"cleared"`, outbound `H` stays asserted while a train in `1T` holds the opposing leaving signal at Stop, so `2W`'s `SR` releases as `1T` clears) | **Holds by trace for `I1`–`I4`** (under `"requested"`, `traffic_free` is carried by `field_fr` and is never bypassed by a stale `SR`) | **Holds by trace for `I1`–`I4`** (`traffic_line` carries `traffic_free` end-to-end without `SR` bypass) |
 
-An inconsistent combination—such as `tumbleDownTrigger: "requested"` paired with `trafficMechanism: "hd_chain"`—fails
-scenarios **I1** and **I3** (a `requested` control while `832T` is occupied holds outbound `H` released after `832T`
-clears, leaving `832NA`'s `SR` set to feed `segment_clear` to the far end) and is rejected by the conformance suite.
+An inconsistent combination—such as `tumbleDownTrigger: "requested"` paired with `trafficMechanism: "hd_chain"`—violates
+scenarios **I1** and **I3** by trace (a `requested` control while `1T` is occupied holds outbound `H` released after
+`1T` clears, leaving `2W`'s `SR` set to feed `segment_clear` to the far end) and will be rejected by the conformance
+suite once gap 2 closes.
 
 ## 15. The HD line and the directional stick relay (`SR`) (decision 12)
 
@@ -489,10 +495,10 @@ is non-vital (`GLOSSARY.md` §5, `R18`), each variation explicitly marks the **v
 
 | Variation | Carrier vitality | What is drawn on the sheets | How state crosses the block |
 |---|---|---|---|
-| **A. AAR codeline only between distributed `FieldUnit`s (preferred model-railroad form)** | **`non_vital` (`R15` codeline-repeat compression)** | Each interlocking connects to the shared AAR `Codeline` encoding and to its own field `Processor`. Each block track circuit and intermediate head device connects to a driver on whichever field `Processor` physically serves it. **No extra `HD` line symbols, topics, or cross-processor wires are drawn.** | **Codeline indication eavesdropping.** Each `FieldUnit` subscribes to the neighbouring station's codeline `Indication` messages on the shared code line. Because the far station's leaving/home signal indications (`NGK`, `SGK`, `TEK`) and remote block circuit indications (`TK`, included automatically by R12 when consumed by the neighbour's block or virtual circuit) are broadcast as codeline indications, each processor evaluates its `HD` chain, `SR` sticks, and virtual block circuit (`831T`) locally without a separate `HD` lineset. Marked `non_vital` because codeline indications are non-vital and subject to code-line latency. |
+| **A. AAR codeline only between distributed `FieldUnit`s (preferred model-railroad form)** | **`non_vital` (`R15` codeline-repeat compression)** | Each interlocking connects to the shared AAR `Codeline` encoding and to its own field `Processor`. Each block track circuit and intermediate head device connects to a driver on whichever field `Processor` physically serves it. **No extra `HD` line symbols, topics, or cross-processor wires are drawn.** | **Codeline indication eavesdropping.** Each `FieldUnit` subscribes to the neighbouring station's codeline `Indication` messages on the shared code line. Because the far station's leaving/home signal indications (`NGK`, `SGK`, `TEK`) and remote block circuit indications (`TK`, included automatically by R12 when consumed by the neighbour's block or virtual circuit) are broadcast as codeline indications, each processor evaluates its `HD` chain, `SR` sticks, and virtual block circuit (`831T`) locally without a separate `HD` lineset. Marked `non_vital` because codeline indications are non-vital and subject to code-line latency. **Fail-safe:** any unreceived, disconnected, or stale neighbour indication (`LOST_COMMS` timeout, `GLOSSARY.md` §7) must read as restrictive (remote circuits occupied; `segment_clear`, `next_proceed`, and `traffic_free` released) so the compression never fails open. |
 | **B. Physical `H`/`D`(`/F`) wire pairs (or dedicated field-to-field link) between distributed `FieldUnit`s** | **`vital`** | Each interlocking has its own field `Processor`. At the segment that crosses between two processors, `Device-HD-Out` on the producer sheet and `Device-HD-In` on the consumer sheet (`Role = DEVICE`, `Appliance = mast`, `Style = hd_out` / `hd_in`, `Name = ${Value}`, pins `~{H}` and `~{D}`, plus `~{F}` when `trafficMechanism` $\ne$ `"hd_chain"`) wire to `IODRIVER` pins on each processor (gap 3). Each mast's governed track circuit is wired to the processor that runs that mast's signal location. | **Wired `HD` cascade (or retained `<root>/hdline/<mast>` topic with last-will `(H)`).** Each processor evaluates its local `HD` segments and drives the active-low open-drain `H` and `D` (and optional `F`) lines across the boundary. A broken wire, unpowered producer, or processor in reset reads as released (`Stop`, `R14`). |
 | **C. Unified field logic system (CMRInet Host, JMRI, or `spcoast_virtual_plant`)** | **`vital`** | Every interlocking's `Processor` pin connects to the **same** `Processor` entity (e.g., the CMRInet Host), and all field I/O drivers (`Driver-CMRInet-Node` `IB`/`OB`, JMRI drivers) attach to that processor's bus. **No cross-processor wires or extra topics are drawn.** | **In-memory.** The `blocks` library (§11) resolves every circuit and signal location in the block to the same processor, so all `HD` links, `SR` sticks, and virtual circuits (`831T`) are evaluated directly in vital memory. |
-| **D. US&S 506 code line with a 1- or 2-circuit ABS/APB link** | **`non_vital` (`R15` codeline-repeat) for 1–2 circuits; `vital` when wired via B** | Both interlockings connect to a `USS506` (7 indication steps per station) or `USS506C` (35 steps) `Codeline` encoding. Track circuits and head devices connect to their local field `Processor`'s drivers. | **Codeline eavesdropping up to step capacity; wired `HD` beyond it.** A standard 1-switch, 1-signal, 1-OS, 1-MC station uses 6 of its 7 indication steps, leaving 1 free step (`reference.CODE_LINE_CAPACITY`, `CODE_LINE_STEPS`). For a **1-circuit** or **2-circuit** block, each end station sends its side's `TK` in its 1 free step and eavesdrops on the neighbour's 506 indication code (`NGK`, `SGK`, `TEK`, `TK`) with **no extra field wires** (`non_vital` `R15` compression, as in A). When a block has more circuits than free 506 steps, intermediate segments use Variation B (`vital` wired `H`/`D`). |
+| **D. US&S 506 code line with a 1- or 2-circuit ABS/APB link** | **`non_vital` (`R15` codeline-repeat) for 1–2 circuits; `vital` when wired via B** | Both interlockings connect to a `USS506` (7 indication steps per station) or `USS506C` (35 steps) `Codeline` encoding. Track circuits and head devices connect to their local field `Processor`'s drivers. | **Codeline eavesdropping up to step capacity; wired `HD` beyond it.** A standard 1-switch, 1-signal, 1-OS, 1-MC station uses 6 of its 7 indication steps, leaving 1 free step (`reference.CODE_LINE_CAPACITY`, `CODE_LINE_STEPS`). For a **1-circuit** or **2-circuit** block, each end station sends its side's `TK` in its 1 free step and eavesdrops on the neighbour's 506 indication code (`NGK`, `SGK`, `TEK`, `TK`) with **no extra field wires** (`non_vital` `R15` compression, with the same fail-safe on missing/stale indications as Variation A). When a block has more circuits than free 506 steps, intermediate segments use Variation B (`vital` wired `H`/`D`). |
 
 ### 18.2 How codeline indication eavesdropping works on the POC 834–836 split (Variations A and D)
 
@@ -529,12 +535,12 @@ circuit `836T`:
    - **Dedicated MQTT `HD` topic:** One retained topic per `HD` line, `<root>/hdline/<mast>` (for example
      `ctc/SPCoast/hdline/834NA`, where `<root>` is the AAR encoding's `Topic`), carrying `H D`, `H (D)`, or `(H)` in a
      single payload with a last-will message of `(H)`.
-4. **Receding stick release requirement (Invariant `I3`):**
+4. **Satisfying Invariant `I3` (receding stick release) in a discrete scan loop:**
    - When a train clears the last circuit of a block (`836T` at Sargent), the receding-direction stick (`834SA`'s `SR`)
-     must see its release condition (`836SA`'s `H out` re-asserted) before an opposing move can clear into the block
-     (`AAR8066 Sheet 2` slow pick-up `3RFR` via `[TLRES]`). In a discrete scan loop, if `836T` clearing and a queued
-     opposing control arrive in the same tick, the `HD` chain must settle the circuit change before the opposing
-     control cuts `836SA` `H out`.
+     needs to see its release condition (`836SA`'s `H out` re-asserted) before an opposing move clears into the block
+     (`AAR8066 Sheet 2` slow pick-up `3RFR` via `[TLRES]`). One way a discrete scan-loop implementation can satisfy `I3`
+     when `836T` clearing and a queued opposing control arrive in the same tick is to settle circuit changes through
+     the `HD` chain before evaluating the control transaction.
 
 ## 19. Other consumer notes
 
