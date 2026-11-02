@@ -1312,7 +1312,7 @@
               "properties": {
                 "mast": {
                   "$ref": "#/$defs/qualifiedName",
-                  "description": "A signal joint's mast, by its SIGNAL wire."
+                  "description": "A signal joint's mast, by its SIGNAL wire; a plate's mast (RULE_290_G, RULE_290_R; ADR 0013 §5), the mast whose SIGNAL wire its To pin sits on."
                 },
                 "masts": {
                   "type": "object",
@@ -1391,7 +1391,7 @@
           }
         },
         "policies": {
-          "description": "The policy signs (RULE_105, RULE_251, RULE_261, RULE_93) with their Direction, on the circuit at their pin.",
+          "description": "The policy signs (RULE_105, RULE_251, RULE_261, RULE_93) with their Direction, on the circuit at their pin; and the plates (RULE_290_G, RULE_290_R; ADR 0013 §5), each on a mast (relations.mast) and on no track.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/trackSymbol"

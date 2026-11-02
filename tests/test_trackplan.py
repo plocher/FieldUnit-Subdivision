@@ -499,6 +499,31 @@ class DoubleJoint(unittest.TestCase):
         self.assertEqual(rows(ix, "joints")[0]["relations"]["masts"], {"A": "X:832NA"})
 
 
+class Plates(unittest.TestCase):
+    """ADR 0013 §5: a plate (RULE_290_G, RULE_290_R) is a POLICY whose To pin sits on a mast's SIGNAL net. Its row
+    states the mast and no track side; that the mast is PERMISSIVE is the derivation's check."""
+
+    PLATE = "PL1  | Signal Mast Plate-G | POLICY | Kind=RULE_290_G\n"
+
+    def test_a_plate_states_the_mast_on_its_net_and_no_track(self):
+        sm, ix = compile_(DOUBLE_JOINT + self.PLATE, DOUBLE_JOINT_NETS.replace("sb   | J1.SIGNAL_B M2.SIGNAL", "sb   | J1.SIGNAL_B M2.SIGNAL PL1.To"))
+        self.assertEqual(sm.report.errors, [])
+        self.assertEqual(rows(ix, "policies"), [{"given": {"Kind": "RULE_290_G"}, "relations": {"mast": "X:832SA"}}])
+        self.assertEqual(diags(sm, "plate", "joint", "track"), [])
+        self.assertNotIn("PL1.To", str(track_relations(ix)))
+        self.assertEqual(layout_model.errors(emit.emit(sm)), [])
+
+    def test_a_plate_on_no_mast_or_on_a_controlled_mast_is_an_error(self):
+        sm, ix = compile_(DOUBLE_JOINT + self.PLATE, DOUBLE_JOINT_NETS + "x    | PL1.To TC2.TC\n")
+        plate = sm.source.symbols["PL1"].uuid                               # a rule check names the row by its id
+        self.assertEqual(diags(sm, "plate"), [("plate.mast", plate)])
+        self.assertNotIn("relations", rows(ix, "policies")[0])
+        sm, _ = compile_(DOUBLE_JOINT.replace("Kind=PERMISSIVE Name=832SA", "Kind=CONTROLLED Name=832SA") + self.PLATE,
+                         DOUBLE_JOINT_NETS.replace("sb   | J1.SIGNAL_B M2.SIGNAL", "sb   | J1.SIGNAL_B M2.SIGNAL PL1.To"))
+        self.assertEqual(diags(sm, "plate"), [("plate.mast", plate)])
+        self.assertEqual([d.severity for d in sm.report.by_code("plate.mast")], ["error"])
+
+
 class Checks(unittest.TestCase):
     """What only the drawing shows, as one scenario: (code, the symbol it names)."""
 
@@ -682,6 +707,10 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(self.ix("Corporal")["appliances"]["832NA"]["derived"]["circuits"], {"governed": "Corporal:832T", "approach": "Corporal:834T"})
         self.assertEqual(self.ix("Corporal")["appliances"]["832SA"]["derived"]["circuits"], {"governed": "Corporal:834T", "approach": "Corporal:832T"})
         self.assertEqual(self.ix("Sargent")["appliances"]["834SA"]["derived"]["circuits"]["governed"], "Sargent:836T")
+        plates = [(n, p["given"]["Kind"], p["relations"].get("mast")) for n, ix in self.model["interlockings"].items()
+                  for p in ix["track"].get("policies", []) if p["given"]["Kind"].startswith("RULE_290")]
+        self.assertEqual(plates, [("Sargent", "RULE_290_G", "Sargent:834SA")])      # the one plate drawn: on a PERMISSIVE mast
+        self.assertEqual(self.sm.report.by_code("plate.mast"), [])
         self.assertEqual(self.sm.report.by_code("mast.joint") + self.sm.report.by_code("track.kind"), [])
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):

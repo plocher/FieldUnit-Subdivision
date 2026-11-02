@@ -259,6 +259,20 @@ class DoubleJoint(unittest.TestCase):
         self.assertEqual(row(out["interlockings"]["X"], "J1")["derived"], {"circuits": {"A": "X:832T", "B": "X:834T"}})
         self.assertEqual(layout_model.errors(out), [])
 
+    def test_a_plate_requires_a_permissive_mast(self):
+        """ADR 0013 §5: a plate on no mast, on a mast the file lacks, or on one that is not PERMISSIVE is an error."""
+        def plated(mast: str | None, kind: str = "PERMISSIVE") -> list[tuple[str, str]]:
+            m = self.block({"A": "X:832NA", "B": "X:832SA"})
+            ix = m["interlockings"]["X"]
+            ix["appliances"]["832SA"]["given"]["Kind"] = kind
+            ix["track"]["policies"] = [{"id": "PL1", "given": {"Kind": "RULE_290_G"}, **({"relations": {"mast": mast}} if mast else {})}]
+            return only(run(m)[1], "plate")
+        self.assertEqual(plated("X:832SA"), [])
+        self.assertEqual(plated(None), [("plate.mast", "PL1")])
+        self.assertEqual(plated("X:9NA"), [("plate.mast", "PL1")])
+        self.assertEqual(plated("X:832SA", "CONTROLLED"), [("plate.mast", "PL1")])
+        self.assertEqual(plated("X:832SA", ""), [("plate.mast", "PL1")])
+
     def test_a_side_with_no_mast_leaves_that_mast_on_no_joint_and_one_mast_on_both_sides_is_on_two(self):
         out, diags = run(self.block({"A": "X:832NA"}))
         self.assertEqual(only(diags, "mast"), [("mast.joint", "832SA")])

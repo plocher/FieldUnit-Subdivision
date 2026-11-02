@@ -25,6 +25,8 @@ names every other track pin its wire reaches, so the relation is symmetric):
 - **A mast states Kind** (ADR 0013 §5): ``CONTROLLED``, ``ABSOLUTE`` or ``PERMISSIVE``, a stated fact. A mast with
   none, or with another word, is reported ``mast.kind`` at missing; nothing is inferred from a CP Name or a plate.
   The §5 check that a non-``CONTROLLED`` mast's route passes no powered switch is not here yet.
+- **A plate requires a PERMISSIVE mast** (ADR 0013 §5): a policy row of Kind ``RULE_290_G`` or ``RULE_290_R`` states
+  ``relations.mast``; one on no mast, or on a mast that is not ``PERMISSIVE``, is ``plate.mast`` at error.
 - **Control points** by propagation from the houses (the owner, 2026-10-26; ADR 0012 §4).
 - **Consumers of another station's indications** (the owner, 2026-10-27): a ``track.consumers`` row is a one-sided
   reference, ``relations.indication`` the token it consumes (``Corporal:2NATK``); a track circuit's token names the
@@ -66,6 +68,7 @@ ROW_LISTS = TRACK_LISTS + ("consumers",)          # every row with an id; a cons
 JOINTS = frozenset({"IRJ", "IRJ_SIGNAL", "IRJ_SIGNALS"})
 DOUBLE_SIDES = {"A": "B", "B": "A"}             # a double joint's side to the other (ADR 0013 §6)
 MAST_KINDS = frozenset({"CONTROLLED", "ABSOLUTE", "PERMISSIVE"})   # what a mast states it is (ADR 0013 §5)
+PLATES = frozenset({"RULE_290_G", "RULE_290_R"})                   # a plate on a mast's SIGNAL net (ADR 0013 §5)
 
 
 @lru_cache(maxsize=1)
@@ -505,6 +508,19 @@ class _Plan:
                                "track on CTC; CTC is the side under the dispatcher's control", where)
             if g.get("Kind") == "NEXT_CP" and not g.get("Interlocking"):
                 self.r.add("next_cp.interlocking", f"{self.name}: a NextCP states no Interlocking", where)
+        for row in self.track.get("policies", []):
+            g, where = row.get("given", {}), self.where("track", "policies", row.get("id", ""))
+            if g.get("Kind") not in PLATES:
+                continue
+            mast = row.get("relations", {}).get("mast")
+            m = self.appliances.get(mast.partition(":")[2]) if mast and not foreign(mast, self.name) else None
+            if not mast:
+                self.r.add("plate.mast", f"{self.name}: a {g['Kind']} plate is on no mast's SIGNAL wire", where)
+            elif m is None or m.get("given", {}).get("Appliance") != "mast":
+                self.r.add("plate.mast", f"{self.name}: a {g['Kind']} plate names {mast}, which is no mast of {self.name}", where)
+            elif m.get("given", {}).get("Kind") != "PERMISSIVE":
+                self.r.add("plate.mast", f"{self.name}: a {g['Kind']} plate is on mast {mast}, which is {m['given'].get('Kind') or 'of no Kind'}; "
+                           "a plate requires a PERMISSIVE mast (ADR 0013 §5)", where, (self.where("appliances", mast.partition(":")[2]),))
         masts_of = defaultdict(int)
         for row in self.track.get("joints", []):
             if row.get("relations", {}).get("mast"):

@@ -22,6 +22,10 @@ governs into side A and ``SIGNAL_B`` the one into side B, stated as ``relations.
 qualified names). Nothing is read from rotation or from which mast is drawn first. Each mast's own approach and
 governed sides are the reference derivation's.
 
+A plate is a POLICY of Kind ``RULE_290_G`` or ``RULE_290_R`` (ADR 0013 §5, 2026-11-02) whose pin ``To`` sits on a
+mast's SIGNAL net: its row's relation is ``mast``, the mast on that net, and it has no track side; that the mast is
+``PERMISSIVE`` is the reference derivation's check.
+
 A name qualified with another interlocking's scope is a one-sided reference: it is no appliance here, and nothing is
 written back to the thing it names (the owner, 2026-10-27). A track circuit marker so named (Sargent's ``Corporal:2NAT``)
 is a consumer of that station's indication: a row of ``track.consumers`` with its symbol's UUID as ``id``, its fields
@@ -53,6 +57,7 @@ DERAIL_PORTS = ("C", "R")
 JOINTS = frozenset({"IRJ", "IRJ_SIGNAL", "IRJ_SIGNALS"})
 ENDS = frozenset({"END_CTC", "NEXT_CP", "BUMPER", "INDUSTRY"})
 SIGNAL_PINS = frozenset({"SIGNAL", "SIGNAL_A", "SIGNAL_B"})       # a signal joint's pins that carry a mast, never track
+PLATES = frozenset({"RULE_290_G", "RULE_290_R"})                   # a POLICY on a mast's SIGNAL net, not on the track (ADR 0013 §5)
 
 
 def on_trackplan(s: Symbol) -> bool:
@@ -91,7 +96,9 @@ def is_track_pin(s: Symbol, pin: str) -> bool:
     """A pin that carries track: a switch's (or derail's) port, a track circuit marker's TC, and every pin of a joint,
     an end or a policy sign but a signal joint's SIGNAL pins, which carry its masts. A milepost is no row and carries
     none."""
-    if s.role in ("TRACK", "POLICY"):
+    if s.role == "POLICY":
+        return s.kind not in PLATES
+    if s.role == "TRACK":
         return s.kind != "MILEPOST" and pin not in SIGNAL_PINS
     if is_switch(s):
         return pin in ports_of(s)
@@ -239,6 +246,8 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
             relations["mast"] = _mast_on(s, "SIGNAL", others, report, ix.name)
         elif s.kind == "IRJ_SIGNALS":                                    # a mast on each side (ADR 0013 §6)
             relations["masts"] = {side: m for side in ("A", "B") if (m := _mast_on(s, f"SIGNAL_{side}", others, report, ix.name))}
+        elif s.role == "POLICY" and s.kind in PLATES:                     # a plate on a mast's SIGNAL net (ADR 0013 §5)
+            relations["mast"] = _mast_on(s, "To", others, None, ix.name)   # two masts there are the joint's error already
         row = _maps(row)
         kind = "policies" if s.role == "POLICY" else "joints" if s.kind in JOINTS else "ends"
         {"policies": policies, "joints": joints, "ends": ends}[kind].append(row)
@@ -251,10 +260,10 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
 
 
 def _mast_on(joint: Symbol, pin: str, others, report, interlocking: str) -> Optional[str]:
-    """The one mast on a signal joint's SIGNAL pin, by qualified name; two there are an error (one pin, one mast), none
-    is absent."""
+    """The one mast on a symbol's pin (a signal joint's SIGNAL pin, a plate's To), by qualified name; two there are an
+    error (one pin, one mast) where a report is given, none is absent."""
     masts = [o for o, p in others(joint, pin) if o.get("Appliance") == "mast" and key_of(o)]
-    if len(masts) > 1:
+    if len(masts) > 1 and report is not None:
         report.error("joint.masts", f"{interlocking}: one signal joint carries masts {', '.join(sorted(key_of(m) for m in masts))} on its {pin} pin",
                      source=loc(joint))
     return qualify(key_of(masts[0]), interlocking) if len(masts) == 1 else None
