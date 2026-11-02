@@ -36,7 +36,7 @@ KiCad.
 | Cross-processor carriers, the POC 834–836 split, and the four things codegen should watch (including settling the `HD` chain before evaluating controls) | §18 |
 | Boundary track circuit occupancy (make-before-break) | §19 |
 | Traceability of every consumer input to Part 1 | §20 |
-| Gaps (operations settings in reference data, how line wires are drawn, glossary additions) | §21 |
+| Gaps (operations settings in reference data, how line wires are drawn) | §21 |
 
 ## First step, before any code
 
@@ -59,7 +59,8 @@ KiCad.
 ## Open on the Subdivision side
 
 ADR 0013 §21 gaps 2 and 3 (the operations settings in reference data, and how line wires between processors are drawn).
-Gaps 1 and 4 (`reference.CODE_LINE_CAPACITY` and `reference.CODE_LINE_STEPS`) are closed.
+Gaps 1, 4, and 5 (`reference.CODE_LINE_CAPACITY`, `reference.CODE_LINE_STEPS`, and the `FieldUnit/docs/GLOSSARY.md`
+entries) are closed.
 
 ## Out of scope for this handoff
 

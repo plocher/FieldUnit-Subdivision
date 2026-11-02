@@ -550,9 +550,11 @@ Each consumer input, the Part 1 section that states it, and its form:
    way; a signal lever three controls (`NGS`, `SGS`, `HS`: the explicit stop has its own step) and three indications;
    a circuit or a maintainer call one; an electric lock one control (a two-position lever) and two indications. The
    token meanings are FieldUnit's (`docs/AAR_SIGNALING_PRIMER.md`, GLOSSARY §10.3).
-5. **Glossary.** Entries to add in `FieldUnit/docs/GLOSSARY.md`: automatic signal, signal location, HD line,
-   station-to-station block, boundary circuit, current of traffic, traffic, `SR` as the directional stick. `FSR` is not
-   a collision: AAR names are not unique across domains (owner, 2026-11-01); the GLOSSARY (§10.5) uses `FSR` for
+5. Closed 2026-11-01: **Glossary.** Added entries in `FieldUnit/docs/GLOSSARY.md` for `automatic signal`, `signal
+   location`, `HD line`, `station-to-station block`, `boundary track circuit`, `current of traffic`, `traffic` /
+   `direction of traffic`, `SR` (directional stick), `BPR`, `FR`/`FSR` (traffic), and `RGPR`, plus "powered switch or
+   derail" in `interlocking limits` (§4) and retired synonyms `line signal` and `passed memory` (§11). `FSR` is not a
+   collision: AAR names are not unique across domains (owner, 2026-11-01); the GLOSSARY (§10.5) uses `FSR` for
    FieldUnit's fleet stick relay, while traffic-lever schemes use it for the traffic stick relay.
 6. Luchessa's and Watsonville's `NFLK` and `SFLK` (board `TRAFFIC` lamps): whether they become a block's direction-of-traffic
    indication.
@@ -578,7 +580,8 @@ Each consumer input, the Part 1 section that states it, and its form:
 - ADR 0009 §3.12 (merged in #58): the track rule covers interlocking track only, amended in place.
 - ADR 0012 §5: the `blocks` library covers the track between control points and serves directed `HD` links. §5.5: the
   proxy and its TBD retire, since a signal never stands in for another; the approach signal of a home is derived.
-- FieldUnit `docs/GLOSSARY.md` §4: "powered switch or derail" in the interlocking limits entry.
+- FieldUnit `docs/GLOSSARY.md` §4, §7, §8, §9, §10.3, §10.5, §11, §12: "powered switch or derail" in `interlocking
+  limits` and the ADR 0013 glossary entries (done).
 - The KiCad importer: a hierarchical label continues a track run (`geometry.run_end` fires on one today);
   `IRJ-Signals` with per-mast sides; `joint.masts` retires for two masts on opposite sides; Style `boundary` (today
   the boundary symbol, with no `TC` pin, is skipped without a word).
