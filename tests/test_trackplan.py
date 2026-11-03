@@ -713,7 +713,9 @@ class SPCoastTrackplan(unittest.TestCase):
 
     def test_every_mast_stands_on_one_signal_joint_and_has_its_control_point(self):
         masts = [(i, n, a) for i, ix in self.model["interlockings"].items() for n, a in ix.get("appliances", {}).items() if a["given"]["Appliance"] == "mast"]
-        self.assertEqual([(i, n) for i, n, a in masts if "controlPoint" not in a.get("derived", {})], [])
+        automatic = sorted((i, n) for i, n, a in masts if a["given"].get("Kind") in ("ABSOLUTE", "PERMISSIVE"))
+        self.assertEqual(automatic, [("Corporal", "832NA"), ("Corporal", "832SA"), ("Sargent", "834NA"), ("Sargent", "834SA")])
+        self.assertEqual([(i, n) for i, n, a in masts if ("controlPoint" in a.get("derived", {})) == ((i, n) in automatic)], [])   # ADR 0013 §5
         joints = [j for ix in self.model["interlockings"].values() for j in ix.get("track", {}).get("joints", []) if j["given"]["Kind"] == "IRJ_SIGNAL"]
         self.assertEqual(len(joints), 36)                                   # Watsonville's 838SAB joint (Railroad 253b666)
         self.assertEqual([j for j in joints if "mast" not in j.get("relations", {}) or "controlPoint" not in j["derived"]], [])
@@ -729,7 +731,7 @@ class SPCoastTrackplan(unittest.TestCase):
     def test_every_appliance_has_its_control_point_and_no_chain_is_broken(self):
         self.assertEqual([d for d in self.sm.report.diags if d.code.startswith("control_point")], [])
         self.assertEqual([(i, n) for i, ix in self.model["interlockings"].items() for n, a in ix.get("appliances", {}).items()
-                          if "controlPoint" not in a.get("derived", {})], [])
+                          if "controlPoint" not in a.get("derived", {}) and a["given"].get("Kind") not in ("ABSOLUTE", "PERMISSIVE")], [])
 
     def test_every_next_cp_names_where_it_leads_and_is_answered(self):
         ends = [(i, e["given"].get("Interlocking")) for i, ix in self.model["interlockings"].items() for e in ix["track"].get("ends", [])
