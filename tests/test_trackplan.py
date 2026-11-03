@@ -671,6 +671,56 @@ class Shorted(unittest.TestCase):
         self.assertEqual(diags(sm, "track.shorted"), [])
 
 
+class TrainOrder(unittest.TestCase):
+    """A train order signal (Appliance train_order; the owner, 2026-11-03): an operator-controlled non-vital indicator
+    with heads for a face, at a timetable station, with no track pin. The importer's part: the appliance row, its
+    heads read from its H pin as a mast's are, its station relation, and the diagnostics about the drawing."""
+
+    STATION = """
+ST1  | Station          | STRUCTURE | Kind=STATION Name=Gilroy Milepost=77.9
+H1   | House            | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
+TC1  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=1NAT
+NX1  | NextCP           | TRACK     | Kind=NEXT_CP Interlocking=Lick
+"""
+    SIGNAL = """
+TO1  | Train Order Mast | APPLIANCE | Appliance=train_order Name=Gilroy Station=Gilroy
+HN   | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=N
+HS   | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=S
+"""
+    TRACK = "w | TC1.TC NX1.To\n"
+
+    def test_the_signal_is_an_appliance_with_its_heads_on_h_and_its_station(self):
+        sm, ix = compile_(self.STATION + self.SIGNAL, self.TRACK + "h | TO1.H HN.M HS.M\n")
+        self.assertEqual(sm.report.errors, [])
+        to = ix["appliances"]["Gilroy"]
+        self.assertEqual(to["given"], {"Appliance": "train_order", "Station": "Gilroy"})
+        self.assertEqual(to["relations"], {"station": "Gilroy"})
+        self.assertEqual({k: v["given"] for k, v in to["heads"].items()}, {"N": {"Appliance": "head", "Style": "LQ"}, "S": {"Appliance": "head", "Style": "LQ"}})
+        self.assertEqual(emit.emit(sm)["layout"]["stations"]["Gilroy"], {"given": {"Kind": "STATION", "Milepost": "77.9"}, "relations": {"interlocking": "X"}})
+        self.assertEqual(layout_model.errors(emit.emit(sm)), [])
+
+    def test_a_head_letter_is_a_direction_each_at_most_once(self):
+        """Incomplete is missing, wrong is an error (the owner, 2026-11-03): a head with no Name is head.letter; one whose
+        letter is no direction (A, or the L and R of a mast's name grammar) can never work, head.direction, and is left
+        out; a direction twice is head.duplicate."""
+        heads = """
+HA   | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=A
+HL   | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=L
+H0   | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=
+HN2  | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=N
+"""
+        sm, ix = compile_(self.STATION + self.SIGNAL + heads, self.TRACK + "h | TO1.H HN.M HS.M HA.M HL.M H0.M HN2.M\n")
+        self.assertEqual(diags(sm, "head."), [("head.direction", "HA"), ("head.direction", "HL"), ("head.duplicate", "HN2"), ("head.letter", "H0")])
+        self.assertEqual({d.code: d.severity for d in sm.report.diags if d.code.startswith("head.")},
+                         {"head.direction": "error", "head.duplicate": "error", "head.letter": "missing"})
+        self.assertEqual(sorted(ix["appliances"]["Gilroy"]["heads"]), ["N", "S"])
+
+    def test_a_pin_on_the_track_is_an_error(self):
+        sm, ix = compile_(self.STATION + self.SIGNAL, "w | TC1.TC NX1.To TO1.H HN.M HS.M\n")
+        self.assertEqual(diags(sm, "train_order."), [("train_order.track", "TO1")])
+        self.assertEqual(ix["track"]["ends"][0]["relations"]["track"], ["X:1NAT.TC"])     # the H pin is no track pin
+
+
 class Locations(unittest.TestCase):
     def test_a_derived_diagnostic_keeps_its_model_path_and_the_importer_adds_the_symbol(self):
         """10c: derive names the model path; the importer appends sheet, reference, library symbol and Value."""
@@ -731,7 +781,8 @@ class SPCoastTrackplan(unittest.TestCase):
     def test_every_appliance_has_its_control_point_and_no_chain_is_broken(self):
         self.assertEqual([d for d in self.sm.report.diags if d.code.startswith("control_point")], [])
         self.assertEqual([(i, n) for i, ix in self.model["interlockings"].items() for n, a in ix.get("appliances", {}).items()
-                          if "controlPoint" not in a.get("derived", {}) and a["given"].get("Kind") not in ("ABSOLUTE", "PERMISSIVE")], [])
+                          if "controlPoint" not in a.get("derived", {}) and a["given"].get("Kind") not in ("ABSOLUTE", "PERMISSIVE")
+                          and a["given"]["Appliance"] != "train_order"], [])                # never in a control point (the owner, 2026-11-03)
 
     def test_every_next_cp_names_where_it_leads_and_is_answered(self):
         ends = [(i, e["given"].get("Interlocking")) for i, ix in self.model["interlockings"].items() for e in ix["track"].get("ends", [])
@@ -830,20 +881,21 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(self.sm.report.by_code("reference.track") + self.sm.report.by_code("reference.marker"), [])
         self.assertEqual(len(self.sm.report.by_code("next_cp.drawn")), 0)
         self.assertEqual(len(self.sm.report.by_code("mast.powered")), 0)
-        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 8, "missing": 31})
+        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 8, "missing": 17})   # 15 mast.kind, 2 interlocking.no_lever (Railroad 31954c5, working tree of 2026-11-03)
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):
         """ADR 0013 §5. The library's mast symbols carry a fixed Kind (Railroad 1695d48), but that commit touched no placed
-        field: the eleven masts of the POC sheets (Corporal, Sargent) state theirs, and the 29 on the five older sheets
-        state none until their placements are updated from the library; each is reported missing, never inferred."""
+        field: a placement states its Kind only once it is updated from the library. As of the Railroad working tree of
+        2026-11-03 (31954c5 plus uncommitted edits to the seven sheets and the library), 25 of the 40 masts state theirs
+        and 15 state none, Christopher's four among them; each is reported missing, never inferred."""
         masts = {(i, n): a["given"].get("Kind") for i, ix in self.model["interlockings"].items() for n, a in ix.get("appliances", {}).items()
                  if a["given"]["Appliance"] == "mast"}
         stated = {k: v for k, v in masts.items() if v}
-        self.assertEqual({i for i, _ in stated}, {"Corporal", "Sargent"})
-        self.assertEqual((len(stated), set(stated.values())), (11, {"CONTROLLED", "PERMISSIVE"}))
+        self.assertEqual({i for i, _ in stated}, set(self.model["interlockings"]) - {"Christopher"})
+        self.assertEqual((len(stated), set(stated.values())), (25, {"CONTROLLED", "PERMISSIVE"}))
         missing = self.sm.report.by_code("mast.kind")
         self.assertEqual(len(missing), len(masts) - len(stated))
-        self.assertEqual(len(missing), 29)
+        self.assertEqual(len(missing), 15)
         self.assertEqual({d.severity for d in missing}, {"missing"})
 
     def test_no_circuit_carries_two_names(self):

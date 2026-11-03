@@ -303,6 +303,13 @@
       "feature": null,
       "replacedBy": null
     },
+    "head.direction": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
     "head.letter": {
       "level": "missing",
       "lifecycle": "active",
@@ -506,6 +513,13 @@
       "feature": null,
       "replacedBy": null
     },
+    "station.duplicate": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
     "track.duplicate": {
       "level": "error",
       "lifecycle": "active",
@@ -528,6 +542,13 @@
       "replacedBy": null
     },
     "track.shorted": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "train_order.track": {
       "level": "error",
       "lifecycle": "active",
       "since": "0.4.0",

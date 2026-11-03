@@ -117,6 +117,17 @@ class Interlocking:
 
 
 @dataclass
+class Station:
+    """A timetable station (the owner, 2026-11-03): a place on the line a train order signal, a house or a milepost
+    belongs to, named by its Name and stated with its Milepost. Not a code line station (``reference.STATION``: a
+    house or an interlocking that is addressed on a code line): the two words name different things."""
+    name: str
+    sym: Symbol
+    given: dict[str, str] = field(default_factory=dict)
+    interlocking: Optional[str] = None                                # relation: the interlocking whose sheet it is drawn under
+
+
+@dataclass
 class Column:
     number: str
     sym: Symbol
@@ -164,8 +175,9 @@ class Seams:
     transports: dict[str, Transport] = field(default_factory=dict)
     encodings: dict[str, Encoding] = field(default_factory=dict)
     interlockings: dict[str, Interlocking] = field(default_factory=dict)
+    stations: dict[str, Station] = field(default_factory=dict)        # timetable stations, layout-level, by Name
     office_units: dict[str, OfficeUnit] = field(default_factory=dict)
-    trackplan: Optional["object"] = None                              # trackplan.Trackplan: appliances and track as drawn
+    trackplan: Optional["object"] = None                             # trackplan.Trackplan: appliances and track as drawn
     derived: bool = False                                             # the reference derivation's diagnostics are in report
 
 
@@ -175,7 +187,8 @@ class Seams:
 # identity is decided here and nowhere else (the owner, 2026-10-26). Every other symbol's key is ``Name``. A CMRInet
 # Node's and a driver's key is its ``Address``, unique within its owner (three-maps D11); a bit's ``IB.n`` and an
 # encoded driver's ``Kind.served`` are computed keys, so those symbols have no key field.
-KEYS = {("STRUCTURE", "CONTROL_POINT"): "CP Name", ("COLUMN", None): "Column", ("IODRIVER", None): "Address"}
+KEYS = {("STRUCTURE", "CONTROL_POINT"): "CP Name", ("STRUCTURE", "STATION"): "Name", ("COLUMN", None): "Column",
+        ("IODRIVER", None): "Address"}
 
 # A CMRInet driver states what it is in ``Kind`` (the owner, 2026-10-30): ``NODE``, keyed by its Address (its UA), or
 # one of its bits, ``IB`` or ``OB``, whose Kind is its direction. ``NodeType`` is an ordinary node setting.
@@ -319,6 +332,7 @@ def resolve(source: Source) -> Seams:
     _transports(seams)
     _encodings(seams)
     _interlockings(seams)
+    _stations(seams)
     _houses(seams)
     _nodes(seams)
     _drivers(seams)
@@ -448,6 +462,27 @@ def _unit_of_sheet(sm: Seams, sheet: str) -> Optional[Interlocking]:
     """The interlocking whose sheet is this sheet or an ancestor of it (the folder)."""
     hits = [ix for ix in sm.interlockings.values() if in_scope(ix.sym.sheet, sheet)]
     return max(hits, key=lambda ix: len(ix.sym.sheet)) if hits else None
+
+
+def _stations(sm: Seams) -> None:
+    """A timetable station (STRUCTURE, Kind STATION; the owner, 2026-11-03) is a layout entity keyed by its Name: its
+    Milepost and every other stated field are ``given``, and the interlocking whose sheet it is drawn under is
+    ``relations.interlocking`` (ADR 0004 D12: a symbol belongs to the INTERLOCKING on its sheet or the nearest ancestor
+    sheet that has one), absent for a station drawn under none. Two stations with one Name are an error: a station is
+    one place on the line. It is not a code line station (``reference.STATION``)."""
+    for s in sm.source.where("STRUCTURE", "STATION"):
+        name = key_of(s, sm.report)
+        if not name:
+            sm.report.missing("entity.name", "a station has no Name; it is not written", source=loc(s))
+            continue
+        if name.casefold() in {n.casefold() for n in sm.stations}:
+            sm.report.error("station.duplicate", f"two stations named {name!r}; a timetable station is one place on the line", source=loc(s))
+            continue
+        st = Station(name, s, given_of(s))
+        check_milepost(s, sm.report, f"station {name}")
+        ix = _unit_of_sheet(sm, s.sheet)
+        st.interlocking = ix.name if ix else None
+        sm.stations[name] = st
 
 
 def _houses(sm: Seams) -> None:
