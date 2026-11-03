@@ -700,12 +700,19 @@ HS   | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=S
         self.assertEqual(layout_model.errors(emit.emit(sm)), [])
 
     def test_a_head_letter_is_a_direction_each_at_most_once(self):
+        """Incomplete is missing, wrong is an error (the owner, 2026-11-03): a head with no Name is head.letter; one whose
+        letter is no direction (A, or the L and R of a mast's name grammar) can never work, head.direction, and is left
+        out; a direction twice is head.duplicate."""
         heads = """
 HA   | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=A
+HL   | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=L
+H0   | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=
 HN2  | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=N
 """
-        sm, ix = compile_(self.STATION + self.SIGNAL + heads, self.TRACK + "h | TO1.H HN.M HS.M HA.M HN2.M\n")
-        self.assertEqual(diags(sm, "head."), [("head.duplicate", "HN2"), ("head.letter", "HA")])
+        sm, ix = compile_(self.STATION + self.SIGNAL + heads, self.TRACK + "h | TO1.H HN.M HS.M HA.M HL.M H0.M HN2.M\n")
+        self.assertEqual(diags(sm, "head."), [("head.direction", "HA"), ("head.direction", "HL"), ("head.duplicate", "HN2"), ("head.letter", "H0")])
+        self.assertEqual({d.code: d.severity for d in sm.report.diags if d.code.startswith("head.")},
+                         {"head.direction": "error", "head.duplicate": "error", "head.letter": "missing"})
         self.assertEqual(sorted(ix["appliances"]["Gilroy"]["heads"]), ["N", "S"])
 
     def test_a_pin_on_the_track_is_an_error(self):
@@ -874,20 +881,21 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(self.sm.report.by_code("reference.track") + self.sm.report.by_code("reference.marker"), [])
         self.assertEqual(len(self.sm.report.by_code("next_cp.drawn")), 0)
         self.assertEqual(len(self.sm.report.by_code("mast.powered")), 0)
-        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 8, "missing": 31})
+        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 8, "missing": 17})   # 15 mast.kind, 2 interlocking.no_lever (Railroad 31954c5, working tree of 2026-11-03)
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):
         """ADR 0013 §5. The library's mast symbols carry a fixed Kind (Railroad 1695d48), but that commit touched no placed
-        field: the eleven masts of the POC sheets (Corporal, Sargent) state theirs, and the 29 on the five older sheets
-        state none until their placements are updated from the library; each is reported missing, never inferred."""
+        field: a placement states its Kind only once it is updated from the library. As of the Railroad working tree of
+        2026-11-03 (31954c5 plus uncommitted edits to the seven sheets and the library), 25 of the 40 masts state theirs
+        and 15 state none, Christopher's four among them; each is reported missing, never inferred."""
         masts = {(i, n): a["given"].get("Kind") for i, ix in self.model["interlockings"].items() for n, a in ix.get("appliances", {}).items()
                  if a["given"]["Appliance"] == "mast"}
         stated = {k: v for k, v in masts.items() if v}
-        self.assertEqual({i for i, _ in stated}, {"Corporal", "Sargent"})
-        self.assertEqual((len(stated), set(stated.values())), (11, {"CONTROLLED", "PERMISSIVE"}))
+        self.assertEqual({i for i, _ in stated}, set(self.model["interlockings"]) - {"Christopher"})
+        self.assertEqual((len(stated), set(stated.values())), (25, {"CONTROLLED", "PERMISSIVE"}))
         missing = self.sm.report.by_code("mast.kind")
         self.assertEqual(len(missing), len(masts) - len(stated))
-        self.assertEqual(len(missing), 29)
+        self.assertEqual(len(missing), 15)
         self.assertEqual({d.severity for d in missing}, {"missing"})
 
     def test_no_circuit_carries_two_names(self):

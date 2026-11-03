@@ -390,9 +390,9 @@ def _heads(mast: Symbol, others, report, interlocking: str, letters: Optional[tu
             if not letter:
                 report.missing("head.letter", f"{interlocking}: a head on {what} has no Name (its letter)", source=loc(o))
                 continue
-            if letters is not None and letter not in letters:
-                report.missing("head.letter", f"{interlocking}: head {letter} on {what} names no direction; its letter is one of "
-                               f"{', '.join(letters)}", source=loc(o))
+            if letters is not None and letter not in letters:         # wrong, not incomplete: an error (the owner, 2026-11-03)
+                report.error("head.direction", f"{interlocking}: head {letter} on {what} names no direction; its letter is one of "
+                             f"{', '.join(letters)}", source=loc(o))
                 continue
             if letter in heads:
                 report.error("head.duplicate", f"{interlocking}: {what} has two heads {letter}", source=loc(o))
