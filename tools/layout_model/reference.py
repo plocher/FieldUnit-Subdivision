@@ -123,7 +123,8 @@ def code_line_steps(encoding: Optional[str], user: Optional[dict[str, dict]] = N
 # 19/31 (via the owner's summary of 2026-11-03, unverified against an opened edition of the Standard Code).
 # FieldUnit's enum is the one home of these words; this table mirrors it (ADR 0012 §6 placeholder reference data).
 # Derive writes the list and the normal state into the file (a train order appliance's ``derived.states`` and
-# ``derived.normal``) so consumers read them there. No blade angle and no lamp colour: that is aspect policy, later.
+# ``derived.normal``) so consumers read them there; the canonical file orders every list (ADR 0008 §4.8), so the order
+# from the most restrictive is this table's. No blade angle and no lamp colour: that is aspect policy, later.
 #   STOP            the train stops and signs for Form 31 orders
 #   RECEIVE_ORDERS  Form 19 orders handed up on the fly; the train slows
 #   PROCEED         no orders held

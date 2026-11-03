@@ -1343,7 +1343,7 @@
                   "items": {
                     "$ref": "#/$defs/trainOrderState"
                   },
-                  "description": "A train order signal's states in order from the most restrictive (STOP, RECEIVE_ORDERS, PROCEED), written from the reference data (reference.TRAIN_ORDER_STATES; the owner, 2026-11-03) so consumers read the vocabulary from the file. Only on Appliance train_order."
+                  "description": "A train order signal's three states (STOP, RECEIVE_ORDERS, PROCEED), written from the reference data (reference.TRAIN_ORDER_STATES; the owner, 2026-11-03) so consumers read the vocabulary from the file. The canonical writer orders every list (ADR 0008 §4.8), so this list carries the set, not the order: the order from the most restrictive is the reference table's, with normal the least restrictive end. Only on Appliance train_order."
                 },
                 "normal": {
                   "$ref": "#/$defs/trainOrderState",

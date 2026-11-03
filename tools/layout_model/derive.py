@@ -43,8 +43,9 @@ names every other track pin its wire reaches, so the relation is symmetric):
   §5); each of its heads derives ``direction``, ``LEFT`` or ``RIGHT``, from the letter it is keyed by as ADR 0003 D1
   maps a mast's compass letter (``grammar.direction_of``: N and W are LEFT, S and E RIGHT). Its ``relations.station``
   names a timetable station of ``layout.stations``; one that names none is ``train_order.station`` at missing. No
-  mast rule, lever rule or code line token reads it. It derives ``states``, the three-state vocabulary in order
-  (``STOP``, ``RECEIVE_ORDERS``, ``PROCEED``), and ``normal`` (``PROCEED``) from the reference data
+  mast rule, lever rule or code line token reads it. It derives ``states``, the three-state vocabulary (``STOP``,
+  ``RECEIVE_ORDERS``, ``PROCEED``; the canonical file orders every list, ADR 0008 §4.8, so the order from the most
+  restrictive is the reference table's, not the file's), and ``normal`` (``PROCEED``) from the reference data
   (``reference.TRAIN_ORDER_STATES``: Rule 221, Rules 207-208, Form 19/31 via the owner's summary of 2026-11-03,
   unverified against an opened edition of the Standard Code), so consumers read the words from the file.
   Its control source is a local lever, a field device of Appliance ``lever`` and Style ``train_order`` serving it by
