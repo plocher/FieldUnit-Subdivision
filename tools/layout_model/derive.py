@@ -33,7 +33,10 @@ names every other track pin its wire reaches, so the relation is symmetric):
   are the circuits on its pins, in A, B order: what it counts toward.
 - **A plate requires a PERMISSIVE mast** (ADR 0013 §5): a policy row of Kind ``RULE_290_G`` or ``RULE_290_R`` states
   ``relations.mast``; one on no mast, or on a mast that is not ``PERMISSIVE``, is ``plate.mast`` at error.
-- **Control points** by propagation from the houses (the owner, 2026-10-26; ADR 0012 §4).
+- **Control points** by propagation from the houses (the owner, 2026-10-26; ADR 0012 §4). An ``ABSOLUTE`` or
+  ``PERMISSIVE`` mast belongs to no control point (ADR 0013 §5: automatic masts state no CP Name; §4: block track is
+  outside every interlocking): it derives no ``controlPoint``, under one house as under several, and no chain runs
+  through it. A mast with no Kind keeps today's handling (``mast.kind`` reports it).
 - **Consumers of another station's indications** (the owner, 2026-10-27): a ``track.consumers`` row is a one-sided
   reference, ``relations.indication`` the token it consumes (``Corporal:2NATK``); a track circuit's token names the
   circuit the row stands on.
@@ -305,7 +308,7 @@ class _Plan:
         Reached by chains from two houses and stating none is an error, and so is reached by none. A track circuit
         marker stands for its circuit."""
         houses = {h.casefold(): h for h in self.houses}
-        apps = list(self.appliances.items())
+        apps = [(n, a) for n, a in self.appliances.items() if not _automatic_mast(a)]   # no control point (ADR 0013 §5)
         joints = [row for row in self.track.get("joints", []) if row.get("given", {}).get("Kind") == "IRJ_SIGNAL"]
 
         def region(node: str) -> Optional[str]:
@@ -1070,6 +1073,12 @@ class _Derivation:
                 self.r.add("transport.reach", f"FieldUnit {name} reaches {t} through its code line {rel['codeline']}; its processor "
                            f"{rel['processor']} anchors no {t} instance", f"interlockings/{name}",
                            (f"layout/processors/{rel['processor']}", f"layout/transports/{t}"))
+
+
+def _automatic_mast(appliance: dict[str, Any]) -> bool:
+    """A mast that states Kind ``ABSOLUTE`` or ``PERMISSIVE``: automatic, of no control point (ADR 0013 §5)."""
+    g = appliance.get("given", {})
+    return g.get("Appliance") == "mast" and g.get("Kind") in MAST_KINDS - {"CONTROLLED"}
 
 
 def _clean(d: dict[str, Any]) -> dict[str, Any]:

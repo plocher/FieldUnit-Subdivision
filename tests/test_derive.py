@@ -310,6 +310,20 @@ class DoubleJoint(unittest.TestCase):
         self.assertEqual(plated("X:832SA", "CONTROLLED"), [("plate.mast", "PL1")])
         self.assertEqual(plated("X:832SA", ""), [("plate.mast", "PL1")])
 
+    def test_an_automatic_mast_belongs_to_no_control_point(self):
+        """ADR 0013 §5 and §4: under one house every appliance is the house's, but an ABSOLUTE or PERMISSIVE mast derives no
+        controlPoint (absent, no diagnostic); a CONTROLLED one on the same double joint derives the house."""
+        m = self.block({"A": "X:832NA", "B": "X:832SA"})
+        m["interlockings"]["X"]["appliances"]["832NA"]["given"]["Kind"] = "CONTROLLED"
+        out, diags = run(m)
+        apps = out["interlockings"]["X"]["appliances"]
+        self.assertEqual(apps["832NA"]["derived"]["controlPoint"], "X:East")
+        self.assertNotIn("controlPoint", apps["832SA"]["derived"])
+        self.assertEqual(apps["832T"]["derived"]["controlPoint"], "X:East")
+        self.assertEqual(only(diags, "control_point"), [])
+        m["interlockings"]["X"]["appliances"]["832SA"]["given"]["Kind"] = "ABSOLUTE"
+        self.assertNotIn("controlPoint", run(m)[0]["interlockings"]["X"]["appliances"]["832SA"].get("derived", {}))
+
     def test_a_permissive_mast_on_a_double_joint_over_a_powered_derail_is_a_warning(self):
         """ADR 0013 §5 on a double joint: 832SA governs into side B (834T); an independent derail with a CP Name there is
         powered (§4), one that follows a hand-throw lock is not."""
