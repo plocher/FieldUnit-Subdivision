@@ -465,6 +465,23 @@ class NextCPs(unittest.TestCase):
         out, diags = run(layout(X=interlocking("N1 | ends | Kind=NEXT_CP Interlocking=Lick\n", "", "East")))
         self.assertEqual(diags, [("next_cp.off_layout", "X")])
 
+    def test_one_marked_off_layout_is_reported_nothing_and_pairs_with_nothing(self):
+        """ADR 0013 §21 gap 7 (the owner, 2026-11-03): Style off_layout states the interlocking will never be drawn."""
+        out, diags = run(layout(X=interlocking("N1 | ends | Kind=NEXT_CP Interlocking=Lick Style=off_layout\n", "", "East")))
+        self.assertEqual(only(diags, "next_cp"), [])
+        self.assertEqual(row(out["interlockings"]["X"], "N1")["given"], {"Kind": "NEXT_CP", "Interlocking": "Lick", "Style": "off_layout"})
+        m = pair(2, 1)
+        m["interlockings"]["A"]["track"]["ends"][0]["given"]["Style"] = "off_layout"      # A: one marked, one not; B: one back
+        self.assertEqual(only(run(m)[1], "next_cp"), [("next_cp.drawn_neighbour", "N0")])
+
+    def test_the_mark_on_a_neighbour_that_is_drawn_lies(self):
+        m = pair(1, 1)
+        m["interlockings"]["A"]["track"]["ends"][0]["given"]["Style"] = "off_layout"
+        self.assertEqual(only(run(m)[1], "next_cp"), [("next_cp.drawn_neighbour", "N0"), ("next_cp.pair", "B")])
+        (d,) = derive.derive(m)[1].by_code("next_cp.drawn_neighbour")
+        self.assertEqual((d.severity, d.entities), ("warning", ("interlockings/A/track/ends/N0", "interlockings/B")))
+        self.assertEqual(d.text, "A: a NextCP to B is marked off_layout, but B is on this layout")
+
     def test_a_next_cp_whose_track_is_drawn_through_to_the_neighbour_is_redundant(self):
         """ADR 0013 §7.1: block track drawn across sheets replaces the NextCP inside CTC. A's NextCP to B stands on a wire
         that also reaches B's marker (by name) or B's joint (by its id): warning, with B as the second party, and the
@@ -929,6 +946,60 @@ class Strip(unittest.TestCase):
         self.assertEqual(layout_model.dumps(derive.derive(stale)[0]), layout_model.dumps(derive.derive(m)[0]))
 
 
+def wired(m: dict, anchors: dict[str, list[str]], codelines: dict[str, tuple[str, str]] = {}, encodings: dict[str, tuple[str, str]] = {},
+          runs: dict[str, str] = {}) -> dict:
+    """Transports by name with the processors that anchor them; code lines and I/O encodings as name: (transport, processor);
+    each interlocking's processor. Every processor named is in ``layout.processors``."""
+    layout = m["layout"]
+    layout["transports"] = {t: {"given": {"Kind": t}, "relations": {"anchors": ps}} for t, ps in anchors.items()}
+    layout["codelines"] = {c: {"given": {"Kind": "AAR"}, "relations": {"transport": t, "processor": p}} for c, (t, p) in codelines.items()}
+    layout["ioEncodings"] = {e: {"given": {"Kind": e}, "relations": {"transport": t, "processor": p}} for e, (t, p) in encodings.items()}
+    names = {p for ps in anchors.values() for p in ps} | {p for _, p in codelines.values()} | {p for _, p in encodings.values()} | set(runs.values())
+    layout["processors"] = {p: {"given": {"Kind": "PROCESSOR"}} for p in sorted(names)}
+    for ix, p in runs.items():
+        m["interlockings"][ix].setdefault("relations", {})["processor"] = p
+    return m
+
+
+class Reach(unittest.TestCase):
+    """ADR 0008 §4.9 (the owner, 2026-10-24 and 2026-11-03): a FieldUnit reaches its code line's transport through the
+    code line, written as its processor's ``derived.transports``; an anchored instance nothing rides on a processor that
+    already reaches that transport through a code line is an unneeded duplicate, ``transport.reach`` at info."""
+
+    def model(self, **kw) -> dict:
+        m = on_line(layout(X=interlocking(ONE_SWITCH, ONE_SWITCH_WIRES, "East")), "X")
+        return wired(m, codelines={"Line": ("MQTT", "Office")}, runs={"X": "Field"}, **kw)
+
+    def transports(self, out: dict) -> dict[str, list[str]]:
+        return {p: proc["derived"]["transports"] for p, proc in out["layout"]["processors"].items()}
+
+    def test_a_field_processor_that_anchors_nothing_reaches_its_code_lines_transport_and_nothing_is_reported(self):
+        out, diags = run(self.model(anchors={"MQTT": ["Office"]}))
+        self.assertEqual(only(diags, "transport"), [])
+        self.assertEqual(self.transports(out), {"Field": ["MQTT"], "Office": ["MQTT"]})
+
+    def test_an_anchor_nothing_rides_beside_the_code_lines_reach_is_an_unneeded_duplicate(self):
+        m = self.model(anchors={"MQTT": ["Field", "Office"]})
+        out, diags = run(m)
+        self.assertEqual(only(diags, "transport"), [("transport.reach", "MQTT")])
+        (d,) = derive.derive(m)[1].by_code("transport.reach")
+        self.assertEqual(d.severity, "info")
+        self.assertEqual(d.entities, ("layout/transports/MQTT", "layout/processors/Field", "interlockings/X"))
+        self.assertEqual(d.text, "processor Field anchors an MQTT instance nothing rides; its FieldUnit X already reaches MQTT through code line Line")
+        self.assertEqual(self.transports(out), {"Field": ["MQTT"], "Office": ["MQTT"]})
+
+    def test_an_anchor_an_encoding_rides_is_not_a_duplicate(self):
+        """Gilroy Caltrain's shape: the field processor anchors MQTT for its JMRI I/O encoding and its code line rides
+        MQTT elsewhere; the office's anchor is ridden by the code line."""
+        out, diags = run(self.model(anchors={"MQTT": ["Field", "Office"]}, encodings={"JMRI": ("MQTT", "Field")}))
+        self.assertEqual(only(diags, "transport"), [])
+
+    def test_an_anchor_of_a_transport_no_code_line_reaches_is_listed_and_not_reported(self):
+        out, diags = run(self.model(anchors={"MQTT": ["Office"], "CMRInet": ["Field"]}))
+        self.assertEqual(only(diags, "transport"), [])
+        self.assertEqual(self.transports(out), {"Field": ["CMRInet", "MQTT"], "Office": ["MQTT"]})
+
+
 class SPCoastExample(unittest.TestCase):
     """The gate (ADR 0011 §5): the committed example, stripped of every derived map and derived again, is the same
     bytes, with the importer's diagnostic counts."""
@@ -940,7 +1011,7 @@ class SPCoastExample(unittest.TestCase):
         self.assertNotIn("rules", stripped["provenance"])
         out, report = derive.derive(stripped)
         self.assertEqual(layout_model.dumps(out), text)
-        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 8, "missing": 31})   # 2 interlocking.no_lever, 29 mast.kind (Railroad 31954c5)
+        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 0, "missing": 2})    # 2 interlocking.no_lever (Railroad 28647dc)
 
 
 if __name__ == "__main__":

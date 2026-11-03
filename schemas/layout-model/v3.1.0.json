@@ -329,6 +329,25 @@
           "additionalProperties": {
             "$ref": "#/$defs/driver"
           }
+        },
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "transports": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/layoutName"
+                  },
+                  "description": "The transports this processor reaches (ADR 0013 §11): those it anchors and the code line transports of the FieldUnits it runs, reached through the code line (ADR 0008 §4.9). Sorted."
+                }
+              }
+            }
+          ]
         }
       }
     },
@@ -1361,6 +1380,10 @@
                     "RIGHT",
                     "BOTH"
                   ]
+                },
+                "Style": {
+                  "type": "string",
+                  "description": "On a NextCP, off_layout: the interlocking it names will never be drawn (ADR 0013 §21 gap 7; the owner, 2026-11-03), so nothing is reported for it and nothing pairs back."
                 }
               }
             },

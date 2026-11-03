@@ -741,20 +741,26 @@ class _Derivation:
 
     def next_cps(self) -> None:
         """A NextCP names the interlocking its track leads to; that interlocking's NextCPs lead back as many times. One
-        beyond the layout (Lick, Hollister) is reported at info. One whose track is also drawn through to another
-        interlocking's track is redundant, ``next_cp.drawn`` at warning (ADR 0013 §7.1: block track is drawn from one
-        control point to the next and replaces the NextCP inside CTC; it stays for a neighbour that is not drawn)."""
+        marked ``Style off_layout`` says its interlocking will never be drawn (ADR 0013 §21 gap 7; the owner, 2026-11-03):
+        nothing is reported for it and it counts toward no pair, since nothing pairs back; the mark on one whose
+        interlocking is in the file lies, ``next_cp.drawn_neighbour`` at warning. One beyond the layout without the mark
+        is reported at info. One whose track is also drawn through to another interlocking's track is redundant,
+        ``next_cp.drawn`` at warning (ADR 0013 §7.1: block track is drawn from one control point to the next and
+        replaces the NextCP inside CTC; it stays for a neighbour that is not drawn)."""
         count: dict[tuple[str, str], int] = defaultdict(int)
         for a, plan in self.plans.items():
             for row in plan.track.get("ends", []):
                 g = row.get("given", {})
-                if g.get("Kind") == "NEXT_CP" and g.get("Interlocking"):
+                if g.get("Kind") == "NEXT_CP" and g.get("Interlocking") and not _off_layout(row):
                     count[(a, g["Interlocking"])] += 1
         for a, plan in self.plans.items():
             for row in plan.track.get("ends", []):
                 g = row.get("given", {})
                 if g.get("Kind") != "NEXT_CP":
                     continue
+                if _off_layout(row) and g.get("Interlocking") in self.plans:
+                    self.r.add("next_cp.drawn_neighbour", f"{a}: a NextCP to {g['Interlocking']} is marked off_layout, but {g['Interlocking']} "
+                               f"is on this layout", plan.where("track", "ends", row.get("id", "")), (f"interlockings/{g['Interlocking']}",))
                 drawn = sorted(x for n in plan.component(f"{plan.row_prefix(row)}.track") if (x := self.drawn_in_other(a, n)))
                 if drawn:
                     self.r.add("next_cp.drawn", f"{a}: a NextCP{' to ' + g['Interlocking'] if g.get('Interlocking') else ''} stands on "
@@ -1083,9 +1089,12 @@ class _Derivation:
     # --------------------------------------------------------------------------------------------- reach
 
     def reach(self) -> None:
-        """A driver whose IC is an encoding needs that I/O encoding on its processor (ADR 0009 §3.6). A FieldUnit reaches
-        its code line's transport through the code line; when its processor anchors no instance of that transport, the
-        layout relies on that derivation, reported at info."""
+        """A driver whose IC is an encoding needs that I/O encoding on its processor (ADR 0009 §3.6). A processor reaches
+        the transports it anchors and, through the code line of each FieldUnit it runs, that code line's transport
+        (ADR 0008 §4.9: the reach is derived from the code line, never drawn as an anchor), written as
+        ``derived.transports`` for consumers (ADR 0013 §11). An anchored instance that no I/O encoding and no code line
+        rides, on a processor that already reaches that transport through a code line, duplicates what the code line
+        says: ``transport.reach`` at info (ADR 0008 §4.9; the owner, 2026-11-03)."""
         layout = self.m.get("layout", {})
         for p, proc in layout.get("processors", {}).items():
             for address, d in proc.get("drivers", {}).items():
@@ -1095,14 +1104,38 @@ class _Derivation:
                                     for e in layout.get("ioEncodings", {}).values()):
                     self.r.add("driver.encoding", f"driver {ic} {address} on {p}: no {kind} I/O encoding rides a transport anchored on {p}",
                                f"layout/processors/{p}/drivers/{address}", (f"layout/processors/{p}",))
+        anchored: dict[str, set[str]] = defaultdict(set)                      # processor -> the transports it anchors
+        for t, tr in layout.get("transports", {}).items():
+            for p in tr.get("relations", {}).get("anchors", []):
+                anchored[p].add(t)
+        ridden: set[tuple[str, str]] = set()                                  # (transport, processor) an encoding rides
+        for e in list(layout.get("codelines", {}).values()) + list(layout.get("ioEncodings", {}).values()):
+            rel = e.get("relations", {})
+            if rel.get("transport") and rel.get("processor"):
+                ridden.add((rel["transport"], rel["processor"]))
+        via: dict[str, dict[str, list[tuple[str, str]]]] = defaultdict(lambda: defaultdict(list))   # processor -> transport -> (FieldUnit, code line)
         for name, ix in self.m.get("interlockings", {}).items():
             rel = ix.get("relations", {})
             e = layout.get("codelines", {}).get(rel.get("codeline")) if rel.get("codeline") else None
             t = e.get("relations", {}).get("transport") if e else None
-            if t and rel.get("processor") and rel["processor"] not in layout.get("transports", {}).get(t, {}).get("relations", {}).get("anchors", []):
-                self.r.add("transport.reach", f"FieldUnit {name} reaches {t} through its code line {rel['codeline']}; its processor "
-                           f"{rel['processor']} anchors no {t} instance", f"interlockings/{name}",
-                           (f"layout/processors/{rel['processor']}", f"layout/transports/{t}"))
+            if t and rel.get("processor"):
+                via[rel["processor"]][t].append((name, rel["codeline"]))
+        for p, proc in layout.get("processors", {}).items():
+            proc.setdefault("derived", {})["transports"] = sorted(anchored[p] | set(via[p]), key=sort_key)
+            for t in sorted(anchored[p] & set(via[p]), key=sort_key):
+                if (t, p) in ridden:
+                    continue
+                units = sorted(via[p][t], key=lambda u: sort_key(u[0]))
+                lines = sorted({c for _, c in units}, key=sort_key)
+                self.r.add("transport.reach", f"processor {p} anchors an {t} instance nothing rides; its FieldUnit{'s' * (len(units) > 1)} "
+                           f"{', '.join(x for x, _ in units)} already reach{'es' * (len(units) == 1)} {t} through code line"
+                           f"{'s' * (len(lines) > 1)} {', '.join(lines)}",
+                           f"layout/transports/{t}", (f"layout/processors/{p}",) + tuple(f"interlockings/{x}" for x, _ in units))
+
+
+def _off_layout(row: dict[str, Any]) -> bool:
+    """A NextCP marked ``Style off_layout``: its interlocking will never be drawn (ADR 0013 §21 gap 7)."""
+    return row.get("given", {}).get("Style") == "off_layout"
 
 
 def _automatic_mast(appliance: dict[str, Any]) -> bool:
