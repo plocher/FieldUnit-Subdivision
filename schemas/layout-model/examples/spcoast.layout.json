@@ -1762,8 +1762,7 @@
             "circuits": {
               "approach": "Corporal:834T",
               "governed": "Corporal:832T"
-            },
-            "controlPoint": "Corporal:Corporal"
+            }
           },
           "given": {
             "Appliance": "mast",
@@ -1784,8 +1783,7 @@
             "circuits": {
               "approach": "Corporal:832T",
               "governed": "Corporal:834T"
-            },
-            "controlPoint": "Corporal:Corporal"
+            }
           },
           "given": {
             "Appliance": "mast",
@@ -7141,8 +7139,7 @@
             "circuits": {
               "approach": "Sargent:836T",
               "governed": "Corporal:834T"
-            },
-            "controlPoint": "Sargent:Sargent"
+            }
           },
           "given": {
             "Appliance": "mast",
@@ -7163,8 +7160,7 @@
             "circuits": {
               "approach": "Corporal:834T",
               "governed": "Sargent:836T"
-            },
-            "controlPoint": "Sargent:Sargent"
+            }
           },
           "given": {
             "Appliance": "mast",
