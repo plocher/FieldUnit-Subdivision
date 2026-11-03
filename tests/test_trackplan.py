@@ -28,7 +28,7 @@ P1   | Processor    | STRUCTURE | Kind=PROCESSOR Name=Alpha Board=cpNode
 """
 
 
-def symbols(table: str) -> list[Symbol]:
+def symbols(table: str, sheet: str = SHEET) -> list[Symbol]:
     """Rows of ``ref | library symbol | Role | Field=value ...`` (a value with spaces in double quotes)."""
     out = []
     for line in filter(str.strip, table.splitlines()):
@@ -37,7 +37,7 @@ def symbols(table: str) -> list[Symbol]:
         for tok in shlex.split(fields):
             k, _, v = tok.partition("=")
             kv[k.replace("_", " ")] = v
-        out.append(Symbol(ref, f"Railroad-Trackplan:{lib}", "", {"Role": role, **kv}, SHEET))
+        out.append(Symbol(ref, f"Railroad-Trackplan:{lib}", "", {"Role": role, **kv}, sheet))
     return out
 
 
@@ -497,6 +497,51 @@ class DoubleJoint(unittest.TestCase):
         sm, ix = compile_(DOUBLE_JOINT, DOUBLE_JOINT_NETS.replace("sb   | J1.SIGNAL_B M2.SIGNAL\n", ""))
         self.assertEqual(diags(sm, "joint"), [])
         self.assertEqual(rows(ix, "joints")[0]["relations"]["masts"], {"A": "X:832NA"})
+
+
+class AcrossSheets(unittest.TestCase):
+    """ADR 0013 §7.1: block track is drawn from one control point to the next, across sheets; a hierarchical label
+    continues the run and pairing comes from the netlist. A track net is read across sheets: each side names the other's
+    pins by their own interlocking (a marker by qualified name, an unnamed row by its id). The Corporal to Sargent shape:
+    834T is drawn on Y's sheet and reaches X's double joint through the label."""
+
+    X = """
+H1   | House            | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
+J1   | IRJ-Signals      | TRACK     | Kind=IRJ_SIGNALS
+M1   | Mast_Single      | APPLIANCE | Appliance=mast Style=single Kind=PERMISSIVE Name=834NA
+M2   | Mast_Single      | APPLIANCE | Appliance=mast Style=single Kind=PERMISSIVE Name=834SA
+TC1  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=836T
+"""
+    Y = """
+IX2  | Interlocking     | STRUCTURE | Kind=INTERLOCKING Name=Y
+P2   | Processor        | STRUCTURE | Kind=PROCESSOR Name=Beta Board=cpNode
+H2   | House            | STRUCTURE | Kind=CONTROL_POINT CP_Name=West
+J2   | IRJ              | TRACK     | Kind=IRJ
+TC2  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=834T
+"""
+    NETS = """
+ToX  | J1.A TC2.TC J2.B
+b    | J1.B TC1.TC
+s1   | J1.SIGNAL_A M1.SIGNAL
+s2   | J1.SIGNAL_B M2.SIGNAL
+n1   | IX2.Processor P2.Processor
+"""
+
+    def setUp(self):
+        syms = symbols(SCAFFOLD + self.X) + symbols(self.Y, "/Y/")
+        self.sm = seams.resolve(from_symbols(syms, nets("n0 | IX1.Processor P1.Processor\n" + self.NETS)))
+        self.model = emit.emit(self.sm)
+        self.x, self.y = self.model["interlockings"]["X"], self.model["interlockings"]["Y"]
+
+    def test_each_side_names_the_other_sheets_pins_by_their_own_interlocking(self):
+        (j1,) = self.x["track"]["joints"]
+        (j2,) = self.y["track"]["joints"]
+        self.assertEqual(j1["relations"]["A"], [at(self.sm, "J2", "B"), "Y:834T.TC"])
+        self.assertEqual(j1["relations"]["B"], ["X:836T.TC"])
+        self.assertEqual(self.y["appliances"]["834T"]["relations"]["TC"], sorted([at(self.sm, "J1", "A"), at(self.sm, "J2", "B")]))
+        self.assertEqual(j2["relations"]["B"], sorted([at(self.sm, "J1", "A"), "Y:834T.TC"]))
+        self.assertEqual(j1["relations"]["masts"], {"A": "X:834NA", "B": "X:834SA"})
+        self.assertEqual(diags(self.sm, "track", "joint", "appliance"), [])
 
 
 class Boundary(unittest.TestCase):

@@ -31,6 +31,14 @@ A plate is a POLICY of Kind ``RULE_290_G`` or ``RULE_290_R`` (ADR 0013 §5, 2026
 mast's SIGNAL net: its row's relation is ``mast``, the mast on that net, and it has no track side; that the mast is
 ``PERMISSIVE`` is the reference derivation's check.
 
+A track net is read across sheets (ADR 0013 §7.1, 2026-11-02): block track is drawn from one control point to the next,
+a hierarchical label continues the run, and pairing comes from netlist connectivity, so a track pin's wire names every
+other track pin on its net whatever sheet that pin is drawn on, each by its own sheet's interlocking (Sargent's 834
+double joint names ``Corporal:834T.TC`` on its side A, and Corporal's 834T names the joint's pin by its id). No pairing
+step exists. The same holds for a signal pin and a head's pin: a mast or a head on another sheet is read as drawn. A
+symbol under no interlocking's sheet is left out, as it was. Whether such a net is block track or an error (a powered
+switch on it) is the reference derivation's check.
+
 A name qualified with another interlocking's scope is a one-sided reference: it is no appliance here, and nothing is
 written back to the thing it names (the owner, 2026-10-27). A track circuit marker so named (Sargent's ``Corporal:2NAT``)
 is a consumer of that station's indication: a row of ``track.consumers`` with its symbol's UUID as ``id``, its fields
@@ -163,12 +171,21 @@ class Trackplan:
 
 def read(sm: Seams) -> Trackplan:
     out = Trackplan()
+    on_track = track_nets(sm)
     for ix in sm.interlockings.values():
         syms = [s for s in sm.source.under(ix.sym.sheet, "APPLIANCE") + sm.source.under(ix.sym.sheet, "TRACK")
                 + sm.source.under(ix.sym.sheet, "POLICY") if unit_of(sm, s) == ix.name]
         if syms:
-            out.plans[ix.name] = _plan(sm, ix, syms)
+            out.plans[ix.name] = _plan(sm, ix, syms, on_track)
     return out
+
+
+def track_nets(sm: Seams) -> frozenset[str]:
+    """The nets that carry track: every net a track pin of any interlocking's trackplan symbol is on, whatever sheet it
+    is drawn on (ADR 0013 §7.1)."""
+    src = sm.source
+    return frozenset(n.name for s in src.symbols.values() if on_trackplan(s) and unit_of(sm, s)
+                     for pin, n in src.pins_of(s.ref).items() if is_track_pin(s, pin))
 
 
 def unit_of(sm: Seams, s: Symbol) -> Optional[str]:
@@ -177,24 +194,32 @@ def unit_of(sm: Seams, s: Symbol) -> Optional[str]:
     return max(hits, key=lambda ix: len(ix.sym.sheet)).name if hits else None
 
 
-def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
+def _plan(sm: Seams, ix, syms: list[Symbol], track_nets: frozenset[str] = frozenset()) -> Plan:
     src, report = sm.source, sm.report
     plan = Plan(ix.name)
-    refs = {s.ref for s in syms}
+    units: dict[str, Optional[str]] = {}
+
+    def unit(s: Symbol) -> Optional[str]:
+        """The interlocking a symbol is drawn under, cached."""
+        if s.ref not in units:
+            units[s.ref] = unit_of(sm, s)
+        return units[s.ref]
 
     def net(s: Symbol, pin: str) -> Optional[Net]:
         return src.net_of(s.ref, pin)
 
     def others(s: Symbol, pin: str) -> list[tuple[Symbol, str]]:
+        """Every other pin on the pin's net, whatever sheet it is drawn on (ADR 0013 §7.1: a hierarchical label
+        continues the run; pairing comes from the netlist). A symbol under no interlocking is left out, as before."""
         n = net(s, pin)
-        return [(src.symbols[p.ref], p.pin) for p in n.others(s.ref) if p.ref in refs] if n else []
+        return [(src.symbols[p.ref], p.pin) for p in n.others(s.ref) if unit(src.symbols[p.ref])] if n else []
 
     def pin_refs(s: Symbol, pin: str) -> list[str]:
-        """Every other track pin this pin's net reaches, each as ``pin_ref`` names it, sorted (the owner, 2026-10-27).
-        ``others`` leaves out the symbol's own pins; a thing with no name and no id is reported where it is read."""
-        return sorted({r for o, op in others(s, pin) if (r := pin_ref(ix.name, o, op))})
+        """Every other track pin this pin's net reaches, each as ``pin_ref`` names it in its own interlocking, sorted
+        (the owner, 2026-10-27; ADR 0013 §7.1). ``others`` leaves out the symbol's own pins; a thing with no name and
+        no id is reported where it is read."""
+        return sorted({r for o, op in others(s, pin) if (r := pin_ref(unit(o), o, op))})
 
-    track_nets = {n.name for s in syms for pin, n in src.pins_of(s.ref).items() if is_track_pin(s, pin)}
     consumers: list[dict[str, Any]] = []
     _shorted(syms, src, report, ix.name)
 
@@ -262,11 +287,11 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
             if is_track_pin(s, p):
                 relations[side_of(s, p)] = pin_refs(s, p)
         if s.kind == "IRJ_SIGNAL":
-            relations["mast"] = _mast_on(s, "SIGNAL", others, report, ix.name)
+            relations["mast"] = _mast_on(s, "SIGNAL", others, report, unit)
         elif s.kind == "IRJ_SIGNALS":                                    # a mast on each side (ADR 0013 §6)
-            relations["masts"] = {side: m for side in ("A", "B") if (m := _mast_on(s, f"SIGNAL_{side}", others, report, ix.name))}
+            relations["masts"] = {side: m for side in ("A", "B") if (m := _mast_on(s, f"SIGNAL_{side}", others, report, unit))}
         elif s.role == "POLICY" and s.kind in PLATES:                     # a plate on a mast's SIGNAL net (ADR 0013 §5)
-            relations["mast"] = _mast_on(s, "To", others, None, ix.name)   # two masts there are the joint's error already
+            relations["mast"] = _mast_on(s, "To", others, None, unit)      # two masts there are the joint's error already
         row = _maps(row)
         kind = "policies" if s.role == "POLICY" else "joints" if s.kind in JOINTS else "ends"
         {"policies": policies, "joints": joints, "ends": ends}[kind].append(row)
@@ -278,14 +303,15 @@ def _plan(sm: Seams, ix, syms: list[Symbol]) -> Plan:
     return plan
 
 
-def _mast_on(joint: Symbol, pin: str, others, report, interlocking: str) -> Optional[str]:
-    """The one mast on a symbol's pin (a signal joint's SIGNAL pin, a plate's To), by qualified name; two there are an
-    error (one pin, one mast) where a report is given, none is absent."""
+def _mast_on(joint: Symbol, pin: str, others, report, unit) -> Optional[str]:
+    """The one mast on a symbol's pin (a signal joint's SIGNAL pin, a plate's To), by its own interlocking's qualified
+    name (``unit``; ADR 0013 §7.1 reads the net across sheets); two there are an error (one pin, one mast) where a
+    report is given, none is absent."""
     masts = [o for o, p in others(joint, pin) if o.get("Appliance") == "mast" and key_of(o)]
     if len(masts) > 1 and report is not None:
-        report.error("joint.masts", f"{interlocking}: one signal joint carries masts {', '.join(sorted(key_of(m) for m in masts))} on its {pin} pin",
+        report.error("joint.masts", f"{unit(joint)}: one signal joint carries masts {', '.join(sorted(key_of(m) for m in masts))} on its {pin} pin",
                      source=loc(joint))
-    return qualify(key_of(masts[0]), interlocking) if len(masts) == 1 else None
+    return qualify(key_of(masts[0]), unit(masts[0])) if len(masts) == 1 else None
 
 
 def _indication(s: Symbol, name: str, report) -> str:
