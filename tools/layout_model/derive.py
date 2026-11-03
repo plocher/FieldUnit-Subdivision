@@ -51,7 +51,9 @@ names every other track pin its wire reaches, so the relation is symmetric):
   Its control source is a local lever, a field device of Appliance ``lever`` and Style ``train_order`` serving it by
   Name (``train_order.lever`` at missing when none does), which derives ``contacts`` ``ORDERS`` and ``PROCEED``.
   Each of its heads needs one head device of its drawn style, as a mast's does (``heads``): a wrong style is
-  ``head.vocabulary`` at error, no device at all ``head.device`` at missing.
+  ``head.vocabulary`` at error, no device at all ``head.device`` at missing. Its field side mirrors a mast's: a field
+  device of Appliance ``train_order`` named for the signal serves it by Name (``serves``, nothing else derived), and
+  its head devices reach it by their IND wire to that device, ``relations.signal`` (a mast device's is ``relations.mast``).
 - **Consumers of another station's indications** (the owner, 2026-10-27): a ``track.consumers`` row is a one-sided
   reference, ``relations.indication`` the token it consumes (``Corporal:2NATK``); a track circuit's token names the
   circuit the row stands on.
@@ -900,7 +902,9 @@ class _Derivation:
     # ------------------------------------------------------------------------------------------- devices
 
     def devices(self) -> None:
-        """A device serves the appliance its ``Name`` names in its scope, a head device the mast its IND wire reaches; a
+        """A device serves the appliance its ``Name`` names in its scope, a head device the mast or the train order signal
+        device its IND wire reaches (``relations.mast`` or ``relations.signal``; a ``train_order`` device serves the
+        signal by Name and derives nothing else, non-vital and operator-driven: the owner, 2026-11-03); a
         lamp consumes the tokens of its ``Indication`` expression, resolved in its scope (``lamp``). A lever's scope is
         its column's interlocking, else its own ``relations.interlocking``. A model board lamp (Appliance ``lamp``, Style
         ``board``) never uses a column: its scope is its own ``relations.interlocking``, the panel sheet it is drawn on
@@ -911,8 +915,9 @@ class _Derivation:
             for i, dev in enumerate(ix.get("devices", [])):
                 g = dev.get("given", {})
                 derived: dict[str, Any] = {}
-                if g.get("Appliance") == "head":
-                    derived["serves"] = dev.get("relations", {}).get("mast")
+                if g.get("Appliance") == "head":                       # its mast, or its train order signal device (the owner, 2026-11-03)
+                    rel = dev.get("relations", {})
+                    derived["serves"] = rel.get("mast") or rel.get("signal")
                 elif g.get("Name"):
                     derived["serves"] = qualify(g["Name"], name)
                 else:
@@ -1050,28 +1055,39 @@ class _Derivation:
         checks as a mast's: one device of the drawn style per head, another style ``head.vocabulary`` at error (wrong),
         and, for a train order head only, no device at all ``head.device`` at missing (incomplete is missing, wrong is
         an error: the owner, 2026-11-03): its face is a device the drawing has yet to bind. A mast head with no device
-        stays unreported, as today (an automatic mast's devices are not yet drawn)."""
+        stays unreported, as today (an automatic mast's devices are not yet drawn). A head device reaches a train order
+        signal through its ``relations.signal`` (its IND wire to the field device of Appliance ``train_order`` named for
+        the signal) and a mast through ``relations.mast``; a mast device is not the signal, so a head wired to a mast
+        device named like the signal is ``head.plan`` (no mast of that name has that head) and leaves the signal's head
+        without a device."""
         for name, ix in self.m.get("interlockings", {}).items():
             plan: dict[tuple[str, str], str] = {}
             undrawn: list[tuple[str, str]] = []                       # a train order head no device serves
+            through: dict[str, str] = {}                              # appliance -> the relation its head devices reach it by
             for mast, a in ix.get("appliances", {}).items():
+                through[mast] = "signal" if _train_order(a) else "mast"
                 for letter, h in a.get("heads", {}).items():
                     plan[(mast, letter)] = h.get("given", {}).get("Style", "")
                     if _train_order(a):
                         undrawn.append((mast, letter))
-            by_head: dict[tuple[str, str], list[tuple[int, dict[str, Any]]]] = defaultdict(list)
+            by_head: dict[tuple[str, str, str], list[tuple[int, dict[str, Any]]]] = defaultdict(list)
             for i, d in enumerate(ix.get("devices", [])):
-                g, serves = d.get("given", {}), d.get("derived", {}).get("serves")
+                g, rel = d.get("given", {}), d.get("relations", {})
+                via = "signal" if rel.get("signal") else "mast"
+                serves = d.get("derived", {}).get("serves")
                 if g.get("Appliance") == "head" and serves and g.get("Head"):
-                    by_head[(serves.partition(":")[2], g["Head"])].append((i, d))
-            for (mast, letter), devs in sorted(by_head.items()):
+                    by_head[(serves.partition(":")[2], g["Head"], via)].append((i, d))
+            for (mast, letter, via), devs in sorted(by_head.items()):
                 where = f"interlockings/{name}/devices/{devs[0][0]}"
                 others = tuple(f"interlockings/{name}/devices/{i}" for i, _ in devs[1:])
                 mast_path = (f"interlockings/{name}/appliances/{mast}",) if mast in ix.get("appliances", {}) else ()
-                style = plan.get((mast, letter))
+                style = plan.get((mast, letter)) if through.get(mast, via) == via else None
                 if style is None:
-                    self.r.add("head.plan", f"{name}: head devices for {mast} head {letter}, but the trackplan draws no such head", where,
-                               others + mast_path)
+                    what = "train order signal" if via == "signal" else "mast"
+                    self.r.add("head.plan", f"{name}: head devices for {what} {mast} head {letter}, but the trackplan draws no such head"
+                               + (f" ({mast} is a {'train order signal' if through[mast] == 'signal' else 'mast'}; bind its heads to its "
+                                  f"{'train_order' if through[mast] == 'signal' else 'mast'} device)" if mast in through else ""),
+                               where, others + mast_path)
                     continue
                 primary = [d for _, d in devs if style in styles(d["given"])]
                 lamps = [d for _, d in devs if style not in styles(d["given"]) and style in ("UQ", "LQ")
@@ -1086,7 +1102,7 @@ class _Derivation:
                     self.r.add("head.vocabulary", f"{name}: {mast} head {letter} ({style}) has {len(primary)} devices of its style; "
                                "one expected", where, others + mast_path)
             for mast, letter in undrawn:
-                if (mast, letter) not in by_head:
+                if (mast, letter, "signal") not in by_head:
                     self.r.add("head.device", f"{name}: train order signal {mast} head {letter} ({plan[(mast, letter)]}) has no device; "
                                f"one {plan[(mast, letter)]} head device bound to it is expected", f"interlockings/{name}/appliances/{mast}")
 

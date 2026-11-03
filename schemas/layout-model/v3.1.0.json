@@ -595,7 +595,11 @@
                 },
                 "mast": {
                   "$ref": "#/$defs/qualifiedName",
-                  "description": "A head device's mast, by its IND wire."
+                  "description": "A head device's mast, by its IND wire to a mast device."
+                },
+                "signal": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "A head device's train order signal, by its IND wire to a field device of Appliance train_order named for the signal (the owner, 2026-11-03); never both mast and signal. A mast device is not the signal: a head wired to one named like the signal leaves the signal's head without a device."
                 }
               }
             }
@@ -611,7 +615,7 @@
               "properties": {
                 "serves": {
                   "$ref": "#/$defs/qualifiedName",
-                  "description": "The appliance this device serves (given.Name in its scope); for a head device, its mast."
+                  "description": "The appliance this device serves (given.Name in its scope); for a head device, its mast or its train order signal (relations.mast or relations.signal). A train_order device derives nothing else: non-vital, operator-driven."
                 },
                 "controls": {
                   "description": "A lever's controls: the Control.<pin> of each bound pin, qualified by its station's interlocking (Luchessa:783NWS); an empty one binds none.",

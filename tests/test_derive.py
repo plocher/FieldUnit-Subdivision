@@ -978,17 +978,22 @@ class TrainOrders(unittest.TestCase):
         self.assertTrue(d.text.endswith(", not the lever of Style toggle that serves it"), d.text)
         self.assertEqual(out["interlockings"]["X"]["devices"][0]["derived"], {"serves": "X:Gilroy"})
 
-    def head(self, letter: str, style: str) -> dict:
-        return {"given": {"Appliance": "head", "Style": style, "Head": letter}, "relations": {"mast": "X:Gilroy"}}
+    SIGNAL = {"given": {"Appliance": "train_order", "Name": "Gilroy"}, "relations": {"bindings": {"IND": "Field/0x20/A3"}}}
+
+    def head(self, letter: str, style: str, via: str = "signal") -> dict:
+        """A head device wired to the train_order device named Gilroy (``relations.signal``), or to a mast device of that
+        name (``relations.mast``)."""
+        return {"given": {"Appliance": "head", "Style": style, "Head": letter}, "relations": {via: "X:Gilroy"}}
 
     def test_each_head_has_one_device_of_its_drawn_style(self):
         """The owner, 2026-11-03: a train order head takes a mast head's checks (ADR 0009 §3.7): a wrong style is
         head.vocabulary at error; no device at all, which a mast's head does not report, is head.device at missing
         (incomplete is missing, wrong is an error)."""
-        bound = [self.LEVER, self.head("N", "LQ"), self.head("S", "LQ")]
+        bound = [self.LEVER, self.SIGNAL, self.head("N", "LQ"), self.head("S", "LQ")]
         out, diags = run(self.model(devices=bound))
-        self.assertEqual(only(diags, "head", "train_order"), [])
-        self.assertEqual([d["derived"]["serves"] for d in out["interlockings"]["X"]["devices"][1:]], ["X:Gilroy", "X:Gilroy"])
+        self.assertEqual(only(diags, "head", "train_order", "device"), [])
+        self.assertEqual([d["derived"] for d in out["interlockings"]["X"]["devices"][1:]],
+                         [{"serves": "X:Gilroy"}, {"serves": "X:Gilroy"}, {"serves": "X:Gilroy"}])   # the train_order device derives nothing else
         m = self.model(devices=[self.LEVER])
         self.assertEqual(only(run(m)[1], "head"), [("head.device", "Gilroy"), ("head.device", "Gilroy")])
         self.assertEqual([(d.severity, d.text) for d in derive.derive(m)[1].by_code("head.device")],
@@ -999,6 +1004,18 @@ class TrainOrders(unittest.TestCase):
         self.assertEqual(only(diags, "head"), [("head.vocabulary", "2")])
         self.assertEqual(only(run(self.model(devices=[self.LEVER, self.head("N", "LQ"), self.head("S", "LQ"), self.head("S", "CL")]))[1], "head"),
                          [])                                                                        # a semaphore's night lamp
+
+    def test_a_head_wired_to_a_mast_device_named_like_the_signal_is_not_its_head(self):
+        """The owner, 2026-11-03: a mast device is not the signal. A head device reaching a mast device named Gilroy
+        (relations.mast) leaves the signal's head without a device (head.device) and names no mast head (head.plan)."""
+        m = self.model(devices=[self.LEVER, self.SIGNAL, self.head("N", "LQ", via="mast"), self.head("S", "LQ")])
+        diags = run(m)[1]
+        self.assertEqual(only(diags, "head"), [("head.device", "Gilroy"), ("head.plan", "2")])
+        (d,) = derive.derive(m)[1].by_code("head.plan")
+        self.assertEqual(d.text, "X: head devices for mast Gilroy head N, but the trackplan draws no such head "
+                                 "(Gilroy is a train order signal; bind its heads to its train_order device)")
+        self.assertEqual(derive.derive(m)[1].by_code("head.device")[0].text,
+                         "X: train order signal Gilroy head N (LQ) has no device; one LQ head device bound to it is expected")
 
     def test_the_desks_no_lever_rule_never_reads_it(self):
         """interlocking.no_lever keys on switches and locks (grammar.lever_class); a train order signal on a code line's

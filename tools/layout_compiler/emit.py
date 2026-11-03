@@ -65,7 +65,7 @@ def _bindings(d) -> dict[str, Any]:
 
 
 def _device(d) -> dict:
-    return _entity(d.given, {"column": d.column, "interlocking": d.interlocking, "mast": d.mast, "bindings": _bindings(d)})
+    return _entity(d.given, {"column": d.column, "interlocking": d.interlocking, "mast": d.mast, "signal": d.signal, "bindings": _bindings(d)})
 
 
 def emit(sm: Seams, source_path: Optional[Path] = None, geometry: Optional[Geometry] = None) -> dict[str, Any]:
