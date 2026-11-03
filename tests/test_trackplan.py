@@ -888,18 +888,17 @@ class SPCoastTrackplan(unittest.TestCase):
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):
         """ADR 0013 §5. The library's mast symbols carry a fixed Kind (Railroad 1695d48), but that commit touched no placed
-        field: a placement states its Kind only once it is updated from the library. As of the Railroad working tree of
-        2026-11-03 (31954c5 plus uncommitted edits to the seven sheets and the library), 25 of the 40 masts state theirs
-        and 15 state none, Christopher's four among them; each is reported missing, never inferred."""
+        field: a placement states its Kind only once it is updated from the library, which the owner's edits and the
+        edits/add_mast_kind.py sweep of 2026-11-03 did for every placement. As of the Railroad working tree of
+        2026-11-03 (31954c5 plus uncommitted edits to the seven sheets and the library), all 40 masts state theirs:
+        the four PERMISSIVE automatics of the Corporal to Sargent block and 36 CONTROLLED. Nothing is reported, and
+        nothing is inferred: a mast with no Kind would be ``mast.kind`` at missing."""
         masts = {(i, n): a["given"].get("Kind") for i, ix in self.model["interlockings"].items() for n, a in ix.get("appliances", {}).items()
                  if a["given"]["Appliance"] == "mast"}
-        stated = {k: v for k, v in masts.items() if v}
-        self.assertEqual({i for i, _ in stated}, set(self.model["interlockings"]) - {"Christopher"})
-        self.assertEqual((len(stated), set(stated.values())), (25, {"CONTROLLED", "PERMISSIVE"}))
-        missing = self.sm.report.by_code("mast.kind")
-        self.assertEqual(len(missing), len(masts) - len(stated))
-        self.assertEqual(len(missing), 15)
-        self.assertEqual({d.severity for d in missing}, {"missing"})
+        self.assertEqual(len(masts), 40)
+        self.assertEqual(sorted(v for v in masts.values() if v == "PERMISSIVE"), ["PERMISSIVE"] * 4)
+        self.assertEqual({v for v in masts.values()}, {"CONTROLLED", "PERMISSIVE"})
+        self.assertEqual(self.sm.report.by_code("mast.kind"), [])
 
     def test_no_circuit_carries_two_names(self):
         self.assertEqual(self.sm.report.by_code("circuit.names") + self.sm.report.by_code("circuit.name.disagree"), [])
