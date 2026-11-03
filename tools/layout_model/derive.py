@@ -24,7 +24,10 @@ names every other track pin its wire reaches, so the relation is symmetric):
   point: ADR 0013 §4 puts block track outside every interlocking and §5 has automatic masts state no CP Name.
 - **A mast states Kind** (ADR 0013 §5): ``CONTROLLED``, ``ABSOLUTE`` or ``PERMISSIVE``, a stated fact. A mast with
   none, or with another word, is reported ``mast.kind`` at missing; nothing is inferred from a CP Name or a plate.
-  The §5 check that a non-``CONTROLLED`` mast's route passes no powered switch is not here yet.
+- **A mast that is not CONTROLLED over a powered switch** (ADR 0013 §5): an ``ABSOLUTE`` or ``PERMISSIVE`` mast whose
+  governed circuit (the side its joint pin names) holds a powered switch's or derail's port (``grammar.is_powered``,
+  §4: Style ``powered`` or ``dual``, or a CP Name; spring and hand-throw switches are not powered) is reported
+  ``mast.powered`` at warning. A check, never a source: it sets nothing.
 - **A boundary track circuit** (ADR 0013 §10; ``Appliance track_circuit``, Style ``boundary``) states ``relations.A``
   and ``.B``, the two nets at its joint. It names no circuit: the marker on each net does. Its ``derived.circuits``
   are the circuits on its pins, in A, B order: what it counts toward.
@@ -545,12 +548,22 @@ class _Plan:
                 self.r.add("plate.mast", f"{self.name}: a {g['Kind']} plate is on mast {mast}, which is {m['given'].get('Kind') or 'of no Kind'}; "
                            "a plate requires a PERMISSIVE mast (ADR 0013 §5)", where, (self.where("appliances", mast.partition(":")[2]),))
         masts_of = defaultdict(int)
+        governed: dict[str, str] = {}                                  # mast (qualified) -> the node its governed side is
         for row in self.track.get("joints", []):
+            prefix = self.row_prefix(row)
             if row.get("relations", {}).get("mast"):
                 masts_of[row["relations"]["mast"]] += 1
-            for mast in row.get("relations", {}).get("masts", {}).values():    # a double joint counts for each of its masts
+                governed[row["relations"]["mast"]] = f"{prefix}.governed"
+            for side, mast in row.get("relations", {}).get("masts", {}).items():    # a double joint counts for each of its masts
                 if mast:
                     masts_of[mast] += 1
+                    governed[mast] = f"{prefix}.{side}"
+        powered_at: dict[str, list[str]] = defaultdict(list)          # region -> the powered switches with a port on it
+        for n, a in self.appliances.items():
+            if is_powered(n, self.appliances):
+                for p in ports_of(a):
+                    if (r := self.region(self.pin(n, p))) and n not in powered_at[r]:
+                        powered_at[r].append(n)
         letters_of_signal: dict[str, dict[str, str]] = defaultdict(dict)
         for name, a in self.appliances.items():
             g = a.get("given", {})
@@ -567,6 +580,13 @@ class _Plan:
                 self.r.add("mast.joint", f"{self.name}: mast {name} stands on no signal joint", where)
             elif n > 1:
                 self.r.add("mast.joints", f"{self.name}: mast {name} stands on {n} signal joints", where)
+            if g.get("Kind") in MAST_KINDS - {"CONTROLLED"} and n == 1:                    # a check, never a source (ADR 0013 §5)
+                over = powered_at.get(self.region(governed[qualify(name, self.name)]) or "", [])
+                if over:
+                    self.r.add("mast.powered", f"{self.name}: mast {name} is {g['Kind']} but its route passes powered "
+                               f"{'switch' if len(over) == 1 else 'switches'} {', '.join(sorted(over, key=sort_key))} on "
+                               f"{self.circuit(governed[qualify(name, self.name)]) or 'dark track'}; a mast over a powered switch "
+                               "or derail is CONTROLLED (ADR 0013 §5)", where, tuple(self.where("appliances", s) for s in sorted(over, key=sort_key)))
             m = MAST_NAME.match(name)
             if m is None:
                 self.r.add("mast.grammar", f"{self.name}: mast {name} is not a signal and its head letters (ADR 0003); not checked", where)

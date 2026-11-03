@@ -219,6 +219,27 @@ class Checks(unittest.TestCase):
             _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("Style=dwarf Kind=CONTROLLED", f"Style=dwarf Kind={kind}"), ONE_SWITCH_WIRES, "East")))
             self.assertEqual(only(diags, "mast"), [], kind)
 
+    def test_a_mast_that_is_not_controlled_over_a_powered_switch_is_a_warning(self):
+        """ADR 0013 §5: a PERMISSIVE or ABSOLUTE mast whose governed circuit holds a powered switch or derail port (§4:
+        Style powered or dual, or a CP Name) is reported; over an electric lock, a hand-throw switch or a switch on its
+        approach side it is not; a CONTROLLED mast never is. The check sets nothing."""
+        def masts(things: str, wires: str = ONE_SWITCH_WIRES) -> list[tuple[str, str]]:
+            return only(run(layout(X=interlocking(things, wires, "East")))[1], "mast")
+        permissive = ONE_SWITCH.replace("836SA  | appliance | Appliance=mast Style=single Kind=CONTROLLED",
+                                        "836SA  | appliance | Appliance=mast Style=single Kind=PERMISSIVE")
+        self.assertEqual(masts(permissive), [])                                                   # 835 is an electric lock
+        self.assertEqual(masts(permissive.replace("Style=lock", "Style=powered")), [("mast.powered", "836SA")])
+        self.assertEqual(masts(permissive.replace("Style=lock", "Style=manual_sensed CP_Name=East")), [])
+        self.assertEqual(masts(permissive.replace("Style=lock", "Style=lock CP_Name=East")), [])
+        self.assertEqual(masts(permissive.replace("Kind=PERMISSIVE", "Kind=ABSOLUTE").replace("Style=lock", "Style=dual")), [("mast.powered", "836SA")])
+        self.assertEqual(masts(ONE_SWITCH.replace("Style=lock", "Style=powered")), [])            # all CONTROLLED
+        d = derive.derive(layout(X=interlocking(permissive.replace("Style=lock", "Style=powered"), ONE_SWITCH_WIRES, "East")))[1].by_code("mast.powered")[0]
+        self.assertEqual((d.severity, d.entities), ("warning", ("interlockings/X/appliances/836SA", "interlockings/X/appliances/835")))
+        self.assertIn("passes powered switch 835 on X:835T1", d.text)
+        # the switch on the approach side only: 836SA's governed side is J2.governed on 835.N; turn J2 around
+        turned = ONE_SWITCH_WIRES.replace("n  | 835.N J2.governed", "n  | 835.N J2.approach").replace("e1 | J2.approach 1SAT.TC", "e1 | J2.governed 1SAT.TC")
+        self.assertEqual(masts(permissive.replace("Style=lock", "Style=powered"), turned), [])
+
     def test_a_mast_named_for_heads_it_does_not_carry_and_one_letter_on_two_masts(self):
         ix = interlocking(ONE_SWITCH, ONE_SWITCH_WIRES, "East")
         ix["appliances"]["836NAB"]["heads"] = {"A": {"given": {"Style": "CPL"}}, "C": {"given": {"Style": "CPL"}}}
@@ -288,6 +309,18 @@ class DoubleJoint(unittest.TestCase):
         self.assertEqual(plated("X:9NA"), [("plate.mast", "PL1")])
         self.assertEqual(plated("X:832SA", "CONTROLLED"), [("plate.mast", "PL1")])
         self.assertEqual(plated("X:832SA", ""), [("plate.mast", "PL1")])
+
+    def test_a_permissive_mast_on_a_double_joint_over_a_powered_derail_is_a_warning(self):
+        """ADR 0013 §5 on a double joint: 832SA governs into side B (834T); an independent derail with a CP Name there is
+        powered (§4), one that follows a hand-throw lock is not."""
+        m = self.block({"A": "X:832NA", "B": "X:832SA"})
+        ix = m["interlockings"]["X"]
+        ix["appliances"]["9D"] = {"given": {"Appliance": "switch", "Style": "derail", "CP Name": "East"}, "relations": {"C": ["J1.B", "X:834T.TC"]}}
+        row(ix, "J1")["relations"]["B"] = ["X:834T.TC", "X:9D.C"]
+        ix["appliances"]["834T"]["relations"]["TC"] = ["J1.B", "X:9D.C"]
+        self.assertEqual(only(run(m)[1], "mast"), [("mast.powered", "832SA")])
+        ix["appliances"]["9"] = {"given": {"Appliance": "switch", "Style": "lock", "CP Name": "East"}, "relations": {"C": ["J1.B"]}}
+        self.assertEqual(only(run(m)[1], "mast"), [])
 
     def test_a_side_with_no_mast_leaves_that_mast_on_no_joint_and_one_mast_on_both_sides_is_on_two(self):
         out, diags = run(self.block({"A": "X:832NA"}))
