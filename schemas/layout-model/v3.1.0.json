@@ -620,6 +620,17 @@
                     "$ref": "#/$defs/qualifiedName"
                   }
                 },
+                "contacts": {
+                  "description": "A train order signal's local lever (a field device, Appliance lever, Style train_order, serving the signal by Name; the owner, 2026-11-03): its two input contacts, ORDERS and PROCEED (the pins ~{ORDERS} and ~{PROCEED} without their polarity mark; reference.TRAIN_ORDER_CONTACTS). Neither asserted reads STOP, the state a released output shows by the library's output convention: a default for a non-vital indicator, not a safety rule. Not a desk lever's controls: a train order signal is never dispatcher-controlled.",
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "ORDERS",
+                      "PROCEED"
+                    ]
+                  }
+                },
                 "expression": {
                   "type": "string",
                   "description": "A desk lamp's Indication, normalized (tools/layout_model/expression.py: | or, & and, ! not, parentheses; a comma read as |), every token qualified: Luchessa:1NATK | Luchessa:2NATK."

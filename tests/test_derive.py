@@ -899,10 +899,15 @@ class TrainOrders(unittest.TestCase):
 
     TO = "Gilroy | appliance | Appliance=train_order Station=Gilroy rel.station=Gilroy\n"
 
-    def model(self, plan=(TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH), stations=("Gilroy",)) -> dict:
+    LEVER = {"given": {"Appliance": "lever", "Style": "train_order", "Name": "Gilroy"},
+             "relations": {"bindings": {"ORDERS": "Field/0x20/A1", "PROCEED": "Field/0x20/A2"}}}
+
+    def model(self, plan=(TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH), stations=("Gilroy",), devices: list[dict] = ()) -> dict:
         things, wires, houses = plan
         ix = interlocking(things + self.TO, wires, houses)
         ix["appliances"]["Gilroy"]["heads"] = {k: {"given": {"Appliance": "head", "Style": "LQ"}} for k in ("N", "S")}
+        if devices:
+            ix["devices"] = [copy.deepcopy(d) for d in devices]
         m = layout(X=ix)
         m["layout"]["stations"] = {s: {"given": {"Milepost": "77.9"}} for s in stations}
         return m
@@ -910,7 +915,7 @@ class TrainOrders(unittest.TestCase):
     def test_it_derives_no_control_point_and_breaks_no_chain(self):
         for plan in ((TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH), (ONE_SWITCH, ONE_SWITCH_WIRES, "East")):
             out, diags = run(self.model(plan))
-            self.assertEqual(only(diags, "control_point", "train_order", "mast", "lever", "interlocking"), [], plan[2])
+            self.assertEqual(only(diags, "control_point", "train_order.station", "mast", "lever", "interlocking"), [], plan[2])
             to = out["interlockings"]["X"]["appliances"]["Gilroy"]
             self.assertNotIn("controlPoint", to.get("derived", {}), plan[2])
             self.assertEqual({n: cp for n, cp in control_points(out).items() if n != "Gilroy"}, control_points(run(layout(X=interlocking(*plan)))[0]))
@@ -937,12 +942,49 @@ class TrainOrders(unittest.TestCase):
 
     def test_a_station_the_layout_does_not_draw_is_missing(self):
         _, diags = run(self.model(stations=("Lick",)))
-        self.assertEqual(only(diags, "train_order"), [("train_order.station", "Gilroy")])
+        self.assertEqual(only(diags, "train_order.station"), [("train_order.station", "Gilroy")])
         _, diags = run(self.model(stations=("gilroy",)))                                           # names fold case
-        self.assertEqual(only(diags, "train_order"), [])
+        self.assertEqual(only(diags, "train_order.station"), [])
         m = self.model()
         del m["interlockings"]["X"]["appliances"]["Gilroy"]["relations"]
-        self.assertEqual(only(run(m)[1], "train_order"), [("train_order.station", "Gilroy")])
+        self.assertEqual(only(run(m)[1], "train_order.station"), [("train_order.station", "Gilroy")])
+
+    def test_a_local_lever_of_style_train_order_serves_it_and_derives_its_contacts(self):
+        """The owner, 2026-11-03: the control source is a field lever device, Style train_order, serving the signal by
+        Name; its two input contacts are ORDERS and PROCEED (neither asserted reads STOP, a released output's state)."""
+        out, diags = run(self.model(devices=[self.LEVER]))
+        self.assertEqual(only(diags, "train_order", "lever", "interlocking", "device"), [])
+        self.assertEqual(out["interlockings"]["X"]["devices"][0]["derived"], {"serves": "X:Gilroy", "contacts": ["ORDERS", "PROCEED"]})
+        self.assertEqual(layout_model.errors(out), [])
+
+    def test_a_train_order_signal_with_no_local_lever_is_missing(self):
+        m = self.model()
+        self.assertEqual(only(run(m)[1], "train_order.lever"), [("train_order.lever", "Gilroy")])
+        (d,) = derive.derive(m)[1].by_code("train_order.lever")
+        self.assertEqual((d.severity, d.where, d.entities), ("missing", "interlockings/X/appliances/Gilroy", ("interlockings/X/appliances/Gilroy",)))
+        self.assertEqual(d.text, "X: train order signal Gilroy has no local lever; a lever device of Style train_order serving it by "
+                                 "Name (contacts ORDERS and PROCEED; neither asserted reads STOP) is expected")
+        self.assertNotIn("fail", d.text)                                                          # non-vital: no safety claim
+
+    def test_a_lever_of_another_style_is_not_its_local_lever(self):
+        """Only Style train_order is the three-position local lever (the default taken 2026-11-03): another Style serving
+        the signal is still train_order.lever at missing, named in the message, and derives no contacts."""
+        other = {**self.LEVER, "given": {**self.LEVER["given"], "Style": "toggle"}}
+        m = self.model(devices=[other])
+        out, diags = run(m)
+        self.assertEqual(only(diags, "train_order.lever"), [("train_order.lever", "Gilroy")])
+        (d,) = derive.derive(m)[1].by_code("train_order.lever")
+        self.assertEqual(d.entities, ("interlockings/X/appliances/Gilroy", "interlockings/X/devices/0"))
+        self.assertTrue(d.text.endswith(", not the lever of Style toggle that serves it"), d.text)
+        self.assertEqual(out["interlockings"]["X"]["devices"][0]["derived"], {"serves": "X:Gilroy"})
+
+    def test_the_desks_no_lever_rule_never_reads_it(self):
+        """interlocking.no_lever keys on switches and locks (grammar.lever_class); a train order signal on a code line's
+        interlocking is not one of its bare switches, lever or no lever."""
+        for devices in ((), (self.LEVER,)):
+            m = on_line(self.model(devices=list(devices)), "X")
+            desk(m, {"1": "North", "2": "South"}, [lever(n, "NWS", column="Desk:1") for n in ("813", "815", "817")])
+            self.assertEqual(only(run(m)[1], "interlocking", "lever"), [], devices)
 
 
 class Strip(unittest.TestCase):

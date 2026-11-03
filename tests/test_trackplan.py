@@ -720,7 +720,7 @@ HN2  | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=N
 
     def test_a_pin_on_the_track_is_an_error(self):
         sm, ix = compile_(self.STATION + self.SIGNAL, "w | TC1.TC NX1.To TO1.H HN.M HS.M\n")
-        self.assertEqual(diags(sm, "train_order."), [("train_order.track", "TO1")])
+        self.assertEqual(diags(sm, "train_order.track"), [("train_order.track", "TO1")])   # train_order.lever is derive's, reported too
         self.assertEqual(ix["track"]["ends"][0]["relations"]["track"], ["X:1NAT.TC"])     # the H pin is no track pin
 
 

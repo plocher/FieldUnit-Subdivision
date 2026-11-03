@@ -47,6 +47,8 @@ names every other track pin its wire reaches, so the relation is symmetric):
   (``STOP``, ``RECEIVE_ORDERS``, ``PROCEED``), and ``normal`` (``PROCEED``) from the reference data
   (``reference.TRAIN_ORDER_STATES``: Rule 221, Rules 207-208, Form 19/31 via the owner's summary of 2026-11-03,
   unverified against an opened edition of the Standard Code), so consumers read the words from the file.
+  Its control source is a local lever, a field device of Appliance ``lever`` and Style ``train_order`` serving it by
+  Name (``train_order.lever`` at missing when none does), which derives ``contacts`` ``ORDERS`` and ``PROCEED``.
 - **Consumers of another station's indications** (the owner, 2026-10-27): a ``track.consumers`` row is a one-sided
   reference, ``relations.indication`` the token it consumes (``Corporal:2NATK``); a track circuit's token names the
   circuit the row stands on.
@@ -738,6 +740,7 @@ class _Derivation:
         self.no_lever()
         self.heads()
         self.train_orders()
+        self.train_order_levers()
         self.reach()
         if "provenance" in self.m:
             self.m["provenance"]["rules"] = RULES
@@ -1090,6 +1093,37 @@ class _Derivation:
                     self.r.add("train_order.station", f"{name}: train order signal {n} stands at station {station!r}, which the layout "
                                f"does not draw ({', '.join(sorted(self.m.get('layout', {}).get('stations', {}), key=sort_key)) or 'no stations'})",
                                f"interlockings/{name}/appliances/{n}")
+
+    def train_order_levers(self) -> None:
+        """A train order signal is worked by a local lever (the owner, 2026-11-03): a field DEVICE of Appliance ``lever``
+        and Style ``train_order`` whose ``Name`` names the signal, so the device binding (``derived.serves``) is the
+        relation. The lever has two input contacts, ``ORDERS`` and ``PROCEED`` (``reference.TRAIN_ORDER_CONTACTS``,
+        the pins without their polarity mark); neither contact asserted reads STOP, the state a released output shows
+        by the library's output convention (``reference.TRAIN_ORDER_RELEASED``: a default for a non-vital indicator,
+        not a safety rule). Such a lever derives ``contacts``, the two names. A train order signal that no lever of
+        Style ``train_order`` serves is ``train_order.lever`` at missing: the lever is a fact not yet drawn. A lever of
+        another Style serving it does not count (only Style ``train_order`` is the three-position local lever; the
+        default taken 2026-11-03) and is named in the message. The desk's ``no_lever`` never reads it (``lever_class``
+        keys on switches and locks); a train order signal is never dispatcher-controlled."""
+        for name, ix in self.m.get("interlockings", {}).items():
+            levers: dict[str, list[tuple[int, dict[str, Any]]]] = defaultdict(list)    # served name -> its lever devices
+            for i, dev in enumerate(ix.get("devices", [])):
+                g, serves = dev.get("given", {}), dev.get("derived", {}).get("serves")
+                if g.get("Appliance") == "lever" and serves and serves.partition(":")[0] == name:
+                    levers[serves.partition(":")[2]].append((i, dev))
+            for n, a in ix.get("appliances", {}).items():
+                if not _train_order(a):
+                    continue
+                local = [(i, d) for i, d in levers.get(n, []) if "train_order" in styles(d.get("given", {}))]
+                for _, d in local:
+                    _set_derived(d, {**d.get("derived", {}), "contacts": list(reference.TRAIN_ORDER_CONTACTS)})
+                if local:
+                    continue
+                others = sorted({d.get("given", {}).get("Style") or "no Style" for _, d in levers.get(n, [])}, key=sort_key)
+                self.r.add("train_order.lever", f"{name}: train order signal {n} has no local lever; a lever device of Style train_order "
+                           f"serving it by Name (contacts ORDERS and PROCEED; neither asserted reads STOP) is expected"
+                           + (f", not the lever of Style {', '.join(others)} that serves it" if others else ""),
+                           f"interlockings/{name}/appliances/{n}", tuple(f"interlockings/{name}/devices/{i}" for i, _ in levers.get(n, [])))
 
     # --------------------------------------------------------------------------------------------- reach
 
