@@ -75,11 +75,12 @@ ADR 0013 §21 gaps 2, 3, and 5 (`blockRules` profiles in `tools/layout_model/ref
 - The KiCad importer and `derive.py` changes (Subdivision's; ADR 0013 §23).
 - A common hardware set for a signal location (connector, wiring, PCB): a layout reference design.
 
-## Asked back (seam checklist) — answered in `FieldUnit` ADR 0007
+## Asked back (seam checklist) — answered in `FieldUnit` ADRs 0007 and 0008
 
-Answered in `FieldUnit` `docs/adr/0007-interlocking-block-seam.md`. The ask was one consolidated per-fact list for the
-seven seam ports of §13 (`requested`, `cleared`, `in_time`, `home_proceed`; `segment_clear`, `next_proceed`,
-`traffic_free`) plus the invariants `I1`–`I4`:
+Answered in `FieldUnit` `docs/adr/0007-interlocking-block-seam.md` and `docs/adr/0008-automatic-signal.md` (with the
+three conformance findings from `tests/test_automatic_signal.cpp` folded back into ADR 0013 §14.2, §16, and §24). The
+ask was one consolidated per-fact list for the seven seam ports of §13 (`requested`, `cleared`, `in_time`,
+`home_proceed`; `segment_clear`, `next_proceed`, `traffic_free`) plus the invariants `I1`–`I4`:
 
 1. For each seam port: what `FieldUnit/src/` exposes today, under what name, and whether it is available today,
    available but misnamed, or a code defect (such as the missing `DR` in `GLOSSARY.md` §10.6 "Code today", related to

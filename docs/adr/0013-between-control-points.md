@@ -366,13 +366,16 @@ Prototype railroads differed along six axes, to be captured in `reference.py` un
 | `trafficRelease` | `"block_clear"` (`!cleared && !in_time` and all block circuits clear, `[RS1942]` via `[ABSAPB]`) | `"request_normal_and_block_clear"` (`!requested && !in_time` and all block circuits clear, `[CBQ1946 p. 616]`, opened) | `"request_normal_and_block_clear"` (lever restored and track unoccupied, `[AAR8064]` via `[TLRES]`) |
 | `idleDirection` | `"none"` (both `HD` lines energized at rest, `[RS1942]`, `[RS1945]` via `[ABSAPB]`) | `"last"` (retains last established direction, `[CBQ1946 p. 616]`, opened) | `"none"` (normally de-energized traffic circuit, `[ERIE1942]` via `[TLRES]`) |
 | `intermediatesAtRest` | `"clear"` (clear both ways while idle, `[RS1942]` via `[ABSAPB]`) | `"established_only"` (clear in last direction, stop opposing, `[CBQ1946 p. 614]`, opened) | `"clear"` (single-track ABS intermediates, `[RS1932]` via `[ABSAPB]`; `ERIE1942` `(unverified)`) |
-| `sameLocationOpposingCut` | `true` ("signals check each other at stop", `[RS1947]` via `[ABSAPB]`) | `true` (opposing `HR` and `SR` back contacts, `[CBQ1946 p. 613]`, opened) | `(unverified)` |
-| **Invariants (by trace; not yet executed, gap 2)** | **Holds by trace for `I1`–`I4`** (under `"cleared"`, outbound `H` stays asserted while a train in `1T` holds the opposing leaving signal at Stop, so `2W`'s `SR` releases as `1T` clears) | **Holds by trace for `I1`–`I4`** (under `"requested"`, `traffic_free` is carried by `field_fr` and is never bypassed by a stale `SR`) | **Holds by trace for `I1`–`I4`** (`traffic_line` carries `traffic_free` end-to-end without `SR` bypass) |
+| `sameLocationOpposingCut` | `false` (`[RS1947]` via `[ABSAPB]` says "signals check each other at stop", circuit detail `(unverified)`; cutting `HR` over the opposing `HR` back contact races when `intermediatesAtRest: "clear"`, `FieldUnit` ADR 0008 finding 2) | `true` (opposing `HR` and `SR` back contacts, `[CBQ1946 p. 613]`, opened; requires `intermediatesAtRest: "established_only"`) | `(unverified)` |
+| **Invariants (`FieldUnit` ADR 0008 `test_automatic_signal.cpp`; Python suite gap 2)** | **Holds in-plant for `I1`–`I4`** (under `"cleared"`, while `1T` is occupied outbound `H` is released by `1T`; on the scan `1T` clears into `West`, `West`'s outbound `H` picks up before `West`'s leaving `HR` picks up and latches `cleared`, releasing `2W`'s `SR`; across a 1-scan delayed wire/codeline carrier, a 1-scan propagation window exists until the cut reaches `East`, §18.3 item 4, `FieldUnit` ADR 0008 finding 1) | **Holds for `I1`–`I4`** (under `"requested"`, `traffic_free` is carried by `field_fr` and is never bypassed by a stale `SR`) | **Holds by trace for `I1`–`I4`** (`traffic_line` carries `traffic_free` end-to-end without `SR` bypass) |
 
-An inconsistent combination—such as `tumbleDownTrigger: "requested"` paired with `trafficMechanism: "hd_chain"`—violates
-scenarios **I1** and **I3** by trace (a `requested` control while `1T` is occupied holds outbound `H` released after
-`1T` clears, leaving `2W`'s `SR` set to feed `segment_clear` to the far end) and will be rejected by the conformance
-suite once gap 2 closes.
+Two combinations are invalid and will be rejected by the conformance suite once gap 2 closes:
+1. `tumbleDownTrigger: "requested"` paired with `trafficMechanism: "hd_chain"` violates scenarios **I1** and **I3** (a
+   `requested` control while `1T` is occupied holds outbound `H` released after `1T` clears, leaving `2W`'s `SR` set to
+   feed `segment_clear` to the far end).
+2. `sameLocationOpposingCut: true` paired with `intermediatesAtRest: "clear"` oscillates at rest (two masts at one
+   location that each break `HR` over the other's `HR` back contact while `H` arrives from both directions pick up
+   together, cut each other, drop together, and repeat on every scan; `FieldUnit` ADR 0008 finding 2).
 
 ## 15. The HD line and the directional stick relay (`SR`) (decision 12)
 
@@ -462,7 +465,7 @@ Southbound train `T1` leaves Corporal for Sargent:
 | At Corporal; `830SAB` cleared (`tumbleDownTrigger` active) | released (`H` from Corporal released; no `832NA` `SR`) | released | asserted | Tumble-down: `832NA`, `834NA` go to Stop; Sargent's `segment_clear` and `traffic_free` are released; `830SAB` clears. |
 | In `832T` (`830SAB` returns to Stop) | released (`832T` occupied) | released | released (`832T` occupied) | `830SAB` is at Stop; Sargent's `836NAB` stays held at Stop. |
 | In `834T` (`832T` clear) | released (`834T` occupied) | released | asserted (`832SA`'s `SR` picked up), `D` released | Corporal has `segment_clear` and `traffic_free` to clear `830SAB` to Approach for a following move; Sargent stays locked out. |
-| In `836T` (`834T` clear) | asserted once Corporal's outbound `H` condition is restored | released (`836T` occupied) | asserted (`834SA`'s `SR` picked up), `D` asserted | `832SA` clears to Clear; Sargent stays locked out by `836T` occupancy until `T1` clears `836T`. |
+| In `836T` (`834T` clear) | asserted once Corporal's outbound `H` condition is restored | released (`836T` occupied) | asserted (`834SA`'s `SR` picked up), `D` asserted | `832SA` clears to Approach (`834SA` is at Stop, so `D` from 834 is released and `832SA`'s own `D` to Corporal is asserted); Sargent stays locked out by `836T` occupancy until `T1` clears `836T`. |
 | Clear of `836T` (into Sargent; `trafficRelease` satisfied) | asserted | asserted | asserted | Block idle; intermediates return to their `intermediatesAtRest` state, and either CP may clear a leaving signal. |
 
 # Part 3. Deployment variations, carrier vitality, and consumer context (non-normative for `derive.py`)
@@ -635,7 +638,8 @@ Each consumer input, the Part 1 section that states it, and its form:
   profiles (gap 2).
 - FieldUnit: exposes the four outbound seam facts (`requested`, `cleared`, `in_time`, `home_proceed`) and consumes the
   three inbound seam facts (`segment_clear`, `next_proceed`, `traffic_free`) of §13 (`FieldUnit` ADR 0007,
-  `FieldUnit/docs/adr/0007-interlocking-block-seam.md`).
+  `FieldUnit/docs/adr/0007-interlocking-block-seam.md`; `FieldUnit` ADR 0008,
+  `FieldUnit/docs/adr/0008-automatic-signal.md`).
 
 ## 24. Record
 
@@ -653,5 +657,12 @@ Each consumer input, the Part 1 section that states it, and its form:
   three-column reference-data profile table (`SP_1942`, `CBQ_1946`, `ERIE_NW_1942`) in §14; marked carrier vitality
   (`vital` vs. `non_vital` `R15` codeline-repeat compression) in §18.1; updated the Order of Authority in `AGENTS.md`
   and `R1` to name both Rank 1 homes and the seam between them.
+- **2026-11-02 (post-conformance update from `FieldUnit` ADR 0008):** Recorded the three findings from
+  `FieldUnit/tests/test_automatic_signal.cpp`: (1) in §14.2, under `SP_1942`, `I3` holds in-plant because `West`'s
+  outbound `H` picks up on the scan `1T` clears before `West`'s leaving `HR` latches `cleared`, with a 1-scan
+  propagation window across a delayed carrier (§18.3 item 4); (2) `sameLocationOpposingCut: true` (cutting `HR` over
+  opposing `HR` back) races when paired with `intermediatesAtRest: "clear"`, so `SP_1942` sets
+  `sameLocationOpposingCut: false`; (3) in §16 row 4 (`T1` in `836T`), `832SA` clears to Approach (not Clear), asserting
+  its `D` to Corporal.
 
 [^rev]: See §24 (Record) for the revision history from commit `96d3765` through rev 4.
