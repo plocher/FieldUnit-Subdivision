@@ -128,6 +128,13 @@
       "feature": null,
       "replacedBy": null
     },
+    "head.device": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
     "head.vocabulary": {
       "level": "error",
       "lifecycle": "active",

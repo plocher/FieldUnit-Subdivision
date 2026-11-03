@@ -49,6 +49,8 @@ names every other track pin its wire reaches, so the relation is symmetric):
   unverified against an opened edition of the Standard Code), so consumers read the words from the file.
   Its control source is a local lever, a field device of Appliance ``lever`` and Style ``train_order`` serving it by
   Name (``train_order.lever`` at missing when none does), which derives ``contacts`` ``ORDERS`` and ``PROCEED``.
+  Each of its heads needs one head device of its drawn style, as a mast's does (``heads``): a wrong style is
+  ``head.vocabulary`` at error, no device at all ``head.device`` at missing.
 - **Consumers of another station's indications** (the owner, 2026-10-27): a ``track.consumers`` row is a one-sided
   reference, ``relations.indication`` the token it consumes (``Corporal:2NATK``); a track circuit's token names the
   circuit the row stands on.
@@ -1042,12 +1044,20 @@ class _Derivation:
     # --------------------------------------------------------------------------------------------- heads
 
     def heads(self) -> None:
-        """A head device to its trackplan head by mast name and letter; the vocabularies must match (ADR 0009 §3.7)."""
+        """A head device to its trackplan head by mast name and letter; the vocabularies must match (ADR 0009 §3.7). A
+        train order signal's heads (Appliance ``train_order``, keyed N, S, E or W; the owner, 2026-11-03) take the same
+        checks as a mast's: one device of the drawn style per head, another style ``head.vocabulary`` at error (wrong),
+        and, for a train order head only, no device at all ``head.device`` at missing (incomplete is missing, wrong is
+        an error: the owner, 2026-11-03): its face is a device the drawing has yet to bind. A mast head with no device
+        stays unreported, as today (an automatic mast's devices are not yet drawn)."""
         for name, ix in self.m.get("interlockings", {}).items():
             plan: dict[tuple[str, str], str] = {}
+            undrawn: list[tuple[str, str]] = []                       # a train order head no device serves
             for mast, a in ix.get("appliances", {}).items():
                 for letter, h in a.get("heads", {}).items():
                     plan[(mast, letter)] = h.get("given", {}).get("Style", "")
+                    if _train_order(a):
+                        undrawn.append((mast, letter))
             by_head: dict[tuple[str, str], list[tuple[int, dict[str, Any]]]] = defaultdict(list)
             for i, d in enumerate(ix.get("devices", [])):
                 g, serves = d.get("given", {}), d.get("derived", {}).get("serves")
@@ -1074,6 +1084,10 @@ class _Derivation:
                 if len(primary) > 1 or (not primary and not wrong):
                     self.r.add("head.vocabulary", f"{name}: {mast} head {letter} ({style}) has {len(primary)} devices of its style; "
                                "one expected", where, others + mast_path)
+            for mast, letter in undrawn:
+                if (mast, letter) not in by_head:
+                    self.r.add("head.device", f"{name}: train order signal {mast} head {letter} ({plan[(mast, letter)]}) has no device; "
+                               f"one {plan[(mast, letter)]} head device bound to it is expected", f"interlockings/{name}/appliances/{mast}")
 
     # -------------------------------------------------------------------------------------- train orders
 

@@ -713,9 +713,10 @@ H0   | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=
 HN2  | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=N
 """
         sm, ix = compile_(self.STATION + self.SIGNAL + heads, self.TRACK + "h | TO1.H HN.M HS.M HA.M HL.M H0.M HN2.M\n")
-        self.assertEqual(diags(sm, "head."), [("head.direction", "HA"), ("head.direction", "HL"), ("head.duplicate", "HN2"), ("head.letter", "H0")])
+        self.assertEqual([d for d in diags(sm, "head.") if d[0] != "head.device"],                  # no head devices drawn here: derive's head.device
+                         [("head.direction", "HA"), ("head.direction", "HL"), ("head.duplicate", "HN2"), ("head.letter", "H0")])
         self.assertEqual({d.code: d.severity for d in sm.report.diags if d.code.startswith("head.")},
-                         {"head.direction": "error", "head.duplicate": "error", "head.letter": "missing"})
+                         {"head.direction": "error", "head.duplicate": "error", "head.letter": "missing", "head.device": "missing"})
         self.assertEqual(sorted(ix["appliances"]["Gilroy"]["heads"]), ["N", "S"])
 
     def test_a_pin_on_the_track_is_an_error(self):

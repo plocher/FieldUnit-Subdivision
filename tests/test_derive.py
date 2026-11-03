@@ -978,6 +978,28 @@ class TrainOrders(unittest.TestCase):
         self.assertTrue(d.text.endswith(", not the lever of Style toggle that serves it"), d.text)
         self.assertEqual(out["interlockings"]["X"]["devices"][0]["derived"], {"serves": "X:Gilroy"})
 
+    def head(self, letter: str, style: str) -> dict:
+        return {"given": {"Appliance": "head", "Style": style, "Head": letter}, "relations": {"mast": "X:Gilroy"}}
+
+    def test_each_head_has_one_device_of_its_drawn_style(self):
+        """The owner, 2026-11-03: a train order head takes a mast head's checks (ADR 0009 §3.7): a wrong style is
+        head.vocabulary at error; no device at all, which a mast's head does not report, is head.device at missing
+        (incomplete is missing, wrong is an error)."""
+        bound = [self.LEVER, self.head("N", "LQ"), self.head("S", "LQ")]
+        out, diags = run(self.model(devices=bound))
+        self.assertEqual(only(diags, "head", "train_order"), [])
+        self.assertEqual([d["derived"]["serves"] for d in out["interlockings"]["X"]["devices"][1:]], ["X:Gilroy", "X:Gilroy"])
+        m = self.model(devices=[self.LEVER])
+        self.assertEqual(only(run(m)[1], "head"), [("head.device", "Gilroy"), ("head.device", "Gilroy")])
+        self.assertEqual([(d.severity, d.text) for d in derive.derive(m)[1].by_code("head.device")],
+                         [("missing", "X: train order signal Gilroy head N (LQ) has no device; one LQ head device bound to it is expected"),
+                          ("missing", "X: train order signal Gilroy head S (LQ) has no device; one LQ head device bound to it is expected")])
+        self.assertEqual(only(run(self.model(devices=[self.LEVER, self.head("N", "LQ")]))[1], "head"), [("head.device", "Gilroy")])
+        _, diags = run(self.model(devices=[self.LEVER, self.head("N", "LQ"), self.head("S", "CPL")]))     # the wrong style
+        self.assertEqual(only(diags, "head"), [("head.vocabulary", "2")])
+        self.assertEqual(only(run(self.model(devices=[self.LEVER, self.head("N", "LQ"), self.head("S", "LQ"), self.head("S", "CL")]))[1], "head"),
+                         [])                                                                        # a semaphore's night lamp
+
     def test_the_desks_no_lever_rule_never_reads_it(self):
         """interlocking.no_lever keys on switches and locks (grammar.lever_class); a train order signal on a code line's
         interlocking is not one of its bare switches, lever or no lever."""
