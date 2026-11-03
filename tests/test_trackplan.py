@@ -449,9 +449,12 @@ I2   | Industry        | TRACK     | Kind=INDUSTRY Name=Cannery
 H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
 NX1  | NextCP          | TRACK     | Kind=NEXT_CP Interlocking=Lick
 NX2  | NextCP          | TRACK     | Kind=NEXT_CP
+NX3  | NextCP          | TRACK     | Kind=NEXT_CP Interlocking=Hollister Style=off_layout
 """
         sm, ix = compile_(given, "")
-        self.assertEqual(sorted_rows(rows(ix, "ends")), sorted_rows([{"given": {"Kind": "NEXT_CP", "Interlocking": "Lick"}}, {"given": {"Kind": "NEXT_CP"}}]))
+        self.assertEqual(sorted_rows(rows(ix, "ends")), sorted_rows([{"given": {"Kind": "NEXT_CP", "Interlocking": "Lick"}}, {"given": {"Kind": "NEXT_CP"}},
+                                                                     {"given": {"Kind": "NEXT_CP", "Interlocking": "Hollister", "Style": "off_layout"}}]))
+        self.assertEqual(diags(sm, "next_cp.off_layout", "next_cp.drawn_neighbour"), [("next_cp.off_layout", "X")])    # Lick unmarked; Hollister marked (ADR 0013 §21 gap 7)
 
 
 # A signal location in a block (ADR 0013 §6): one double joint with a mast on each side, 832T on side A and 834T on B.
@@ -881,7 +884,7 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(self.sm.report.by_code("reference.track") + self.sm.report.by_code("reference.marker"), [])
         self.assertEqual(len(self.sm.report.by_code("next_cp.drawn")), 0)
         self.assertEqual(len(self.sm.report.by_code("mast.powered")), 0)
-        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 2, "missing": 2})   # 2 next_cp.off_layout; 2 interlocking.no_lever, no mast.kind (Railroad 31954c5 plus the uncommitted working tree of 2026-11-03, every mast stating its Kind)
+        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 0, "missing": 2})   # 2 interlocking.no_lever; no mast.kind, and Lick and Hollister marked off_layout (Railroad 31954c5 plus the uncommitted working tree of 2026-11-03)
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):
         """ADR 0013 §5. The library's mast symbols carry a fixed Kind (Railroad 1695d48), but that commit touched no placed

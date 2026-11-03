@@ -465,6 +465,23 @@ class NextCPs(unittest.TestCase):
         out, diags = run(layout(X=interlocking("N1 | ends | Kind=NEXT_CP Interlocking=Lick\n", "", "East")))
         self.assertEqual(diags, [("next_cp.off_layout", "X")])
 
+    def test_one_marked_off_layout_is_reported_nothing_and_pairs_with_nothing(self):
+        """ADR 0013 §21 gap 7 (the owner, 2026-11-03): Style off_layout states the interlocking will never be drawn."""
+        out, diags = run(layout(X=interlocking("N1 | ends | Kind=NEXT_CP Interlocking=Lick Style=off_layout\n", "", "East")))
+        self.assertEqual(only(diags, "next_cp"), [])
+        self.assertEqual(row(out["interlockings"]["X"], "N1")["given"], {"Kind": "NEXT_CP", "Interlocking": "Lick", "Style": "off_layout"})
+        m = pair(2, 1)
+        m["interlockings"]["A"]["track"]["ends"][0]["given"]["Style"] = "off_layout"      # A: one marked, one not; B: one back
+        self.assertEqual(only(run(m)[1], "next_cp"), [("next_cp.drawn_neighbour", "N0")])
+
+    def test_the_mark_on_a_neighbour_that_is_drawn_lies(self):
+        m = pair(1, 1)
+        m["interlockings"]["A"]["track"]["ends"][0]["given"]["Style"] = "off_layout"
+        self.assertEqual(only(run(m)[1], "next_cp"), [("next_cp.drawn_neighbour", "N0"), ("next_cp.pair", "B")])
+        (d,) = derive.derive(m)[1].by_code("next_cp.drawn_neighbour")
+        self.assertEqual((d.severity, d.entities), ("warning", ("interlockings/A/track/ends/N0", "interlockings/B")))
+        self.assertEqual(d.text, "A: a NextCP to B is marked off_layout, but B is on this layout")
+
     def test_a_next_cp_whose_track_is_drawn_through_to_the_neighbour_is_redundant(self):
         """ADR 0013 §7.1: block track drawn across sheets replaces the NextCP inside CTC. A's NextCP to B stands on a wire
         that also reaches B's marker (by name) or B's joint (by its id): warning, with B as the second party, and the

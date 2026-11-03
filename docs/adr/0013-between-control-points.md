@@ -604,7 +604,10 @@ Each consumer input, the Part 1 section that states it, and its form:
    stick relay, while traffic-lever schemes use it for the traffic stick relay.
 6. Luchessa's and Watsonville's `NFLK` and `SFLK` (board `TRAFFIC` lamps): whether they become a block's direction-of-traffic
    indication.
-7. Off-layout ends (Lick, Hollister): a block with one end on the layout is reported at info.
+7. Closed 2026-11-03 (the owner): an off-layout end (Lick, Hollister) will never be drawn, and the drawing states it with
+   `Style = off_layout` on the NextCP. One so marked is reported nothing and pairs with nothing; one that names an
+   interlocking not in the file without the mark stays `next_cp.off_layout` at info; the mark on a neighbour that is in
+   the file lies, `next_cp.drawn_neighbour` at warning.
 8. **Hold signals.** An intermediate signal the dispatcher can hold at stop to divide an established block. A held
    signal location takes a control, so it is a code line station. Not modeled yet.
 

@@ -741,20 +741,26 @@ class _Derivation:
 
     def next_cps(self) -> None:
         """A NextCP names the interlocking its track leads to; that interlocking's NextCPs lead back as many times. One
-        beyond the layout (Lick, Hollister) is reported at info. One whose track is also drawn through to another
-        interlocking's track is redundant, ``next_cp.drawn`` at warning (ADR 0013 §7.1: block track is drawn from one
-        control point to the next and replaces the NextCP inside CTC; it stays for a neighbour that is not drawn)."""
+        marked ``Style off_layout`` says its interlocking will never be drawn (ADR 0013 §21 gap 7; the owner, 2026-11-03):
+        nothing is reported for it and it counts toward no pair, since nothing pairs back; the mark on one whose
+        interlocking is in the file lies, ``next_cp.drawn_neighbour`` at warning. One beyond the layout without the mark
+        is reported at info. One whose track is also drawn through to another interlocking's track is redundant,
+        ``next_cp.drawn`` at warning (ADR 0013 §7.1: block track is drawn from one control point to the next and
+        replaces the NextCP inside CTC; it stays for a neighbour that is not drawn)."""
         count: dict[tuple[str, str], int] = defaultdict(int)
         for a, plan in self.plans.items():
             for row in plan.track.get("ends", []):
                 g = row.get("given", {})
-                if g.get("Kind") == "NEXT_CP" and g.get("Interlocking"):
+                if g.get("Kind") == "NEXT_CP" and g.get("Interlocking") and not _off_layout(row):
                     count[(a, g["Interlocking"])] += 1
         for a, plan in self.plans.items():
             for row in plan.track.get("ends", []):
                 g = row.get("given", {})
                 if g.get("Kind") != "NEXT_CP":
                     continue
+                if _off_layout(row) and g.get("Interlocking") in self.plans:
+                    self.r.add("next_cp.drawn_neighbour", f"{a}: a NextCP to {g['Interlocking']} is marked off_layout, but {g['Interlocking']} "
+                               f"is on this layout", plan.where("track", "ends", row.get("id", "")), (f"interlockings/{g['Interlocking']}",))
                 drawn = sorted(x for n in plan.component(f"{plan.row_prefix(row)}.track") if (x := self.drawn_in_other(a, n)))
                 if drawn:
                     self.r.add("next_cp.drawn", f"{a}: a NextCP{' to ' + g['Interlocking'] if g.get('Interlocking') else ''} stands on "
@@ -1125,6 +1131,11 @@ class _Derivation:
                            f"{', '.join(x for x, _ in units)} already reach{'es' * (len(units) == 1)} {t} through code line"
                            f"{'s' * (len(lines) > 1)} {', '.join(lines)}",
                            f"layout/transports/{t}", (f"layout/processors/{p}",) + tuple(f"interlockings/{x}" for x, _ in units))
+
+
+def _off_layout(row: dict[str, Any]) -> bool:
+    """A NextCP marked ``Style off_layout``: its interlocking will never be drawn (ADR 0013 §21 gap 7)."""
+    return row.get("given", {}).get("Style") == "off_layout"
 
 
 def _automatic_mast(appliance: dict[str, Any]) -> bool:
