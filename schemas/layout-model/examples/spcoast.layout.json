@@ -1530,10 +1530,14 @@
               "19fa32d3-a9c3-4a4c-a3ea-20c63680f896.DARK"
             ],
             "N": [
-              "Corporal:Beet Loader 2.EoT"
+              "Corporal:Beet Loader 2.EoT",
+              "Sargent:1.N",
+              "Sargent:Beet Loader 2.EoT"
             ],
             "R": [
-              "Corporal:Beet Loader 1.EoT"
+              "Corporal:Beet Loader 1.EoT",
+              "Sargent:1.R",
+              "Sargent:Beet Loader 1.EoT"
             ]
           }
         },
@@ -1835,6 +1839,7 @@
               "ddd56695-5907-4c47-9faa-18723057031a.A"
             ],
             "B": [
+              "2ed485d8-9399-4b83-8285-6cf2e67c0af8.A",
               "Corporal:834T.TC",
               "ddd56695-5907-4c47-9faa-18723057031a.B"
             ]
@@ -1850,6 +1855,7 @@
           },
           "relations": {
             "TC": [
+              "2ed485d8-9399-4b83-8285-6cf2e67c0af8.A",
               "Corporal:833T.B",
               "ddd56695-5907-4c47-9faa-18723057031a.B"
             ]
@@ -2704,7 +2710,9 @@
             "name": "Corporal:Beet Loader 1",
             "relations": {
               "EoT": [
-                "Corporal:1.R"
+                "Corporal:1.R",
+                "Sargent:1.R",
+                "Sargent:Beet Loader 1.EoT"
               ]
             }
           },
@@ -2716,7 +2724,9 @@
             "name": "Corporal:Beet Loader 2",
             "relations": {
               "EoT": [
-                "Corporal:1.N"
+                "Corporal:1.N",
+                "Sargent:1.N",
+                "Sargent:Beet Loader 2.EoT"
               ]
             }
           }
@@ -2761,6 +2771,7 @@
                 "Corporal:833T.A"
               ],
               "B": [
+                "2ed485d8-9399-4b83-8285-6cf2e67c0af8.A",
                 "Corporal:833T.B",
                 "Corporal:834T.TC"
               ],
@@ -7068,9 +7079,13 @@
               "de274dbe-41d8-4795-9866-fbb0950c5f2c.DARK"
             ],
             "N": [
+              "Corporal:1.N",
+              "Corporal:Beet Loader 2.EoT",
               "Sargent:Beet Loader 2.EoT"
             ],
             "R": [
+              "Corporal:1.R",
+              "Corporal:Beet Loader 1.EoT",
               "Sargent:Beet Loader 1.EoT"
             ]
           }
@@ -7124,7 +7139,8 @@
         "834NA": {
           "derived": {
             "circuits": {
-              "approach": "Sargent:836T"
+              "approach": "Sargent:836T",
+              "governed": "Corporal:834T"
             },
             "controlPoint": "Sargent:Sargent"
           },
@@ -7145,6 +7161,7 @@
         "834SA": {
           "derived": {
             "circuits": {
+              "approach": "Corporal:834T",
               "governed": "Sargent:836T"
             },
             "controlPoint": "Sargent:Sargent"
@@ -7796,6 +7813,16 @@
         "track": [
           {
             "derived": {
+              "circuit": "Corporal:834T"
+            },
+            "points": "0.0,33.02 13.97,33.02",
+            "relations": {
+              "from": "label:ToCorporalMT",
+              "to": "2ed485d8-9399-4b83-8285-6cf2e67c0af8.A"
+            }
+          },
+          {
+            "derived": {
               "circuit": "Sargent:1NAT"
             },
             "points": "81.28,33.02 109.22,33.02",
@@ -7836,13 +7863,6 @@
             "relations": {
               "from": "Sargent:1.N",
               "to": "label:Beet Loader 2"
-            }
-          },
-          {
-            "points": "0.0,33.02 13.97,33.02",
-            "relations": {
-              "from": "label:ToCorporalMT",
-              "to": "2ed485d8-9399-4b83-8285-6cf2e67c0af8.A"
             }
           }
         ]
@@ -7916,6 +7936,8 @@
             "name": "Sargent:Beet Loader 2",
             "relations": {
               "EoT": [
+                "Corporal:1.N",
+                "Corporal:Beet Loader 2.EoT",
                 "Sargent:1.N"
               ]
             }
@@ -7928,12 +7950,42 @@
             "name": "Sargent:Beet Loader 1",
             "relations": {
               "EoT": [
+                "Corporal:1.R",
+                "Corporal:Beet Loader 1.EoT",
                 "Sargent:1.R"
               ]
             }
           }
         ],
         "joints": [
+          {
+            "derived": {
+              "circuits": {
+                "A": "Corporal:834T",
+                "B": "Sargent:836T"
+              }
+            },
+            "given": {
+              "Kind": "IRJ_SIGNALS"
+            },
+            "id": "2ed485d8-9399-4b83-8285-6cf2e67c0af8",
+            "relations": {
+              "A": [
+                "Corporal:833T.B",
+                "Corporal:834T.TC",
+                "ddd56695-5907-4c47-9faa-18723057031a.B"
+              ],
+              "B": [
+                "57f8967a-3010-441d-bea9-0eb783a0fa60.approach",
+                "db6785fb-b68d-4a4c-8fb5-1bcfbfd8d672.track",
+                "Sargent:836T.TC"
+              ],
+              "masts": {
+                "A": "Sargent:834NA",
+                "B": "Sargent:834SA"
+              }
+            }
+          },
           {
             "derived": {
               "circuits": {
@@ -8007,28 +8059,6 @@
                 "Sargent:835.N"
               ],
               "mast": "Sargent:836SA"
-            }
-          },
-          {
-            "derived": {
-              "circuits": {
-                "B": "Sargent:836T"
-              }
-            },
-            "given": {
-              "Kind": "IRJ_SIGNALS"
-            },
-            "id": "2ed485d8-9399-4b83-8285-6cf2e67c0af8",
-            "relations": {
-              "B": [
-                "57f8967a-3010-441d-bea9-0eb783a0fa60.approach",
-                "db6785fb-b68d-4a4c-8fb5-1bcfbfd8d672.track",
-                "Sargent:836T.TC"
-              ],
-              "masts": {
-                "A": "Sargent:834NA",
-                "B": "Sargent:834SA"
-              }
             }
           }
         ],
