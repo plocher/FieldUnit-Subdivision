@@ -1489,7 +1489,7 @@
       }
     },
     "head": {
-      "description": "A head of a mast, keyed by its letter: an entity nested under its mast (three-maps D9). given holds its Appliance and Style.",
+      "description": "A head of a mast, keyed by its letter: an entity nested under its mast (three-maps D9). given holds its Appliance and Style. A train order signal's head is keyed by the direction it faces (N, S, E or W) and derives direction (the owner, 2026-11-03).",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -1497,6 +1497,26 @@
           "allOf": [
             {
               "$ref": "#/$defs/given"
+            }
+          ]
+        },
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "direction": {
+                  "type": "string",
+                  "enum": [
+                    "LEFT",
+                    "RIGHT"
+                  ],
+                  "description": "The direction a train order signal's head faces, from its letter by ADR 0003 D1: N and W are LEFT, S and E RIGHT. Not derived on a mast's head."
+                }
+              }
             }
           ]
         }

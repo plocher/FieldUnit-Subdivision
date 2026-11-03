@@ -774,7 +774,8 @@ class SPCoastTrackplan(unittest.TestCase):
     def test_every_appliance_has_its_control_point_and_no_chain_is_broken(self):
         self.assertEqual([d for d in self.sm.report.diags if d.code.startswith("control_point")], [])
         self.assertEqual([(i, n) for i, ix in self.model["interlockings"].items() for n, a in ix.get("appliances", {}).items()
-                          if "controlPoint" not in a.get("derived", {}) and a["given"].get("Kind") not in ("ABSOLUTE", "PERMISSIVE")], [])
+                          if "controlPoint" not in a.get("derived", {}) and a["given"].get("Kind") not in ("ABSOLUTE", "PERMISSIVE")
+                          and a["given"]["Appliance"] != "train_order"], [])                # never in a control point (the owner, 2026-11-03)
 
     def test_every_next_cp_names_where_it_leads_and_is_answered(self):
         ends = [(i, e["given"].get("Interlocking")) for i, ix in self.model["interlockings"].items() for e in ix["track"].get("ends", [])

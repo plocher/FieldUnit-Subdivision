@@ -15,6 +15,14 @@ UNPOWERED = frozenset({"manual", "manual_sensed", "spring"}) | LOCKED   # may li
 LEVER = re.compile(r"^\d+")
 MAST_NAME = re.compile(r"^(0?[1-9]\d{0,3}[LRNSEW])([A-Z]+)$")
 GANG = re.compile(r"(?<=\d)[A-Z]$")
+# ADR 0003 D1: a drawing uses N/S, E/W or L/R as local policy decides, with one fixed mapping: Left = North and West,
+# Right = South and East. The code uses LEFT and RIGHT; the drawn letter stays in the name.
+DIRECTION = {"L": "LEFT", "N": "LEFT", "W": "LEFT", "R": "RIGHT", "S": "RIGHT", "E": "RIGHT"}
+
+
+def direction_of(letter: str) -> str | None:
+    """The direction a drawn letter names, ``LEFT`` or ``RIGHT`` (ADR 0003 D1); None for any other letter."""
+    return DIRECTION.get(letter)
 
 
 def styles(given: dict[str, str]) -> list[str]:

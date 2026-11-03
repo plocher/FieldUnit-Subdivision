@@ -37,6 +37,13 @@ names every other track pin its wire reaches, so the relation is symmetric):
   ``PERMISSIVE`` mast belongs to no control point (ADR 0013 §5: automatic masts state no CP Name; §4: block track is
   outside every interlocking): it derives no ``controlPoint``, under one house as under several, and no chain runs
   through it. A mast with no Kind keeps today's handling (``mast.kind`` reports it).
+- **A train order signal** (``Appliance train_order``; the owner, 2026-11-03) is an operator-controlled, non-vital
+  indicator with heads for a face: never a signal in the interlocking sense, never in a route, never in a control
+  point. It derives no ``controlPoint`` and no chain runs through it (the exclusion an automatic mast has, ADR 0013
+  §5); each of its heads derives ``direction``, ``LEFT`` or ``RIGHT``, from the letter it is keyed by as ADR 0003 D1
+  maps a mast's compass letter (``grammar.direction_of``: N and W are LEFT, S and E RIGHT). Its ``relations.station``
+  names a timetable station of ``layout.stations``; one that names none is ``train_order.station`` at missing. No
+  mast rule, lever rule or code line token reads it.
 - **Consumers of another station's indications** (the owner, 2026-10-27): a ``track.consumers`` row is a one-sided
   reference, ``relations.indication`` the token it consumes (``Corporal:2NATK``); a track circuit's token names the
   circuit the row stands on.
@@ -72,7 +79,7 @@ from typing import Any, Optional
 from tools.railroad import codeline
 
 from . import expression, reference
-from .grammar import GANG, MAST_NAME, is_powered, lever_class, lever_of, styles
+from .grammar import GANG, MAST_NAME, direction_of, is_powered, lever_class, lever_of, styles
 from . import sort_key
 from .report import Report
 
@@ -308,7 +315,7 @@ class _Plan:
         Reached by chains from two houses and stating none is an error, and so is reached by none. A track circuit
         marker stands for its circuit."""
         houses = {h.casefold(): h for h in self.houses}
-        apps = [(n, a) for n, a in self.appliances.items() if not _automatic_mast(a)]   # no control point (ADR 0013 §5)
+        apps = [(n, a) for n, a in self.appliances.items() if not _automatic_mast(a) and not _train_order(a)]   # no control point (ADR 0013 §5; the owner, 2026-11-03)
         joints = [row for row in self.track.get("joints", []) if row.get("given", {}).get("Kind") == "IRJ_SIGNAL"]
 
         def region(node: str) -> Optional[str]:
@@ -464,6 +471,9 @@ class _Plan:
                 derived["circuits"] = {p: self.circuit(self.pin(name, p)) for p in ("A", "B")}
             if g.get("Appliance") == "track_circuit" and g.get("Style") == "virtual":
                 derived["members"] = [qualify(t.strip(), self.name) for t in g.get("Members", "").split(",") if t.strip()]
+            if _train_order(a):                                       # each head faces the direction its letter names (ADR 0003 D1)
+                for letter, h in a.get("heads", {}).items():
+                    _set_derived(h, {"direction": direction_of(letter)})
             cp = self.cp.get(id(a))
             derived["controlPoint"] = f"{self.name}:{cp}" if cp else None
             _set_derived(a, derived)
@@ -722,6 +732,7 @@ class _Derivation:
         self.codeline()
         self.no_lever()
         self.heads()
+        self.train_orders()
         self.reach()
         if "provenance" in self.m:
             self.m["provenance"]["rules"] = RULES
@@ -1050,6 +1061,25 @@ class _Derivation:
                     self.r.add("head.vocabulary", f"{name}: {mast} head {letter} ({style}) has {len(primary)} devices of its style; "
                                "one expected", where, others + mast_path)
 
+    # -------------------------------------------------------------------------------------- train orders
+
+    def train_orders(self) -> None:
+        """A train order signal stands at a timetable station (the owner, 2026-11-03): its ``relations.station`` names
+        an entry of ``layout.stations`` (names fold case, as every name does). One that names none, or states none,
+        is ``train_order.station`` at missing: the station is a fact not yet drawn, not a contradiction."""
+        stations = {n.casefold() for n in self.m.get("layout", {}).get("stations", {})}
+        for name, ix in self.m.get("interlockings", {}).items():
+            for n, a in ix.get("appliances", {}).items():
+                if not _train_order(a):
+                    continue
+                station = a.get("relations", {}).get("station")
+                if not station:
+                    self.r.add("train_order.station", f"{name}: train order signal {n} states no Station", f"interlockings/{name}/appliances/{n}")
+                elif station.casefold() not in stations:
+                    self.r.add("train_order.station", f"{name}: train order signal {n} stands at station {station!r}, which the layout "
+                               f"does not draw ({', '.join(sorted(self.m.get('layout', {}).get('stations', {}), key=sort_key)) or 'no stations'})",
+                               f"interlockings/{name}/appliances/{n}")
+
     # --------------------------------------------------------------------------------------------- reach
 
     def reach(self) -> None:
@@ -1079,6 +1109,12 @@ def _automatic_mast(appliance: dict[str, Any]) -> bool:
     """A mast that states Kind ``ABSOLUTE`` or ``PERMISSIVE``: automatic, of no control point (ADR 0013 §5)."""
     g = appliance.get("given", {})
     return g.get("Appliance") == "mast" and g.get("Kind") in MAST_KINDS - {"CONTROLLED"}
+
+
+def _train_order(appliance: dict[str, Any]) -> bool:
+    """A train order signal (``Appliance train_order``; the owner, 2026-11-03): never in a control point, a route or a
+    mast rule."""
+    return appliance.get("given", {}).get("Appliance") == "train_order"
 
 
 def _clean(d: dict[str, Any]) -> dict[str, Any]:

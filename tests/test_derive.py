@@ -876,6 +876,46 @@ class Heads(unittest.TestCase):
         self.assertEqual(self.check("100SB", "UQ", [("head", "UQ"), ("head", "CL")]), [])
 
 
+class TrainOrders(unittest.TestCase):
+    """A train order signal (Appliance train_order; the owner, 2026-11-03): never in a control point, its heads facing
+    the direction their letters name (ADR 0003 D1), standing at a timetable station of layout.stations."""
+
+    TO = "Gilroy | appliance | Appliance=train_order Station=Gilroy rel.station=Gilroy\n"
+
+    def model(self, plan=(TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH), stations=("Gilroy",)) -> dict:
+        things, wires, houses = plan
+        ix = interlocking(things + self.TO, wires, houses)
+        ix["appliances"]["Gilroy"]["heads"] = {k: {"given": {"Appliance": "head", "Style": "LQ"}} for k in ("N", "S")}
+        m = layout(X=ix)
+        m["layout"]["stations"] = {s: {"given": {"Milepost": "77.9"}} for s in stations}
+        return m
+
+    def test_it_derives_no_control_point_and_breaks_no_chain(self):
+        for plan in ((TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH), (ONE_SWITCH, ONE_SWITCH_WIRES, "East")):
+            out, diags = run(self.model(plan))
+            self.assertEqual(only(diags, "control_point", "train_order", "mast", "lever", "interlocking"), [], plan[2])
+            to = out["interlockings"]["X"]["appliances"]["Gilroy"]
+            self.assertNotIn("controlPoint", to.get("derived", {}), plan[2])
+            self.assertEqual({n: cp for n, cp in control_points(out).items() if n != "Gilroy"}, control_points(run(layout(X=interlocking(*plan)))[0]))
+
+    def test_each_head_faces_the_direction_its_letter_names(self):
+        out, _ = run(self.model())
+        heads = out["interlockings"]["X"]["appliances"]["Gilroy"]["heads"]
+        self.assertEqual({k: h["derived"] for k, h in heads.items()}, {"N": {"direction": "LEFT"}, "S": {"direction": "RIGHT"}})
+        self.assertEqual(layout_model.errors(out), [])
+        mast = out["interlockings"]["X"]["appliances"]["814SA"]
+        self.assertEqual([h for h in mast.get("heads", {}).values() if "derived" in h], [])         # a mast's head derives none
+
+    def test_a_station_the_layout_does_not_draw_is_missing(self):
+        _, diags = run(self.model(stations=("Lick",)))
+        self.assertEqual(only(diags, "train_order"), [("train_order.station", "Gilroy")])
+        _, diags = run(self.model(stations=("gilroy",)))                                           # names fold case
+        self.assertEqual(only(diags, "train_order"), [])
+        m = self.model()
+        del m["interlockings"]["X"]["appliances"]["Gilroy"]["relations"]
+        self.assertEqual(only(run(m)[1], "train_order"), [("train_order.station", "Gilroy")])
+
+
 class Strip(unittest.TestCase):
     def test_strip_removes_every_derived_map_and_what_held_nothing_else(self):
         m = {"a": {"given": {"x": "1"}, "derived": {"y": 2}}, "track": {"links": [{"derived": {"ports": []}}]},
