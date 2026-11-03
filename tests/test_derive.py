@@ -929,6 +929,60 @@ class Strip(unittest.TestCase):
         self.assertEqual(layout_model.dumps(derive.derive(stale)[0]), layout_model.dumps(derive.derive(m)[0]))
 
 
+def wired(m: dict, anchors: dict[str, list[str]], codelines: dict[str, tuple[str, str]] = {}, encodings: dict[str, tuple[str, str]] = {},
+          runs: dict[str, str] = {}) -> dict:
+    """Transports by name with the processors that anchor them; code lines and I/O encodings as name: (transport, processor);
+    each interlocking's processor. Every processor named is in ``layout.processors``."""
+    layout = m["layout"]
+    layout["transports"] = {t: {"given": {"Kind": t}, "relations": {"anchors": ps}} for t, ps in anchors.items()}
+    layout["codelines"] = {c: {"given": {"Kind": "AAR"}, "relations": {"transport": t, "processor": p}} for c, (t, p) in codelines.items()}
+    layout["ioEncodings"] = {e: {"given": {"Kind": e}, "relations": {"transport": t, "processor": p}} for e, (t, p) in encodings.items()}
+    names = {p for ps in anchors.values() for p in ps} | {p for _, p in codelines.values()} | {p for _, p in encodings.values()} | set(runs.values())
+    layout["processors"] = {p: {"given": {"Kind": "PROCESSOR"}} for p in sorted(names)}
+    for ix, p in runs.items():
+        m["interlockings"][ix].setdefault("relations", {})["processor"] = p
+    return m
+
+
+class Reach(unittest.TestCase):
+    """ADR 0008 §4.9 (the owner, 2026-10-24 and 2026-11-03): a FieldUnit reaches its code line's transport through the
+    code line, written as its processor's ``derived.transports``; an anchored instance nothing rides on a processor that
+    already reaches that transport through a code line is an unneeded duplicate, ``transport.reach`` at info."""
+
+    def model(self, **kw) -> dict:
+        m = on_line(layout(X=interlocking(ONE_SWITCH, ONE_SWITCH_WIRES, "East")), "X")
+        return wired(m, codelines={"Line": ("MQTT", "Office")}, runs={"X": "Field"}, **kw)
+
+    def transports(self, out: dict) -> dict[str, list[str]]:
+        return {p: proc["derived"]["transports"] for p, proc in out["layout"]["processors"].items()}
+
+    def test_a_field_processor_that_anchors_nothing_reaches_its_code_lines_transport_and_nothing_is_reported(self):
+        out, diags = run(self.model(anchors={"MQTT": ["Office"]}))
+        self.assertEqual(only(diags, "transport"), [])
+        self.assertEqual(self.transports(out), {"Field": ["MQTT"], "Office": ["MQTT"]})
+
+    def test_an_anchor_nothing_rides_beside_the_code_lines_reach_is_an_unneeded_duplicate(self):
+        m = self.model(anchors={"MQTT": ["Field", "Office"]})
+        out, diags = run(m)
+        self.assertEqual(only(diags, "transport"), [("transport.reach", "MQTT")])
+        (d,) = derive.derive(m)[1].by_code("transport.reach")
+        self.assertEqual(d.severity, "info")
+        self.assertEqual(d.entities, ("layout/transports/MQTT", "layout/processors/Field", "interlockings/X"))
+        self.assertEqual(d.text, "processor Field anchors an MQTT instance nothing rides; its FieldUnit X already reaches MQTT through code line Line")
+        self.assertEqual(self.transports(out), {"Field": ["MQTT"], "Office": ["MQTT"]})
+
+    def test_an_anchor_an_encoding_rides_is_not_a_duplicate(self):
+        """Gilroy Caltrain's shape: the field processor anchors MQTT for its JMRI I/O encoding and its code line rides
+        MQTT elsewhere; the office's anchor is ridden by the code line."""
+        out, diags = run(self.model(anchors={"MQTT": ["Field", "Office"]}, encodings={"JMRI": ("MQTT", "Field")}))
+        self.assertEqual(only(diags, "transport"), [])
+
+    def test_an_anchor_of_a_transport_no_code_line_reaches_is_listed_and_not_reported(self):
+        out, diags = run(self.model(anchors={"MQTT": ["Office"], "CMRInet": ["Field"]}))
+        self.assertEqual(only(diags, "transport"), [])
+        self.assertEqual(self.transports(out), {"Field": ["CMRInet", "MQTT"], "Office": ["MQTT"]})
+
+
 class SPCoastExample(unittest.TestCase):
     """The gate (ADR 0011 §5): the committed example, stripped of every derived map and derived again, is the same
     bytes, with the importer's diagnostic counts."""
@@ -940,7 +994,7 @@ class SPCoastExample(unittest.TestCase):
         self.assertNotIn("rules", stripped["provenance"])
         out, report = derive.derive(stripped)
         self.assertEqual(layout_model.dumps(out), text)
-        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 8, "missing": 31})   # 2 interlocking.no_lever, 29 mast.kind (Railroad 31954c5)
+        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 2, "missing": 31})   # 2 next_cp.off_layout; 2 interlocking.no_lever, 29 mast.kind (Railroad 31954c5)
 
 
 if __name__ == "__main__":

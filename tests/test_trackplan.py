@@ -881,7 +881,7 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(self.sm.report.by_code("reference.track") + self.sm.report.by_code("reference.marker"), [])
         self.assertEqual(len(self.sm.report.by_code("next_cp.drawn")), 0)
         self.assertEqual(len(self.sm.report.by_code("mast.powered")), 0)
-        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 8, "missing": 17})   # 15 mast.kind, 2 interlocking.no_lever (Railroad 31954c5, working tree of 2026-11-03)
+        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 2, "missing": 2})   # 2 next_cp.off_layout; 2 interlocking.no_lever, no mast.kind (Railroad 31954c5 plus the uncommitted working tree of 2026-11-03, every mast stating its Kind)
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):
         """ADR 0013 §5. The library's mast symbols carry a fixed Kind (Railroad 1695d48), but that commit touched no placed

@@ -268,7 +268,7 @@ its detectors at block boundaries for the same reason.)
 | The indications a station already sends | computed on demand | `tools/railroad/codeline.py` (`stations`) |
 | Drawn line wires (`Device-HD-Out` / `Device-HD-In`) | relation | device bindings `processor/address/pin` (§18.1, gap 3) |
 | Whether a cross-processor carrier is `vital` or `non_vital` (R15) | derived from carrier kind | §18.1 |
-| The transports each processor reaches | given and relation | ADR 0008 (`anchors`; a code line's transport) |
+| The transports each processor reaches | derived | ADR 0008 §4.9: `layout.processors.<p>.derived.transports` (what it anchors plus its FieldUnits' code line transports) |
 
 ## 12. Derived, and where each result lives
 
@@ -573,7 +573,7 @@ Each consumer input, the Part 1 section that states it, and its form:
 | Each station's code line kind, capacity, and steps | §11, §18.1 | §11 | given, relation, and reference data |
 | Drawn line wires (`Device-HD-Out` / `Device-HD-In`) | §18.1 | §11 | relation (`bindings`, gap 3) |
 | Carrier vitality (`vital` vs. `non_vital` R15 compression) | §18.1 | §11 | derived from carrier kind |
-| The transports each processor reaches | §18.1 | §11 | given and relation |
+| The transports each processor reaches | §18.1 | §11 | derived (`processors.<p>.derived.transports`) |
 | The MQTT topic root | §18.3 | ADR 0009 §3.10 | given (AAR encoding `Topic`) |
 | The rule and the current of traffic | §14 | §8 | given (sign Kind, Direction); derived per block |
 | The `blockRules` profile | §14.2, §15.4 | none | reference data (`reference.py`, gap 2) |
