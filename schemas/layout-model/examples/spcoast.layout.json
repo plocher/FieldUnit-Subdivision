@@ -189,6 +189,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "double"
           },
           "heads": {
@@ -212,6 +213,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "single"
           },
           "heads": {
@@ -229,6 +231,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "double"
           },
           "heads": {
@@ -252,6 +255,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "single"
           },
           "heads": {
@@ -3113,6 +3117,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "double"
           },
           "heads": {
@@ -3136,6 +3141,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "dwarf"
           },
           "heads": {
@@ -3153,6 +3159,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "dwarf"
           },
           "heads": {
@@ -3170,6 +3177,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "dwarf"
           },
           "heads": {
@@ -3187,6 +3195,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "double"
           },
           "heads": {
@@ -3698,18 +3707,19 @@
           {
             "at": {
               "x": 0.0,
-              "y": 15.24
+              "y": 13.97
             },
-            "glyph": "Railroad-Trackplan:NextCP",
-            "row": "54cdb686-7b86-4869-aff4-74c66a26d8a8"
+            "glyph": "Railroad-Trackplan:Rule261-DoT-BiDirectional",
+            "row": "d4ac0b2e-148c-49a1-a54a-9de437a417ac"
           },
           {
             "at": {
               "x": 0.0,
               "y": 15.24
             },
-            "glyph": "Railroad-Trackplan:Rule261-DoT-BiDirectional",
-            "row": "d4ac0b2e-148c-49a1-a54a-9de437a417ac"
+            "glyph": "Railroad-Trackplan:NextCP Not Modeled",
+            "rotation": 180,
+            "row": "54cdb686-7b86-4869-aff4-74c66a26d8a8"
           },
           {
             "at": {
@@ -3861,6 +3871,16 @@
             "relations": {
               "from": "d5ab4695-dde4-44bd-a42b-83dffd322517.approach",
               "to": "946ad0dc-88dc-44cb-a260-02b893893ce5.track"
+            }
+          },
+          {
+            "derived": {
+              "circuit": "Gilroy Caltrain:1SAT"
+            },
+            "points": "0.0,13.97 0.0,15.24",
+            "relations": {
+              "from": "d4ac0b2e-148c-49a1-a54a-9de437a417ac.track",
+              "to": "54cdb686-7b86-4869-aff4-74c66a26d8a8.track"
             }
           },
           {
@@ -4046,7 +4066,8 @@
             },
             "given": {
               "Interlocking": "Lick",
-              "Kind": "NEXT_CP"
+              "Kind": "NEXT_CP",
+              "Style": "off_layout"
             },
             "id": "54cdb686-7b86-4869-aff4-74c66a26d8a8",
             "relations": {
@@ -4447,6 +4468,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "double"
           },
           "heads": {
@@ -4470,6 +4492,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "dwarf"
           },
           "heads": {
@@ -4487,6 +4510,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "double"
           },
           "heads": {
@@ -4510,6 +4534,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "dwarf"
           },
           "heads": {
@@ -4543,6 +4568,35 @@
             "R": [
               "abde960c-453c-4d28-81ac-0a4634488adf.governed"
             ]
+          }
+        },
+        "Gilroy": {
+          "given": {
+            "Appliance": "train_order",
+            "Station": "Gilroy"
+          },
+          "heads": {
+            "N": {
+              "derived": {
+                "direction": "LEFT"
+              },
+              "given": {
+                "Appliance": "head",
+                "Style": "LQ"
+              }
+            },
+            "S": {
+              "derived": {
+                "direction": "RIGHT"
+              },
+              "given": {
+                "Appliance": "head",
+                "Style": "LQ"
+              }
+            }
+          },
+          "relations": {
+            "station": "Gilroy"
           }
         }
       },
@@ -5003,6 +5057,30 @@
             },
             "glyph": "Railroad-Trackplan:Switch_Lock",
             "mirror": "y"
+          },
+          "Gilroy": {
+            "at": {
+              "x": 59.69,
+              "y": 29.21
+            },
+            "glyph": "Railroad-Trackplan:Train Order Mast",
+            "heads": {
+              "N": {
+                "at": {
+                  "x": 59.69,
+                  "y": 29.21
+                },
+                "glyph": "Railroad-Trackplan:Signal Head - Semaphore-LQ"
+              },
+              "S": {
+                "at": {
+                  "x": 59.69,
+                  "y": 29.21
+                },
+                "glyph": "Railroad-Trackplan:Signal Head - Semaphore-LQ",
+                "mirror": "x"
+              }
+            }
           }
         },
         "houses": {
@@ -5586,6 +5664,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "double"
           },
           "heads": {
@@ -5609,6 +5688,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "dwarf"
           },
           "heads": {
@@ -5626,6 +5706,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "single"
           },
           "heads": {
@@ -5643,6 +5724,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "double"
           },
           "heads": {
@@ -5666,6 +5748,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "single"
           },
           "heads": {
@@ -6482,7 +6565,7 @@
               "x": 217.17,
               "y": 26.67
             },
-            "glyph": "Railroad-Trackplan:NextCP",
+            "glyph": "Railroad-Trackplan:NextCP Not Modeled",
             "row": "e357578d-2a68-400f-a47d-cd3318b74070"
           },
           {
@@ -6736,7 +6819,8 @@
             },
             "given": {
               "Interlocking": "Hollister",
-              "Kind": "NEXT_CP"
+              "Kind": "NEXT_CP",
+              "Style": "off_layout"
             },
             "id": "e357578d-2a68-400f-a47d-cd3318b74070",
             "relations": {
@@ -9007,6 +9091,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "double"
           },
           "heads": {
@@ -9030,6 +9115,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "double"
           },
           "heads": {
@@ -9053,6 +9139,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "double"
           },
           "heads": {
@@ -9076,6 +9163,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "dwarf"
           },
           "heads": {
@@ -9093,6 +9181,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "dwarf"
           },
           "heads": {
@@ -9110,6 +9199,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "dwarf"
           },
           "heads": {
@@ -9127,6 +9217,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "dwarf"
           },
           "heads": {
@@ -9144,6 +9235,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "dwarf"
           },
           "heads": {
@@ -9161,6 +9253,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "dwarf"
           },
           "heads": {
@@ -9178,6 +9271,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "dwarf"
           },
           "heads": {
@@ -9195,6 +9289,7 @@
           },
           "given": {
             "Appliance": "mast",
+            "Kind": "CONTROLLED",
             "Style": "dwarf"
           },
           "heads": {
@@ -13454,6 +13549,67 @@
           }
         ]
       },
+      "Railroad-Trackplan:NextCP Not Modeled": {
+        "ports": {
+          "To": {
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        "shape": [
+          {
+            "at": {
+              "x": 0.0,
+              "y": 2.54
+            },
+            "size": 1.016,
+            "text": "${Interlocking}",
+            "type": "text"
+          },
+          {
+            "points": "0.0,-1.27 1.27,0.0",
+            "stroke": {
+              "width": 0.3048
+            },
+            "type": "polyline"
+          },
+          {
+            "points": "0.0,-1.27 -1.27,0.0",
+            "stroke": {
+              "width": 0.3048
+            },
+            "type": "polyline"
+          },
+          {
+            "points": "1.27,0.0 0.0,1.27",
+            "stroke": {
+              "width": 0.3048
+            },
+            "type": "polyline"
+          },
+          {
+            "points": "1.27,-1.27 1.27,1.27",
+            "stroke": {
+              "width": 0.3048
+            },
+            "type": "polyline"
+          },
+          {
+            "points": "1.778,-1.27 1.778,1.27",
+            "stroke": {
+              "width": 0.3048
+            },
+            "type": "polyline"
+          },
+          {
+            "points": "-1.27,0.0 0.0,1.27",
+            "stroke": {
+              "width": 0.3048
+            },
+            "type": "polyline"
+          }
+        ]
+      },
       "Railroad-Trackplan:Rule93-Yard Limits": {
         "ports": {
           "To": {
@@ -13761,6 +13917,58 @@
               "width": 0.0762
             },
             "type": "circle"
+          }
+        ]
+      },
+      "Railroad-Trackplan:Signal Head - Semaphore-LQ": {
+        "ports": {
+          "M": {
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        "shape": [
+          {
+            "end": {
+              "x": 0.635,
+              "y": -0.635
+            },
+            "fill": {
+              "color": "#000000",
+              "opacity": 0.0,
+              "type": "color"
+            },
+            "mid": {
+              "x": 0.449,
+              "y": -1.084
+            },
+            "start": {
+              "x": 0.0,
+              "y": -1.27
+            },
+            "type": "arc"
+          },
+          {
+            "points": "0.0,0.0 0.0,-0.635",
+            "stroke": {
+              "width": 0.1016
+            },
+            "type": "polyline"
+          },
+          {
+            "points": "0.0,0.0 -3.175,0.0",
+            "stroke": {
+              "width": 0.1016
+            },
+            "type": "polyline"
+          },
+          {
+            "points": "0.0,-0.635 0.0,-3.175",
+            "type": "polyline"
+          },
+          {
+            "points": "0.0,-0.635 2.159,-2.159",
+            "type": "polyline"
           }
         ]
       },
@@ -14463,6 +14671,40 @@
             "type": "circle"
           }
         ]
+      },
+      "Railroad-Trackplan:Train Order Mast": {
+        "ports": {
+          "H": {
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        "shape": [
+          {
+            "at": {
+              "x": 3.81,
+              "y": 0.0
+            },
+            "rotation": 900.0,
+            "size": 0.635,
+            "text": "Train Order",
+            "type": "text"
+          },
+          {
+            "points": "5.08,0.0 0.0,0.0",
+            "stroke": {
+              "width": 0.254
+            },
+            "type": "polyline"
+          },
+          {
+            "points": "5.08,-1.27 5.08,1.27",
+            "stroke": {
+              "width": 0.3048
+            },
+            "type": "polyline"
+          }
+        ]
       }
     },
     "ioEncodings": {
@@ -14865,6 +15107,17 @@
         "given": {
           "Board": "cpNode-Xiao",
           "Kind": "PROCESSOR"
+        }
+      }
+    },
+    "stations": {
+      "Gilroy": {
+        "given": {
+          "Kind": "STATION",
+          "Milepost": "77.9"
+        },
+        "relations": {
+          "interlocking": "Gilroy Interchange"
         }
       }
     },
@@ -16899,7 +17152,7 @@
   },
   "provenance": {
     "libraries": {
-      "Railroad-Trackplan": "split-projects-final-117-g31954c5"
+      "Railroad-Trackplan": "split-projects-final-118-g28647dc"
     },
     "referenceData": {
       "codeLineCapacity": "2026-11-01",
@@ -16911,7 +17164,7 @@
     },
     "rules": "0.1.0",
     "source": {
-      "describe": "split-projects-final-117-g31954c5",
+      "describe": "split-projects-final-118-g28647dc",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad",
