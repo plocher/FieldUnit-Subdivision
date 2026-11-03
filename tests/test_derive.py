@@ -14,7 +14,7 @@ import unittest
 from pathlib import Path
 
 from tools import layout_model
-from tools.layout_model import derive
+from tools.layout_model import derive, reference
 from tools.railroad import codeline
 
 EXAMPLE = Path(__file__).resolve().parents[1] / "schemas" / "layout-model" / "examples" / "spcoast.layout.json"
@@ -914,6 +914,18 @@ class TrainOrders(unittest.TestCase):
             to = out["interlockings"]["X"]["appliances"]["Gilroy"]
             self.assertNotIn("controlPoint", to.get("derived", {}), plan[2])
             self.assertEqual({n: cp for n, cp in control_points(out).items() if n != "Gilroy"}, control_points(run(layout(X=interlocking(*plan)))[0]))
+
+    def test_its_states_and_normal_are_the_reference_data(self):
+        """The three-state vocabulary is reference data (Rule 221, Rules 207-208, Form 19/31 via the owner's summary of
+        2026-11-03, unverified), written into the file so consumers read it there; a mast derives none."""
+        out, _ = run(self.model())
+        to = out["interlockings"]["X"]["appliances"]["Gilroy"]["derived"]
+        self.assertEqual((to["states"], to["normal"]), (["STOP", "RECEIVE_ORDERS", "PROCEED"], "PROCEED"))
+        self.assertEqual((reference.TRAIN_ORDER_RELEASED, reference.TRAIN_ORDER_NORMAL), ("STOP", "PROCEED"))
+        self.assertEqual(reference.TRAIN_ORDER_STATES[0], reference.TRAIN_ORDER_RELEASED)         # the most restrictive
+        mast = out["interlockings"]["X"]["appliances"]["814SA"].get("derived", {})
+        self.assertNotIn("states", mast)
+        self.assertEqual(layout_model.errors(out), [])
 
     def test_each_head_faces_the_direction_its_letter_names(self):
         out, _ = run(self.model())
