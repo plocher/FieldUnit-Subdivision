@@ -37,6 +37,7 @@ from .trackplan import TRACKPLAN_ROLES, is_boundary, is_consumer, is_switch, pin
 COORDINATE_DECIMALS = 2     # placements and runs sit on the drawing's grid (§4.2)
 GLYPH_DECIMALS = 4          # a glyph's primitives have up to four
 LABEL_END = "label:"        # a run's end on a hierarchical label: ``label:<Name>`` (ADR 0013 §7.1)
+HEADED = frozenset({"mast", "train_order"})   # the appliances a head nests under by letter (§4.5; a train order signal's face, the owner, 2026-11-03)
 
 Point = tuple[float, float]
 
@@ -363,7 +364,7 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         return pin_ref(ix.name, s, pin) if is_switch(s) or is_boundary(s) or s.role in ("TRACK", "POLICY") else None
 
     appliances: dict[str, Any] = {}
-    masts: dict[str, str] = {}
+    with_heads: dict[str, str] = {}                                       # a mast or a train order signal: what a head nests under
     consumer_markers: list[dict[str, Any]] = []
     for s in trackplan:
         if s.role != "APPLIANCE" or s.get("Appliance") == "head" or s.ref not in placed:
@@ -376,17 +377,17 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
             consumer_markers.append({"row": s.uuid, **placement(s.ref)})   # a consumer is a row: its marker names it by id (D10)
             continue
         appliances[name] = placement(s.ref)
-        if s.get("Appliance") == "mast":
-            masts[s.ref] = name
-    for s in trackplan:                                                   # a head nests under its mast by letter (§4.5)
-        if s.get("Appliance") != "head" or s.ref not in placed:
+        if s.get("Appliance") in HEADED:
+            with_heads[s.ref] = name
+    for s in trackplan:                                                   # a head nests under its mast by letter (§4.5), or under
+        if s.get("Appliance") != "head" or s.ref not in placed:           # its train order signal the same way (the owner, 2026-11-03)
             continue
         net = net_of(s.ref, "M")
-        owner = next((p.ref for p in net.others(s.ref) if p.ref in masts), None) if net else None
+        owner = next((p.ref for p in net.others(s.ref) if p.ref in with_heads), None) if net else None
         if owner is None:
-            report.missing("geometry.head", f"{ix.name}: head {s.ref} is on no mast's M pin; its placement is not written", source=loc(s))
+            report.missing("geometry.head", f"{ix.name}: head {s.ref} is on no mast's or train order signal's M pin; its placement is not written", source=loc(s))
             continue
-        appliances[masts[owner]].setdefault("heads", {})[key_of(s, report)] = placement(s.ref)
+        appliances[with_heads[owner]].setdefault("heads", {})[key_of(s, report)] = placement(s.ref)
 
     house_rows = {h.cp_name: placement(h.sym.ref) for h in houses if h.sym.ref in placed}
 
