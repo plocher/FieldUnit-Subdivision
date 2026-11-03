@@ -671,6 +671,49 @@ class Shorted(unittest.TestCase):
         self.assertEqual(diags(sm, "track.shorted"), [])
 
 
+class TrainOrder(unittest.TestCase):
+    """A train order signal (Appliance train_order; the owner, 2026-11-03): an operator-controlled non-vital indicator
+    with heads for a face, at a timetable station, with no track pin. The importer's part: the appliance row, its
+    heads read from its H pin as a mast's are, its station relation, and the diagnostics about the drawing."""
+
+    STATION = """
+ST1  | Station          | STRUCTURE | Kind=STATION Name=Gilroy Milepost=77.9
+H1   | House            | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
+TC1  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=1NAT
+NX1  | NextCP           | TRACK     | Kind=NEXT_CP Interlocking=Lick
+"""
+    SIGNAL = """
+TO1  | Train Order Mast | APPLIANCE | Appliance=train_order Name=Gilroy Station=Gilroy
+HN   | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=N
+HS   | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=S
+"""
+    TRACK = "w | TC1.TC NX1.To\n"
+
+    def test_the_signal_is_an_appliance_with_its_heads_on_h_and_its_station(self):
+        sm, ix = compile_(self.STATION + self.SIGNAL, self.TRACK + "h | TO1.H HN.M HS.M\n")
+        self.assertEqual(sm.report.errors, [])
+        to = ix["appliances"]["Gilroy"]
+        self.assertEqual(to["given"], {"Appliance": "train_order", "Station": "Gilroy"})
+        self.assertEqual(to["relations"], {"station": "Gilroy"})
+        self.assertEqual({k: v["given"] for k, v in to["heads"].items()}, {"N": {"Appliance": "head", "Style": "LQ"}, "S": {"Appliance": "head", "Style": "LQ"}})
+        self.assertEqual(emit.emit(sm)["layout"]["stations"]["Gilroy"], {"given": {"Kind": "STATION", "Milepost": "77.9"}, "relations": {"interlocking": "X"}})
+        self.assertEqual(layout_model.errors(emit.emit(sm)), [])
+
+    def test_a_head_letter_is_a_direction_each_at_most_once(self):
+        heads = """
+HA   | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=A
+HN2  | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=N
+"""
+        sm, ix = compile_(self.STATION + self.SIGNAL + heads, self.TRACK + "h | TO1.H HN.M HS.M HA.M HN2.M\n")
+        self.assertEqual(diags(sm, "head."), [("head.duplicate", "HN2"), ("head.letter", "HA")])
+        self.assertEqual(sorted(ix["appliances"]["Gilroy"]["heads"]), ["N", "S"])
+
+    def test_a_pin_on_the_track_is_an_error(self):
+        sm, ix = compile_(self.STATION + self.SIGNAL, "w | TC1.TC NX1.To TO1.H HN.M HS.M\n")
+        self.assertEqual(diags(sm, "train_order."), [("train_order.track", "TO1")])
+        self.assertEqual(ix["track"]["ends"][0]["relations"]["track"], ["X:1NAT.TC"])     # the H pin is no track pin
+
+
 class Locations(unittest.TestCase):
     def test_a_derived_diagnostic_keeps_its_model_path_and_the_importer_adds_the_symbol(self):
         """10c: derive names the model path; the importer appends sheet, reference, library symbol and Value."""
