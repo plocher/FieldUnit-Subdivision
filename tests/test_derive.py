@@ -1087,7 +1087,7 @@ class SPCoastExample(unittest.TestCase):
         self.assertNotIn("rules", stripped["provenance"])
         out, report = derive.derive(stripped)
         self.assertEqual(layout_model.dumps(out), text)
-        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 0, "missing": 2})    # 2 interlocking.no_lever (Railroad 28647dc)
+        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 0, "missing": 5})    # 2 interlocking.no_lever, train_order.lever and 2 head.device for Gilroy (Railroad 5715653)
 
 
 if __name__ == "__main__":

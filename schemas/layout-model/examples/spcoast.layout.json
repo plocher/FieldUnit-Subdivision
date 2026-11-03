@@ -4571,6 +4571,14 @@
           }
         },
         "Gilroy": {
+          "derived": {
+            "normal": "PROCEED",
+            "states": [
+              "PROCEED",
+              "RECEIVE_ORDERS",
+              "STOP"
+            ]
+          },
           "given": {
             "Appliance": "train_order",
             "Station": "Gilroy"
@@ -17152,7 +17160,7 @@
   },
   "provenance": {
     "libraries": {
-      "Railroad-Trackplan": "split-projects-final-118-g28647dc"
+      "Railroad-Trackplan": "split-projects-final-120-g5715653"
     },
     "referenceData": {
       "codeLineCapacity": "2026-11-01",
@@ -17160,11 +17168,12 @@
       "driverEncodings": "2026-10-23",
       "encodingTransportPairing": "2026-10-23",
       "indicationTokens": "2026-10-27.2",
-      "stations": "2026-10-27"
+      "stations": "2026-10-27",
+      "trainOrderStates": "2026-11-03"
     },
     "rules": "0.1.0",
     "source": {
-      "describe": "split-projects-final-118-g28647dc",
+      "describe": "split-projects-final-120-g5715653",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad",
