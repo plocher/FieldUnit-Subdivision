@@ -760,19 +760,23 @@ class SPCoastTrackplan(unittest.TestCase):
                          {"783": "Luchessa:Luchessa", "795": "Luchessa:Gilroy", "795D": "Luchessa:Gilroy", "799": "Luchessa:Carnadero"})
         self.assertEqual(self.ix("Luchessa")["track"]["links"], [{"derived": {"ports": ["Luchessa:795.R", "Luchessa:795D.R"], "circuit": "Luchessa:795T1"}}])
 
-    def test_every_track_relation_is_named_back_in_its_interlocking(self):
-        """The owner, 2026-10-27: symmetric adjacency on the drawing, consumer rows included. A reference to another
-        interlocking's switch (``Y:5.R``) would have no row here to name it back."""
+    def test_every_track_relation_is_named_back_across_the_file(self):
+        """The owner, 2026-10-27: symmetric adjacency on the drawing, consumer rows included; since the block POC a track net
+        is read across sheets (ADR 0013 §7.1, Railroad 31954c5), so a pin another interlocking names (Sargent's 834 joint
+        names Corporal:834T.TC) names it back from its own interlocking, and every pin named is a pin of the file."""
+        rel = {}
         for name, ix in self.model["interlockings"].items():
-            rel = {}
             for n, a in ix.get("appliances", {}).items():
                 rel.update({f"{name}:{n}.{side}": v for side, v in a.get("relations", {}).items() if isinstance(v, list)})
             for kind in ("joints", "ends", "policies", "consumers"):
                 for r in ix.get("track", {}).get(kind, []):
                     rel.update({f"{r.get('name') or r['id']}.{side}": v for side, v in r.get("relations", {}).items() if isinstance(v, list)})
-            own = [(a, b) for a, bs in rel.items() for b in bs if not (":" in b and not b.startswith(f"{name}:"))]
-            self.assertEqual([(a, b) for a, b in own if a not in rel.get(b, [])], [], name)
-            self.assertEqual([a for a, bs in rel.items() if any(b.rsplit(".", 1)[0] == a.rsplit(".", 1)[0] for b in bs)], [], name)
+        self.assertEqual([(a, b) for a, bs in rel.items() for b in bs if b not in rel], [])
+        self.assertEqual([(a, b) for a, bs in rel.items() for b in bs if a not in rel[b]], [])
+        self.assertEqual([a for a, bs in rel.items() if any(b.rsplit(".", 1)[0] == a.rsplit(".", 1)[0] for b in bs)], [])
+        across = sorted({(a.partition(":")[0], b.partition(":")[0]) for a, bs in rel.items() for b in bs
+                         if ":" in a and ":" in b and a.partition(":")[0] != b.partition(":")[0]})
+        self.assertEqual(across, [("Corporal", "Sargent"), ("Sargent", "Corporal")])      # the one block drawn across sheets
 
     def test_no_cross_interlocking_consumer_is_drawn_today(self):
         """Sargent's consumer of Corporal:2NATK went with the block POC (Railroad 56ff2e1, 2a1696e): the track between
@@ -789,8 +793,8 @@ class SPCoastTrackplan(unittest.TestCase):
 
     def test_the_poc_signal_locations_are_double_joints_with_a_mast_on_each_side(self):
         """ADR 0013 §2 and §6 (Railroad 2a1696e, 31954c5): 832 on Corporal's sheet, 834 on Sargent's; each mast's governed
-        side is the side its pin names. 834T is drawn on Corporal's sheet, so Sargent's side A carries no circuit of
-        Sargent's (where block track with no CP Name lives in the file is open; issue #61)."""
+        side is the side its pin names. 834T is drawn on Corporal's sheet and reaches Sargent's 834 joint through the
+        ToSargentMT / ToCorporalMT labels (§7.1; ``test_the_block_track_is_read_across_sheets``)."""
         double = {n: [j for j in self.ix(n)["track"]["joints"] if j["given"]["Kind"] == "IRJ_SIGNALS"] for n in ("Corporal", "Sargent")}
         self.assertEqual({n: [j["relations"]["masts"] for j in js] for n, js in double.items()},
                          {"Corporal": [{"A": "Corporal:832NA", "B": "Corporal:832SA"}], "Sargent": [{"A": "Sargent:834NA", "B": "Sargent:834SA"}]})
@@ -807,6 +811,24 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertIn("Corporal:833T.A", double["Corporal"][0]["relations"]["A"])
         self.assertEqual(self.sm.report.by_code("circuit.names"), [])             # the boundary names no circuit
         self.assertEqual(self.sm.report.by_code("mast.joint") + self.sm.report.by_code("track.kind"), [])
+
+    def test_the_block_track_is_read_across_sheets(self):
+        """ADR 0013 §7.1 (Railroad 31954c5): Corporal's 834T runs through ToSargentMT to Sargent's 834 double joint, whose
+        side A names Corporal:834T.TC and Corporal's 833T boundary, derives Corporal:834T, and 834NA governs over it;
+        Corporal's 834T names the joint's pin by its id. Plain track across sheets is block track: no reference.track,
+        no consumer, no token. No NextCP stands on drawn block track (next_cp.drawn) and no PERMISSIVE mast governs
+        over a powered switch (mast.powered): both counts are zero on this drawing."""
+        s, c = self.ix("Sargent"), self.ix("Corporal")
+        joint = next(j for j in s["track"]["joints"] if j["given"]["Kind"] == "IRJ_SIGNALS")
+        self.assertEqual(sorted(x for x in joint["relations"]["A"] if ":" in x), ["Corporal:833T.B", "Corporal:834T.TC"])
+        self.assertEqual(joint["derived"]["circuits"], {"A": "Corporal:834T", "B": "Sargent:836T"})
+        self.assertEqual(s["appliances"]["834NA"]["derived"]["circuits"], {"governed": "Corporal:834T", "approach": "Sargent:836T"})
+        self.assertIn(f"{joint['id']}.A", c["appliances"]["834T"]["relations"]["TC"])
+        self.assertEqual(c["appliances"]["833T"]["derived"]["circuits"], {"A": "Corporal:832T", "B": "Corporal:834T"})
+        self.assertEqual(self.sm.report.by_code("reference.track") + self.sm.report.by_code("reference.marker"), [])
+        self.assertEqual(len(self.sm.report.by_code("next_cp.drawn")), 0)
+        self.assertEqual(len(self.sm.report.by_code("mast.powered")), 0)
+        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 8, "missing": 31})
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):
         """ADR 0013 §5. The library's mast symbols carry a fixed Kind (Railroad 1695d48), but that commit touched no placed

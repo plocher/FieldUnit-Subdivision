@@ -239,9 +239,10 @@ class SPCoastGeometry(unittest.TestCase):
         self.assertEqual(len(g["appliances"]), 12)
         self.assertEqual(len(g["track"]), 6)
         runs = self.model["interlockings"]["Sargent"]["geometry"]["track"]                   # a run's circuit is derived
-        self.assertEqual(sorted(t["derived"]["circuit"] for t in runs if "derived" in t), ["Sargent:1NAT", "Sargent:2SAT", "Sargent:836T"])
-        self.assertEqual(sorted(t["relations"]["from"] for t in runs if "derived" not in t),            # dark here: the three label runs
-                         ["Sargent:1.N", "Sargent:1.R", "label:ToCorporalMT"])
+        self.assertEqual(sorted(t["derived"]["circuit"] for t in runs if "derived" in t),
+                         ["Corporal:834T", "Sargent:1NAT", "Sargent:2SAT", "Sargent:836T"])   # 834T reaches the 834 joint through ToCorporalMT (ADR 0013 §7.1)
+        self.assertEqual(sorted(t["relations"]["from"] for t in runs if "derived" not in t), ["Sargent:1.N", "Sargent:1.R"])   # the Beet Loader spur: dark
+        self.assertIn("label:ToCorporalMT", next(t["relations"].values() for t in runs if t.get("derived", {}).get("circuit") == "Corporal:834T"))
         self.assertEqual(len(g["markers"]), 12)
         rows = self.rows("Sargent")
         self.assertEqual(sum(1 for m in g["markers"] if rows[m["row"]]["given"].get("Kind") == "INDUSTRY"), 2)
