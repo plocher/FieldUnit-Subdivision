@@ -418,6 +418,24 @@ class NextCPs(unittest.TestCase):
         out, diags = run(layout(X=interlocking("N1 | ends | Kind=NEXT_CP Interlocking=Lick\n", "", "East")))
         self.assertEqual(diags, [("next_cp.off_layout", "X")])
 
+    def test_a_next_cp_whose_track_is_drawn_through_to_the_neighbour_is_redundant(self):
+        """ADR 0013 §7.1: block track drawn across sheets replaces the NextCP inside CTC. A's NextCP to B stands on a wire
+        that also reaches B's marker (by name) or B's joint (by its id): warning, with B as the second party, and the
+        drawn circuit stands. A NextCP on a wire that reaches no other interlocking's track is kept, as is next_cp.pair."""
+        a = interlocking("N1 | ends | Kind=NEXT_CP Interlocking=B\n", "w | N1.track B:2T.TC\n", "A", "A")
+        b = interlocking("N2 | ends | Kind=NEXT_CP Interlocking=A\n2T | appliance | Appliance=track_circuit\nJ9 | joints | Kind=IRJ\n",
+                         "w | N2.track 2T.TC\n", "B", "B")
+        out, diags = run(layout(A=a, B=b))
+        self.assertEqual(diags, [("next_cp.drawn", "N1")])
+        d = derive.derive(layout(A=a, B=b))[1].by_code("next_cp.drawn")[0]
+        self.assertEqual((d.severity, d.entities), ("warning", ("interlockings/A/track/ends/N1", "interlockings/B")))
+        self.assertIn("drawn through to B's (B:2T.TC)", d.text)
+        self.assertEqual(row(out["interlockings"]["A"], "N1")["derived"]["circuits"], {"track": "B:2T"})
+        by_id = interlocking("N1 | ends | Kind=NEXT_CP Interlocking=B\n", "", "A", "A")
+        row(by_id, "N1")["relations"] = {"track": ["J9.B"]}                                   # B's unnamed joint, by its id
+        self.assertEqual(run(layout(A=by_id, B=b))[1], [("next_cp.drawn", "N1")])
+        self.assertEqual(run(pair(1, 1))[1], [])
+
 
 def on_line(m: dict, *names: str, kind: str = "AAR") -> dict:
     """The interlockings ``names`` on one code line of encoding ``kind``."""

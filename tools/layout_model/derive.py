@@ -44,7 +44,9 @@ names every other track pin its wire reaches, so the relation is symmetric):
   (``grammar.is_powered``): such a piece is never block track (§4), and interlocking track leaves an interlocking at
   a NextCP or an END_CTC. The net creates no consumer and no indication token: the block's token is the codeline
   library's by R12 (§7.2, §12, §18.1). Blocks and interlocking limits are not computed here (the ``blocks`` library).
-- **NextCP pairing** and the **cross-interlocking reference** check.
+- **NextCP pairing** and the **cross-interlocking reference** check. A NextCP whose track is also drawn through to
+  another interlocking's track is redundant (ADR 0013 §7.1: inside CTC a NextCP is no longer needed; it stays for an
+  interlocking whose neighbour is not drawn), reported ``next_cp.drawn`` at warning.
 - An OfficeUnit's columns (``house``, ``interlocking``), every device's ``serves``, a desk lamp's ``indications`` and
   ``expression`` (its ``Indication``, ``tools/layout_model/expression.py``), a lever's ``controls`` and ``indications``
   from its per-pin ``Control.X`` and ``Indication.X``; a dispatcher-controlled switch or lock no desk lever serves.
@@ -219,6 +221,11 @@ class _Plan:
 
     def region(self, node: str) -> Optional[str]:
         return self.union.find(node) if node in self.union else None
+
+    def component(self, node: str) -> list[str]:
+        """Every track pin in the node's connected component, the node included; none for a pin the track lacks."""
+        r = self.region(node)
+        return [n for n in self.union.parent if self.union.find(n) == r] if r else []
 
     def circuit(self, node: str) -> Optional[str]:
         r = self.region(node)
@@ -700,13 +707,27 @@ class _Derivation:
 
     def next_cps(self) -> None:
         """A NextCP names the interlocking its track leads to; that interlocking's NextCPs lead back as many times. One
-        beyond the layout (Lick, Hollister) is reported at info."""
+        beyond the layout (Lick, Hollister) is reported at info. One whose track is also drawn through to another
+        interlocking's track is redundant, ``next_cp.drawn`` at warning (ADR 0013 §7.1: block track is drawn from one
+        control point to the next and replaces the NextCP inside CTC; it stays for a neighbour that is not drawn)."""
         count: dict[tuple[str, str], int] = defaultdict(int)
         for a, plan in self.plans.items():
             for row in plan.track.get("ends", []):
                 g = row.get("given", {})
                 if g.get("Kind") == "NEXT_CP" and g.get("Interlocking"):
                     count[(a, g["Interlocking"])] += 1
+        for a, plan in self.plans.items():
+            for row in plan.track.get("ends", []):
+                g = row.get("given", {})
+                if g.get("Kind") != "NEXT_CP":
+                    continue
+                drawn = sorted(x for n in plan.component(f"{plan.row_prefix(row)}.track") if (x := self.drawn_in_other(a, n)))
+                if drawn:
+                    self.r.add("next_cp.drawn", f"{a}: a NextCP{' to ' + g['Interlocking'] if g.get('Interlocking') else ''} stands on "
+                               f"track that is drawn through to {', '.join(dict.fromkeys(x.partition(':')[0] for x in drawn))}'s "
+                               f"({', '.join(drawn)}); inside CTC the drawn block replaces it (ADR 0013 §7.1)",
+                               plan.where("track", "ends", row.get("id", "")),
+                               tuple(dict.fromkeys(f"interlockings/{x.partition(':')[0]}" for x in drawn)))
         for (a, b), n in sorted(count.items()):
             if b not in self.plans:
                 self.r.add("next_cp.off_layout", f"{a}: {n} NextCP{'s lead' if n > 1 else ' leads'} to {b}, which is not on this layout",
@@ -714,6 +735,18 @@ class _Derivation:
             elif count.get((b, a), 0) != n:
                 self.r.add("next_cp.pair", f"{a} has {n} NextCP{'s' * (n > 1)} to {b}, but {b} has {count.get((b, a), 0)} back to {a}",
                            f"interlockings/{a}", (f"interlockings/{b}",))
+
+    def drawn_in_other(self, a: str, ref: str) -> Optional[str]:
+        """Where a track pin named in interlocking ``a``'s relations is another interlocking's drawn track (ADR 0013
+        §7.1): a pin qualified for another interlocking, or an unnamed row's side whose id is a row of another plan in
+        the file. The pin as ``<interlocking>:<pin>``, or None."""
+        thing, _, side = ref.rpartition(".")
+        if ":" in thing:
+            return ref if foreign(thing, a) else None
+        for b, plan in self.plans.items():
+            if b != a and thing in plan.rows:
+                return f"{b}:{ref}"
+        return None
 
     # ----------------------------------------------------------------------------------------- references
 
