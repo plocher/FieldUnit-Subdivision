@@ -57,7 +57,7 @@ RETIRED_FIELDS = {"ControlToken", "Vital", "NormalIs", "Chain", "Index", "Kind"}
 ATTACHMENT_ADDRESS = {"CMRI": "Bit", "MQTT": None}  # by IC; every other bus device attaches by Address (ADR 0005 S4)
 MAST_KINDS = ("CONTROLLED", "ABSOLUTE", "PERMISSIVE")    # what a mast is: dispatcher-controlled, or automatic and absolute or permissive (owner, 2026-10-31)
 CMRI_KINDS = ("NODE", "IB", "OB")                   # what a CMRInet driver is: the node or one of its bits (owner, 2026-10-30)
-NOT_SETTINGS = {"Role", "Name", "Kind", "Appliance", "Style", "IC", "Address", "UA", "Bit", "Node", "Head", "Invert", "IndicationToken", "Members", "Color", "CP Name", "Control", "Indication", "TC",
+NOT_SETTINGS = {"Role", "Name", "Kind", "Appliance", "Style", "IC", "Address", "UA", "Bit", "Node", "Head", "Invert", "IndicationToken", "Members", "Color", "CP Name", "Station", "Control", "Indication", "TC",
                 "Transport", "NodeType", "InputBytes", "OutputBytes",
                 "IndicationCeiling", "Display", "Processor", "Milepost", "Reference", "Value", "Footprint",
                 "Datasheet", "Description", "ki_keywords", "ki_fp_filters", "ki_description"}
