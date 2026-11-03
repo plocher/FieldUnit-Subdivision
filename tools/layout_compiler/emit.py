@@ -120,6 +120,8 @@ def sources(sm: Seams) -> dict[str, Symbol]:
             out[f"layout/processors/{p.name}"] = p.syms[0]
         for a, d in p.drivers.items():
             out[f"layout/processors/{p.name}/drivers/{a}"] = d.sym
+    for st in sm.stations.values():
+        out[f"layout/stations/{st.name}"] = st.sym
     return out
 
 
@@ -147,6 +149,7 @@ def facts(sm: Seams, geometry: Optional[Geometry] = None) -> dict[str, Any]:
                        for e in sm.encodings.values() if e.role == role}
     layout["processors"] = {p.name: _entity(p.given, drivers={a: _entity(d.given) for a, d in p.drivers.items()})
                             for p in sm.processors.values()}
+    layout["stations"] = {st.name: _entity(st.given, {"interlocking": st.interlocking}) for st in sm.stations.values()}
     if geometry is not None:
         layout["glyphs"] = dict(geometry.glyphs)
 

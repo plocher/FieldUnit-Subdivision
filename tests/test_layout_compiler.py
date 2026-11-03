@@ -268,6 +268,22 @@ class RuleTests(unittest.TestCase):
         self.assertEqual(layout_model.errors(model), [])
         self.assertEqual(layout_model.dumps(layout_model.loads(layout_model.dumps(model))), layout_model.dumps(model))
 
+    def test_a_timetable_station_is_a_layout_entity(self):
+        """The owner (2026-11-03): a Station symbol (STRUCTURE, Kind STATION) is layout.stations.<Name>, its Milepost in
+        given, the interlocking whose sheet it is drawn under its relation (ADR 0004 D12), absent for one drawn under
+        none. Two stations with one Name are an error; the second is not written."""
+        src = plant()
+        for s in [sym("ST1", "Station", "/X/", "Gilroy", Role="STRUCTURE", Kind="STATION", Name="Gilroy", Milepost="77.9"),
+                  sym("ST2", "Station", "/", "Lick", Role="STRUCTURE", Kind="STATION", Name="Lick"),
+                  sym("ST3", "Station", "/X/", "gilroy", Role="STRUCTURE", Kind="STATION", Name="gilroy", Milepost="78")]:
+            src.symbols[s.ref] = s
+        sm = seams.resolve(src)
+        model = emit.emit(sm)
+        self.assertEqual(model["layout"]["stations"], {"Gilroy": {"given": {"Kind": "STATION", "Milepost": "77.9"}, "relations": {"interlocking": "X"}},
+                                                        "Lick": {"given": {"Kind": "STATION"}}})
+        self.assertEqual([(d.severity, d.source.split(" ")[0]) for d in sm.report.by_code("station.duplicate")], [("error", "/X/ST3")])
+        self.assertEqual(layout_model.errors(model), [])
+
 
 @unittest.skipUnless(SPCOAST_AVAILABLE, f"SPCoast project not present or kicad-cli missing: {NETLIST or PROJECT}")
 class SPCoastRelationTable(unittest.TestCase):

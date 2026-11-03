@@ -184,6 +184,13 @@
             "$ref": "#/$defs/processor"
           }
         },
+        "stations": {
+          "description": "The layout's timetable stations by Name (the owner, 2026-11-03): places on the line, each with its Milepost. Distinct from a code line station (reference.STATION: a house or an interlocking addressed on a code line), which this map never holds.",
+          "$ref": "#/$defs/namedMap",
+          "additionalProperties": {
+            "$ref": "#/$defs/station"
+          }
+        },
         "glyphs": {
           "$ref": "#/$defs/glyphs"
         }
@@ -458,6 +465,55 @@
               "additionalProperties": false,
               "properties": {},
               "description": "Nothing yet. A station's controls and indications are not stored (the owner, 2026-10-28): tools/railroad/codeline.py computes them on demand."
+            }
+          ]
+        }
+      }
+    },
+    "station": {
+      "description": "A timetable station (STRUCTURE, Kind STATION; the owner, 2026-11-03), keyed by its Name: a place on the line that a train order signal names in its Station field. given holds its Milepost and its other stated fields; relations.interlocking the interlocking whose sheet it is drawn under (ADR 0004 D12), absent for one drawn under none. Not a code line station (reference.STATION: a house or an interlocking addressed on a code line).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "given": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/given"
+            },
+            {
+              "properties": {
+                "Milepost": {
+                  "$ref": "#/$defs/numericGiven"
+                }
+              }
+            }
+          ]
+        },
+        "relations": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/relations"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "interlocking": {
+                  "$ref": "#/$defs/layoutName",
+                  "description": "The interlocking whose sheet the station is drawn under (ADR 0004 D12 sheet scope)."
+                }
+              }
+            }
+          ]
+        },
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {},
+              "description": "Nothing yet."
             }
           ]
         }
