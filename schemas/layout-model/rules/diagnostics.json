@@ -263,10 +263,10 @@
     },
     "reference.marker": {
       "level": "error",
-      "lifecycle": "active",
+      "lifecycle": "deprecated",
       "since": "0.1.0",
       "feature": null,
-      "replacedBy": null
+      "replacedBy": "reference.track"
     },
     "reference.station": {
       "level": "warning",

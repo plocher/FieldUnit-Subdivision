@@ -11,6 +11,7 @@ from typing import Any
 
 POWERED = frozenset({"powered", "dual"})           # switch Styles with a lever and NWK/RWK (GLOSSARY: powered switch)
 LOCKED = frozenset({"lock"})                       # an electric lock: WLK/WLQK, not NWK/RWK (the owner, 2026-10-27)
+UNPOWERED = frozenset({"manual", "manual_sensed", "spring"}) | LOCKED   # may lie in a station-to-station block (ADR 0013 §4)
 LEVER = re.compile(r"^\d+")
 MAST_NAME = re.compile(r"^(0?[1-9]\d{0,3}[LRNSEW])([A-Z]+)$")
 GANG = re.compile(r"(?<=\d)[A-Z]$")
@@ -18,6 +19,25 @@ GANG = re.compile(r"(?<=\d)[A-Z]$")
 
 def styles(given: dict[str, str]) -> list[str]:
     return sorted(x.strip() for x in given.get("Style", "").split(",") if x.strip())
+
+
+def is_powered(name: str, appliances: dict[str, dict[str, Any]]) -> bool:
+    """A powered switch or derail (ADR 0013 §4): one with a machine (Style ``powered`` or ``dual``) or a CP Name. A
+    hand-throw switch (``manual``, ``manual_sensed``), a spring switch and an electrically locked hand-throw switch
+    (``lock``) are not powered whatever CP Name they state: §4 lets them lie in a station-to-station block, and on
+    SPCoast every switch states the control point that senses it. A dependent derail (ADR 0003 D8: its gang id names
+    a switch) takes its switch's position, so it is powered when that switch is; an independent derail is powered by a
+    CP Name. False for anything that is no switch."""
+    g = appliances.get(name, {}).get("given", {})
+    if g.get("Appliance") != "switch":
+        return False
+    st = set(styles(g))
+    if st & UNPOWERED:
+        return False
+    lead = GANG.sub("", name)
+    if "derail" in st and lead != name and appliances.get(lead, {}).get("given", {}).get("Appliance") == "switch":
+        return is_powered(lead, appliances)
+    return bool(POWERED & st or g.get("CP Name"))
 
 
 def leads_gang(name: str, switches: set[str] | frozenset[str]) -> bool:

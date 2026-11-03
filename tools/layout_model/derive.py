@@ -37,6 +37,13 @@ names every other track pin its wire reaches, so the relation is symmetric):
 - **The code line** is checked, not stored (the owner, 2026-10-28): what each station receives and must send is the
   domain library ``tools/railroad/codeline.py``'s, computed on demand; every token a consumer states (a desk lever's,
   a desk lamp's, a consumer row's) must be one an appliance of the named interlocking can report there.
+- **Block track across sheets** (ADR 0013 §7.1, amending ADR 0009 §3.12): a track net that joins two interlockings
+  (a pin of one names a pin of the other) is block track and is accepted when it is plain track; a foreign marker's
+  TC on it names the component as a marker would (Sargent's 834 joint has ``Corporal:834T`` on its side A). It stays
+  ``reference.track`` at error when the joining net holds a powered switch or derail port of either interlocking
+  (``grammar.is_powered``): such a piece is never block track (§4), and interlocking track leaves an interlocking at
+  a NextCP or an END_CTC. The net creates no consumer and no indication token: the block's token is the codeline
+  library's by R12 (§7.2, §12, §18.1). Blocks and interlocking limits are not computed here (the ``blocks`` library).
 - **NextCP pairing** and the **cross-interlocking reference** check.
 - An OfficeUnit's columns (``house``, ``interlocking``), every device's ``serves``, a desk lamp's ``indications`` and
   ``expression`` (its ``Indication``, ``tools/layout_model/expression.py``), a lever's ``controls`` and ``indications``
@@ -57,7 +64,7 @@ from typing import Any, Optional
 from tools.railroad import codeline
 
 from . import expression, reference
-from .grammar import GANG, MAST_NAME, lever_class, lever_of, styles
+from .grammar import GANG, MAST_NAME, is_powered, lever_class, lever_of, styles
 from . import sort_key
 from .report import Report
 
@@ -244,6 +251,10 @@ class _Plan:
         for node, circuit in consumed.items():
             if node in self.union:
                 named[self.union.find(node)]["marker"].add(circuit)
+        for node in list(self.union.parent):                             # another sheet's marker on block track (ADR 0013 §7.1)
+            thing, _, side = node.rpartition(".")
+            if side == "TC" and foreign(thing, self.name):
+                named[self.union.find(node)]["marker"].add(thing)
         self.name_of = {self.union.find(n): None for n in self.union.parent}
         self.namer = {}
         for root, names in named.items():
@@ -565,32 +576,41 @@ class _Plan:
 
     # ------------------------------------------------------------------------------------- references
 
-    def references(self) -> list[tuple[str, str, frozenset[str], str, str]]:
+    def references(self) -> list[tuple[str, str, frozenset[str], str, str, frozenset[str]]]:
         """Every qualified name this interlocking states for another's thing: (kind, name, ports or sides it wires,
-        how it is stated, where). One-sided (the owner, 2026-10-27): nothing is written back."""
+        how it is stated, where, the switch ports in the component the wire joins). One-sided (the owner, 2026-10-27):
+        nothing is written back. A pin of another interlocking's thing (kind ``switch`` for a switch port, ``pin`` for
+        a marker's TC, a boundary's side or a named row's side) is a track net drawn across sheets (ADR 0013 §7.1);
+        the switch ports of its component, this interlocking's and the other's, decide whether it is block track."""
         out = []
         by_thing: dict[str, set[str]] = defaultdict(set)
-        for refs in self._all_refs():
-            for ref in refs:
-                thing, _, side = ref.rpartition(".")
-                if foreign(thing, self.name) and thing not in self.rows:
-                    by_thing[thing].add(side)
+        roots: dict[str, set[str]] = defaultdict(set)
+        ports_of_root: dict[str, set[str]] = defaultdict(set)
+        for node in list(self.union.parent):
+            thing, _, side = node.rpartition(".")
+            if self.is_switch_port(node):
+                ports_of_root[self.union.find(node)].add(node)
+            if foreign(thing, self.name) and thing not in self.rows:
+                by_thing[thing].add(side)
+                roots[thing].add(self.union.find(node))
         for thing, sides in sorted(by_thing.items()):
-            kind = "marker" if "TC" in sides else "switch"
-            out.append((kind, thing, frozenset(sides), "the track circuit marker" if kind == "marker" else "the switch", self.where()))
+            kind = "switch" if sides & set(SWITCH_PORTS) else "pin"
+            what = "the switch" if kind == "switch" else "the track circuit marker" if "TC" in sides else "the track pin"
+            ports = frozenset(p for r in roots[thing] for p in ports_of_root[r])
+            out.append((kind, thing, frozenset(sides), what, self.where(), ports))
         for prefix, (kind, row) in sorted(self.rows.items()):
             if row.get("name") and foreign(row["name"], self.name):
                 out.append(("track", row["name"], frozenset(track_pins(row.get("relations", {}))),
-                            f"the {row.get('given', {}).get('Kind', 'track row')}", self.where("track", kind, row.get("id", ""))))
+                            f"the {row.get('given', {}).get('Kind', 'track row')}", self.where("track", kind, row.get("id", "")), frozenset()))
         for name, a in self.appliances.items():
             g = a.get("given", {})
             if g.get("Appliance") == "switch" and g.get("TC") and foreign(g["TC"], self.name) and "," not in g["TC"]:
-                out.append(("circuit", g["TC"], frozenset(), f"switch {name}'s TC", self.where("appliances", name)))
+                out.append(("circuit", g["TC"], frozenset(), f"switch {name}'s TC", self.where("appliances", name), frozenset()))
             if g.get("Appliance") == "track_circuit" and g.get("Style") == "virtual":
                 for t in g.get("Members", "").split(","):
                     if t.strip() and foreign(t.strip(), self.name):
                         out.append(("circuit", t.strip(), frozenset(), f"virtual circuit {name}'s Members",
-                                    self.where("appliances", name)))
+                                    self.where("appliances", name), frozenset()))
         return out
 
 
@@ -702,23 +722,37 @@ class _Derivation:
         plan = self.plans.get(b)
         return (f"interlockings/{b}/appliances/{n}",) if plan is not None and n in plan.appliances else ()
 
+    def powered_port(self, ref: str) -> bool:
+        """Whether a switch port, by its qualified name, is a powered switch's or derail's (ADR 0013 §4,
+        ``grammar.is_powered``). A port of a switch the file does not have cannot be shown not to be: it counts as one."""
+        thing, _, side = ref.rpartition(".")
+        b, _, n = thing.partition(":")
+        plan = self.plans.get(b)
+        return True if plan is None or n not in plan.appliances else is_powered(n, plan.appliances)
+
     def resolve_references(self) -> None:
-        """A qualified name for another interlocking's thing. On a switch port or a track row it is an error (the owner,
-        2026-10-28): track leaves an interlocking at a NextCP or an END_CTC (ADR 0009 §3.12), and what one interlocking
-        has of another's is only its indications (a consumer row). A circuit named in a field (a switch's TC, a virtual
-        circuit's members) names one that exists: an interlocking not in the file is a warning, a circuit missing from
-        one that is an error. Each finding names the referring thing, then the interlocking and appliance it names when
-        the file has them."""
+        """A qualified name for another interlocking's thing. A track net that joins two interlockings (a pin of one
+        names a pin of the other) is block track, drawn across sheets (ADR 0013 §7.1): accepted when it is plain track,
+        with no consumer and no token (the block's token is the codeline library's, R12). It is ``reference.track`` at
+        error when the joining net holds a powered switch or derail port of either interlocking: such a piece is never
+        block track (§4), and interlocking track leaves an interlocking at a NextCP or an END_CTC (ADR 0009 §3.12,
+        which §7.1 narrows to interlocking track). A track row named for another interlocking is that error too (the
+        owner, 2026-10-28). A circuit named in a field (a switch's TC, a virtual circuit's members) names one that
+        exists: an interlocking not in the file is a warning, a circuit missing from one that is an error. Each finding
+        names the referring thing, then the interlocking and appliance it names when the file has them."""
         for a, plan in self.plans.items():
-            for kind, name, ports, what, where in plan.references():
+            for kind, name, ports, what, where, switch_ports in plan.references():
                 b, _, n = name.partition(":")
                 target = (f"interlockings/{b}",) if b in self.plans else ()
-                if kind == "marker":
-                    self.r.add("reference.marker", f"{a}: a track pin names {name}.TC, another interlocking's marker; a reference to it "
-                               "is a consumer row of its indication (relations.indication)", where,
-                               target + self._appliance_path(b, n))
-                    continue
-                if kind in ("switch", "track"):
+                if kind in ("switch", "pin"):
+                    powered = sorted(p for p in switch_ports if self.powered_port(p))
+                    if powered:
+                        self.r.add("reference.track", f"{a}: {what} {name} joins this interlocking's track to {b}'s on a wire that holds "
+                                   f"powered switch port{'s' if len(powered) > 1 else ''} {', '.join(powered)}; a piece with a powered "
+                                   "switch or derail is never block track (ADR 0013 §4), and interlocking track leaves an interlocking "
+                                   "at a NextCP or an END_CTC (ADR 0009 §3.12)", where, target + self._appliance_path(b, n))
+                    continue                                              # plain track across sheets: block track (§7.1)
+                if kind == "track":
                     self.r.add("reference.track", f"{a}: {what} {name} joins this interlocking's track to {b}'s; track leaves an "
                                "interlocking at a NextCP or an END_CTC, and another interlocking's state is only its indications",
                                where, target + self._appliance_path(b, n))

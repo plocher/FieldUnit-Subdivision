@@ -543,6 +543,17 @@ n1   | IX2.Processor P2.Processor
         self.assertEqual(j1["relations"]["masts"], {"A": "X:834NA", "B": "X:834SA"})
         self.assertEqual(diags(self.sm, "track", "joint", "appliance"), [])
 
+    def test_the_other_sheets_marker_names_the_circuit_on_this_side_and_no_reference_is_raised(self):
+        """The reference derivation's part (ADR 0013 §7.1): plain track across sheets is block track, Y's 834T names X's
+        side A, and 834NA governs over it."""
+        (j1,) = self.x["track"]["joints"]
+        self.assertEqual(j1["derived"]["circuits"], {"A": "Y:834T", "B": "X:836T"})
+        self.assertEqual(self.x["appliances"]["834NA"]["derived"]["circuits"], {"governed": "Y:834T", "approach": "X:836T"})
+        self.assertEqual(self.x["appliances"]["834SA"]["derived"]["circuits"], {"governed": "X:836T", "approach": "Y:834T"})
+        self.assertEqual(self.y["track"]["joints"][0]["derived"]["circuits"], {"B": "Y:834T"})
+        self.assertEqual(diags(self.sm, "reference", "circuit"), [])
+        self.assertNotIn("consumers", self.x["track"])
+
 
 class Boundary(unittest.TestCase):
     """ADR 0013 §10: a boundary track circuit is a detector at a joint, Appliance track_circuit with Style boundary, its

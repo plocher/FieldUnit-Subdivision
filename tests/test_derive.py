@@ -574,9 +574,11 @@ class References(unittest.TestCase):
     Y = interlocking("""
 5    | appliance | Appliance=switch Style=lock TC=5T1 Indication=5T1K
 6    | appliance | Appliance=switch Style=derail
+7    | appliance | Appliance=switch Style=powered TC=7T1 Indication=7T1K
+8    | appliance | Appliance=switch Style=derail CP_Name=West
 3NAT | appliance | Appliance=track_circuit Indication=3NATK
 J5   | joints    | Kind=IRJ
-""", "y1 | 5.C 6.C\ny2 | 5.N J5.A\ny3 | J5.B 3NAT.TC\n", "West", "Y")
+""", "y1 | 5.C 6.C\ny2 | 5.N J5.A\ny3 | J5.B 3NAT.TC\ny4 | 7.C 8.C\n", "West", "Y")
 
     def model(self, things: str, wires: str, line: bool = True) -> dict:
         x = interlocking("J1 | joints | Kind=IRJ\n1SAT | appliance | Appliance=track_circuit\n" + things, "b | J1.B 1SAT.TC\n" + wires, "East")
@@ -608,13 +610,36 @@ J5   | joints    | Kind=IRJ
         self.assertEqual(self.check(self.consumer("Z:2NATK"), "a | J1.A K1.TC\n"), [("reference.interlocking", "K1")])
         self.assertEqual(self.check(self.consumer("Y:3NATK"), "a | J1.A K1.TC\n", line=False), [("reference.codeline", "K1")])
 
-    def test_a_pin_of_another_interlockings_marker_is_no_form(self):
-        self.assertEqual(self.check("", "a | J1.A Y:3NAT.TC\n"), [("reference.marker", "X")])
+    def test_plain_track_drawn_to_another_interlockings_marker_is_block_track_and_names_the_circuit(self):
+        """ADR 0013 §7.1: a track net joining two interlockings is block track; the other sheet's marker names the circuit
+        on this side, and no consumer and no token come of it (the block's token is the codeline library's, R12)."""
+        out, diags = run(self.model("", "a | J1.A Y:3NAT.TC\n"))
+        self.assertEqual(only(diags, "reference"), [])
+        self.assertEqual(row(out["interlockings"]["X"], "J1")["derived"]["circuits"], {"A": "Y:3NAT", "B": "X:1SAT"})
+        self.assertNotIn("consumers", out["interlockings"]["X"]["track"])
+        self.assertNotIn("3NATK", stations(self.model("", "a | J1.A Y:3NAT.TC\n"))[0][("Y", None)][1])
 
-    def test_track_wired_to_another_interlockings_switch_or_track_row_is_an_error(self):
-        self.assertEqual(self.check("", "a | J1.A Y:5.R Y:6.R\n"), [("reference.track", "X"), ("reference.track", "X")])
-        self.assertIn("track leaves an interlocking at a NextCP or an END_CTC",
-                      derive.derive(self.model("", "a | J1.A Y:5.R\n"))[1].by_code("reference.track")[0].text)
+    def test_a_joining_wire_with_a_hand_throw_switch_is_block_track_too(self):
+        """ADR 0013 §4: a hand-throw switch may lie in a block; Y's 5 (Style lock) on the wire is no error, and the wire's
+        circuit is Y's 5T1 through its TC (named by Y's own switch, so dark here: no marker names it)."""
+        self.assertEqual(self.check("", "a | J1.A Y:5.R\n"), [])
+
+    def test_a_joining_wire_with_a_powered_switch_or_derail_is_an_error(self):
+        """ADR 0013 §4 and §7.1: a piece with a powered switch or derail is never block track, so the wire is interlocking
+        track and leaves an interlocking only at a NextCP or an END_CTC (ADR 0009 §3.12); a switch the file lacks counts
+        as powered."""
+        self.assertEqual(self.check("", "a | J1.A Y:7.R Y:8.R\n"), [("reference.track", "X"), ("reference.track", "X")])
+        self.assertIn("powered switch port Y:7.R", derive.derive(self.model("", "a | J1.A Y:7.R\n"))[1].by_code("reference.track")[0].text)
+        d = derive.derive(self.model("", "a | J1.A Y:7.R\n"))[1].by_code("reference.track")[0]
+        self.assertEqual(d.entities, ("interlockings/X", "interlockings/Y", "interlockings/Y/appliances/7"))
+        self.assertEqual(self.check("9 | appliance | Appliance=switch Style=powered\n", "a | J1.A Y:3NAT.TC 9.C\n"), [("reference.track", "X")])
+        self.assertEqual(self.check("9 | appliance | Appliance=switch Style=derail CP_Name=East\n", "a | J1.A Y:3NAT.TC 9.C\n"), [("reference.track", "X")])
+        self.assertEqual(self.check("9 | appliance | Appliance=switch Style=lock CP_Name=East\n", "a | J1.A Y:3NAT.TC 9.C\n"), [])
+        self.assertEqual(self.check("9 | appliance | Appliance=switch Style=manual_sensed CP_Name=East\n", "a | J1.A Y:3NAT.TC 9.C\n"), [])
+        dependent = "9 | appliance | Appliance=switch Style=lock CP_Name=East\n9D | appliance | Appliance=switch Style=derail CP_Name=East\n"
+        self.assertEqual(self.check(dependent, "a | J1.A Y:3NAT.TC 9.C 9D.C\n"), [])   # a dependent derail follows its lock
+
+    def test_a_track_row_named_for_another_interlocking_is_an_error(self):
         self.assertEqual(self.check("I1 | ends | Kind=INDUSTRY name=Y:Cannery\n", "a | J1.A I1.EoT\n"), [("reference.track", "I1")])
 
     def test_a_circuit_named_in_a_field_must_exist_too(self):
