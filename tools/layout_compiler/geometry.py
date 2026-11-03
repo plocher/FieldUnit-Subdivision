@@ -16,6 +16,11 @@ What is on the trackplan is decided by Role (§4.1): ``APPLIANCE``, ``TRACK``, `
 library, symbol name or position (``trackplan.TRACKPLAN_ROLES``). A wire is track when it ends on a pin of a
 trackplan symbol or is chained onto one that does. Which circuit a run carries is derived from what its ends meet by
 the reference derivation (``tools/layout_model/derive.py``), never read here.
+
+A run may end on a hierarchical label (ADR 0013 §7.1, 2026-11-02: block track is drawn from one control point to the
+next, across sheets where needed, and a hierarchical label continues the run). That end states the label's name as
+drawn, ``label:<Name>`` (``LABEL_END``), and nothing more: not where the label is, not what is on the other sheet.
+Which circuit continues through it is the netlist's, carried by the circuits already; geometry copies none of it.
 """
 from __future__ import annotations
 
@@ -27,10 +32,11 @@ from typing import Any, Optional
 
 from .seams import Seams, key_of, loc
 from .source import Symbol
-from .trackplan import TRACKPLAN_ROLES, is_consumer, is_switch, pin_ref, unit_of
+from .trackplan import TRACKPLAN_ROLES, is_boundary, is_consumer, is_switch, pin_ref, unit_of
 
 COORDINATE_DECIMALS = 2     # placements and runs sit on the drawing's grid (§4.2)
 GLYPH_DECIMALS = 4          # a glyph's primitives have up to four
+LABEL_END = "label:"        # a run's end on a hierarchical label: ``label:<Name>`` (ADR 0013 §7.1)
 
 Point = tuple[float, float]
 
@@ -307,9 +313,11 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         pl, sym, _ = placed[ref]
         return _rounded(kicad_place(pl, anchor_of({p.name: (p.x, p.y) for p in sym.pins})))
 
-    # ports and runs on the page, before the frame is known
+    # ports and runs on the page, before the frame is known. Where two pins share a point (a boundary track circuit
+    # sits with its A and B on a joint's A and B, ADR 0013 §10), the track row's or the switch's pin is the one a run's
+    # end names: the row is the track, the boundary is what else is there.
     port_at: dict[Point, tuple[str, str]] = {}
-    for ref, (pl, sym, pins) in placed.items():
+    for ref, (pl, sym, pins) in sorted(placed.items(), key=lambda kv: symbols[kv[0]].role == "TRACK" or is_switch(symbols[kv[0]])):
         if symbols[ref].role in TRACKPLAN_ROLES:
             for pin, xy in pins.items():
                 port_at[xy] = (ref, pin)
@@ -348,10 +356,11 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         return src.net_of(ref, pin)
 
     def end_ref(ref: str, pin: str) -> Optional[str]:
-        """What a run's end meets (three-maps D5): a switch's port or a track row's side, in the one form the rows'
-        relations use (``trackplan.pin_ref``). A run's end is never a track circuit marker's TC."""
+        """What a run's end meets (three-maps D5): a switch's port, a track row's side or a boundary track circuit's
+        pin (ADR 0013 §10), in the one form the rows' relations use (``trackplan.pin_ref``). A run's end is never a
+        track circuit marker's TC."""
         s = symbols[ref]
-        return pin_ref(ix.name, s, pin) if is_switch(s) or s.role in ("TRACK", "POLICY") else None
+        return pin_ref(ix.name, s, pin) if is_switch(s) or is_boundary(s) or s.role in ("TRACK", "POLICY") else None
 
     appliances: dict[str, Any] = {}
     masts: dict[str, str] = {}
@@ -381,14 +390,23 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
 
     house_rows = {h.cp_name: placement(h.sym.ref) for h in houses if h.sym.ref in placed}
 
+    label_at: dict[Point, str] = {_rounded((lb.x, lb.y)): lb.name for lb in model.hierarchical_labels}
+
+    def run_end(xy: Point) -> Optional[str]:
+        """What a run's end states: the pin it meets (``end_ref``), or the hierarchical label it ends on (§7.1)."""
+        if xy in port_at:
+            return end_ref(*port_at[xy])
+        if xy in label_at:
+            return LABEL_END + label_at[xy]
+        return None
+
     track: list[dict[str, Any]] = []
     for line in runs:
-        ends = [port_at.get(line[0]), port_at.get(line[-1])]
-        for end, xy in zip(ends, (line[0], line[-1])):
-            if end is None and xy not in model.junctions:
-                report.error("geometry.run_end", f"{ix.name}: a run of track ends at {xy} where no trackplan pin and no junction is", source=f"sheet {model.path.name}")
+        for xy in (line[0], line[-1]):
+            if xy not in port_at and xy not in label_at and xy not in model.junctions:
+                report.error("geometry.run_end", f"{ix.name}: a run of track ends at {xy} where no trackplan pin, no hierarchical label and no junction is", source=f"sheet {model.path.name}")
         row: dict[str, Any] = {"points": " ".join(f"{norm(p)['x']},{norm(p)['y']}" for p in line)}
-        relations = {key: end_ref(*e) for key, e in zip(("from", "to"), ends) if e and end_ref(*e)}
+        relations = {key: ref for key, xy in zip(("from", "to"), (line[0], line[-1])) if (ref := run_end(xy))}
         if relations:
             row["relations"] = relations
         track.append(row)

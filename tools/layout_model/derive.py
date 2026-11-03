@@ -17,14 +17,42 @@ names every other track pin its wire reaches, so the relation is symmetric):
   component are an error. A component with neither is dark track. From them: each row's ``derived.circuits``, a
   switch's ``osCircuit``, a run's ``derived.circuit`` (geometry's ends name the pins), and ``track.links``: switch
   ports that meet with no joint or end between.
-- **Control points** by propagation from the houses (the owner, 2026-10-26; ADR 0012 §4).
+- **A mast's sides on a double signal joint** (ADR 0013 §6): a joint of Kind ``IRJ_SIGNALS`` keeps its sides ``A``
+  and ``B`` and states ``relations.masts`` (``{"A": mast, "B": mast}``); each mast's ``governed`` side is the side its
+  pin names and its ``approach`` the other, written on the mast as ``derived.circuits`` in the shape a single joint's
+  row carries (``{"governed": circuit, "approach": circuit}``, ADR 0012 §8). A double joint belongs to no control
+  point: ADR 0013 §4 puts block track outside every interlocking and §5 has automatic masts state no CP Name.
+- **A mast states Kind** (ADR 0013 §5): ``CONTROLLED``, ``ABSOLUTE`` or ``PERMISSIVE``, a stated fact. A mast with
+  none, or with another word, is reported ``mast.kind`` at missing; nothing is inferred from a CP Name or a plate.
+- **A mast that is not CONTROLLED over a powered switch** (ADR 0013 §5): an ``ABSOLUTE`` or ``PERMISSIVE`` mast whose
+  governed circuit (the side its joint pin names) holds a powered switch's or derail's port (``grammar.is_powered``,
+  §4: Style ``powered`` or ``dual``, or a CP Name; spring and hand-throw switches are not powered) is reported
+  ``mast.powered`` at warning. A check, never a source: it sets nothing.
+- **A boundary track circuit** (ADR 0013 §10; ``Appliance track_circuit``, Style ``boundary``) states ``relations.A``
+  and ``.B``, the two nets at its joint. It names no circuit: the marker on each net does. Its ``derived.circuits``
+  are the circuits on its pins, in A, B order: what it counts toward.
+- **A plate requires a PERMISSIVE mast** (ADR 0013 §5): a policy row of Kind ``RULE_290_G`` or ``RULE_290_R`` states
+  ``relations.mast``; one on no mast, or on a mast that is not ``PERMISSIVE``, is ``plate.mast`` at error.
+- **Control points** by propagation from the houses (the owner, 2026-10-26; ADR 0012 §4). An ``ABSOLUTE`` or
+  ``PERMISSIVE`` mast belongs to no control point (ADR 0013 §5: automatic masts state no CP Name; §4: block track is
+  outside every interlocking): it derives no ``controlPoint``, under one house as under several, and no chain runs
+  through it. A mast with no Kind keeps today's handling (``mast.kind`` reports it).
 - **Consumers of another station's indications** (the owner, 2026-10-27): a ``track.consumers`` row is a one-sided
   reference, ``relations.indication`` the token it consumes (``Corporal:2NATK``); a track circuit's token names the
   circuit the row stands on.
 - **The code line** is checked, not stored (the owner, 2026-10-28): what each station receives and must send is the
   domain library ``tools/railroad/codeline.py``'s, computed on demand; every token a consumer states (a desk lever's,
   a desk lamp's, a consumer row's) must be one an appliance of the named interlocking can report there.
-- **NextCP pairing** and the **cross-interlocking reference** check.
+- **Block track across sheets** (ADR 0013 §7.1, amending ADR 0009 §3.12): a track net that joins two interlockings
+  (a pin of one names a pin of the other) is block track and is accepted when it is plain track; a foreign marker's
+  TC on it names the component as a marker would (Sargent's 834 joint has ``Corporal:834T`` on its side A). It stays
+  ``reference.track`` at error when the joining net holds a powered switch or derail port of either interlocking
+  (``grammar.is_powered``): such a piece is never block track (§4), and interlocking track leaves an interlocking at
+  a NextCP or an END_CTC. The net creates no consumer and no indication token: the block's token is the codeline
+  library's by R12 (§7.2, §12, §18.1). Blocks and interlocking limits are not computed here (the ``blocks`` library).
+- **NextCP pairing** and the **cross-interlocking reference** check. A NextCP whose track is also drawn through to
+  another interlocking's track is redundant (ADR 0013 §7.1: inside CTC a NextCP is no longer needed; it stays for an
+  interlocking whose neighbour is not drawn), reported ``next_cp.drawn`` at warning.
 - An OfficeUnit's columns (``house``, ``interlocking``), every device's ``serves``, a desk lamp's ``indications`` and
   ``expression`` (its ``Indication``, ``tools/layout_model/expression.py``), a lever's ``controls`` and ``indications``
   from its per-pin ``Control.X`` and ``Indication.X``; a dispatcher-controlled switch or lock no desk lever serves.
@@ -44,7 +72,7 @@ from typing import Any, Optional
 from tools.railroad import codeline
 
 from . import expression, reference
-from .grammar import GANG, MAST_NAME, lever_class, lever_of, styles
+from .grammar import GANG, MAST_NAME, is_powered, lever_class, lever_of, styles
 from . import sort_key
 from .report import Report
 
@@ -55,7 +83,10 @@ SWITCH_PORTS = ("C", "N", "R")
 DERAIL_PORTS = ("C", "R")
 TRACK_LISTS = ("joints", "ends", "policies")
 ROW_LISTS = TRACK_LISTS + ("consumers",)          # every row with an id; a consumer has track but no circuits of its own
-JOINTS = frozenset({"IRJ", "IRJ_SIGNAL"})
+JOINTS = frozenset({"IRJ", "IRJ_SIGNAL", "IRJ_SIGNALS"})
+DOUBLE_SIDES = {"A": "B", "B": "A"}             # a double joint's side to the other (ADR 0013 §6)
+MAST_KINDS = frozenset({"CONTROLLED", "ABSOLUTE", "PERMISSIVE"})   # what a mast states it is (ADR 0013 §5)
+PLATES = frozenset({"RULE_290_G", "RULE_290_R"})                   # a plate on a mast's SIGNAL net (ADR 0013 §5)
 
 
 @lru_cache(maxsize=1)
@@ -197,6 +228,11 @@ class _Plan:
     def region(self, node: str) -> Optional[str]:
         return self.union.find(node) if node in self.union else None
 
+    def component(self, node: str) -> list[str]:
+        """Every track pin in the node's connected component, the node included; none for a pin the track lacks."""
+        r = self.region(node)
+        return [n for n in self.union.parent if self.union.find(n) == r] if r else []
+
     def circuit(self, node: str) -> Optional[str]:
         r = self.region(node)
         return self.name_of.get(r) if r else None
@@ -210,7 +246,7 @@ class _Plan:
         for name, a in self.appliances.items():
             g = a.get("given", {})
             pins = track_pins(a.get("relations", {}))
-            if g.get("Appliance") == "track_circuit" and "TC" in pins:
+            if g.get("Appliance") == "track_circuit" and "TC" in pins and g.get("Style") != "boundary":   # a boundary names none (ADR 0013 §10)
                 root = self.union.find(self.pin(name, "TC"))
                 named[root]["marker"].add(qualify(name, self.name))
                 namer[root] = a
@@ -228,6 +264,10 @@ class _Plan:
         for node, circuit in consumed.items():
             if node in self.union:
                 named[self.union.find(node)]["marker"].add(circuit)
+        for node in list(self.union.parent):                             # another sheet's marker on block track (ADR 0013 §7.1)
+            thing, _, side = node.rpartition(".")
+            if side == "TC" and foreign(thing, self.name):
+                named[self.union.find(node)]["marker"].add(thing)
         self.name_of = {self.union.find(n): None for n in self.union.parent}
         self.namer = {}
         for root, names in named.items():
@@ -268,7 +308,7 @@ class _Plan:
         Reached by chains from two houses and stating none is an error, and so is reached by none. A track circuit
         marker stands for its circuit."""
         houses = {h.casefold(): h for h in self.houses}
-        apps = list(self.appliances.items())
+        apps = [(n, a) for n, a in self.appliances.items() if not _automatic_mast(a)]   # no control point (ADR 0013 §5)
         joints = [row for row in self.track.get("joints", []) if row.get("given", {}).get("Kind") == "IRJ_SIGNAL"]
 
         def region(node: str) -> Optional[str]:
@@ -397,12 +437,31 @@ class _Plan:
 
     # -------------------------------------------------------------------------------------------------- write
 
+    def mast_sides(self) -> dict[str, dict[str, Optional[str]]]:
+        """Each mast on a double signal joint to its governed and approach circuits (ADR 0013 §6): governed is the
+        circuit on the side its SIGNAL pin names, approach the circuit on the other side."""
+        out: dict[str, dict[str, Optional[str]]] = {}
+        for row in self.track.get("joints", []):
+            if row.get("given", {}).get("Kind") != "IRJ_SIGNALS":
+                continue
+            prefix = self.row_prefix(row)
+            for side, mast in row.get("relations", {}).get("masts", {}).items():
+                if mast and not foreign(mast, self.name) and side in DOUBLE_SIDES:
+                    out[mast.partition(":")[2]] = {"governed": self.circuit(f"{prefix}.{side}"),
+                                                   "approach": self.circuit(f"{prefix}.{DOUBLE_SIDES[side]}")}
+        return out
+
     def write(self) -> None:
+        sides = self.mast_sides()
         for name, a in self.appliances.items():
             g = a.get("given", {})
             derived: dict[str, Any] = {}
             if g.get("Appliance") == "switch":
                 derived["osCircuit"] = next((c for p in ports_of(a) if (c := self.circuit(self.pin(name, p)))), None)
+            if g.get("Appliance") == "mast" and name in sides:
+                derived["circuits"] = sides[name]
+            if g.get("Appliance") == "track_circuit" and g.get("Style") == "boundary":          # what it counts toward (ADR 0013 §10)
+                derived["circuits"] = {p: self.circuit(self.pin(name, p)) for p in ("A", "B")}
             if g.get("Appliance") == "track_circuit" and g.get("Style") == "virtual":
                 derived["members"] = [qualify(t.strip(), self.name) for t in g.get("Members", "").split(",") if t.strip()]
             cp = self.cp.get(id(a))
@@ -478,10 +537,36 @@ class _Plan:
                                "track on CTC; CTC is the side under the dispatcher's control", where)
             if g.get("Kind") == "NEXT_CP" and not g.get("Interlocking"):
                 self.r.add("next_cp.interlocking", f"{self.name}: a NextCP states no Interlocking", where)
+        for row in self.track.get("policies", []):
+            g, where = row.get("given", {}), self.where("track", "policies", row.get("id", ""))
+            if g.get("Kind") not in PLATES:
+                continue
+            mast = row.get("relations", {}).get("mast")
+            m = self.appliances.get(mast.partition(":")[2]) if mast and not foreign(mast, self.name) else None
+            if not mast:
+                self.r.add("plate.mast", f"{self.name}: a {g['Kind']} plate is on no mast's SIGNAL wire", where)
+            elif m is None or m.get("given", {}).get("Appliance") != "mast":
+                self.r.add("plate.mast", f"{self.name}: a {g['Kind']} plate names {mast}, which is no mast of {self.name}", where)
+            elif m.get("given", {}).get("Kind") != "PERMISSIVE":
+                self.r.add("plate.mast", f"{self.name}: a {g['Kind']} plate is on mast {mast}, which is {m['given'].get('Kind') or 'of no Kind'}; "
+                           "a plate requires a PERMISSIVE mast (ADR 0013 §5)", where, (self.where("appliances", mast.partition(":")[2]),))
         masts_of = defaultdict(int)
+        governed: dict[str, str] = {}                                  # mast (qualified) -> the node its governed side is
         for row in self.track.get("joints", []):
+            prefix = self.row_prefix(row)
             if row.get("relations", {}).get("mast"):
                 masts_of[row["relations"]["mast"]] += 1
+                governed[row["relations"]["mast"]] = f"{prefix}.governed"
+            for side, mast in row.get("relations", {}).get("masts", {}).items():    # a double joint counts for each of its masts
+                if mast:
+                    masts_of[mast] += 1
+                    governed[mast] = f"{prefix}.{side}"
+        powered_at: dict[str, list[str]] = defaultdict(list)          # region -> the powered switches with a port on it
+        for n, a in self.appliances.items():
+            if is_powered(n, self.appliances):
+                for p in ports_of(a):
+                    if (r := self.region(self.pin(n, p))) and n not in powered_at[r]:
+                        powered_at[r].append(n)
         letters_of_signal: dict[str, dict[str, str]] = defaultdict(dict)
         for name, a in self.appliances.items():
             g = a.get("given", {})
@@ -490,11 +575,21 @@ class _Plan:
                 self.r.add("switch.track", f"{self.name}: switch {name} has no track on any port", where)
             if g.get("Appliance") != "mast":
                 continue
+            if g.get("Kind") not in MAST_KINDS:
+                self.r.add("mast.kind", f"{self.name}: mast {name} states {'no Kind' if not g.get('Kind') else 'Kind ' + repr(g['Kind'])}; "
+                           "a mast is CONTROLLED, ABSOLUTE or PERMISSIVE (ADR 0013 §5)", where)
             n = masts_of.get(qualify(name, self.name), 0)
             if n == 0:
                 self.r.add("mast.joint", f"{self.name}: mast {name} stands on no signal joint", where)
             elif n > 1:
                 self.r.add("mast.joints", f"{self.name}: mast {name} stands on {n} signal joints", where)
+            if g.get("Kind") in MAST_KINDS - {"CONTROLLED"} and n == 1:                    # a check, never a source (ADR 0013 §5)
+                over = powered_at.get(self.region(governed[qualify(name, self.name)]) or "", [])
+                if over:
+                    self.r.add("mast.powered", f"{self.name}: mast {name} is {g['Kind']} but its route passes powered "
+                               f"{'switch' if len(over) == 1 else 'switches'} {', '.join(sorted(over, key=sort_key))} on "
+                               f"{self.circuit(governed[qualify(name, self.name)]) or 'dark track'}; a mast over a powered switch "
+                               "or derail is CONTROLLED (ADR 0013 §5)", where, tuple(self.where("appliances", s) for s in sorted(over, key=sort_key)))
             m = MAST_NAME.match(name)
             if m is None:
                 self.r.add("mast.grammar", f"{self.name}: mast {name} is not a signal and its head letters (ADR 0003); not checked", where)
@@ -511,32 +606,41 @@ class _Plan:
 
     # ------------------------------------------------------------------------------------- references
 
-    def references(self) -> list[tuple[str, str, frozenset[str], str, str]]:
+    def references(self) -> list[tuple[str, str, frozenset[str], str, str, frozenset[str]]]:
         """Every qualified name this interlocking states for another's thing: (kind, name, ports or sides it wires,
-        how it is stated, where). One-sided (the owner, 2026-10-27): nothing is written back."""
+        how it is stated, where, the switch ports in the component the wire joins). One-sided (the owner, 2026-10-27):
+        nothing is written back. A pin of another interlocking's thing (kind ``switch`` for a switch port, ``pin`` for
+        a marker's TC, a boundary's side or a named row's side) is a track net drawn across sheets (ADR 0013 §7.1);
+        the switch ports of its component, this interlocking's and the other's, decide whether it is block track."""
         out = []
         by_thing: dict[str, set[str]] = defaultdict(set)
-        for refs in self._all_refs():
-            for ref in refs:
-                thing, _, side = ref.rpartition(".")
-                if foreign(thing, self.name) and thing not in self.rows:
-                    by_thing[thing].add(side)
+        roots: dict[str, set[str]] = defaultdict(set)
+        ports_of_root: dict[str, set[str]] = defaultdict(set)
+        for node in list(self.union.parent):
+            thing, _, side = node.rpartition(".")
+            if self.is_switch_port(node):
+                ports_of_root[self.union.find(node)].add(node)
+            if foreign(thing, self.name) and thing not in self.rows:
+                by_thing[thing].add(side)
+                roots[thing].add(self.union.find(node))
         for thing, sides in sorted(by_thing.items()):
-            kind = "marker" if "TC" in sides else "switch"
-            out.append((kind, thing, frozenset(sides), "the track circuit marker" if kind == "marker" else "the switch", self.where()))
+            kind = "switch" if sides & set(SWITCH_PORTS) else "pin"
+            what = "the switch" if kind == "switch" else "the track circuit marker" if "TC" in sides else "the track pin"
+            ports = frozenset(p for r in roots[thing] for p in ports_of_root[r])
+            out.append((kind, thing, frozenset(sides), what, self.where(), ports))
         for prefix, (kind, row) in sorted(self.rows.items()):
             if row.get("name") and foreign(row["name"], self.name):
                 out.append(("track", row["name"], frozenset(track_pins(row.get("relations", {}))),
-                            f"the {row.get('given', {}).get('Kind', 'track row')}", self.where("track", kind, row.get("id", ""))))
+                            f"the {row.get('given', {}).get('Kind', 'track row')}", self.where("track", kind, row.get("id", "")), frozenset()))
         for name, a in self.appliances.items():
             g = a.get("given", {})
             if g.get("Appliance") == "switch" and g.get("TC") and foreign(g["TC"], self.name) and "," not in g["TC"]:
-                out.append(("circuit", g["TC"], frozenset(), f"switch {name}'s TC", self.where("appliances", name)))
+                out.append(("circuit", g["TC"], frozenset(), f"switch {name}'s TC", self.where("appliances", name), frozenset()))
             if g.get("Appliance") == "track_circuit" and g.get("Style") == "virtual":
                 for t in g.get("Members", "").split(","):
                     if t.strip() and foreign(t.strip(), self.name):
                         out.append(("circuit", t.strip(), frozenset(), f"virtual circuit {name}'s Members",
-                                    self.where("appliances", name)))
+                                    self.where("appliances", name), frozenset()))
         return out
 
 
@@ -626,13 +730,27 @@ class _Derivation:
 
     def next_cps(self) -> None:
         """A NextCP names the interlocking its track leads to; that interlocking's NextCPs lead back as many times. One
-        beyond the layout (Lick, Hollister) is reported at info."""
+        beyond the layout (Lick, Hollister) is reported at info. One whose track is also drawn through to another
+        interlocking's track is redundant, ``next_cp.drawn`` at warning (ADR 0013 §7.1: block track is drawn from one
+        control point to the next and replaces the NextCP inside CTC; it stays for a neighbour that is not drawn)."""
         count: dict[tuple[str, str], int] = defaultdict(int)
         for a, plan in self.plans.items():
             for row in plan.track.get("ends", []):
                 g = row.get("given", {})
                 if g.get("Kind") == "NEXT_CP" and g.get("Interlocking"):
                     count[(a, g["Interlocking"])] += 1
+        for a, plan in self.plans.items():
+            for row in plan.track.get("ends", []):
+                g = row.get("given", {})
+                if g.get("Kind") != "NEXT_CP":
+                    continue
+                drawn = sorted(x for n in plan.component(f"{plan.row_prefix(row)}.track") if (x := self.drawn_in_other(a, n)))
+                if drawn:
+                    self.r.add("next_cp.drawn", f"{a}: a NextCP{' to ' + g['Interlocking'] if g.get('Interlocking') else ''} stands on "
+                               f"track that is drawn through to {', '.join(dict.fromkeys(x.partition(':')[0] for x in drawn))}'s "
+                               f"({', '.join(drawn)}); inside CTC the drawn block replaces it (ADR 0013 §7.1)",
+                               plan.where("track", "ends", row.get("id", "")),
+                               tuple(dict.fromkeys(f"interlockings/{x.partition(':')[0]}" for x in drawn)))
         for (a, b), n in sorted(count.items()):
             if b not in self.plans:
                 self.r.add("next_cp.off_layout", f"{a}: {n} NextCP{'s lead' if n > 1 else ' leads'} to {b}, which is not on this layout",
@@ -641,6 +759,18 @@ class _Derivation:
                 self.r.add("next_cp.pair", f"{a} has {n} NextCP{'s' * (n > 1)} to {b}, but {b} has {count.get((b, a), 0)} back to {a}",
                            f"interlockings/{a}", (f"interlockings/{b}",))
 
+    def drawn_in_other(self, a: str, ref: str) -> Optional[str]:
+        """Where a track pin named in interlocking ``a``'s relations is another interlocking's drawn track (ADR 0013
+        §7.1): a pin qualified for another interlocking, or an unnamed row's side whose id is a row of another plan in
+        the file. The pin as ``<interlocking>:<pin>``, or None."""
+        thing, _, side = ref.rpartition(".")
+        if ":" in thing:
+            return ref if foreign(thing, a) else None
+        for b, plan in self.plans.items():
+            if b != a and thing in plan.rows:
+                return f"{b}:{ref}"
+        return None
+
     # ----------------------------------------------------------------------------------------- references
 
     def _appliance_path(self, b: str, n: str) -> tuple[str, ...]:
@@ -648,23 +778,37 @@ class _Derivation:
         plan = self.plans.get(b)
         return (f"interlockings/{b}/appliances/{n}",) if plan is not None and n in plan.appliances else ()
 
+    def powered_port(self, ref: str) -> bool:
+        """Whether a switch port, by its qualified name, is a powered switch's or derail's (ADR 0013 §4,
+        ``grammar.is_powered``). A port of a switch the file does not have cannot be shown not to be: it counts as one."""
+        thing, _, side = ref.rpartition(".")
+        b, _, n = thing.partition(":")
+        plan = self.plans.get(b)
+        return True if plan is None or n not in plan.appliances else is_powered(n, plan.appliances)
+
     def resolve_references(self) -> None:
-        """A qualified name for another interlocking's thing. On a switch port or a track row it is an error (the owner,
-        2026-10-28): track leaves an interlocking at a NextCP or an END_CTC (ADR 0009 §3.12), and what one interlocking
-        has of another's is only its indications (a consumer row). A circuit named in a field (a switch's TC, a virtual
-        circuit's members) names one that exists: an interlocking not in the file is a warning, a circuit missing from
-        one that is an error. Each finding names the referring thing, then the interlocking and appliance it names when
-        the file has them."""
+        """A qualified name for another interlocking's thing. A track net that joins two interlockings (a pin of one
+        names a pin of the other) is block track, drawn across sheets (ADR 0013 §7.1): accepted when it is plain track,
+        with no consumer and no token (the block's token is the codeline library's, R12). It is ``reference.track`` at
+        error when the joining net holds a powered switch or derail port of either interlocking: such a piece is never
+        block track (§4), and interlocking track leaves an interlocking at a NextCP or an END_CTC (ADR 0009 §3.12,
+        which §7.1 narrows to interlocking track). A track row named for another interlocking is that error too (the
+        owner, 2026-10-28). A circuit named in a field (a switch's TC, a virtual circuit's members) names one that
+        exists: an interlocking not in the file is a warning, a circuit missing from one that is an error. Each finding
+        names the referring thing, then the interlocking and appliance it names when the file has them."""
         for a, plan in self.plans.items():
-            for kind, name, ports, what, where in plan.references():
+            for kind, name, ports, what, where, switch_ports in plan.references():
                 b, _, n = name.partition(":")
                 target = (f"interlockings/{b}",) if b in self.plans else ()
-                if kind == "marker":
-                    self.r.add("reference.marker", f"{a}: a track pin names {name}.TC, another interlocking's marker; a reference to it "
-                               "is a consumer row of its indication (relations.indication)", where,
-                               target + self._appliance_path(b, n))
-                    continue
-                if kind in ("switch", "track"):
+                if kind in ("switch", "pin"):
+                    powered = sorted(p for p in switch_ports if self.powered_port(p))
+                    if powered:
+                        self.r.add("reference.track", f"{a}: {what} {name} joins this interlocking's track to {b}'s on a wire that holds "
+                                   f"powered switch port{'s' if len(powered) > 1 else ''} {', '.join(powered)}; a piece with a powered "
+                                   "switch or derail is never block track (ADR 0013 §4), and interlocking track leaves an interlocking "
+                                   "at a NextCP or an END_CTC (ADR 0009 §3.12)", where, target + self._appliance_path(b, n))
+                    continue                                              # plain track across sheets: block track (§7.1)
+                if kind == "track":
                     self.r.add("reference.track", f"{a}: {what} {name} joins this interlocking's track to {b}'s; track leaves an "
                                "interlocking at a NextCP or an END_CTC, and another interlocking's state is only its indications",
                                where, target + self._appliance_path(b, n))
@@ -674,7 +818,8 @@ class _Derivation:
                     continue
                 plan_b = self.plans[b]
                 circuits = {c for c in plan_b.name_of.values() if c} | {
-                    f"{b}:{k}" for k, v in plan_b.appliances.items() if v.get("given", {}).get("Appliance") == "track_circuit"}
+                    f"{b}:{k}" for k, v in plan_b.appliances.items()
+                    if v.get("given", {}).get("Appliance") == "track_circuit" and v["given"].get("Style") != "boundary"}
                 if name not in circuits:
                     self.r.add("reference.unresolved", f"{a}: {what} {name} names {b}, which has no circuit {n}", where, target)
 
@@ -928,6 +1073,12 @@ class _Derivation:
                 self.r.add("transport.reach", f"FieldUnit {name} reaches {t} through its code line {rel['codeline']}; its processor "
                            f"{rel['processor']} anchors no {t} instance", f"interlockings/{name}",
                            (f"layout/processors/{rel['processor']}", f"layout/transports/{t}"))
+
+
+def _automatic_mast(appliance: dict[str, Any]) -> bool:
+    """A mast that states Kind ``ABSOLUTE`` or ``PERMISSIVE``: automatic, of no control point (ADR 0013 §5)."""
+    g = appliance.get("given", {})
+    return g.get("Appliance") == "mast" and g.get("Kind") in MAST_KINDS - {"CONTROLLED"}
 
 
 def _clean(d: dict[str, Any]) -> dict[str, Any]:

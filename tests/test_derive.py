@@ -102,9 +102,9 @@ def row(ix: dict, rid: str) -> dict:
 # One switch inside three signal joints of house East: the Sargent shape.
 ONE_SWITCH = """
 835    | appliance | Appliance=switch Style=lock TC=835T1 Indication=835T1K
-836NAB | appliance | Appliance=mast Style=double
-836SA  | appliance | Appliance=mast Style=single
-836SB  | appliance | Appliance=mast Style=dwarf
+836NAB | appliance | Appliance=mast Style=double Kind=CONTROLLED
+836SA  | appliance | Appliance=mast Style=single Kind=CONTROLLED
+836SB  | appliance | Appliance=mast Style=dwarf Kind=CONTROLLED
 1NAT   | appliance | Appliance=track_circuit Indication=1NATK
 1SAT   | appliance | Appliance=track_circuit Indication=1SATK
 2SAT   | appliance | Appliance=track_circuit Indication=2SATK
@@ -207,6 +207,39 @@ class Checks(unittest.TestCase):
         _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("rel.mast=X:836SB", "rel.mast=X:836SA"), ONE_SWITCH_WIRES, "East")))
         self.assertEqual(only(diags, "mast"), [("mast.joint", "836SB"), ("mast.joints", "836SA")])
 
+    def test_a_mast_states_what_it_is_or_is_missing(self):
+        """ADR 0013 §5: Kind CONTROLLED, ABSOLUTE or PERMISSIVE is a stated fact; none, or another word, is missing."""
+        _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("Style=dwarf Kind=CONTROLLED", "Style=dwarf"), ONE_SWITCH_WIRES, "East")))
+        self.assertEqual(only(diags, "mast"), [("mast.kind", "836SB")])
+        _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("Style=dwarf Kind=CONTROLLED", "Style=dwarf Kind=AUTOMATIC"), ONE_SWITCH_WIRES, "East")))
+        self.assertEqual(only(diags, "mast"), [("mast.kind", "836SB")])
+        self.assertEqual(derive.derive(layout(X=interlocking(ONE_SWITCH.replace("Style=dwarf Kind=CONTROLLED", "Style=dwarf"), ONE_SWITCH_WIRES, "East")))[1]
+                         .by_code("mast.kind")[0].severity, "missing")
+        for kind in ("CONTROLLED", "ABSOLUTE", "PERMISSIVE"):
+            _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("Style=dwarf Kind=CONTROLLED", f"Style=dwarf Kind={kind}"), ONE_SWITCH_WIRES, "East")))
+            self.assertEqual(only(diags, "mast"), [], kind)
+
+    def test_a_mast_that_is_not_controlled_over_a_powered_switch_is_a_warning(self):
+        """ADR 0013 §5: a PERMISSIVE or ABSOLUTE mast whose governed circuit holds a powered switch or derail port (§4:
+        Style powered or dual, or a CP Name) is reported; over an electric lock, a hand-throw switch or a switch on its
+        approach side it is not; a CONTROLLED mast never is. The check sets nothing."""
+        def masts(things: str, wires: str = ONE_SWITCH_WIRES) -> list[tuple[str, str]]:
+            return only(run(layout(X=interlocking(things, wires, "East")))[1], "mast")
+        permissive = ONE_SWITCH.replace("836SA  | appliance | Appliance=mast Style=single Kind=CONTROLLED",
+                                        "836SA  | appliance | Appliance=mast Style=single Kind=PERMISSIVE")
+        self.assertEqual(masts(permissive), [])                                                   # 835 is an electric lock
+        self.assertEqual(masts(permissive.replace("Style=lock", "Style=powered")), [("mast.powered", "836SA")])
+        self.assertEqual(masts(permissive.replace("Style=lock", "Style=manual_sensed CP_Name=East")), [])
+        self.assertEqual(masts(permissive.replace("Style=lock", "Style=lock CP_Name=East")), [])
+        self.assertEqual(masts(permissive.replace("Kind=PERMISSIVE", "Kind=ABSOLUTE").replace("Style=lock", "Style=dual")), [("mast.powered", "836SA")])
+        self.assertEqual(masts(ONE_SWITCH.replace("Style=lock", "Style=powered")), [])            # all CONTROLLED
+        d = derive.derive(layout(X=interlocking(permissive.replace("Style=lock", "Style=powered"), ONE_SWITCH_WIRES, "East")))[1].by_code("mast.powered")[0]
+        self.assertEqual((d.severity, d.entities), ("warning", ("interlockings/X/appliances/836SA", "interlockings/X/appliances/835")))
+        self.assertIn("passes powered switch 835 on X:835T1", d.text)
+        # the switch on the approach side only: 836SA's governed side is J2.governed on 835.N; turn J2 around
+        turned = ONE_SWITCH_WIRES.replace("n  | 835.N J2.governed", "n  | 835.N J2.approach").replace("e1 | J2.approach 1SAT.TC", "e1 | J2.governed 1SAT.TC")
+        self.assertEqual(masts(permissive.replace("Style=lock", "Style=powered"), turned), [])
+
     def test_a_mast_named_for_heads_it_does_not_carry_and_one_letter_on_two_masts(self):
         ix = interlocking(ONE_SWITCH, ONE_SWITCH_WIRES, "East")
         ix["appliances"]["836NAB"]["heads"] = {"A": {"given": {"Style": "CPL"}}, "C": {"given": {"Style": "CPL"}}}
@@ -226,6 +259,91 @@ class Checks(unittest.TestCase):
         self.assertEqual(only(diags, "switch"), [("switch.tc_block", "835")])
 
 
+class DoubleJoint(unittest.TestCase):
+    """ADR 0013 §6: a joint of Kind IRJ_SIGNALS with relations.masts counts as the signal joint of each mast; each mast's
+    governed circuit is the side its pin names, its approach the other."""
+
+    def block(self, masts: dict) -> dict:
+        ix = interlocking("832T | appliance | Appliance=track_circuit\n834T | appliance | Appliance=track_circuit\n"
+                          "832NA | appliance | Appliance=mast Style=single Kind=PERMISSIVE\n"
+                          "832SA | appliance | Appliance=mast Style=single Kind=PERMISSIVE\n"
+                          "J1 | joints | Kind=IRJ_SIGNALS\n", "a | J1.A 832T.TC\nb | J1.B 834T.TC\n", "East")
+        row(ix, "J1").setdefault("relations", {})["masts"] = masts
+        return layout(X=ix)
+
+    def test_a_mast_on_a_double_joint_stands_on_a_joint_and_has_its_sides(self):
+        out, diags = run(self.block({"A": "X:832NA", "B": "X:832SA"}))
+        self.assertEqual(only(diags, "mast", "joint"), [])
+        apps = out["interlockings"]["X"]["appliances"]
+        self.assertEqual(apps["832NA"]["derived"]["circuits"], {"governed": "X:832T", "approach": "X:834T"})
+        self.assertEqual(apps["832SA"]["derived"]["circuits"], {"governed": "X:834T", "approach": "X:832T"})
+        self.assertEqual(row(out["interlockings"]["X"], "J1")["derived"], {"circuits": {"A": "X:832T", "B": "X:834T"}})
+        self.assertEqual(layout_model.errors(out), [])
+
+    def test_a_boundary_track_circuit_counts_toward_the_circuit_on_each_pin_and_names_none(self):
+        """ADR 0013 §10: derived.circuits on the boundary, A then B; the markers name the circuits, never the boundary."""
+        m = self.block({"A": "X:832NA", "B": "X:832SA"})
+        ix = m["interlockings"]["X"]
+        ix["appliances"]["833T"] = {"given": {"Appliance": "track_circuit", "Style": "boundary"},
+                                    "relations": {"A": ["J1.A", "X:832T.TC"], "B": ["J1.B", "X:834T.TC"]}}
+        out, diags = run(m)
+        self.assertEqual(only(diags, "circuit"), [])
+        self.assertEqual(out["interlockings"]["X"]["appliances"]["833T"]["derived"]["circuits"], {"A": "X:832T", "B": "X:834T"})
+        self.assertEqual(row(out["interlockings"]["X"], "J1")["derived"]["circuits"], {"A": "X:832T", "B": "X:834T"})
+        del ix["appliances"]["834T"]
+        out, diags = run(m)
+        self.assertEqual(only(diags, "circuit"), [])
+        self.assertEqual(out["interlockings"]["X"]["appliances"]["833T"]["derived"]["circuits"], {"A": "X:832T"})
+        self.assertEqual(layout_model.errors(out), [])
+
+    def test_a_plate_requires_a_permissive_mast(self):
+        """ADR 0013 §5: a plate on no mast, on a mast the file lacks, or on one that is not PERMISSIVE is an error."""
+        def plated(mast: str | None, kind: str = "PERMISSIVE") -> list[tuple[str, str]]:
+            m = self.block({"A": "X:832NA", "B": "X:832SA"})
+            ix = m["interlockings"]["X"]
+            ix["appliances"]["832SA"]["given"]["Kind"] = kind
+            ix["track"]["policies"] = [{"id": "PL1", "given": {"Kind": "RULE_290_G"}, **({"relations": {"mast": mast}} if mast else {})}]
+            return only(run(m)[1], "plate")
+        self.assertEqual(plated("X:832SA"), [])
+        self.assertEqual(plated(None), [("plate.mast", "PL1")])
+        self.assertEqual(plated("X:9NA"), [("plate.mast", "PL1")])
+        self.assertEqual(plated("X:832SA", "CONTROLLED"), [("plate.mast", "PL1")])
+        self.assertEqual(plated("X:832SA", ""), [("plate.mast", "PL1")])
+
+    def test_an_automatic_mast_belongs_to_no_control_point(self):
+        """ADR 0013 §5 and §4: under one house every appliance is the house's, but an ABSOLUTE or PERMISSIVE mast derives no
+        controlPoint (absent, no diagnostic); a CONTROLLED one on the same double joint derives the house."""
+        m = self.block({"A": "X:832NA", "B": "X:832SA"})
+        m["interlockings"]["X"]["appliances"]["832NA"]["given"]["Kind"] = "CONTROLLED"
+        out, diags = run(m)
+        apps = out["interlockings"]["X"]["appliances"]
+        self.assertEqual(apps["832NA"]["derived"]["controlPoint"], "X:East")
+        self.assertNotIn("controlPoint", apps["832SA"]["derived"])
+        self.assertEqual(apps["832T"]["derived"]["controlPoint"], "X:East")
+        self.assertEqual(only(diags, "control_point"), [])
+        m["interlockings"]["X"]["appliances"]["832SA"]["given"]["Kind"] = "ABSOLUTE"
+        self.assertNotIn("controlPoint", run(m)[0]["interlockings"]["X"]["appliances"]["832SA"].get("derived", {}))
+
+    def test_a_permissive_mast_on_a_double_joint_over_a_powered_derail_is_a_warning(self):
+        """ADR 0013 §5 on a double joint: 832SA governs into side B (834T); an independent derail with a CP Name there is
+        powered (§4), one that follows a hand-throw lock is not."""
+        m = self.block({"A": "X:832NA", "B": "X:832SA"})
+        ix = m["interlockings"]["X"]
+        ix["appliances"]["9D"] = {"given": {"Appliance": "switch", "Style": "derail", "CP Name": "East"}, "relations": {"C": ["J1.B", "X:834T.TC"]}}
+        row(ix, "J1")["relations"]["B"] = ["X:834T.TC", "X:9D.C"]
+        ix["appliances"]["834T"]["relations"]["TC"] = ["J1.B", "X:9D.C"]
+        self.assertEqual(only(run(m)[1], "mast"), [("mast.powered", "832SA")])
+        ix["appliances"]["9"] = {"given": {"Appliance": "switch", "Style": "lock", "CP Name": "East"}, "relations": {"C": ["J1.B"]}}
+        self.assertEqual(only(run(m)[1], "mast"), [])
+
+    def test_a_side_with_no_mast_leaves_that_mast_on_no_joint_and_one_mast_on_both_sides_is_on_two(self):
+        out, diags = run(self.block({"A": "X:832NA"}))
+        self.assertEqual(only(diags, "mast"), [("mast.joint", "832SA")])
+        self.assertNotIn("circuits", out["interlockings"]["X"]["appliances"]["832SA"].get("derived", {}))
+        _, diags = run(self.block({"A": "X:832NA", "B": "X:832NA"}))
+        self.assertEqual(only(diags, "mast"), [("mast.joint", "832SA"), ("mast.joints", "832NA")])
+
+
 # Two houses, the Christopher shape: switches 813 and 815 (with 815A in its gang) on North, 817 on South; siding 01T
 # between 813's R and 817's R; 815's R meets 815A's R at a plain joint. Each signal states its house on the joint or on
 # the mast; approach circuit 1NAT states North though South's signal bounds it.
@@ -234,9 +352,9 @@ TWO_HOUSES = """
 815   | appliance | Appliance=switch Style=powered TC=815T1 Indication=815T1K CP_Name=North
 815A  | appliance | Appliance=switch Style=powered TC=815AT1 Indication=815AT1K
 817   | appliance | Appliance=switch Style=powered TC=817T1 Indication=817T1K CP_Name=South
-814SA | appliance | Appliance=mast Style=single
-816NA | appliance | Appliance=mast Style=single CP_Name=South
-818NA | appliance | Appliance=mast Style=single
+814SA | appliance | Appliance=mast Style=single Kind=CONTROLLED
+816NA | appliance | Appliance=mast Style=single Kind=CONTROLLED CP_Name=South
+818NA | appliance | Appliance=mast Style=single Kind=CONTROLLED
 1SAT  | appliance | Appliance=track_circuit Indication=1SATK
 01T   | appliance | Appliance=track_circuit CP_Name=North Indication=01TK
 2NAT  | appliance | Appliance=track_circuit Indication=2NATK
@@ -346,6 +464,24 @@ class NextCPs(unittest.TestCase):
     def test_one_beyond_the_layout_is_info(self):
         out, diags = run(layout(X=interlocking("N1 | ends | Kind=NEXT_CP Interlocking=Lick\n", "", "East")))
         self.assertEqual(diags, [("next_cp.off_layout", "X")])
+
+    def test_a_next_cp_whose_track_is_drawn_through_to_the_neighbour_is_redundant(self):
+        """ADR 0013 §7.1: block track drawn across sheets replaces the NextCP inside CTC. A's NextCP to B stands on a wire
+        that also reaches B's marker (by name) or B's joint (by its id): warning, with B as the second party, and the
+        drawn circuit stands. A NextCP on a wire that reaches no other interlocking's track is kept, as is next_cp.pair."""
+        a = interlocking("N1 | ends | Kind=NEXT_CP Interlocking=B\n", "w | N1.track B:2T.TC\n", "A", "A")
+        b = interlocking("N2 | ends | Kind=NEXT_CP Interlocking=A\n2T | appliance | Appliance=track_circuit\nJ9 | joints | Kind=IRJ\n",
+                         "w | N2.track 2T.TC\n", "B", "B")
+        out, diags = run(layout(A=a, B=b))
+        self.assertEqual(diags, [("next_cp.drawn", "N1")])
+        d = derive.derive(layout(A=a, B=b))[1].by_code("next_cp.drawn")[0]
+        self.assertEqual((d.severity, d.entities), ("warning", ("interlockings/A/track/ends/N1", "interlockings/B")))
+        self.assertIn("drawn through to B's (B:2T.TC)", d.text)
+        self.assertEqual(row(out["interlockings"]["A"], "N1")["derived"]["circuits"], {"track": "B:2T"})
+        by_id = interlocking("N1 | ends | Kind=NEXT_CP Interlocking=B\n", "", "A", "A")
+        row(by_id, "N1")["relations"] = {"track": ["J9.B"]}                                   # B's unnamed joint, by its id
+        self.assertEqual(run(layout(A=by_id, B=b))[1], [("next_cp.drawn", "N1")])
+        self.assertEqual(run(pair(1, 1))[1], [])
 
 
 def on_line(m: dict, *names: str, kind: str = "AAR") -> dict:
@@ -503,9 +639,11 @@ class References(unittest.TestCase):
     Y = interlocking("""
 5    | appliance | Appliance=switch Style=lock TC=5T1 Indication=5T1K
 6    | appliance | Appliance=switch Style=derail
+7    | appliance | Appliance=switch Style=powered TC=7T1 Indication=7T1K
+8    | appliance | Appliance=switch Style=derail CP_Name=West
 3NAT | appliance | Appliance=track_circuit Indication=3NATK
 J5   | joints    | Kind=IRJ
-""", "y1 | 5.C 6.C\ny2 | 5.N J5.A\ny3 | J5.B 3NAT.TC\n", "West", "Y")
+""", "y1 | 5.C 6.C\ny2 | 5.N J5.A\ny3 | J5.B 3NAT.TC\ny4 | 7.C 8.C\n", "West", "Y")
 
     def model(self, things: str, wires: str, line: bool = True) -> dict:
         x = interlocking("J1 | joints | Kind=IRJ\n1SAT | appliance | Appliance=track_circuit\n" + things, "b | J1.B 1SAT.TC\n" + wires, "East")
@@ -537,13 +675,36 @@ J5   | joints    | Kind=IRJ
         self.assertEqual(self.check(self.consumer("Z:2NATK"), "a | J1.A K1.TC\n"), [("reference.interlocking", "K1")])
         self.assertEqual(self.check(self.consumer("Y:3NATK"), "a | J1.A K1.TC\n", line=False), [("reference.codeline", "K1")])
 
-    def test_a_pin_of_another_interlockings_marker_is_no_form(self):
-        self.assertEqual(self.check("", "a | J1.A Y:3NAT.TC\n"), [("reference.marker", "X")])
+    def test_plain_track_drawn_to_another_interlockings_marker_is_block_track_and_names_the_circuit(self):
+        """ADR 0013 §7.1: a track net joining two interlockings is block track; the other sheet's marker names the circuit
+        on this side, and no consumer and no token come of it (the block's token is the codeline library's, R12)."""
+        out, diags = run(self.model("", "a | J1.A Y:3NAT.TC\n"))
+        self.assertEqual(only(diags, "reference"), [])
+        self.assertEqual(row(out["interlockings"]["X"], "J1")["derived"]["circuits"], {"A": "Y:3NAT", "B": "X:1SAT"})
+        self.assertNotIn("consumers", out["interlockings"]["X"]["track"])
+        self.assertNotIn("3NATK", stations(self.model("", "a | J1.A Y:3NAT.TC\n"))[0][("Y", None)][1])
 
-    def test_track_wired_to_another_interlockings_switch_or_track_row_is_an_error(self):
-        self.assertEqual(self.check("", "a | J1.A Y:5.R Y:6.R\n"), [("reference.track", "X"), ("reference.track", "X")])
-        self.assertIn("track leaves an interlocking at a NextCP or an END_CTC",
-                      derive.derive(self.model("", "a | J1.A Y:5.R\n"))[1].by_code("reference.track")[0].text)
+    def test_a_joining_wire_with_a_hand_throw_switch_is_block_track_too(self):
+        """ADR 0013 §4: a hand-throw switch may lie in a block; Y's 5 (Style lock) on the wire is no error, and the wire's
+        circuit is Y's 5T1 through its TC (named by Y's own switch, so dark here: no marker names it)."""
+        self.assertEqual(self.check("", "a | J1.A Y:5.R\n"), [])
+
+    def test_a_joining_wire_with_a_powered_switch_or_derail_is_an_error(self):
+        """ADR 0013 §4 and §7.1: a piece with a powered switch or derail is never block track, so the wire is interlocking
+        track and leaves an interlocking only at a NextCP or an END_CTC (ADR 0009 §3.12); a switch the file lacks counts
+        as powered."""
+        self.assertEqual(self.check("", "a | J1.A Y:7.R Y:8.R\n"), [("reference.track", "X"), ("reference.track", "X")])
+        self.assertIn("powered switch port Y:7.R", derive.derive(self.model("", "a | J1.A Y:7.R\n"))[1].by_code("reference.track")[0].text)
+        d = derive.derive(self.model("", "a | J1.A Y:7.R\n"))[1].by_code("reference.track")[0]
+        self.assertEqual(d.entities, ("interlockings/X", "interlockings/Y", "interlockings/Y/appliances/7"))
+        self.assertEqual(self.check("9 | appliance | Appliance=switch Style=powered\n", "a | J1.A Y:3NAT.TC 9.C\n"), [("reference.track", "X")])
+        self.assertEqual(self.check("9 | appliance | Appliance=switch Style=derail CP_Name=East\n", "a | J1.A Y:3NAT.TC 9.C\n"), [("reference.track", "X")])
+        self.assertEqual(self.check("9 | appliance | Appliance=switch Style=lock CP_Name=East\n", "a | J1.A Y:3NAT.TC 9.C\n"), [])
+        self.assertEqual(self.check("9 | appliance | Appliance=switch Style=manual_sensed CP_Name=East\n", "a | J1.A Y:3NAT.TC 9.C\n"), [])
+        dependent = "9 | appliance | Appliance=switch Style=lock CP_Name=East\n9D | appliance | Appliance=switch Style=derail CP_Name=East\n"
+        self.assertEqual(self.check(dependent, "a | J1.A Y:3NAT.TC 9.C 9D.C\n"), [])   # a dependent derail follows its lock
+
+    def test_a_track_row_named_for_another_interlocking_is_an_error(self):
         self.assertEqual(self.check("I1 | ends | Kind=INDUSTRY name=Y:Cannery\n", "a | J1.A I1.EoT\n"), [("reference.track", "I1")])
 
     def test_a_circuit_named_in_a_field_must_exist_too(self):
@@ -703,7 +864,7 @@ class NoLever(unittest.TestCase):
 
 class Heads(unittest.TestCase):
     def check(self, mast: str, style: str, devices: list[tuple[str, str]]) -> list[tuple[str, str]]:
-        ix = interlocking(f"{mast} | appliance | Appliance=mast Style=single\n", "", "East")
+        ix = interlocking(f"{mast} | appliance | Appliance=mast Style=single Kind=CONTROLLED\n", "", "East")
         ix["appliances"][mast]["heads"] = {mast[-1]: {"given": {"Appliance": "head", "Style": style}}}
         ix["devices"] = [{"given": {"Appliance": a, "Style": s, "Head": mast[-1]}, "relations": {"mast": f"X:{mast}"}} for a, s in devices]
         return only(run(layout(X=ix))[1], "head")
@@ -739,7 +900,7 @@ class SPCoastExample(unittest.TestCase):
         self.assertNotIn("rules", stripped["provenance"])
         out, report = derive.derive(stripped)
         self.assertEqual(layout_model.dumps(out), text)
-        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 8, "missing": 2})
+        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 8, "missing": 31})   # 2 interlocking.no_lever, 29 mast.kind (Railroad 31954c5)
 
 
 if __name__ == "__main__":

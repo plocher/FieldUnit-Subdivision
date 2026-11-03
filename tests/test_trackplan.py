@@ -28,7 +28,7 @@ P1   | Processor    | STRUCTURE | Kind=PROCESSOR Name=Alpha Board=cpNode
 """
 
 
-def symbols(table: str) -> list[Symbol]:
+def symbols(table: str, sheet: str = SHEET) -> list[Symbol]:
     """Rows of ``ref | library symbol | Role | Field=value ...`` (a value with spaces in double quotes)."""
     out = []
     for line in filter(str.strip, table.splitlines()):
@@ -37,7 +37,7 @@ def symbols(table: str) -> list[Symbol]:
         for tok in shlex.split(fields):
             k, _, v = tok.partition("=")
             kv[k.replace("_", " ")] = v
-        out.append(Symbol(ref, f"Railroad-Trackplan:{lib}", "", {"Role": role, **kv}, SHEET))
+        out.append(Symbol(ref, f"Railroad-Trackplan:{lib}", "", {"Role": role, **kv}, sheet))
     return out
 
 
@@ -100,9 +100,9 @@ SW1  | Switch_Lock      | APPLIANCE | Appliance=switch Style=lock Name=835 TC=83
 J1   | IRJ-Signal       | TRACK     | Kind=IRJ_SIGNAL CP_Name=East
 J2   | IRJ-Signal       | TRACK     | Kind=IRJ_SIGNAL CP_Name=East
 J3   | IRJ-Signal       | TRACK     | Kind=IRJ_SIGNAL CP_Name=East
-M1   | Mast_Double      | APPLIANCE | Appliance=mast Style=double Name=836NAB
-M2   | Mast_Single      | APPLIANCE | Appliance=mast Style=single Name=836SA
-M3   | Mast_Dwarf       | APPLIANCE | Appliance=mast Style=dwarf Name=836SB
+M1   | Mast_Double      | APPLIANCE | Appliance=mast Style=double Kind=CONTROLLED Name=836NAB
+M2   | Mast_Single      | APPLIANCE | Appliance=mast Style=single Kind=CONTROLLED Name=836SA
+M3   | Mast_Dwarf       | APPLIANCE | Appliance=mast Style=dwarf Kind=CONTROLLED Name=836SB
 HA   | Signal Head - CPL | APPLIANCE | Appliance=head Style=CPL Name=A
 HB   | Signal Head - CPL | APPLIANCE | Appliance=head Style=CPL Name=B
 HC   | Signal Head - CL  | APPLIANCE | Appliance=head Style=CL Name=A
@@ -454,6 +454,165 @@ NX2  | NextCP          | TRACK     | Kind=NEXT_CP
         self.assertEqual(sorted_rows(rows(ix, "ends")), sorted_rows([{"given": {"Kind": "NEXT_CP", "Interlocking": "Lick"}}, {"given": {"Kind": "NEXT_CP"}}]))
 
 
+# A signal location in a block (ADR 0013 §6): one double joint with a mast on each side, 832T on side A and 834T on B.
+DOUBLE_JOINT = """
+H1   | House                         | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
+TC1  | Track Circuit                 | APPLIANCE | Appliance=track_circuit Name=832T
+TC2  | Track Circuit                 | APPLIANCE | Appliance=track_circuit Name=834T
+J1   | IRJ-Signals                   | TRACK     | Kind=IRJ_SIGNALS
+M1   | Signal Mast Single PERMISSIVE | APPLIANCE | Appliance=mast Style=single Kind=PERMISSIVE Name=832NA
+M2   | Signal Mast Single PERMISSIVE | APPLIANCE | Appliance=mast Style=single Kind=PERMISSIVE Name=832SA
+"""
+DOUBLE_JOINT_NETS = """
+a    | J1.A TC1.TC
+b    | J1.B TC2.TC
+sa   | J1.SIGNAL_A M1.SIGNAL
+sb   | J1.SIGNAL_B M2.SIGNAL
+"""
+
+
+class DoubleJoint(unittest.TestCase):
+    """ADR 0013 §6: IRJ_SIGNALS joins the joints. Its sides keep their names A and B; SIGNAL_A and SIGNAL_B carry its
+    masts, stated as relations.masts, and are no track pins. Nothing is read from rotation."""
+
+    def test_a_double_joint_states_a_mast_on_each_side_and_its_sides_are_a_and_b(self):
+        sm, ix = compile_(DOUBLE_JOINT, DOUBLE_JOINT_NETS)
+        self.assertEqual(sm.report.errors, [])
+        self.assertEqual(rows(ix, "joints"), [{"given": {"Kind": "IRJ_SIGNALS"},
+                                               "relations": {"A": ["X:832T.TC"], "B": ["X:834T.TC"], "masts": {"A": "X:832NA", "B": "X:832SA"}},
+                                               "derived": {"circuits": {"A": "X:832T", "B": "X:834T"}}}])
+        self.assertEqual(diags(sm, "joint", "track.kind", "mast"), [])
+        self.assertEqual(layout_model.errors(emit.emit(sm)), [])
+
+    def test_each_mast_derives_its_governed_side_from_its_pin_and_its_approach_from_the_other(self):
+        _, ix = compile_(DOUBLE_JOINT, DOUBLE_JOINT_NETS)
+        self.assertEqual(ix["appliances"]["832NA"]["derived"]["circuits"], {"governed": "X:832T", "approach": "X:834T"})
+        self.assertEqual(ix["appliances"]["832SA"]["derived"]["circuits"], {"governed": "X:834T", "approach": "X:832T"})
+
+    def test_two_masts_on_one_signal_pin_are_an_error_and_a_side_with_none_is_absent(self):
+        sm, ix = compile_(DOUBLE_JOINT, DOUBLE_JOINT_NETS.replace("sa   | J1.SIGNAL_A M1.SIGNAL", "sa   | J1.SIGNAL_A M1.SIGNAL M2.SIGNAL")
+                          .replace("sb   | J1.SIGNAL_B M2.SIGNAL\n", ""))
+        self.assertEqual(diags(sm, "joint"), [("joint.masts", "J1")])
+        self.assertNotIn("masts", rows(ix, "joints")[0]["relations"])
+        sm, ix = compile_(DOUBLE_JOINT, DOUBLE_JOINT_NETS.replace("sb   | J1.SIGNAL_B M2.SIGNAL\n", ""))
+        self.assertEqual(diags(sm, "joint"), [])
+        self.assertEqual(rows(ix, "joints")[0]["relations"]["masts"], {"A": "X:832NA"})
+
+
+class AcrossSheets(unittest.TestCase):
+    """ADR 0013 §7.1: block track is drawn from one control point to the next, across sheets; a hierarchical label
+    continues the run and pairing comes from the netlist. A track net is read across sheets: each side names the other's
+    pins by their own interlocking (a marker by qualified name, an unnamed row by its id). The Corporal to Sargent shape:
+    834T is drawn on Y's sheet and reaches X's double joint through the label."""
+
+    X = """
+H1   | House            | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
+J1   | IRJ-Signals      | TRACK     | Kind=IRJ_SIGNALS
+M1   | Mast_Single      | APPLIANCE | Appliance=mast Style=single Kind=PERMISSIVE Name=834NA
+M2   | Mast_Single      | APPLIANCE | Appliance=mast Style=single Kind=PERMISSIVE Name=834SA
+TC1  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=836T
+"""
+    Y = """
+IX2  | Interlocking     | STRUCTURE | Kind=INTERLOCKING Name=Y
+P2   | Processor        | STRUCTURE | Kind=PROCESSOR Name=Beta Board=cpNode
+H2   | House            | STRUCTURE | Kind=CONTROL_POINT CP_Name=West
+J2   | IRJ              | TRACK     | Kind=IRJ
+TC2  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=834T
+"""
+    NETS = """
+ToX  | J1.A TC2.TC J2.B
+b    | J1.B TC1.TC
+s1   | J1.SIGNAL_A M1.SIGNAL
+s2   | J1.SIGNAL_B M2.SIGNAL
+n1   | IX2.Processor P2.Processor
+"""
+
+    def setUp(self):
+        syms = symbols(SCAFFOLD + self.X) + symbols(self.Y, "/Y/")
+        self.sm = seams.resolve(from_symbols(syms, nets("n0 | IX1.Processor P1.Processor\n" + self.NETS)))
+        self.model = emit.emit(self.sm)
+        self.x, self.y = self.model["interlockings"]["X"], self.model["interlockings"]["Y"]
+
+    def test_each_side_names_the_other_sheets_pins_by_their_own_interlocking(self):
+        (j1,) = self.x["track"]["joints"]
+        (j2,) = self.y["track"]["joints"]
+        self.assertEqual(j1["relations"]["A"], [at(self.sm, "J2", "B"), "Y:834T.TC"])
+        self.assertEqual(j1["relations"]["B"], ["X:836T.TC"])
+        self.assertEqual(self.y["appliances"]["834T"]["relations"]["TC"], sorted([at(self.sm, "J1", "A"), at(self.sm, "J2", "B")]))
+        self.assertEqual(j2["relations"]["B"], sorted([at(self.sm, "J1", "A"), "Y:834T.TC"]))
+        self.assertEqual(j1["relations"]["masts"], {"A": "X:834NA", "B": "X:834SA"})
+        self.assertEqual(diags(self.sm, "track", "joint", "appliance"), [])
+
+    def test_the_other_sheets_marker_names_the_circuit_on_this_side_and_no_reference_is_raised(self):
+        """The reference derivation's part (ADR 0013 §7.1): plain track across sheets is block track, Y's 834T names X's
+        side A, and 834NA governs over it."""
+        (j1,) = self.x["track"]["joints"]
+        self.assertEqual(j1["derived"]["circuits"], {"A": "Y:834T", "B": "X:836T"})
+        self.assertEqual(self.x["appliances"]["834NA"]["derived"]["circuits"], {"governed": "Y:834T", "approach": "X:836T"})
+        self.assertEqual(self.x["appliances"]["834SA"]["derived"]["circuits"], {"governed": "X:836T", "approach": "Y:834T"})
+        self.assertEqual(self.y["track"]["joints"][0]["derived"]["circuits"], {"B": "Y:834T"})
+        self.assertEqual(diags(self.sm, "reference", "circuit"), [])
+        self.assertNotIn("consumers", self.x["track"])
+
+
+class Boundary(unittest.TestCase):
+    """ADR 0013 §10: a boundary track circuit is a detector at a joint, Appliance track_circuit with Style boundary, its
+    A and B on the two nets there. It is an appliance with relations.A and .B; it names no circuit (the marker on each
+    net does), and its derived circuits are what it counts toward, in A, B order."""
+
+    BOUNDARY = "TC3  | Track Circuit IR Boundary | APPLIANCE | Appliance=track_circuit Style=boundary Name=833T Indication=833TK\n"
+    NETS = DOUBLE_JOINT_NETS.replace("a    | J1.A TC1.TC", "a    | J1.A TC1.TC TC3.A").replace("b    | J1.B TC2.TC", "b    | J1.B TC2.TC TC3.B")
+
+    def test_a_boundary_is_an_appliance_on_the_two_nets_at_its_joint_and_names_no_circuit(self):
+        sm, ix = compile_(DOUBLE_JOINT + self.BOUNDARY, self.NETS)
+        self.assertEqual(sm.report.errors, [])
+        self.assertEqual(ix["appliances"]["833T"], {
+            "given": {"Appliance": "track_circuit", "Style": "boundary", "Indication": "833TK"},
+            "relations": {"A": sorted([at(sm, "J1", "A"), "X:832T.TC"]), "B": sorted([at(sm, "J1", "B"), "X:834T.TC"])},
+            "derived": {"circuits": {"A": "X:832T", "B": "X:834T"}, "controlPoint": "X:East"}})
+        self.assertEqual(list(ix["appliances"]["833T"]["derived"]["circuits"]), ["A", "B"])
+        self.assertEqual(rows(ix, "joints")[0]["derived"]["circuits"], {"A": "X:832T", "B": "X:834T"})   # the markers name them
+        self.assertEqual(rows(ix, "joints")[0]["relations"]["A"], sorted([at(sm, "J1", "A").replace(at(sm, "J1", "A"), "X:832T.TC"), "X:833T.A"]))
+        self.assertEqual(diags(sm, "circuit", "track"), [])
+        self.assertEqual(layout_model.errors(emit.emit(sm)), [])
+
+    def test_a_boundary_with_no_marker_on_a_side_leaves_that_side_dark_rather_than_naming_it(self):
+        sm, ix = compile_(DOUBLE_JOINT.replace("TC2  | Track Circuit                 | APPLIANCE | Appliance=track_circuit Name=834T\n", "") + self.BOUNDARY,
+                          self.NETS.replace(" TC2.TC", ""))
+        self.assertEqual(ix["appliances"]["833T"]["derived"]["circuits"], {"A": "X:832T"})
+        self.assertEqual(rows(ix, "joints")[0]["derived"]["circuits"], {"A": "X:832T"})
+        self.assertEqual(diags(sm, "circuit"), [])
+
+    def test_both_pins_on_one_wire_are_shorted(self):
+        sm, _ = compile_(DOUBLE_JOINT + self.BOUNDARY, self.NETS.replace(" TC3.B", "").replace(" TC3.A", " TC3.A TC3.B"))
+        self.assertEqual(diags(sm, "track.shorted"), [("track.shorted", "TC3")])
+
+
+class Plates(unittest.TestCase):
+    """ADR 0013 §5: a plate (RULE_290_G, RULE_290_R) is a POLICY whose To pin sits on a mast's SIGNAL net. Its row
+    states the mast and no track side; that the mast is PERMISSIVE is the derivation's check."""
+
+    PLATE = "PL1  | Signal Mast Plate-G | POLICY | Kind=RULE_290_G\n"
+
+    def test_a_plate_states_the_mast_on_its_net_and_no_track(self):
+        sm, ix = compile_(DOUBLE_JOINT + self.PLATE, DOUBLE_JOINT_NETS.replace("sb   | J1.SIGNAL_B M2.SIGNAL", "sb   | J1.SIGNAL_B M2.SIGNAL PL1.To"))
+        self.assertEqual(sm.report.errors, [])
+        self.assertEqual(rows(ix, "policies"), [{"given": {"Kind": "RULE_290_G"}, "relations": {"mast": "X:832SA"}}])
+        self.assertEqual(diags(sm, "plate", "joint", "track"), [])
+        self.assertNotIn("PL1.To", str(track_relations(ix)))
+        self.assertEqual(layout_model.errors(emit.emit(sm)), [])
+
+    def test_a_plate_on_no_mast_or_on_a_controlled_mast_is_an_error(self):
+        sm, ix = compile_(DOUBLE_JOINT + self.PLATE, DOUBLE_JOINT_NETS + "x    | PL1.To TC2.TC\n")
+        plate = sm.source.symbols["PL1"].uuid                               # a rule check names the row by its id
+        self.assertEqual(diags(sm, "plate"), [("plate.mast", plate)])
+        self.assertNotIn("relations", rows(ix, "policies")[0])
+        sm, _ = compile_(DOUBLE_JOINT.replace("Kind=PERMISSIVE Name=832SA", "Kind=CONTROLLED Name=832SA") + self.PLATE,
+                         DOUBLE_JOINT_NETS.replace("sb   | J1.SIGNAL_B M2.SIGNAL", "sb   | J1.SIGNAL_B M2.SIGNAL PL1.To"))
+        self.assertEqual(diags(sm, "plate"), [("plate.mast", plate)])
+        self.assertEqual([d.severity for d in sm.report.by_code("plate.mast")], ["error"])
+
+
 class Checks(unittest.TestCase):
     """What only the drawing shows, as one scenario: (code, the symbol it names)."""
 
@@ -554,7 +713,9 @@ class SPCoastTrackplan(unittest.TestCase):
 
     def test_every_mast_stands_on_one_signal_joint_and_has_its_control_point(self):
         masts = [(i, n, a) for i, ix in self.model["interlockings"].items() for n, a in ix.get("appliances", {}).items() if a["given"]["Appliance"] == "mast"]
-        self.assertEqual([(i, n) for i, n, a in masts if "controlPoint" not in a.get("derived", {})], [])
+        automatic = sorted((i, n) for i, n, a in masts if a["given"].get("Kind") in ("ABSOLUTE", "PERMISSIVE"))
+        self.assertEqual(automatic, [("Corporal", "832NA"), ("Corporal", "832SA"), ("Sargent", "834NA"), ("Sargent", "834SA")])
+        self.assertEqual([(i, n) for i, n, a in masts if ("controlPoint" in a.get("derived", {})) == ((i, n) in automatic)], [])   # ADR 0013 §5
         joints = [j for ix in self.model["interlockings"].values() for j in ix.get("track", {}).get("joints", []) if j["given"]["Kind"] == "IRJ_SIGNAL"]
         self.assertEqual(len(joints), 36)                                   # Watsonville's 838SAB joint (Railroad 253b666)
         self.assertEqual([j for j in joints if "mast" not in j.get("relations", {}) or "controlPoint" not in j["derived"]], [])
@@ -562,18 +723,20 @@ class SPCoastTrackplan(unittest.TestCase):
 
     def test_every_track_row_has_its_own_id(self):
         ids = [r["id"] for ix in self.model["interlockings"].values() for k in ("joints", "ends", "policies") for r in ix.get("track", {}).get(k, [])]
-        self.assertEqual(len(ids), 56 + 36 + 18 + 5 + 3 + 3 + 29)
+        # IRJ, IRJ_SIGNAL, IRJ_SIGNALS; NEXT_CP, END_CTC, BUMPER, INDUSTRY; policies with the one plate: the Corporal to
+        # Sargent block drawn across sheets (Railroad 56ff2e1, 2a1696e, 31954c5) replaced that NextCP pair and its END_CTCs.
+        self.assertEqual(len(ids), 54 + 36 + 2 + 16 + 3 + 3 + 5 + 30)
         self.assertEqual(len(set(ids)), len(ids))
 
     def test_every_appliance_has_its_control_point_and_no_chain_is_broken(self):
         self.assertEqual([d for d in self.sm.report.diags if d.code.startswith("control_point")], [])
         self.assertEqual([(i, n) for i, ix in self.model["interlockings"].items() for n, a in ix.get("appliances", {}).items()
-                          if "controlPoint" not in a.get("derived", {})], [])
+                          if "controlPoint" not in a.get("derived", {}) and a["given"].get("Kind") not in ("ABSOLUTE", "PERMISSIVE")], [])
 
     def test_every_next_cp_names_where_it_leads_and_is_answered(self):
         ends = [(i, e["given"].get("Interlocking")) for i, ix in self.model["interlockings"].items() for e in ix["track"].get("ends", [])
                 if e["given"]["Kind"] == "NEXT_CP"]
-        self.assertEqual(len(ends), 18)
+        self.assertEqual(len(ends), 16)          # the Corporal to Sargent pair is gone: the block is drawn (Railroad 56ff2e1, 2a1696e)
         self.assertEqual([e for e in ends if not e[1]], [])
         self.assertEqual(sorted(b for a, b in ends if a == "Christopher"), ["Corporal", "Corporal", "Luchessa", "Luchessa"])
         self.assertEqual(self.sm.report.by_code("next_cp.pair"), [])
@@ -599,32 +762,89 @@ class SPCoastTrackplan(unittest.TestCase):
                          {"783": "Luchessa:Luchessa", "795": "Luchessa:Gilroy", "795D": "Luchessa:Gilroy", "799": "Luchessa:Carnadero"})
         self.assertEqual(self.ix("Luchessa")["track"]["links"], [{"derived": {"ports": ["Luchessa:795.R", "Luchessa:795D.R"], "circuit": "Luchessa:795T1"}}])
 
-    def test_every_track_relation_is_named_back_in_its_interlocking(self):
-        """The owner, 2026-10-27: symmetric adjacency on the drawing, a consumer row (Sargent's of Corporal:2NATK)
-        included. A reference to another interlocking's switch (``Y:5.R``) would have no row here to name it back."""
+    def test_every_track_relation_is_named_back_across_the_file(self):
+        """The owner, 2026-10-27: symmetric adjacency on the drawing, consumer rows included; since the block POC a track net
+        is read across sheets (ADR 0013 §7.1, Railroad 31954c5), so a pin another interlocking names (Sargent's 834 joint
+        names Corporal:834T.TC) names it back from its own interlocking, and every pin named is a pin of the file."""
+        rel = {}
         for name, ix in self.model["interlockings"].items():
-            rel = {}
             for n, a in ix.get("appliances", {}).items():
                 rel.update({f"{name}:{n}.{side}": v for side, v in a.get("relations", {}).items() if isinstance(v, list)})
             for kind in ("joints", "ends", "policies", "consumers"):
                 for r in ix.get("track", {}).get(kind, []):
                     rel.update({f"{r.get('name') or r['id']}.{side}": v for side, v in r.get("relations", {}).items() if isinstance(v, list)})
-            own = [(a, b) for a, bs in rel.items() for b in bs if not (":" in b and not b.startswith(f"{name}:"))]
-            self.assertEqual([(a, b) for a, b in own if a not in rel.get(b, [])], [], name)
-            self.assertEqual([a for a, bs in rel.items() if any(b.rsplit(".", 1)[0] == a.rsplit(".", 1)[0] for b in bs)], [], name)
+        self.assertEqual([(a, b) for a, bs in rel.items() for b in bs if b not in rel], [])
+        self.assertEqual([(a, b) for a, bs in rel.items() for b in bs if a not in rel[b]], [])
+        self.assertEqual([a for a, bs in rel.items() if any(b.rsplit(".", 1)[0] == a.rsplit(".", 1)[0] for b in bs)], [])
+        across = sorted({(a.partition(":")[0], b.partition(":")[0]) for a, bs in rel.items() for b in bs
+                         if ":" in a and ":" in b and a.partition(":")[0] != b.partition(":")[0]})
+        self.assertEqual(across, [("Corporal", "Sargent"), ("Sargent", "Corporal")])      # the one block drawn across sheets
 
-    def test_sargents_consumer_of_corporals_2natk_is_the_only_reference_and_resolves(self):
+    def test_no_cross_interlocking_consumer_is_drawn_today(self):
+        """Sargent's consumer of Corporal:2NATK went with the block POC (Railroad 56ff2e1, 2a1696e): the track between
+        Corporal and Sargent is drawn, not paired, so no interlocking draws a marker named for another's circuit, no
+        reference is raised, and no track relation names a thing outside the file's interlockings."""
         refs = {n: ix["track"].get("consumers", []) for n, ix in self.model["interlockings"].items()}
-        self.assertEqual({n: [c["relations"]["indication"] for c in cs] for n, cs in refs.items() if cs}, {"Sargent": ["Corporal:2NATK"]})
-        self.assertIn("2NATK", codeline.stations(self.model).stations[("Corporal", None)].indications)
-        self.assertEqual([d for d in self.sm.report.diags if d.code.startswith("reference") and "/consumers/" in d.where], [])
-        joint = next(j for j in self.ix("Sargent")["track"]["joints"] if j["given"]["Kind"] == "IRJ")
-        self.assertIn(f"{refs['Sargent'][0]['id']}.TC", joint["relations"]["A"])
-        self.assertEqual(joint["derived"]["circuits"]["A"], "Corporal:2NAT")
+        self.assertEqual({n: cs for n, cs in refs.items() if cs}, {})
+        self.assertNotIn("2NATK", codeline.stations(self.model).stations[("Corporal", None)].indications)
+        self.assertEqual([d for d in self.sm.report.diags if d.code.startswith("reference")], [])
         foreign = [b for ix in self.model["interlockings"].values() for k in ("joints", "ends", "policies")
                    for r in ix["track"].get(k, []) for v in r.get("relations", {}).values() if isinstance(v, list) for b in v
                    if ":" in b and not b.startswith(tuple(f"{n}:" for n in self.model["interlockings"]))]
         self.assertEqual(foreign, [])
+
+    def test_the_poc_signal_locations_are_double_joints_with_a_mast_on_each_side(self):
+        """ADR 0013 §2 and §6 (Railroad 2a1696e, 31954c5): 832 on Corporal's sheet, 834 on Sargent's; each mast's governed
+        side is the side its pin names. 834T is drawn on Corporal's sheet and reaches Sargent's 834 joint through the
+        ToSargentMT / ToCorporalMT labels (§7.1; ``test_the_block_track_is_read_across_sheets``)."""
+        double = {n: [j for j in self.ix(n)["track"]["joints"] if j["given"]["Kind"] == "IRJ_SIGNALS"] for n in ("Corporal", "Sargent")}
+        self.assertEqual({n: [j["relations"]["masts"] for j in js] for n, js in double.items()},
+                         {"Corporal": [{"A": "Corporal:832NA", "B": "Corporal:832SA"}], "Sargent": [{"A": "Sargent:834NA", "B": "Sargent:834SA"}]})
+        self.assertEqual(double["Corporal"][0]["derived"]["circuits"], {"A": "Corporal:832T", "B": "Corporal:834T"})
+        self.assertEqual(self.ix("Corporal")["appliances"]["832NA"]["derived"]["circuits"], {"governed": "Corporal:832T", "approach": "Corporal:834T"})
+        self.assertEqual(self.ix("Corporal")["appliances"]["832SA"]["derived"]["circuits"], {"governed": "Corporal:834T", "approach": "Corporal:832T"})
+        self.assertEqual(self.ix("Sargent")["appliances"]["834SA"]["derived"]["circuits"]["governed"], "Sargent:836T")
+        plates = [(n, p["given"]["Kind"], p["relations"].get("mast")) for n, ix in self.model["interlockings"].items()
+                  for p in ix["track"].get("policies", []) if p["given"]["Kind"].startswith("RULE_290")]
+        self.assertEqual(plates, [("Sargent", "RULE_290_G", "Sargent:834SA")])      # the one plate drawn: on a PERMISSIVE mast
+        self.assertEqual(self.sm.report.by_code("plate.mast"), [])
+        boundary = self.ix("Corporal")["appliances"]["833T"]                   # the detector at 832, on 832T and 834T
+        self.assertEqual((boundary["given"]["Style"], boundary["derived"]["circuits"]), ("boundary", {"A": "Corporal:832T", "B": "Corporal:834T"}))
+        self.assertIn("Corporal:833T.A", double["Corporal"][0]["relations"]["A"])
+        self.assertEqual(self.sm.report.by_code("circuit.names"), [])             # the boundary names no circuit
+        self.assertEqual(self.sm.report.by_code("mast.joint") + self.sm.report.by_code("track.kind"), [])
+
+    def test_the_block_track_is_read_across_sheets(self):
+        """ADR 0013 §7.1 (Railroad 31954c5): Corporal's 834T runs through ToSargentMT to Sargent's 834 double joint, whose
+        side A names Corporal:834T.TC and Corporal's 833T boundary, derives Corporal:834T, and 834NA governs over it;
+        Corporal's 834T names the joint's pin by its id. Plain track across sheets is block track: no reference.track,
+        no consumer, no token. No NextCP stands on drawn block track (next_cp.drawn) and no PERMISSIVE mast governs
+        over a powered switch (mast.powered): both counts are zero on this drawing."""
+        s, c = self.ix("Sargent"), self.ix("Corporal")
+        joint = next(j for j in s["track"]["joints"] if j["given"]["Kind"] == "IRJ_SIGNALS")
+        self.assertEqual(sorted(x for x in joint["relations"]["A"] if ":" in x), ["Corporal:833T.B", "Corporal:834T.TC"])
+        self.assertEqual(joint["derived"]["circuits"], {"A": "Corporal:834T", "B": "Sargent:836T"})
+        self.assertEqual(s["appliances"]["834NA"]["derived"]["circuits"], {"governed": "Corporal:834T", "approach": "Sargent:836T"})
+        self.assertIn(f"{joint['id']}.A", c["appliances"]["834T"]["relations"]["TC"])
+        self.assertEqual(c["appliances"]["833T"]["derived"]["circuits"], {"A": "Corporal:832T", "B": "Corporal:834T"})
+        self.assertEqual(self.sm.report.by_code("reference.track") + self.sm.report.by_code("reference.marker"), [])
+        self.assertEqual(len(self.sm.report.by_code("next_cp.drawn")), 0)
+        self.assertEqual(len(self.sm.report.by_code("mast.powered")), 0)
+        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 8, "missing": 31})
+
+    def test_a_mast_states_its_kind_or_is_reported_missing(self):
+        """ADR 0013 §5. The library's mast symbols carry a fixed Kind (Railroad 1695d48), but that commit touched no placed
+        field: the eleven masts of the POC sheets (Corporal, Sargent) state theirs, and the 29 on the five older sheets
+        state none until their placements are updated from the library; each is reported missing, never inferred."""
+        masts = {(i, n): a["given"].get("Kind") for i, ix in self.model["interlockings"].items() for n, a in ix.get("appliances", {}).items()
+                 if a["given"]["Appliance"] == "mast"}
+        stated = {k: v for k, v in masts.items() if v}
+        self.assertEqual({i for i, _ in stated}, {"Corporal", "Sargent"})
+        self.assertEqual((len(stated), set(stated.values())), (11, {"CONTROLLED", "PERMISSIVE"}))
+        missing = self.sm.report.by_code("mast.kind")
+        self.assertEqual(len(missing), len(masts) - len(stated))
+        self.assertEqual(len(missing), 29)
+        self.assertEqual({d.severity for d in missing}, {"missing"})
 
     def test_no_circuit_carries_two_names(self):
         self.assertEqual(self.sm.report.by_code("circuit.names") + self.sm.report.by_code("circuit.name.disagree"), [])

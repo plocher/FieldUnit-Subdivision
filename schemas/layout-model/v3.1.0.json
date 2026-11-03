@@ -125,8 +125,13 @@
       "type": "string",
       "pattern": "^[^\\s:/.]+\\.[A-Za-z][A-Za-z0-9_]*$"
     },
+    "labelEnd": {
+      "description": "A run's end on a hierarchical label (ADR 0013 §7.1): label: and the label's name as drawn (label:ToSargentMT). It states the name only; pairing across sheets is netlist connectivity, which the circuits carry.",
+      "type": "string",
+      "pattern": "^label:[^\\s/](?:[^/\\t\\n\\r]*[^\\s/])?$"
+    },
     "portRefs": {
-      "description": "Every other track pin a track pin's wire reaches, sorted and without repeats (three-maps D5; the owner, 2026-10-27): a switch port, a track circuit marker's TC or a named track row's side by qualified name, an unnamed track row's side by the row's id. Never a pin of the same symbol; symmetric: the pin named here names this one back.",
+      "description": "Every other track pin a track pin's wire reaches, sorted and without repeats (three-maps D5; the owner, 2026-10-27): a switch port, a track circuit marker's TC or a named track row's side by qualified name, an unnamed track row's side by the row's id. A pin drawn on another interlocking's sheet is named the same way, by its own interlocking (ADR 0013 §7.1: block track is drawn across sheets; Corporal:834T.TC on Sargent's 834 joint). Never a pin of the same symbol; symmetric: the pin named here names this one back.",
       "type": "array",
       "uniqueItems": true,
       "items": {
@@ -775,7 +780,7 @@
       }
     },
     "track": {
-      "description": "One drawn run of track. points is geometry's own; derived.circuit the circuit it carries (absent for dark track); relations.from and .to what each end meets: a switch port or a named track row's pin by name (Luchessa:783.R), an unnamed track row's pin by the row's id and side (three-maps D5, D10). An end at a junction is absent.",
+      "description": "One drawn run of track. points is geometry's own; derived.circuit the circuit it carries (absent for dark track); relations.from and .to what each end meets: a switch port or a named track row's pin by name (Luchessa:783.R), an unnamed track row's pin by the row's id and side (three-maps D5, D10), or the hierarchical label the run ends on, label:<Name> as drawn (label:ToSargentMT; ADR 0013 §7.1: block track is drawn across sheets and a hierarchical label continues the run; what is on the other sheet is the netlist's, never stated here). An end at a junction is absent.",
       "type": "object",
       "required": [
         "points"
@@ -796,6 +801,9 @@
                 },
                 {
                   "$ref": "#/$defs/rowPortRef"
+                },
+                {
+                  "$ref": "#/$defs/labelEnd"
                 }
               ]
             },
@@ -806,6 +814,9 @@
                 },
                 {
                   "$ref": "#/$defs/rowPortRef"
+                },
+                {
+                  "$ref": "#/$defs/labelEnd"
                 }
               ]
             }
@@ -1134,7 +1145,7 @@
       }
     },
     "appliance": {
-      "description": "A named thing on the trackplan (ADR 0010 §4.1, by Role APPLIANCE), keyed by its Name: given.Appliance is switch (Style derail for a derail), mast, track_circuit, lamp or contact. A reference to another interlocking's appliance is not an appliance of this one.",
+      "description": "A named thing on the trackplan (ADR 0010 §4.1, by Role APPLIANCE), keyed by its Name: given.Appliance is switch (Style derail for a derail), mast, track_circuit (Style virtual for a virtual circuit, boundary for a detector at a joint, ADR 0013 §10), lamp or contact. A reference to another interlocking's appliance is not an appliance of this one.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -1188,6 +1199,14 @@
                   "$ref": "#/$defs/portRefs",
                   "description": "A track circuit marker's TC pin."
                 },
+                "A": {
+                  "$ref": "#/$defs/portRefs",
+                  "description": "A boundary track circuit's A pin (Style boundary, ADR 0013 §10): one of the two nets at its joint. A track pin like a marker's TC; it names no circuit."
+                },
+                "B": {
+                  "$ref": "#/$defs/portRefs",
+                  "description": "A boundary track circuit's B pin, the other net at its joint."
+                },
                 "house": {
                   "$ref": "#/$defs/qualifiedName",
                   "description": "A maintainer call's house, by its MC wire (three-maps D8)."
@@ -1218,6 +1237,25 @@
                     "$ref": "#/$defs/qualifiedName"
                   },
                   "description": "A virtual track circuit's member circuits, its Members resolved."
+                },
+                "circuits": {
+                  "type": "object",
+                  "description": "A mast on a double signal joint (IRJ_SIGNALS, ADR 0013 §6): governed is the circuit on the side its SIGNAL pin names, approach the circuit on the other side, the shape a single signal joint's row carries (ADR 0012 §8). A boundary track circuit (ADR 0013 §10): A and B, the circuit on each of its pins, what it counts toward. A side on dark track is absent.",
+                  "additionalProperties": false,
+                  "properties": {
+                    "governed": {
+                      "$ref": "#/$defs/qualifiedName"
+                    },
+                    "approach": {
+                      "$ref": "#/$defs/qualifiedName"
+                    },
+                    "A": {
+                      "$ref": "#/$defs/qualifiedName"
+                    },
+                    "B": {
+                      "$ref": "#/$defs/qualifiedName"
+                    }
+                  }
                 }
               }
             }
@@ -1240,7 +1278,7 @@
       ]
     },
     "trackSymbol": {
-      "description": "A track row (a joint, an end, a policy sign): its id, its name where it has one (an industry), given (Kind as the libraries spell it, CP, Direction, Interlocking), each side's wire as relations.<side> and each side's circuit as derived.circuits.<side>. Sides are named for what they do (ADR 0012 §8): a signal joint's approach and governed; a policy sign's and a NextCP's track; a plain joint's A and B; CTC, DARK, EoT as drawn.",
+      "description": "A track row (a joint, an end, a policy sign): its id, its name where it has one (an industry), given (Kind as the libraries spell it, CP, Direction, Interlocking), each side's wire as relations.<side> and each side's circuit as derived.circuits.<side>. Sides are named for what they do (ADR 0012 §8): a signal joint's approach and governed; a policy sign's and a NextCP's track; a plain joint's A and B, and a double signal joint's (IRJ_SIGNALS, ADR 0013 §6: approach and governed are relative to each of its masts, derived on the mast); CTC, DARK, EoT as drawn.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -1288,7 +1326,20 @@
               "properties": {
                 "mast": {
                   "$ref": "#/$defs/qualifiedName",
-                  "description": "A signal joint's mast, by its SIGNAL wire."
+                  "description": "A signal joint's mast, by its SIGNAL wire; a plate's mast (RULE_290_G, RULE_290_R; ADR 0013 §5), the mast whose SIGNAL wire its To pin sits on."
+                },
+                "masts": {
+                  "type": "object",
+                  "description": "A double signal joint's masts (IRJ_SIGNALS, ADR 0013 §6): A the mast on its SIGNAL_A wire, which governs into side A; B the mast on SIGNAL_B, into side B. A side with no mast is absent.",
+                  "additionalProperties": false,
+                  "properties": {
+                    "A": {
+                      "$ref": "#/$defs/qualifiedName"
+                    },
+                    "B": {
+                      "$ref": "#/$defs/qualifiedName"
+                    }
+                  }
                 }
               },
               "propertyNames": {
@@ -1310,7 +1361,7 @@
               "additionalProperties": false,
               "properties": {
                 "circuits": {
-                  "description": "The circuit at each side; a side on dark track is absent.",
+                  "description": "The circuit at each side; a side on dark track is absent. On block track drawn across sheets (ADR 0013 §7.1) a side may carry another interlocking's circuit, named by that sheet's marker (Corporal:834T on Sargent's 834 joint).",
                   "type": "object",
                   "propertyNames": {
                     "type": "string",
@@ -1340,7 +1391,7 @@
       "additionalProperties": false,
       "properties": {
         "joints": {
-          "description": "IRJ and IRJ_SIGNAL: insulated joints, each between the circuits on its two sides; a signal joint's governed side is where the route it protects begins.",
+          "description": "IRJ, IRJ_SIGNAL and IRJ_SIGNALS: insulated joints, each between the circuits on its two sides; a signal joint's governed side is where the route it protects begins; a double signal joint (ADR 0013 §6) has a mast on each side, relations.masts.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/trackSymbol"
@@ -1354,7 +1405,7 @@
           }
         },
         "policies": {
-          "description": "The policy signs (RULE_105, RULE_251, RULE_261, RULE_93) with their Direction, on the circuit at their pin.",
+          "description": "The policy signs (RULE_105, RULE_251, RULE_261, RULE_93) with their Direction, on the circuit at their pin; and the plates (RULE_290_G, RULE_290_R; ADR 0013 §5), each on a mast (relations.mast) and on no track.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/trackSymbol"

@@ -198,8 +198,29 @@
       "feature": null,
       "replacedBy": null
     },
+    "mast.kind": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "mast.powered": {
+      "level": "warning",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
     "mast.letters": {
       "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "next_cp.drawn": {
+      "level": "warning",
       "lifecycle": "active",
       "since": "0.1.0",
       "feature": null,
@@ -220,6 +241,13 @@
       "replacedBy": null
     },
     "next_cp.pair": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": null,
+      "replacedBy": null
+    },
+    "plate.mast": {
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
@@ -249,10 +277,10 @@
     },
     "reference.marker": {
       "level": "error",
-      "lifecycle": "active",
+      "lifecycle": "deprecated",
       "since": "0.1.0",
       "feature": null,
-      "replacedBy": null
+      "replacedBy": "reference.track"
     },
     "reference.station": {
       "level": "warning",

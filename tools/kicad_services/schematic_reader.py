@@ -1,4 +1,4 @@
-"""Read placed-symbol transforms, wires and junctions from a KiCad schematic source, without interpreting them."""
+"""Read placed-symbol transforms, wires, junctions and hierarchical labels from a KiCad schematic source, without interpreting them."""
 
 from __future__ import annotations
 
@@ -48,6 +48,10 @@ class SchematicPlacementReader:
                 at = self._child(node, "at")
                 if at is not None:
                     model.junctions.add((float(at[1]), float(at[2])))
+            elif node[0] == Symbol("hierarchical_label"):
+                label = self._parse_label(node)
+                if label is not None:
+                    model.hierarchical_labels.append(label)
             else:
                 placement = self._parse_symbol(node)
                 if placement is not None:
@@ -62,6 +66,17 @@ class SchematicPlacementReader:
             if isinstance(child, list) and child and child[0] == Symbol(tag):
                 return child
         return None
+
+    def _parse_label(self, node: Any) -> ktypes.SchematicLabel | None:
+        """One ``(hierarchical_label "Name" (shape ...) (at x y rot) ...)`` record: its name and anchor, as drawn."""
+        if len(node) < 2 or not isinstance(node[1], str):
+            return None
+        at = self._child(node, "at")
+        if at is None or len(at) < 3:
+            return None
+        shape = self._child(node, "shape")
+        rotation = float(at[3]) if len(at) >= 4 else 0.0
+        return ktypes.SchematicLabel(node[1], float(at[1]), float(at[2]), rotation, str(shape[1]) if shape is not None and len(shape) >= 2 else "")
 
     def _read_title_block(
         self,
