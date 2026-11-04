@@ -838,6 +838,63 @@ class LintMessagesTests(unittest.TestCase):
                          [("error", "L:Odd: a CMRInet driver states what it is in Kind, one of NODE, IB, OB; this has SENSOR")])
         self.assertEqual(lint_symbol("L", "Node", driver(Kind="NODE", NodeType="C")), [("error", "L:Node: Address missing on a bus device")])
 
+    def test_an_encoder_takes_one_head_word_and_states_its_hardware(self):
+        """Worklist 2026-11-04: Role ENCODER, Kind required, no Appliance, one indication input, Pin.* per function pin,
+        CHAIN a bus attachment without Pin.*, Address.<colour> and Code contract fields, settings lower_snake_case."""
+        from contract.lint_symbol_fields import lint_symbol
+
+        def encoder(props, pins):
+            return {"properties": {"Role": "ENCODER", "Name": "${Value}", **props}, "pins": pins,
+                    "units": {1: [n for n, _, _ in pins]}, "locked": False, "value_autoplace": False}
+        ryg = encoder({"Kind": "RYG", "Pin.APP": "indication", "Pin.R": "binary", "Pin.Y": "binary", "Pin.G": "binary"},
+                      [("APP", "1", "input"), ("~{R}", "2", "output"), ("~{Y}", "3", "output"), ("~{G}", "4", "output")])
+        self.assertEqual(lint_symbol("L", "RYG", ryg), [])
+        pixel = encoder({"Kind": "PIXEL", "Pin.APP": "indication", "Address.R": "", "Address.Y": "", "Address.G": ""},
+                        [("APP", "1", "input"), ("CHAIN", "2", "passive")])
+        self.assertEqual(lint_symbol("L", "Pixel", pixel), [])                       # CHAIN carries no Pin.*
+        two_bit = encoder({"Kind": "TWO_BIT", "Pin.APP": "indication", "Pin.S0": "binary", "Pin.S1": "binary", "Code": ""},
+                          [("APP", "1", "input"), ("S0", "2", "output"), ("S1", "3", "output")])
+        self.assertEqual(lint_symbol("L", "2bit", two_bit), [])                      # Code is a contract field
+        two_inputs = encoder({"Kind": "RYG", "Pin.APP": "indication", "Pin.IND": "indication", "Pin.R": "binary"},
+                             [("APP", "1", "input"), ("IND", "2", "input"), ("~{R}", "3", "output")])
+        self.assertEqual(lint_symbol("L", "Two", two_inputs),
+                         [("error", "L:Two: an encoder takes exactly one indication input, the head word; this has 2")])
+        bare = encoder({"Appliance": "head", "Pin.APP": "indication", "Pin.R": "binary", "Pin.R_lamp": "binary"},
+                       [("APP", "1", "input"), ("~{R}", "2", "output")])
+        msgs = [m for _, m in lint_symbol("L", "Bare", bare)]
+        self.assertIn("L:Bare: an encoder serves a head through the wire; it has no Appliance", msgs)
+        self.assertIn("L:Bare: an encoder states Kind, the hardware it makes (RYG, PIXEL, SERVO, ...)", msgs)
+        self.assertIn("L:Bare: Pin.R_lamp names no pin", msgs)
+        camel = encoder({"Kind": "SERVO", "Pin.APP": "indication", "Pin.ARM": "position", "stopDeg": ""},
+                        [("APP", "1", "input"), ("ARM", "2", "output")])
+        self.assertEqual(lint_symbol("L", "Camel", camel), [("error", "L:Camel: setting stopDeg is not lower_snake_case")])
+
+    def test_a_head_device_presents_one_head_word_or_makes_its_lamps(self):
+        """Worklist 2026-11-04: the Signals-library head has one indication input and one indication output, nothing
+        else; the older Railroad-Field head (indication in, lamp pins out) keeps its rule until the sheets migrate."""
+        from contract.lint_symbol_fields import lint_symbol
+
+        def head(props, pins):
+            return {"properties": {"Role": "DEVICE", "Appliance": "head", "Name": "${Value}", "Style": "TypeD", **props},
+                    "pins": pins, "units": {1: [n for n, _, _ in pins]}, "locked": False, "value_autoplace": False}
+        word = head({"Pin.IND": "indication", "Pin.APP": "indication"}, [("IND", "1", "input"), ("APP", "2", "output")])
+        self.assertEqual(lint_symbol("L", "Word", word), [])
+        extra = head({"Pin.IND": "indication", "Pin.APP": "indication", "Pin.R": "binary"},
+                     [("IND", "1", "input"), ("APP", "2", "output"), ("~{R}", "3", "output")])
+        self.assertEqual(lint_symbol("L", "Extra", extra),
+                         [("error", "L:Extra: a head device presents a head word and nothing else; it has pins ~{R}")])
+        setting = head({"Pin.IND": "indication", "Pin.APP": "indication", "stop_deg": ""},
+                       [("IND", "1", "input"), ("APP", "2", "output")])
+        self.assertEqual(lint_symbol("L", "Setting", setting),
+                         [("error", "L:Setting: a head device of this shape has no settings; it has stop_deg")])
+        old = head({"Pin.IND": "indication", "Pin.R": "binary", "Pin.Y": "binary", "Pin.G": "binary"},
+                   [("IND", "1", "input"), ("~{R}", "2", "input"), ("~{Y}", "3", "input"), ("~{G}", "4", "input")])
+        self.assertEqual(lint_symbol("L", "Old", old), [])                           # the Railroad-Field shape still passes
+        mixed = head({"Pin.IND": "indication", "Pin.R": "binary", "Pin.ARM": "position"},
+                     [("IND", "1", "input"), ("~{R}", "2", "input"), ("ARM", "3", "input")])
+        self.assertEqual(lint_symbol("L", "Mixed", mixed),
+                         [("error", "L:Mixed: a head device produces one kind; this produces binary, position")])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -7,9 +7,18 @@ Per symbol, by Role:
 - DEVICE with Appliance head (a head device; Role CAST until 2026-10-23, ADR 0009 §3.6): the head
   letter is the last letter of its Name (784A); the `Head` field of the older symbols is tolerated, not
   required (2026-11-03, the Signals libraries); Style is the manufacturer model, fixed by the symbol;
-  exactly one input pin of kind indication and every other pin one output kind; `Pin.*` per pin;
-  settings lower_snake_case. A mast's `Indications` (its demand, rulebook words) is a contract field.
-  The aspect is derived from style and indication, never a pin.
+  exactly one input pin of kind indication. Two shapes (worklist 2026-11-04): the Signals-library head
+  presents a head word, so it has exactly one output pin of kind indication, no other pin and no
+  setting; the older head device makes its lamps itself, so every other pin is one output kind and
+  settings are lower_snake_case. The shape is told by whether the device has an output of kind
+  indication. A mast's `Indications` (its demand, rulebook words) is a contract field. The aspect is
+  derived from style and indication, never a pin.
+- ENCODER (the head word -> hardware step, worklist 2026-11-04): no Appliance; Kind required, any
+  word (RYG, PIXEL, SERVO, ...); exactly one input pin of kind indication (the head word); every other
+  function pin one kind from the vocabulary, `Pin.*` per pin and none without a pin; a `CHAIN` pin is
+  a bus attachment like a driver's `IOBus`, no `Pin.*`; `Address` and `Address.<colour>` are contract
+  fields (the latter names a lamp colour of the served head, not a pin), as is `Code` (it names a
+  reference-data table); settings lower_snake_case.
 - APPLIANCE: Appliance present; no Kind, except a mast, which states Kind CONTROLLED, ABSOLUTE or PERMISSIVE
   (owner, 2026-10-31; ADR 0009 §3.10, ADR 0013).
 - DEVICE, PANEL: Appliance present; no Kind; one `Pin.<base>` per function pin (Column excepted) and
@@ -55,7 +64,8 @@ VOCABULARY = {"binary", "level", "position", "color", "indication", "message"}
 SOURCE_KINDS = {"indication"}  # a cast's one input
 FUNCTION_ETYPES = {"input", "output", "bidirectional"}
 STRUCTURAL = {"TRACK", "POLICY", "STRUCTURE", "COLUMN", "OFFICE_UNIT", "TRANSPORT", "CODELINE_ENCODING", "IO_ENCODING"}
-FUNCTIONAL = {"APPLIANCE", "DEVICE", "PANEL", "IODRIVER", "SETTING"}
+FUNCTIONAL = {"APPLIANCE", "DEVICE", "PANEL", "IODRIVER", "ENCODER", "SETTING"}
+KIND_ROLES = {"IODRIVER", "ENCODER"}               # Roles whose Kind is not retired: a JMRI or CMRInet driver's class, an encoder's hardware
 RETIRED_FIELDS = {"ControlToken", "Vital", "NormalIs", "Chain", "Index", "Kind"}
 ATTACHMENT_ADDRESS = {"CMRI": "Bit", "MQTT": None}  # by IC; every other bus device attaches by Address (ADR 0005 S4)
 MAST_KINDS = ("CONTROLLED", "ABSOLUTE", "PERMISSIVE")    # what a mast is: dispatcher-controlled, or automatic and absolute or permissive (owner, 2026-10-31)
@@ -65,7 +75,9 @@ NOT_SETTINGS = {"Role", "Name", "Kind", "Appliance", "Style", "IC", "Address", "
                 "IndicationCeiling", "Display", "Processor", "Milepost", "Reference", "Value", "Footprint",
                 "Datasheet", "Description", "ki_keywords", "ki_fp_filters", "ki_description"}
 PIN_TOKENS = ("Control.", "Indication.")   # PANEL per-pin tokens (owner, 2026-10-28); an empty one is a deliberate none
-MEMBERSHIP_PINS = {"Column", "IOBus", "Processor", "Transport", "Codeline", "MC"}   # seam pins (ADR 0009 §3.1): nets, not device functions
+MEMBERSHIP_PINS = {"Column", "IOBus", "Processor", "Transport", "Codeline", "MC", "CHAIN"}   # seam pins (ADR 0009 §3.1): nets, not device functions; CHAIN = an encoder's pixel-chain attachment (2026-11-04)
+ADDRESS_FIELDS = ("Address.",)                     # an encoder's per-colour pixel address (2026-11-04): a contract field, not a setting
+ENCODER_FIELDS = {"Code"}                          # an encoder's other contract fields: Code names the two-bit table in the reference data
 DRIVER_LOOK = ("(width 0.3048)", "(type solid)", "(color 128 77 0 1)", "(type background)")
 RECT = re.compile(r"\(start ([-\d.]+) ([-\d.]+)\)\s*\(end ([-\d.]+) ([-\d.]+)\)")
 
@@ -108,25 +120,52 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
     mast = role == "APPLIANCE" and props.get("Appliance") == "mast"
     if mast and props.get("Kind") not in MAST_KINDS:                 # a mast states what it is (owner, 2026-10-31)
         err(f"a mast states Kind, one of {', '.join(MAST_KINDS)}; this has {props.get('Kind') or 'none'}")
-    elif "Kind" in props and role != "IODRIVER" and not mast:        # a JMRI driver's Kind is its object class (owner, 2026-10-24)
+    elif "Kind" in props and role not in KIND_ROLES and not mast:    # a JMRI driver's Kind is its object class (owner, 2026-10-24)
         err("Kind is retired")
     if role in {"APPLIANCE", "DEVICE", "PANEL"} and not props.get("Appliance"):
         err("Appliance missing")
+    if role == "ENCODER":                                            # worklist 2026-11-04: Kind says what hardware it makes
+        if props.get("Appliance"):
+            err("an encoder serves a head through the wire; it has no Appliance")
+        if not props.get("Kind"):
+            err("an encoder states Kind, the hardware it makes (RYG, PIXEL, SERVO, ...)")
     if role == "IODRIVER" and not props.get("IC"):
         err("IC missing")
     pin_caps = {k[4:]: v for k, v in props.items() if k.startswith("Pin.")}
     function_pins = [(n, num, ty) for n, num, ty in pins if n not in MEMBERSHIP_PINS]
     bases = {base(n) for n, _, _ in function_pins}
+    etype = {n: ty for n, _, ty in pins}
     if role == "DEVICE" and props.get("Appliance") == "head":        # a head device (ADR 0009 §3.6; Role CAST until 2026-10-23)
-        sources = [n for n, _, _ in function_pins if pin_caps.get(base(n)) in SOURCE_KINDS]
+        sources = [n for n, _, _ in function_pins if pin_caps.get(base(n)) in SOURCE_KINDS and etype[n] != "output"]
         if len(sources) != 1:
             err(f"a head device takes exactly one indication input; this has {len(sources)}")
-        outs = {pin_caps.get(base(n), "?") for n, _, _ in function_pins if n not in sources}
-        if len(outs) != 1:
-            err(f"a head device produces one kind; this produces {', '.join(sorted(outs)) or 'nothing'}")
+        words = [n for n, _, _ in function_pins if pin_caps.get(base(n)) in SOURCE_KINDS and etype[n] == "output"]
+        if words:
+            # The Signals-library shape (worklist 2026-11-04): the head presents a head word on one indication output
+            # and nothing else; an encoder makes the hardware. The older Railroad-Field heads have no such output and
+            # keep the rule below, so both libraries lint clean until the sheets migrate.
+            if len(words) != 1:
+                err(f"a head device presents one head word; this has {len(words)} indication outputs")
+            others = [n for n, _, _ in function_pins if n not in sources and n not in words]
+            if others:
+                err(f"a head device presents a head word and nothing else; it has pins {', '.join(others)}")
+            settings = [f for f in props if f not in NOT_SETTINGS and not f.startswith("Pin.")]
+            if settings:
+                err(f"a head device of this shape has no settings; it has {', '.join(settings)}")
+        else:
+            outs = {pin_caps.get(base(n), "?") for n, _, _ in function_pins if n not in sources}
+            if len(outs) != 1:
+                err(f"a head device produces one kind; this produces {', '.join(sorted(outs)) or 'nothing'}")
         if len([u for u, p in sym["units"].items() if p]) > 1:
             err("a head device is one head; units would hide the head letter")
-    if role in {"DEVICE", "PANEL", "IODRIVER"}:
+    if role == "ENCODER":
+        sources = [n for n, _, _ in function_pins if pin_caps.get(base(n)) in SOURCE_KINDS and etype[n] == "input"]
+        if len(sources) != 1:
+            err(f"an encoder takes exactly one indication input, the head word; this has {len(sources)}")
+        for n, _, ty in function_pins:
+            if n not in sources and pin_caps.get(base(n)) in SOURCE_KINDS:
+                err(f"pin {n} is a second indication pin; an encoder's other pins are its hardware")
+    if role in {"DEVICE", "PANEL", "IODRIVER", "ENCODER"}:
         for n, num, ty in function_pins:
             cap = pin_caps.get(base(n))
             if cap is None:
@@ -171,7 +210,6 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
         err("Role DEVICE with a Column pin; a plate in the machine is PANEL")
     head_device = role == "DEVICE" and props.get("Appliance") == "head"     # one unit, one indication input plus one kind: checked above
     if role in {"DEVICE", "PANEL"} and not head_device:
-        etype = {n: ty for n, _, ty in pins}
         caps = {f"{pin_caps.get(base(n), '?')} {ty}" for n, _, ty in function_pins}
         pin_units = {u: p for u, p in sym["units"].items() if p}
         for u, names in pin_units.items():
@@ -192,11 +230,13 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
             err("carries Pin.* but serves no function")
     all_bases = {base(n) for n, _, _ in pins}
     for f in props:
-        if f in RETIRED_FIELDS and not (f == "Kind" and (role == "IODRIVER" or mast)):
+        if f in RETIRED_FIELDS and not (f == "Kind" and (role in KIND_ROLES or mast)):
             err(f"field {f} is retired")
         elif f.startswith(PIN_TOKENS) and role == "PANEL":          # a per-pin token (2026-10-28): its pin must exist
             if f.split(".", 1)[1] not in all_bases:
                 err(f"{f} names no pin")
+        elif (f.startswith(ADDRESS_FIELDS) or f in ENCODER_FIELDS) and role == "ENCODER":    # contract fields, not settings
+            pass
         elif f not in NOT_SETTINGS and not f.startswith("Pin.") and not SNAKE.match(f):
             err(f"setting {f} is not lower_snake_case")
     return out
@@ -207,7 +247,8 @@ def row(lib: str, name: str, sym: dict) -> str:
     caps = ", ".join(f"{base(n)}: {p.get('Pin.' + base(n), '?')}" for n, _, _ in sym["pins"] if n not in MEMBERSHIP_PINS)
     if len(sym["pins"]) > 8:
         caps = f"{len(sym['pins'])} pins: {p.get('Pin.A1', '?')}"
-    settings = ", ".join(f for f in p if f not in NOT_SETTINGS and not f.startswith(("Pin.",) + PIN_TOKENS) and f != "Kind")
+    contract = NOT_SETTINGS | (ENCODER_FIELDS if p.get("Role") == "ENCODER" else set())
+    settings = ", ".join(f for f in p if f not in contract and not f.startswith(("Pin.",) + PIN_TOKENS + ADDRESS_FIELDS) and f != "Kind")
     return (f"| {lib} | `{name}` | {p.get('Role', '')} | {p.get('Appliance', '')} | {p.get('Style', '')} | "
             f"{p.get('IC', '')} | {caps} | {p.get('Invert', '')} | {settings} |")
 
