@@ -4,9 +4,11 @@
     python3 tools/contract/lint_symbol_fields.py [--libdir DIR] [--table]
 
 Per symbol, by Role:
-- DEVICE with Appliance head (a head device; Role CAST until 2026-10-23, ADR 0009 §3.6): a `Head`
-  field (the head letter, written per instance); Style fixed by the symbol; exactly one input pin of
-  kind indication and every other pin one output kind; `Pin.*` per pin; settings lower_snake_case.
+- DEVICE with Appliance head (a head device; Role CAST until 2026-10-23, ADR 0009 §3.6): the head
+  letter is the last letter of its Name (784A); the `Head` field of the older symbols is tolerated, not
+  required (2026-11-03, the Signals libraries); Style is the manufacturer model, fixed by the symbol;
+  exactly one input pin of kind indication and every other pin one output kind; `Pin.*` per pin;
+  settings lower_snake_case. A mast's `Indications` (its demand, rulebook words) is a contract field.
   The aspect is derived from style and indication, never a pin.
 - APPLIANCE: Appliance present; no Kind, except a mast, which states Kind CONTROLLED, ABSOLUTE or PERMISSIVE
   (owner, 2026-10-31; ADR 0009 §3.10, ADR 0013).
@@ -47,7 +49,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from kicad_services.sch_text import blocks, library_symbols  # noqa: E402
 
 LIBDIR = Path.home() / "Dropbox/KiCad/Railroad/symbols"
-LIBRARIES = ("Railroad-Trackplan", "Railroad-Office", "Railroad-Field", "Railroad-HardwareIO")
+LIBRARIES = ("Railroad-Trackplan", "Railroad-Trackplan-Signals", "Railroad-Office", "Railroad-Field", "Railroad-Field-Signals",
+             "Railroad-HardwareIO")
 VOCABULARY = {"binary", "level", "position", "color", "indication", "message"}
 SOURCE_KINDS = {"indication"}  # a cast's one input
 FUNCTION_ETYPES = {"input", "output", "bidirectional"}
@@ -57,7 +60,7 @@ RETIRED_FIELDS = {"ControlToken", "Vital", "NormalIs", "Chain", "Index", "Kind"}
 ATTACHMENT_ADDRESS = {"CMRI": "Bit", "MQTT": None}  # by IC; every other bus device attaches by Address (ADR 0005 S4)
 MAST_KINDS = ("CONTROLLED", "ABSOLUTE", "PERMISSIVE")    # what a mast is: dispatcher-controlled, or automatic and absolute or permissive (owner, 2026-10-31)
 CMRI_KINDS = ("NODE", "IB", "OB")                   # what a CMRInet driver is: the node or one of its bits (owner, 2026-10-30)
-NOT_SETTINGS = {"Role", "Name", "Kind", "Appliance", "Style", "IC", "Address", "UA", "Bit", "Node", "Head", "Invert", "IndicationToken", "Members", "Color", "CP Name", "Station", "Control", "Indication", "TC",
+NOT_SETTINGS = {"Role", "Name", "Kind", "Appliance", "Style", "IC", "Address", "UA", "Bit", "Node", "Head", "Invert", "IndicationToken", "Members", "Color", "CP Name", "Station", "Indications", "Control", "Indication", "TC",
                 "Transport", "NodeType", "InputBytes", "OutputBytes",
                 "IndicationCeiling", "Display", "Processor", "Milepost", "Reference", "Value", "Footprint",
                 "Datasheet", "Description", "ki_keywords", "ki_fp_filters", "ki_description"}
@@ -121,8 +124,6 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
         outs = {pin_caps.get(base(n), "?") for n, _, _ in function_pins if n not in sources}
         if len(outs) != 1:
             err(f"a head device produces one kind; this produces {', '.join(sorted(outs)) or 'nothing'}")
-        if "Head" not in props:
-            err("a head device renders one head; Head field missing (the letter is written per instance)")
         if len([u for u, p in sym["units"].items() if p]) > 1:
             err("a head device is one head; units would hide the head letter")
     if role in {"DEVICE", "PANEL", "IODRIVER"}:
