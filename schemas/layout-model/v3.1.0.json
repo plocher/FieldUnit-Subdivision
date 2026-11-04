@@ -489,6 +489,15 @@
         }
       }
     },
+    "trainOrderState": {
+      "description": "A state of a train order signal (Appliance train_order; the owner, 2026-11-03), from the most restrictive: STOP, the train stops and signs for Form 31 orders; RECEIVE_ORDERS, Form 19 orders handed up on the fly, the train slows; PROCEED, no orders held. Rule 221, Rules 207-208, Form 19/31 of the Standard Code of Operating Rules (via the owner's summary of 2026-11-03, unverified against an opened edition). FieldUnit's enum is the one home of these words; tools/layout_model/reference.py mirrors it (ADR 0012 §6). No blade angle and no lamp colour here: aspect policy comes later.",
+      "type": "string",
+      "enum": [
+        "STOP",
+        "RECEIVE_ORDERS",
+        "PROCEED"
+      ]
+    },
     "station": {
       "description": "A timetable station (STRUCTURE, Kind STATION; the owner, 2026-11-03), keyed by its Name: a place on the line that a train order signal names in its Station field. given holds its Milepost and its other stated fields; relations.interlocking the interlocking whose sheet it is drawn under (ADR 0004 D12), absent for one drawn under none. Not a code line station (reference.STATION: a house or an interlocking addressed on a code line).",
       "type": "object",
@@ -586,7 +595,11 @@
                 },
                 "mast": {
                   "$ref": "#/$defs/qualifiedName",
-                  "description": "A head device's mast, by its IND wire."
+                  "description": "A head device's mast, by its IND wire to a mast device."
+                },
+                "signal": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "A head device's train order signal, by its IND wire to a field device of Appliance train_order named for the signal (the owner, 2026-11-03); never both mast and signal. A mast device is not the signal: a head wired to one named like the signal leaves the signal's head without a device."
                 }
               }
             }
@@ -602,13 +615,24 @@
               "properties": {
                 "serves": {
                   "$ref": "#/$defs/qualifiedName",
-                  "description": "The appliance this device serves (given.Name in its scope); for a head device, its mast."
+                  "description": "The appliance this device serves (given.Name in its scope); for a head device, its mast or its train order signal (relations.mast or relations.signal). A train_order device derives nothing else: non-vital, operator-driven."
                 },
                 "controls": {
                   "description": "A lever's controls: the Control.<pin> of each bound pin, qualified by its station's interlocking (Luchessa:783NWS); an empty one binds none.",
                   "type": "array",
                   "items": {
                     "$ref": "#/$defs/qualifiedName"
+                  }
+                },
+                "contacts": {
+                  "description": "A train order signal's local lever (a field device, Appliance lever, Style train_order, serving the signal by Name; the owner, 2026-11-03): its two input contacts, ORDERS and PROCEED (the pins ~{ORDERS} and ~{PROCEED} without their polarity mark; reference.TRAIN_ORDER_CONTACTS). Neither asserted reads STOP, the state a released output shows by the library's output convention: a default for a non-vital indicator, not a safety rule. Not a desk lever's controls: a train order signal is never dispatcher-controlled.",
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "ORDERS",
+                      "PROCEED"
+                    ]
                   }
                 },
                 "expression": {
@@ -1317,6 +1341,17 @@
                     "$ref": "#/$defs/qualifiedName"
                   },
                   "description": "A virtual track circuit's member circuits, its Members resolved."
+                },
+                "states": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/trainOrderState"
+                  },
+                  "description": "A train order signal's three states (STOP, RECEIVE_ORDERS, PROCEED), written from the reference data (reference.TRAIN_ORDER_STATES; the owner, 2026-11-03) so consumers read the vocabulary from the file. The canonical writer orders every list (ADR 0008 §4.8), so this list carries the set, not the order: the order from the most restrictive is the reference table's, with normal the least restrictive end. Only on Appliance train_order."
+                },
+                "normal": {
+                  "$ref": "#/$defs/trainOrderState",
+                  "description": "A train order signal's normal state, PROCEED: Rule 221 sets Proceed when no orders are held (reference.TRAIN_ORDER_NORMAL; via the owner's summary of 2026-11-03, unverified). Distinct from the state a released output shows (STOP, reference.TRAIN_ORDER_RELEASED: the library's output convention, a default for a non-vital indicator, not a safety rule). Only on Appliance train_order."
                 },
                 "circuits": {
                   "type": "object",

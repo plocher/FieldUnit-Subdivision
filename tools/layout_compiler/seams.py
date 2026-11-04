@@ -162,6 +162,7 @@ class Device:
     column: Optional[str] = None                                      # relation: the OfficeUnit-qualified column
     interlocking: Optional[str] = None                                # relation: the folder, for a device in no column (D6)
     mast: Optional[str] = None                                        # relation: a head device's IND wire to its Mast
+    signal: Optional[str] = None                                      # relation: a head device's IND wire to its train order signal device (the owner, 2026-11-03)
     bindings: list[Binding] = field(default_factory=list)
 
 
@@ -743,21 +744,23 @@ def _devices(sm: Seams) -> None:
             if ix is None:
                 sm.report.error("device.interlocking", f"device {appliance} {s.value!r}: no Interlocking on its sheet or above", source=at)
                 continue
-            if appliance == "head":
+            if appliance == "head":                                    # its IND wire reaches its Mast, or its train order signal device (the owner, 2026-11-03)
                 ind = sm.source.net_of(s.ref, "IND")
                 masts = [sm.source.symbols[p.ref] for p in ind.others(s.ref)] if ind else []
-                masts = [m for m in masts if m.get("Appliance") == "mast" and m.role == "DEVICE"]
-                m = one(masts, "masts on one IND net", at, sm.report, "head.masts") if masts else None
+                masts = [m for m in masts if m.get("Appliance") in ("mast", "train_order") and m.role == "DEVICE"]
+                m = one(masts, "mast or train order signal devices on one IND net", at, sm.report, "head.masts") if masts else None
                 if m is None:
-                    sm.report.missing("head.mast", f"head device {s.lib_id.split(':')[1]} letter {s.get('Head')!r}: wired to no Mast", source=at)
-                else:
+                    sm.report.missing("head.mast", f"head device {s.lib_id.split(':')[1]} letter {s.get('Head')!r}: wired to no Mast or train order signal device", source=at)
+                elif m.get("Appliance") == "mast":
                     dev.mast = qualify(device_name(m, sm.report) or "", ix.name)
+                else:
+                    dev.signal = qualify(device_name(m, sm.report) or "", ix.name)
                 if not s.get("Head"):
                     sm.report.missing("head.letter", "a head device has no Head letter", source=at)
             ix.devices.append(dev)
         inverted = {x.strip() for x in s.get("Invert").split(",") if x.strip()}
         for pin, net in sorted(sm.source.pins_of(s.ref).items()):
-            if pin == "Column" or (pin == "IND" and appliance != "mast"):   # a head's IND wire reaches its Mast; the Mast's IND is its own binding
+            if pin == "Column" or (pin == "IND" and appliance not in ("mast", "train_order")):   # a head's IND wire reaches its Mast or train order signal device, whose own IND is its binding
                 continue
             for p in net.others(s.ref):
                 hit = _driver_route(sm, p)
