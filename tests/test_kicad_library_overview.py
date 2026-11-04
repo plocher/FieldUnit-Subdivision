@@ -759,6 +759,13 @@ class ConventionsTests(unittest.TestCase):
         for name in ("IRJ", "Rule251", "IB"):                               # a row's id, or a computed key
             self.assertEqual(cells[name]["Name"].flags, [], name)
         self.assertIn("missing Address; the KiCad importer keys a IODRIVER by it", cells["Node"]["Name"].flags)   # Kind NODE, not NodeType
+        head = sym("Head", {"Role": "DEVICE", "Appliance": "head", "Style": "TypeD", "Pin.IND": "indication",
+                            "Pin.APP": "indication"}, {1: ["IND", "APP"]}, outputs=("APP",))
+        old_head = sym("OldHead", {"Role": "DEVICE", "Appliance": "head", "Style": "CPL", "Pin.IND": "indication",
+                                   "Pin.R": "binary"}, {1: ["IND", "~{R}"]})
+        cells = {s.name: c for k in overview.convention_kinds([head, old_head]) for s, c in zip(k.symbols, k.cells)}
+        self.assertEqual(cells["Head"]["Name"].flags, [])                   # anonymous: keyed by the mast pin (2026-11-04)
+        self.assertIn("missing Name; the KiCad importer keys a DEVICE by it", cells["OldHead"]["Name"].flags)
 
     def test_g3_never_asks_for_a_field_only_another_style_carries(self):
         plain = sym("TC", {"Role": "APPLIANCE", "Appliance": "track_circuit", "Name": "${Value}",
@@ -875,7 +882,7 @@ class LintMessagesTests(unittest.TestCase):
         from contract.lint_symbol_fields import lint_symbol
 
         def head(props, pins):
-            return {"properties": {"Role": "DEVICE", "Appliance": "head", "Name": "${Value}", "Style": "TypeD", **props},
+            return {"properties": {"Role": "DEVICE", "Appliance": "head", "Style": "TypeD", **props},   # no Name: anonymous since take 3
                     "pins": pins, "units": {1: [n for n, _, _ in pins]}, "locked": False, "value_autoplace": False}
         word = head({"Pin.IND": "indication", "Pin.APP": "indication"}, [("IND", "1", "input"), ("APP", "2", "output")])
         self.assertEqual(lint_symbol("L", "Word", word), [])
@@ -887,13 +894,58 @@ class LintMessagesTests(unittest.TestCase):
                        [("IND", "1", "input"), ("APP", "2", "output")])
         self.assertEqual(lint_symbol("L", "Setting", setting),
                          [("error", "L:Setting: a head device of this shape has no settings; it has stop_deg")])
-        old = head({"Pin.IND": "indication", "Pin.R": "binary", "Pin.Y": "binary", "Pin.G": "binary"},
+        old = head({"Name": "${Value}", "Pin.IND": "indication", "Pin.R": "binary", "Pin.Y": "binary", "Pin.G": "binary"},
                    [("IND", "1", "input"), ("~{R}", "2", "input"), ("~{Y}", "3", "input"), ("~{G}", "4", "input")])
         self.assertEqual(lint_symbol("L", "Old", old), [])                           # the Railroad-Field shape still passes
-        mixed = head({"Pin.IND": "indication", "Pin.R": "binary", "Pin.ARM": "position"},
+        mixed = head({"Name": "${Value}", "Pin.IND": "indication", "Pin.R": "binary", "Pin.ARM": "position"},
                      [("IND", "1", "input"), ("~{R}", "2", "input"), ("ARM", "3", "input")])
         self.assertEqual(lint_symbol("L", "Mixed", mixed),
                          [("error", "L:Mixed: a head device produces one kind; this produces binary, position")])
+
+    def test_a_head_that_presents_a_head_word_has_no_name(self):
+        """Owner, 2026-11-04: a head is a position on its mast, keyed by the pin it is wired to; the old-shape head keeps
+        its Name (the head letter is its last letter)."""
+        from contract.lint_symbol_fields import lint_symbol
+
+        def head(props, pins):
+            return {"properties": {"Role": "DEVICE", "Appliance": "head", "Style": "TypeD", **props},
+                    "pins": pins, "units": {1: [n for n, _, _ in pins]}, "locked": False, "value_autoplace": False}
+        word_pins = [("IND", "1", "input"), ("APP", "2", "output")]
+        anonymous = head({"Pin.IND": "indication", "Pin.APP": "indication"}, word_pins)
+        self.assertEqual(lint_symbol("L", "Anon", anonymous), [])
+        named = head({"Name": "${Value}", "Pin.IND": "indication", "Pin.APP": "indication"}, word_pins)
+        self.assertEqual(lint_symbol("L", "Named", named),
+                         [("error", "L:Named: a head has no name; it is keyed by the mast pin it is wired to")])
+        old = head({"Name": "${Value}", "Pin.IND": "indication", "Pin.R": "binary"},
+                   [("IND", "1", "input"), ("~{R}", "2", "input")])
+        self.assertEqual(lint_symbol("L", "Old", old), [])                           # the Railroad-Field shape keeps its Name
+
+    def test_a_field_mast_device_hands_each_head_its_word_on_a_lettered_pin(self):
+        """Take 3, 2026-11-04: Role DEVICE, Appliance mast, outputs A, B, C of kind indication in order from A, one to
+        three; no Style, Kind or Indications (the pin set states the head count). The old Railroad-Field:Mast, one IND
+        output, has no lettered pin and keeps the plain DEVICE rules."""
+        from contract.lint_symbol_fields import lint_symbol
+
+        def mast(props, pins):
+            return {"properties": {"Role": "DEVICE", "Appliance": "mast", "Name": "${Value}", **props},
+                    "pins": pins, "units": {1: [n for n, _, _ in pins]}, "locked": False, "value_autoplace": False}
+        double = mast({"Pin.A": "indication", "Pin.B": "indication"}, [("A", "1", "output"), ("B", "2", "output")])
+        self.assertEqual(lint_symbol("L", "Device-Mast-Double", double), [])
+        single = mast({"Pin.A": "indication"}, [("A", "1", "output")])
+        self.assertEqual(lint_symbol("L", "Device-Mast-Single", single), [])
+        gap = mast({"Pin.A": "indication", "Pin.C": "indication"}, [("A", "1", "output"), ("C", "2", "output")])
+        self.assertEqual(lint_symbol("L", "Gap", gap),
+                         [("error", "L:Gap: a field mast's pins are A, B, C in order from A, one per head position; this has A, C")])
+        styled = mast({"Style": "double", "Pin.A": "indication", "Pin.B": "indication"},
+                      [("A", "1", "output"), ("B", "2", "output")])
+        self.assertEqual(lint_symbol("L", "Styled", styled),
+                         [("error", "L:Styled: a field mast states no Style; the pin set states the head count")])
+        inward = mast({"Pin.A": "indication", "Pin.B": "binary"}, [("A", "1", "output"), ("B", "2", "input")])
+        msgs = [m for _, m in lint_symbol("L", "Inward", inward)]
+        self.assertIn("L:Inward: pin B is input; a field mast hands each head its indication word on an output", msgs)
+        self.assertIn("L:Inward: Pin.B = 'binary'; a field mast's pins are kind indication", msgs)
+        old = mast({"Pin.IND": "indication"}, [("IND", "1", "output")])
+        self.assertEqual(lint_symbol("L", "Mast", old), [])                          # Railroad-Field:Mast untouched
 
 
 if __name__ == "__main__":

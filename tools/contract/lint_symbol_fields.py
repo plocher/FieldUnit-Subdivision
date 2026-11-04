@@ -4,15 +4,21 @@
     python3 tools/contract/lint_symbol_fields.py [--libdir DIR] [--table]
 
 Per symbol, by Role:
-- DEVICE with Appliance head (a head device; Role CAST until 2026-10-23, ADR 0009 §3.6): the head
-  letter is the last letter of its Name (784A); the `Head` field of the older symbols is tolerated, not
-  required (2026-11-03, the Signals libraries); Style is the manufacturer model, fixed by the symbol;
-  exactly one input pin of kind indication. Two shapes (worklist 2026-11-04): the Signals-library head
-  presents a head word, so it has exactly one output pin of kind indication, no other pin and no
-  setting; the older head device makes its lamps itself, so every other pin is one output kind and
-  settings are lower_snake_case. The shape is told by whether the device has an output of kind
-  indication. A mast's `Indications` (its demand, rulebook words) is a contract field. The aspect is
-  derived from style and indication, never a pin.
+- DEVICE with Appliance head (a head device; Role CAST until 2026-10-23, ADR 0009 §3.6): Style is the
+  manufacturer model, fixed by the symbol; exactly one input pin of kind indication. Two shapes
+  (worklist 2026-11-04): the Signals-library head presents a head word, so it has exactly one output
+  pin of kind indication, no other pin and no setting, and it is anonymous (owner, 2026-11-04): a head
+  is a position on its mast, keyed by the mast pin it is wired to, so a `Name` property is an error.
+  This is the one exemption from "Name=${Value} on every keyed symbol" (the overview's G2). The older
+  head device makes its lamps itself: the head letter is the last letter of its Name (784A), the `Head`
+  field is tolerated, not required, every other pin is one output kind and settings are
+  lower_snake_case. The shape is told by whether the device has an output of kind indication. The
+  aspect is derived from style and indication, never a pin.
+- DEVICE with Appliance mast and lettered pins (a field mast device, take 3, 2026-11-04): the binding
+  between the trackplan mast (Name) and its heads. Its pins are outputs of kind indication named A, B,
+  C in number order from A with no gap, one to three of them, `Pin.<letter>=indication` each; no Style,
+  Kind or Indications field: the pin set states the head count. The older Railroad-Field:Mast (one IND
+  output) has no lettered pin and keeps the plain DEVICE rules.
 - ENCODER (the head word -> hardware step, worklist 2026-11-04): no Appliance; Kind required, any
   word (RYG, PIXEL, SERVO, ...); exactly one input pin of kind indication (the head word); every other
   function pin one kind from the vocabulary, `Pin.*` per pin and none without a pin; a `CHAIN` pin is
@@ -69,6 +75,8 @@ KIND_ROLES = {"IODRIVER", "ENCODER"}               # Roles whose Kind is not ret
 RETIRED_FIELDS = {"ControlToken", "Vital", "NormalIs", "Chain", "Index", "Kind"}
 ATTACHMENT_ADDRESS = {"CMRI": "Bit", "MQTT": None}  # by IC; every other bus device attaches by Address (ADR 0005 S4)
 MAST_KINDS = ("CONTROLLED", "ABSOLUTE", "PERMISSIVE")    # what a mast is: dispatcher-controlled, or automatic and absolute or permissive (owner, 2026-10-31)
+HEAD_POSITIONS = "ABC"                              # a field mast device's pins, top down (830SAB, 784EAB; Glossary head1..head3)
+NOT_ON_FIELD_MAST = ("Style", "Kind", "Indications")    # the pin set states the head count; demand lives on the trackplan mast
 CMRI_KINDS = ("NODE", "IB", "OB")                   # what a CMRInet driver is: the node or one of its bits (owner, 2026-10-30)
 NOT_SETTINGS = {"Role", "Name", "Kind", "Appliance", "Style", "IC", "Address", "UA", "Bit", "Node", "Head", "Invert", "IndicationToken", "Members", "Color", "CP Name", "Station", "Indications", "Control", "Indication", "TC",
                 "Transport", "NodeType", "InputBytes", "OutputBytes",
@@ -152,12 +160,28 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
             settings = [f for f in props if f not in NOT_SETTINGS and not f.startswith("Pin.")]
             if settings:
                 err(f"a head device of this shape has no settings; it has {', '.join(settings)}")
+            if "Name" in props:                                      # owner, 2026-11-04: a head is a position on its mast
+                err("a head has no name; it is keyed by the mast pin it is wired to")
         else:
             outs = {pin_caps.get(base(n), "?") for n, _, _ in function_pins if n not in sources}
             if len(outs) != 1:
                 err(f"a head device produces one kind; this produces {', '.join(sorted(outs)) or 'nothing'}")
         if len([u for u, p in sym["units"].items() if p]) > 1:
             err("a head device is one head; units would hide the head letter")
+    lettered = [p for p in function_pins if len(p[0]) == 1 and p[0].isupper()]
+    if role == "DEVICE" and props.get("Appliance") == "mast" and lettered:     # a field mast device (take 3, 2026-11-04)
+        by_number = sorted(function_pins, key=lambda p: (len(p[1]), p[1]))
+        names = "".join(n for n, _, _ in by_number)
+        if not (1 <= len(names) <= len(HEAD_POSITIONS) and names == HEAD_POSITIONS[:len(names)]):
+            err(f"a field mast's pins are {', '.join(HEAD_POSITIONS)} in order from A, one per head position; this has {', '.join(names) or 'none'}")
+        for n, _, ty in function_pins:
+            if ty != "output":
+                err(f"pin {n} is {ty}; a field mast hands each head its indication word on an output")
+            if pin_caps.get(n) is not None and pin_caps.get(n) != "indication":
+                err(f"Pin.{n} = {pin_caps[n]!r}; a field mast's pins are kind indication")
+        for f in NOT_ON_FIELD_MAST:
+            if f in props:
+                err(f"a field mast states no {f}; the pin set states the head count")
     if role == "ENCODER":
         sources = [n for n, _, _ in function_pins if pin_caps.get(base(n)) in SOURCE_KINDS and etype[n] == "input"]
         if len(sources) != 1:
