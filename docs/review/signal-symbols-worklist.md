@@ -1,7 +1,9 @@
 # Signal symbols: the settled shape, take 3 (worklist, 2026-11-04)
 
 Working direction agreed 2026-11-03/04, to be recorded in an ADR once the POC compiles. Supersedes the take 2 version
-of this file (Railroad PR #17 pass 2). Railroad `5eda8ab` regenerates `Railroad-Field-Signals` to this shape.
+of this file (Railroad PR #17 pass 2). Both Signals libraries are hand-maintained by the owner in KiCad; the generator
+`edits/make_signal_libraries.py` is retired at Railroad `b45950a`. The library is the truth; where the lint
+disagrees, the lint is fixed.
 
 ## The chain and its seams
 
@@ -28,25 +30,25 @@ a colour for a word.
 | policy table | reference data, per rulebook | mast indication → one head word per head position | the aspect a mast shows |
 | field mast device | field sheet, Name = the trackplan mast's Name (246AB), pins A/B/C | the binding: which heads this mast has and in which position | head position = the pin the head's IND is wired to |
 | head | field device, Style = manufacturer model, anonymous | which model sits at that position | `presents` = the keys of its model table |
-| head model table | reference data, per model | head word → the output the encoder makes (R, Y flashing, horizontal, none) | absence = cannot present |
-| encoder | field symbol between head and driver | its pins / pixel addresses | reads the table of the head it serves |
+| head model table | reference data, per model | head word → one column per encoder Kind (lamps R/Y/G, blade angle, the lamp behind a semaphore roundel: DARK = lamp out, blade unchanged) | absence = cannot present |
+| encoder | field symbol between head and driver, anonymous (keyed by the head it serves) | Kind, its pins / pixel addresses | reads its Kind's column of the served head's table; one APP net may feed two encoders (Servo for the blade, Lamp for the lamp) |
 | driver | HardwareIO, unchanged | the chip or chain that owns the pins | |
 | match | derived | demand ⊆ what the heads present through the policy table | missing (no devices yet) / error (cannot present) |
 
 A head alone shows no aspect (Glossary). A head has no identity of its own: it is a position on a mast, keyed by the
 mast's Name plus the pin it is wired to (A, B, C top down: 830SAB, 784EAB, Glossary head1..head3). Nothing is written
-per instance except the mast's Name, an encoder's Address and settings.
+per instance except the mast's Name, an encoder's Address and settings. Value is informative and never read.
 
 ## Symbols
 
-### Railroad-Trackplan-Signals (owner-maintained; the generator does not touch it)
+### Railroad-Trackplan-Signals (hand-maintained)
 
 `Signal Mast Single`, `Signal Mast Single ABSOLUTE`, `Signal Mast Single PERMISSIVE`, `Signal Mast Double`,
 `Signal Mast Triple`, `Signal Mast Dwarf`, `Stop`; Role APPLIANCE, Appliance mast, Name=${Value}, Kind
 CONTROLLED/ABSOLUTE/PERMISSIVE, `Indications=` empty by rule (the exception above), one pin SIGNAL. Head glyphs are
 picture; the trackplan mast has no head devices.
 
-### Railroad-Field-Signals: field mast devices (generated)
+### Railroad-Field-Signals: field mast devices (hand-maintained)
 
 Role DEVICE, Appliance mast, Reference DevMast, Name=${Value}; one output pin per head position, named A, B, C top
 down and numbered 1..3, `Pin.<letter>=indication`; no Style, no Kind, no Indications (the pin set is the head count).
@@ -58,34 +60,39 @@ Picture: the Field library's box with `MAST ${VALUE}`.
 | Device-Mast-Double | A, B |
 | Device-Mast-Triple | A, B, C |
 
-### Railroad-Field-Signals: heads (generated, anonymous)
+### Railroad-Field-Signals: heads (hand-maintained, anonymous)
 
-Role DEVICE, Appliance head, Reference Cast, Style the model, **no Name property** (Value stays as KiCad's required
-empty property; the box shows the Style alone); pins `IND` (input, Pin.IND=indication) and `APP` (output,
-Pin.APP=indication); no other pins, no settings, no Head field.
+Role DEVICE, Appliance head, Reference `Head`, Value `${Style}` (informative, never read), Style the model, **no Name
+property**; pins `IND` (input, Pin.IND=indication) and `APP` (output, Pin.APP=indication); no other pins, no
+settings, no Head field.
 
-| symbol | Style | Description |
-| --- | --- | --- |
-| Device-Head-TypeD | TypeD | GRS Type D colour-light head. Presents what its model table lists; the encoder it is wired to makes the lamps. |
-| Device-Head-SA | SA | GRS SA searchlight head. |
-| Device-Head-H2 | H2 | US&S H-2 searchlight head. |
-| Device-Head-Semaphore-UQ | UQ | Upper-quadrant semaphore head, three positions. |
-| Device-Head-Semaphore-LQ | LQ | Lower-quadrant semaphore head, two positions. |
+| symbol | Style |
+| --- | --- |
+| Device-Head-TypeD | TypeD |
+| Device-Head-SA | SA |
+| Device-Head-H2 | H2 |
+| Device-Head-Semaphore-UQ | UQ |
+| Device-Head-Semaphore-LQ | LQ |
 
-### Railroad-Field-Signals: encoders (generated, unchanged since take 2)
+### Railroad-Field-Signals: encoders (hand-maintained, anonymous)
 
-Role ENCODER, Kind per symbol, Name=${Value}, no Appliance; exactly one input pin `APP` (Pin.APP=indication);
-outputs as listed, `Pin.*` per pin; settings lower_snake_case. An encoder states only its hardware side; the mapping
-head word → output is the served head's model table, read through the wire.
+Role ENCODER, Kind per symbol (any word: a reference-data key), **no Name** (keyed by the head it serves), Value
+informative (`${Kind}`, or a literal such as PIXEL / PIXELS; never read), no Appliance; exactly one input pin `APP`
+(Pin.APP=indication); every hardware-side function pin is an **input** of kind binary or position, driven by a
+driver's output pin (as Device-Lamp and the old CPL-Encoded S0/S1 were); `Pin.*` per pin; `CHAIN` a passive
+membership pin without `Pin.*`; `Address` / `Address.<colour>` contract fields; no `Code` field; settings
+lower_snake_case. An encoder states only its hardware side; the mapping head word → output is its Kind's column of
+the served head's model table, read through the wire.
 
-| symbol | Kind | outputs | fields | Description |
-| --- | --- | --- | --- | --- |
-| Encoder-RYG | RYG | ~{R} ~{Y} ~{G} binary | | Three lamp lines for a three-lamp head, to any driver's pins. |
-| Encoder-RGB | RGB | ~{R} ~{G} ~{B} binary | | Three legs of one tricolour LED (a searchlight); the palette mixes yellow. |
-| Encoder-2bit | TWO_BIT | S0 S1 binary | Code= | Two-bit select for the decoder on the mast; Code names the table. 35 placements on SPCoast today. |
-| Encoder-Pixel | PIXEL | CHAIN (chain attachment) | Address.R= Address.Y= Address.G= | Three pixels on a chain, one per lamp colour; no span, nothing positional. |
-| Encoder-Pixel-RGB | PIXEL_RGB | CHAIN | Address= | One pixel showing the head's colour. |
-| Encoder-Servo | SERVO | ARM position | stop_deg= approach_deg= clear_deg= | A blade's angles, moved here from the semaphore head devices. |
+| symbol | Kind | hardware pins (inputs) | fields |
+| --- | --- | --- | --- |
+| Encoder-RYG | RYG | ~{R} ~{Y} ~{G} binary | |
+| Encoder-RGB | RGB | ~{R} ~{G} ~{B} binary | |
+| Encoder-3MUX2A | 3MUX2A | S0 S1 binary | (truth table G=00, Y=01, R=10, DARK=11 is reference data keyed by Kind; owner's decoder board, 2026-11-04) |
+| Encoder-Lamp | LAMP | ~{LAMP} binary | |
+| Encoder-Pixel-RYG | PIXEL_RYG | CHAIN | Address.R= Address.Y= Address.G= |
+| Encoder-Pixel-RGB | PIXEL_RGB | CHAIN | Address= |
+| Encoder-Servo | SERVO | ARM position | stop_deg= approach_deg= clear_deg= |
 
 Retired: Railroad-Field:Mast and Device-Head-CL-RGB, -CL-Pixel, -CPL, -CPL-Encoded, -CPL-Pixel (old library, after
 the sheets migrate); the first-cut Device-Head-TypeD-Encoded, -TypeD-Pixel, -SA-RGB, -SA-Pixel, -H2-RGB, -H2-Pixel;
@@ -94,25 +101,30 @@ the trackplan head symbols.
 ## Contract changes (Subdivision)
 
 - No new pin kind: the head → encoder seam carries an indication word, so `APP` is kind indication, direction output.
-- Role `ENCODER`: no Appliance; Kind required; exactly one input pin of kind indication; `Pin.*` per pin;
-  `Address.<pin or colour>` and `Code` are contract fields; settings snake.
+- Role `ENCODER`: no Appliance; Kind required; no `Name` (error: "an encoder is keyed by the head it serves; it has no
+  name"); exactly one input pin of kind indication; every other function pin an input of kind binary or position
+  (an output is an error: "encoder hardware pins are inputs, driven by the driver"); `Pin.*` per pin; `Address` and
+  `Address.<colour>` contract fields; `Code` gone (a plain non-snake setting now, so flagged); settings snake.
 - Head device (take 2): exactly one input of kind indication and exactly one output of kind indication, nothing else.
 - Anonymous head (take 3, `lint_symbol_fields.py`): a DEVICE/head with an indication output carries no `Name`
   (error: "a head has no name; it is keyed by the mast pin it is wired to"). Old-shape Railroad-Field heads untouched.
 - Field mast (take 3): DEVICE/mast with lettered pins: all outputs of kind indication, named A, B, C in number
   order from A with no gap, one to three; `Pin.<letter>=indication`; no Style, Kind or Indications (error: the pin
   set states the head count). Railroad-Field:Mast (one IND output) has no lettered pin and keeps the plain DEVICE rules.
-- "Name=${Value} on every keyed symbol" (the overview's G2, `identity_field`) exempts exactly the anonymous head.
+- "Name=${Value} on every keyed symbol" (the overview's G2, `identity_field`) exempts the anonymous head and Role
+  ENCODER, nothing else.
 - ADR 0009's Role table gains ENCODER; the Glossary's "encoding" widens to the verb (owner, FieldUnit repo).
 
 ## Reference data (behind `reference.py` functions until files exist)
 
-- `head_model(style)` → the model table, head word → output. Seed: TypeD {STOP R, APPROACH Y, ADVANCE_APPROACH Y
-  flashing, CLEAR G, DARK none}; SA and H2 the same table; UQ {STOP horizontal, APPROACH diagonal, CLEAR vertical};
-  LQ {STOP horizontal, CLEAR dropped}. Lunar and other variants are new rows when a drawing needs them.
+- `head_model(style)` → the model table, head word → one column per encoder Kind. Seed: TypeD {STOP R, APPROACH Y,
+  ADVANCE_APPROACH Y flashing, CLEAR G, DARK none}; SA and H2 the same table; UQ {STOP horizontal, APPROACH diagonal,
+  CLEAR vertical} plus a lamp column {every word lamp on, DARK lamp out}; LQ {STOP horizontal, CLEAR dropped} plus
+  the same lamp column. Lunar and other variants are new rows when a drawing needs them.
 - `policy(rulebook)` → mast indication → head word per position (seeded with #62). No named subsets of the
   indication list: the profile's words, the derived demand, and an explicit `Indications` list are the only sets.
-- `code(name)` → the two-bit table; `palette()` → colour mixes for Encoder-RGB.
+- `encoder_table(kind)` → keyed by Kind: 3MUX2A {G 00, Y 01, R 10, DARK 11} (owner's decoder board, 2026-11-04);
+  `palette()` → colour mixes for RGB.
 
 ## Model step (after the symbols)
 
@@ -143,3 +155,9 @@ Names (784A) are dropped. Scripted, lock-gated, with a compile diff.
 - Kind (CONTROLLED/ABSOLUTE/PERMISSIVE) changes no demand word: a permissive mast demands STOP like any other; the
   number plate changes the crew's rule after stopping.
 - Only Stop is universal; every other word is earned by a governed route's ceiling or block spacing.
+- Encoders are anonymous: keyed by the head they serve.
+- Value is informative and never read (heads `${Style}`, encoders `${Kind}` or a literal).
+- A device pin meeting a driver pin is an input: encoder hardware pins are inputs, driven by the driver's output.
+- The lamp behind a semaphore roundel is a head output column (DARK = lamp out, blade unchanged): the UQ and LQ model
+  tables gain a lamp column, and a head's one APP net may feed two encoders (Servo for the blade, Lamp for the
+  lamp), each reading only its Kind's column.

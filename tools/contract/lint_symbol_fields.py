@@ -19,12 +19,17 @@ Per symbol, by Role:
   C in number order from A with no gap, one to three of them, `Pin.<letter>=indication` each; no Style,
   Kind or Indications field: the pin set states the head count. The older Railroad-Field:Mast (one IND
   output) has no lettered pin and keeps the plain DEVICE rules.
-- ENCODER (the head word -> hardware step, worklist 2026-11-04): no Appliance; Kind required, any
-  word (RYG, PIXEL, SERVO, ...); exactly one input pin of kind indication (the head word); every other
-  function pin one kind from the vocabulary, `Pin.*` per pin and none without a pin; a `CHAIN` pin is
-  a bus attachment like a driver's `IOBus`, no `Pin.*`; `Address` and `Address.<colour>` are contract
-  fields (the latter names a lamp colour of the served head, not a pin), as is `Code` (it names a
-  reference-data table); settings lower_snake_case.
+- ENCODER (the head word -> hardware step; the owner's hand-edited Railroad-Field-Signals of
+  2026-11-04 is the truth): no Appliance; anonymous, keyed by the head it serves, so a `Name` is an
+  error (Value is informative, never read); Kind required, any word (RYG, RGB, 3MUX2A, LAMP,
+  PIXEL_RYG, PIXEL_RGB, SERVO, ...: a reference-data key, not enumerated here); exactly one input pin
+  of kind indication (the head word, `APP`); every hardware-side function pin (R/Y/G/B, S0/S1, ARM,
+  LAMP) is an INPUT of kind binary or position, driven by a driver's output pin, as Device-Lamp and the
+  old CPL-Encoded S0/S1 were, so an output function pin is an error; `Pin.*` per pin and none without
+  a pin; a `CHAIN` pin is a bus attachment like a driver's `IOBus`, no `Pin.*`; `Address` and
+  `Address.<colour>` are contract fields (the latter names a lamp colour of the served head, not a
+  pin); there is no `Code` field (a 3MUX2A truth table is reference data keyed by Kind); settings
+  lower_snake_case.
 - APPLIANCE: Appliance present; no Kind, except a mast, which states Kind CONTROLLED, ABSOLUTE or PERMISSIVE
   (owner, 2026-10-31; ADR 0009 §3.10, ADR 0013).
 - DEVICE, PANEL: Appliance present; no Kind; one `Pin.<base>` per function pin (Column excepted) and
@@ -85,7 +90,8 @@ NOT_SETTINGS = {"Role", "Name", "Kind", "Appliance", "Style", "IC", "Address", "
 PIN_TOKENS = ("Control.", "Indication.")   # PANEL per-pin tokens (owner, 2026-10-28); an empty one is a deliberate none
 MEMBERSHIP_PINS = {"Column", "IOBus", "Processor", "Transport", "Codeline", "MC", "CHAIN"}   # seam pins (ADR 0009 §3.1): nets, not device functions; CHAIN = an encoder's pixel-chain attachment (2026-11-04)
 ADDRESS_FIELDS = ("Address.",)                     # an encoder's per-colour pixel address (2026-11-04): a contract field, not a setting
-ENCODER_FIELDS = {"Code"}                          # an encoder's other contract fields: Code names the two-bit table in the reference data
+ENCODER_FIELDS: set[str] = set()                   # an encoder's other contract fields: none; `Code` went when the 3MUX2A table became reference data keyed by Kind (2026-11-04)
+ENCODER_PIN_KINDS = {"binary", "position"}         # what a driver's output pin hands an encoder's hardware-side input
 DRIVER_LOOK = ("(width 0.3048)", "(type solid)", "(color 128 77 0 1)", "(type background)")
 RECT = re.compile(r"\(start ([-\d.]+) ([-\d.]+)\)\s*\(end ([-\d.]+) ([-\d.]+)\)")
 
@@ -137,6 +143,8 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
             err("an encoder serves a head through the wire; it has no Appliance")
         if not props.get("Kind"):
             err("an encoder states Kind, the hardware it makes (RYG, PIXEL, SERVO, ...)")
+        if "Name" in props:                                          # owner, 2026-11-04: anonymous, like the head it serves
+            err("an encoder is keyed by the head it serves; it has no name")
     if role == "IODRIVER" and not props.get("IC"):
         err("IC missing")
     pin_caps = {k[4:]: v for k, v in props.items() if k.startswith("Pin.")}
@@ -187,8 +195,16 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
         if len(sources) != 1:
             err(f"an encoder takes exactly one indication input, the head word; this has {len(sources)}")
         for n, _, ty in function_pins:
-            if n not in sources and pin_caps.get(base(n)) in SOURCE_KINDS:
+            if n in sources:
+                continue
+            if pin_caps.get(base(n)) in SOURCE_KINDS:
                 err(f"pin {n} is a second indication pin; an encoder's other pins are its hardware")
+                continue
+            if ty == "output":                                       # the driver's output drives it (owner, 2026-11-04)
+                err(f"pin {n} is an output; encoder hardware pins are inputs, driven by the driver")
+            cap = pin_caps.get(base(n))
+            if cap in VOCABULARY and cap not in ENCODER_PIN_KINDS:
+                err(f"Pin.{base(n)} = {cap!r}; an encoder's hardware pin takes {' or '.join(sorted(ENCODER_PIN_KINDS))} from the driver")
     if role in {"DEVICE", "PANEL", "IODRIVER", "ENCODER"}:
         for n, num, ty in function_pins:
             cap = pin_caps.get(base(n))
