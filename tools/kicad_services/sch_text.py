@@ -97,3 +97,21 @@ def library_symbols(text: str) -> dict[str, dict]:
                      "units": units, "locked": '\n\t\t(property "ki_locked"' in b,
                      "value_autoplace": "(do_not_autoplace yes)" not in value_block}
     return out
+
+
+def library_fields(text: str) -> dict[str, list[tuple[str, str, bool]]]:
+    """{symbol name: [(field, value, hidden)]} for every field of every top-level symbol, in file order.
+
+    Standard fields are included; names and values are unescaped.
+    """
+    out = {}
+    for s, e in blocks(text, "symbol", 1):
+        b = text[s:e]
+        name = re.match(r'\(symbol "([^"]+)"', b).group(1)
+        fields = []
+        for ps, pe in blocks(b, "property", 2):
+            pb = b[ps:pe]
+            m = re.match(r'\(property "((?:[^"\\]|\\.)*)" "((?:[^"\\]|\\.)*)"', pb)
+            fields.append((unquote(m.group(1)), unquote(m.group(2)), "(hide yes)" in pb))
+        out[name] = fields
+    return out
