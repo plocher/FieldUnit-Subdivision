@@ -191,3 +191,23 @@ fact with an Examples row per realisation; the importer's "a wire means" rules l
 logic, named in the user's words; its diagnostic code is a tag; the registry key is `file#scenario`. The field
 device is the one place both halves meet. Symbols a feature touches are computed from library fields by the manual
 generator, never written in the feature. First features: the four rulings above and the take 3 head positions.
+
+## Documentation decisions (owner, 2026-11-04/05)
+
+- The symbols manual is generated HTML, not markdown (owner: markdown "isn't suitable for user documentation"). Facts
+  come from the six libraries through the contact-sheet tooling: Description, fields and pins per symbol, who sets
+  each field (an empty library value = the user fills it; a literal or `${...}` = fixed), per-unit SVGs from
+  kicad-cli. Only a usage paragraph per group is hand-written. Each pin or field links to the rule feature that binds
+  it; the symbols a feature touches are computed from library fields. `symbols/README.symbols.md` is the interim draft
+  and retires when the page lands. Open: prose as HTML fragments in `symbols/manual/` with output in `production/`
+  (default) or one page with marked regions.
+- Examples in use are a curated KiCad project `Railroad/Examples` (branch feat/examples-project): one page per
+  compiler pattern, bands TRACKPLAN / FIELD / OFFICE, each page its own Interlocking and House, a sidecar `.md` with
+  the intent paragraph and the facts the compiler must derive, `TODO:` text wherever the script guessed. Drafted by
+  `tools/examples/build_examples.py` from SPCoast patterns, tidied by the owner in KiCad. Consumers: the manual
+  (render), functional tests (fresh netlist, compile), talks. Project scaffolding (Railroad, OfficeUnit, processors,
+  transports, encodings) sits once on the root sheet, so a page does not compile alone (recorded, not fixed). Order:
+  01 track circuit, 02 powered switch, 03 single mast (drafted d92f385), 04 double mast 3MUX2A + siding dwarf,
+  05 semaphore servo+lamp, 06 pixel chain, 07 control point complete, 08 desk column, 09 code line three ways,
+  10 AUXILIARY/Contact/MaintainerCall, 11 hand switch + derail (empty office band), 12 train order board + station,
+  13 ABS/APB + END_CTC + HD line (with #62). The talk outline is a quarry of ideas; its history figures are slides.
