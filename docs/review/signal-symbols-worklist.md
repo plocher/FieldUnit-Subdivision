@@ -161,3 +161,33 @@ Names (784A) are dropped. Scripted, lock-gated, with a compile diff.
 - The lamp behind a semaphore roundel is a head output column (DARK = lamp out, blade unchanged): the UQ and LQ model
   tables gain a lamp column, and a head's one APP net may feed two encoders (Servo for the blade, Lamp for the
   lamp), each reading only its Kind's column.
+
+## Rulings 2026-11-05 (manual review, items 1 to 4)
+
+- IndicationCeiling: on every switch, empty by default; the route derivation's heuristics set each route's ceiling.
+  Filled, it is an override, two indication words NORMAL/REVERSE ("a route through this appliance in this position
+  can never show better than X"). The hand-switch library default RESTRICTING/RESTRICTING is removed (owner's edit);
+  its rule moves to reference data for the heuristics. A derail keeps STOP/RESTRICTING: NORMAL is derailing.
+- Train order boards (Time Table and Train Order territory, never CTC): one trackplan `Train Order Mast` with Station
+  and no head pin; a field `Device-TrainOrder`, one unit per face (N/W, S/E), inputs STOP, SLOW, CALLON from any
+  driver, output IND to an anonymous head; nothing asserted = CLEAR, SLOW = APPROACH (orders on the fly), CALLON =
+  RESTRICTING, the most restrictive asserted input wins. The fascia control is local, no code line. A one-faced
+  board places one unit.
+- AUXILIARY and Contact: the `MC` pin was copied from MaintainerCall by mistake; it becomes an optional `TRACK` pin.
+  Wired to a track net, the importer writes the circuit as the appliance's relation and the derivation checks it is
+  a circuit of the same interlocking; wired elsewhere is an import error; unwired, Milepost and CP Name place it.
+  A switch heater attaches to the switch's N pin like track. NFL/SFL at Luchessa and Watsonville are fleeting
+  (traffic flow direction) lamps, not fouling. Grade crossings are an appliance of their own: issue #74.
+- Driver-CMRInet-Node: the `Transport` field is deleted (owner); the `Transport` pin's wire is the binding.
+
+## Rules as features (structure settled 2026-11-05)
+
+Derivation rules are Gherkin features (ADR 0012), none written yet; every registry code has `feature: None`.
+Structure: `logical/` (what the drawing means on the railroad: trackplan, office, code line, policy and demand
+tables; rules answer "is this correct", cite rulebook and history) and `physical/` (how a logical fact is realised:
+field devices, encoders, drivers, transports; rules answer "are these equivalent", one scenario outline per logical
+fact with an Examples row per realisation; the importer's "a wire means" rules live here too). Inside each: seam
+(ADR 0009's table) then Role, or Role plus Appliance where Role is too wide. A scenario is one route through the
+logic, named in the user's words; its diagnostic code is a tag; the registry key is `file#scenario`. The field
+device is the one place both halves meet. Symbols a feature touches are computed from library fields by the manual
+generator, never written in the feature. First features: the four rulings above and the take 3 head positions.
