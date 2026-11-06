@@ -182,15 +182,24 @@ Names (784A) are dropped. Scripted, lock-gated, with a compile diff.
 
 ## Rules as features (structure settled 2026-11-05)
 
-Derivation rules are Gherkin features (ADR 0012), none written yet; every registry code has `feature: None`.
-Structure: `logical/` (what the drawing means on the railroad: trackplan, office, code line, policy and demand
-tables; rules answer "is this correct", cite rulebook and history) and `physical/` (how a logical fact is realised:
-field devices, encoders, drivers, transports; rules answer "are these equivalent", one scenario outline per logical
-fact with an Examples row per realisation; the importer's "a wire means" rules live here too). Inside each: seam
-(ADR 0009's table) then Role, or Role plus Appliance where Role is too wide. A scenario is one route through the
-logic, named in the user's words; its diagnostic code is a tag; the registry key is `file#scenario`. The field
-device is the one place both halves meet. Symbols a feature touches are computed from library fields by the manual
-generator, never written in the feature. First features: the four rulings above and the take 3 head positions.
+Derivation rules are Gherkin features (ADR 0012). A registry code's `feature` is null until a scenario names it.
+Two roots (owner, 2026-11-05; the check is "what would Studio do", whose native file is the model):
+
+- **Model features**, `schemas/layout-model/rules/features/`: start from facts of the file, end at `derived` or a rule
+  check. Every writer passes them. Inside: `logical/` (what the facts mean on the railroad: trackplan, office, code
+  line, policy and demand tables; rules answer "is this correct", cite rulebook and history) and `physical/` (how a
+  logical fact is realised: field devices, encoders, drivers, transports; rules answer "are these equivalent", one
+  scenario outline per logical fact with an Examples row per realisation).
+- **Import features**, `tools/layout_compiler/features/`: start from a drawing (symbols, pins, nets), end at the facts
+  written or an import diagnostic. The importer's "a wire means" rules live here, with the import registry, and
+  retire with the importer. Nothing KiCad is in the model root.
+
+Inside each: seam then Role, or Role plus Appliance where Role is too wide. A scenario is one route through the
+logic, named in the user's words; its diagnostic code is a tag; the registry key is `file#scenario`, relative to the
+registry's own root. A ruling with both parts is two files of the same name. `@pending` marks a rule stated before
+its implementation; its code is `proposed`. The field device is the one place both halves of the model root meet.
+Symbols a feature touches are computed from library fields by the manual generator, never written in the feature.
+First features: the four rulings above and the take 3 head positions (`tests/test_rule_features.py` is the gate).
 
 ## Documentation decisions (owner, 2026-11-04/05)
 

@@ -12,6 +12,11 @@ dependencies = [
 [tool.uv]
 package = false
 
+[dependency-groups]
+dev = [
+    "behave>=1.3.3",
+]
+
 # jbom comes from PyPI, the released build, so a half-finished branch in the jBOM checkout never
 # becomes this repo's test environment. To dogfood the live checkout on purpose, uncomment the
 # source below and run `uv sync`; `git checkout -- pyproject.toml uv.lock` returns to the release.

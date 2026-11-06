@@ -321,7 +321,7 @@
       "level": "missing",
       "lifecycle": "active",
       "since": "0.4.0",
-      "feature": null,
+      "feature": "field/device_mast_head.feature#a head wired to no mast",
       "replacedBy": null
     },
     "head.masts": {
@@ -552,7 +552,7 @@
       "level": "error",
       "lifecycle": "active",
       "since": "0.4.0",
-      "feature": null,
+      "feature": "trackplan/appliance_train_order.feature#a board with a pin on the track",
       "replacedBy": null
     },
     "transport.anchor": {
@@ -595,6 +595,20 @@
       "lifecycle": "active",
       "since": "0.4.0",
       "feature": null,
+      "replacedBy": null
+    },
+    "appliance.track_pin": {
+      "level": "error",
+      "lifecycle": "proposed",
+      "since": "0.1.0",
+      "feature": "trackplan/appliance_lamp_contact.feature#a lamp wired to a net that is not track",
+      "replacedBy": null
+    },
+    "head.position": {
+      "level": "error",
+      "lifecycle": "proposed",
+      "since": "0.1.0",
+      "feature": "field/device_mast_head.feature#two heads wired to one mast pin",
       "replacedBy": null
     }
   }
