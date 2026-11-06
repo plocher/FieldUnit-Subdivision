@@ -973,20 +973,20 @@ class LintMessagesTests(unittest.TestCase):
         def mast(props, pins):
             return {"properties": {"Role": "DEVICE", "Appliance": "mast", "Name": "${Value}", **props},
                     "pins": pins, "units": {1: [n for n, _, _ in pins]}, "locked": False, "value_autoplace": False}
-        double = mast({"Pin.A": "indication", "Pin.B": "indication"}, [("A", "1", "output"), ("B", "2", "output")])
+        double = mast({"Pin.A": "indication", "Pin.B": "indication"}, [("A", "1", "passive"), ("B", "2", "passive")])
         self.assertEqual(lint_symbol("L", "Device-Mast-Double", double), [])
-        single = mast({"Pin.A": "indication"}, [("A", "1", "output")])
+        single = mast({"Pin.A": "indication"}, [("A", "1", "passive")])
         self.assertEqual(lint_symbol("L", "Device-Mast-Single", single), [])
-        gap = mast({"Pin.A": "indication", "Pin.C": "indication"}, [("A", "1", "output"), ("C", "2", "output")])
+        gap = mast({"Pin.A": "indication", "Pin.C": "indication"}, [("A", "1", "passive"), ("C", "2", "passive")])
         self.assertEqual(lint_symbol("L", "Gap", gap),
                          [("error", "L:Gap: a field mast's pins are A, B, C in order from A, one per head position; this has A, C")])
         styled = mast({"Style": "double", "Pin.A": "indication", "Pin.B": "indication"},
-                      [("A", "1", "output"), ("B", "2", "output")])
+                      [("A", "1", "passive"), ("B", "2", "passive")])
         self.assertEqual(lint_symbol("L", "Styled", styled),
                          [("error", "L:Styled: a field mast states no Style; the pin set states the head count")])
-        inward = mast({"Pin.A": "indication", "Pin.B": "binary"}, [("A", "1", "output"), ("B", "2", "input")])
+        inward = mast({"Pin.A": "indication", "Pin.B": "binary"}, [("A", "1", "passive"), ("B", "2", "input")])
         msgs = [m for _, m in lint_symbol("L", "Inward", inward)]
-        self.assertIn("L:Inward: pin B is input; a field mast hands each head its indication word on an output", msgs)
+        self.assertIn("L:Inward: pin B is input; a field mast's position pin is passive, so a consumer may take one position or several tied together", msgs)
         self.assertIn("L:Inward: Pin.B = 'binary'; a field mast's pins are kind indication", msgs)
         old = mast({"Pin.IND": "indication"}, [("IND", "1", "output")])
         self.assertEqual(lint_symbol("L", "Mast", old), [])                          # Railroad-Field:Mast untouched

@@ -177,14 +177,16 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
         if len([u for u, p in sym["units"].items() if p]) > 1:
             err("a head device is one head; units would hide the head letter")
     lettered = [p for p in function_pins if len(p[0]) == 1 and p[0].isupper()]
+    mast_positions = []                                               # a field mast's position pins, passive by rule
     if role == "DEVICE" and props.get("Appliance") == "mast" and lettered:     # a field mast device (take 3, 2026-11-04)
+        mast_positions = list(function_pins)
         by_number = sorted(function_pins, key=lambda p: (len(p[1]), p[1]))
         names = "".join(n for n, _, _ in by_number)
         if not (1 <= len(names) <= len(HEAD_POSITIONS) and names == HEAD_POSITIONS[:len(names)]):
             err(f"a field mast's pins are {', '.join(HEAD_POSITIONS)} in order from A, one per head position; this has {', '.join(names) or 'none'}")
         for n, _, ty in function_pins:
-            if ty != "output":
-                err(f"pin {n} is {ty}; a field mast hands each head its indication word on an output")
+            if ty != "passive":                                       # owner, 2026-11-05: what is wired says what it takes
+                err(f"pin {n} is {ty}; a field mast's position pin is passive, so a consumer may take one position or several tied together")
             if pin_caps.get(n) is not None and pin_caps.get(n) != "indication":
                 err(f"Pin.{n} = {pin_caps[n]!r}; a field mast's pins are kind indication")
         for f in NOT_ON_FIELD_MAST:
@@ -214,7 +216,7 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
             if cap not in VOCABULARY:
                 err(f"Pin.{base(n)} = {cap!r} is not in the vocabulary (one primary word; direction is the pin type)")
                 continue
-            if ty not in FUNCTION_ETYPES:
+            if ty not in FUNCTION_ETYPES and (n, num, ty) not in mast_positions:
                 err(f"pin {n} is {ty}; a function pin is input, output or bidirectional")
         for p in pin_caps:
             if p not in bases:
