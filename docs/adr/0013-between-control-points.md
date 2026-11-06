@@ -284,7 +284,7 @@ its detectors at block boundaries for the same reason.)
 
 # Part 2. Between-interlockings prototype behavior, seam, invariants and profiles (reference authority)
 
-Order of authority Rank 1 (`AGENTS.md`, `R1`): how the prototype relay circuits and operating rules work **between**
+Order of authority Rank 1 (`R1`): how the prototype relay circuits and operating rules work **between**
 interlockings, bounded by the functional seam (§13) where a station-to-station block meets the interlocking at each
 end. Logic **inside** an interlocking plant belongs to `FieldUnit/docs/GLOSSARY.md` §10.6.
 
@@ -378,7 +378,7 @@ Two combinations are invalid and will be rejected by the conformance suite once 
    location that each break `HR` over the other's `HR` back contact while `H` arrives from both directions pick up
    together, cut each other, drop together, and repeat on every scan; `FieldUnit` ADR 0008 finding 2).
 
-## 15. The HD line and the directional stick relay (`SR`) (decision 12)
+## 15. The HD line and the directional stick relay (`SR`) 
 
 ### 15.1 What an HD line carries
 
