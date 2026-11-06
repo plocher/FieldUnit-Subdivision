@@ -211,3 +211,36 @@ generator, never written in the feature. First features: the four rulings above 
   05 semaphore servo+lamp, 06 pixel chain, 07 control point complete, 08 desk column, 09 code line three ways,
   10 AUXILIARY/Contact/MaintainerCall, 11 hand switch + derail (empty office band), 12 train order board + station,
   13 ABS/APB + END_CTC + HD line (with #62). The talk outline is a quarry of ideas; its history figures are slides.
+
+## Blocks, direction of traffic and lamps (owner, 2026-11-05; feeds #62 and ADR 0013 pending item 6)
+
+Settled in discussion:
+- Library renames (owner): Contact is `Sensor` (pin SENSOR), new `Actuator` (pin ACTUATOR) and `Lamp` (pin LAMP);
+  AUXILIARY is gone. The importer keys the optional track pin on Role and Appliance, never a pin name. No migration
+  bridges: migrate completely, then change the tools.
+- A trackplan `Lamp` is a physical lamp on the layout on the field processor; it never appears on the office board.
+  An office `ModelLamp` is the board's lamp. Lamp and Actuator state no `Indication`. A `Sensor` states
+  `Indication = ${Name}K` and is the source a board lamp consumes: Sargent's `HBA` Lamp was a local repeater with no
+  source and becomes a Sensor with its field device an input.
+- One level, not two. A block ends at every controlled or absolute signal joint (ADR 0013 §4): Corporal to Sargent and
+  Sargent to Watsonville are two independent station-to-station blocks in a row; nothing real corresponds to their
+  union. A board wanting one lamp for the run draws two.
+- A block's identity is a name symbol placed on its track. The block exposes its "in use" indication (the virtual
+  circuit of §7.2, members derived), its direction of traffic, and its place on the board (X from the track, Y from
+  the swimlane the trackplan capture gives).
+- Direction of traffic is a property of the whole block including both end interlockings: an agreement, never one
+  end's decision. One of the pair or neither is lit; lettered N/S or E/W by railroad and era.
+- Either end station may send a block's indications; demand = a consumer exists, then it is in every packet. Each end
+  sends the other all of its block circuits. Under AAR MQTT eavesdropping the signal and time indications are already
+  in the packet; with H and D wired, direction is explicit.
+- The `NFL` and `SFL` Lamp placements (Luchessa, Watsonville) are proxies for this logic and go once blocks expose
+  direction. A `Rule261-DoT` marker only delineates one end of a section; it is not the fact and gives no place.
+
+Open for ADR 0013:
+1. The direction-of-traffic indication needs a definition per profile in terms of the seam ports (§13). Direction is
+   not one of the seven ports; under `hd_chain` each end holds only complementary views, and after the stick picks up
+   the sending end holds nothing that says which way traffic runs. `field_fr` and `traffic_line` carry an explicit term.
+2. Extent of the approach section of a home signal facing a block. With an intermediate interlocking's signal lined
+   through, a train leaving the far end on Clear has accepted an indication that depended on it through the D chain:
+   the tumble-down continues to the next control point and the signal and switch must be held (restoring needs time).
+   The section must cover every block circuit whose signals its proceed upgraded. Not stated in the ADR.
