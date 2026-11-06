@@ -224,7 +224,7 @@ Settled in discussion:
   source and becomes a Sensor with its field device an input.
 - One level, not two. A block ends at every controlled or absolute signal joint (ADR 0013 §4): Corporal to Sargent and
   Sargent to Watsonville are two independent station-to-station blocks in a row; nothing real corresponds to their
-  union. A board wanting one lamp for the run draws two.
+  union. They are never combined into one indication: each block has its own lamps.
 - A block's identity is a name symbol placed on its track. The block exposes its "in use" indication (the virtual
   circuit of §7.2, members derived), its direction of traffic, and its place on the board (X from the track, Y from
   the swimlane the trackplan capture gives).
