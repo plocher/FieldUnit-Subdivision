@@ -1,21 +1,33 @@
 #!/usr/bin/env python3
-"""Generate the symbols manual: one HTML page from the Railroad symbol libraries and the prose fragments.
+"""Generate the symbols manual: one HTML page from the Railroad symbol libraries and the prose source.
 
-    uv run python tools/contract/symbol_manual.py [--libdir DIR] [--prose DIR] [--out DIR] [--bindings FILE]
+    uv run python tools/contract/symbol_manual.py [--libdir DIR] [--source FILE] [--out DIR] [--bindings FILE]
+    uv run python tools/contract/symbol_manual.py --harvest [PAGE]
 
 Facts come from the libraries only: each symbol's Description, its fields (who sets each one, shown or
-hidden), its pins (kind from `Pin.<pin>`, direction) and its units, rendered by `kicad-cli sym export svg`.
-The prose directory (default <libdir>/manual) holds what is hand-written:
+hidden; an empty library value is filled by the user, a literal or `${...}` is fixed by the symbol, and
+Value is the user's wherever Name is `${Value}`), its pins (kind from `Pin.<pin>`, direction) and its units,
+rendered by `kicad-cli sym export svg`.
 
-    groups.toml     the groups in page order: id, title, library (the tab) and `match`, a selector over
-                    library facts (`library`, `pin`, or any field such as Role, Appliance, Kind, Style, IC;
-                    a value or a list of values). A symbol belongs to the first group that matches it.
-    <id>.html       the usage paragraph of group <id>, an HTML fragment
-    intro.html      the "About" tab, an HTML fragment (optional)
+What is hand-written is the source file (default <libdir>/manual.html): HTML fragments between markers,
+in page order. Text outside the markers is ignored.
+
+    <!-- ABOUT -->
+    ... the "About" tab ...
+    <!-- END ABOUT -->
+    <!-- GROUP: Switches and derails | library=Railroad-Trackplan, Appliance=switch -->
+    ... the usage text of the group ...
+    <!-- END GROUP -->
+
+A GROUP marker holds the group's title and its selector over library facts: `library`, `pin`, or any field
+such as Role, Appliance, Kind, Style, IC; `a or b` is either value. A symbol belongs to the first group
+that matches it. The group's tab is its `library`, or `tab=<library>` when the group spans libraries.
 
 The page is <out>/index.html (default <libdir>/production/manual, gitignored), self-contained: style,
-script and SVGs are inline. A symbol no group matches, a group that matches nothing and a group with no
-fragment are reported on stderr and shown on the page; the exit status is then 1.
+script and SVGs are inline. It repeats the markers around each fragment, so the prose can be edited in the
+page: `--harvest` then copies the page's fragments back into the source file. It refuses when the page's
+titles are not the source's titles, each once. A symbol no group matches, a group that matches nothing and
+a marker that cannot be read are reported on stderr; the exit status is then 1.
 
 Rule links (the hook for the rule features of ADR 0012): `--bindings` names a JSON list of
 {"match": selector, "pin": name or "field": name, "feature": "file#scenario", "href": url}. Each row of a
@@ -33,7 +45,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -177,20 +188,79 @@ def selector_text(selector: dict) -> str:
     return ", ".join(f"{k} {v if isinstance(v, str) else ' or '.join(v)}" for k, v in selector.items() if k != "library")
 
 
-def build(libdir: Path, prose: Path, bindings: list[dict]) -> tuple[str, list[str]]:
+_MARKED = re.compile(r"<!-- (ABOUT|GROUP:[^\n]*?) -->\n?(.*?)<!-- END (ABOUT|GROUP) -->", re.S)
+
+
+@dataclass
+class Fragment:
+    marker: str                     # the opening marker's text, as written
+    text: str
+    title: str = ""                 # empty for ABOUT
+    match: dict = field(default_factory=dict)
+    tab: str = ""
+
+
+def read_fragments(source: str) -> tuple[list[Fragment], list[str]]:
+    """(the marked fragments in file order, problems). Text outside the markers is not read."""
+    out, problems = [], []
+    for marker, text, end in _MARKED.findall(source):
+        if marker == "ABOUT":
+            out.append(Fragment(marker, text))
+            continue
+        title, bar, sel = marker.removeprefix("GROUP:").partition("|")
+        f = Fragment(marker, text, title.strip())
+        for part in filter(None, (p.strip() for p in sel.split(","))):
+            key, eq, value = part.partition("=")
+            values = [v.strip() for v in value.split(" or ")]
+            if not eq or not key.strip() or not all(values):
+                problems.append(f"group {f.title}: cannot read `{part}`")
+            elif key.strip() == "tab":
+                f.tab = values[0]
+            else:
+                f.match[key.strip()] = values[0] if len(values) == 1 else values
+        f.tab = f.tab or (f.match.get("library") if isinstance(f.match.get("library"), str) else "")
+        if end != "GROUP" or not f.title or not f.match:
+            problems.append(f"marker `{marker}`: needs a title, a selector and END GROUP")
+        elif f.tab not in LIBRARIES:
+            problems.append(f"group {f.title}: its tab is not a library; write library=... or tab=...")
+        out.append(f)
+    titles = [f.title for f in out]
+    problems += [f"{t or 'ABOUT'}: marked more than once" for t in sorted(set(titles)) if titles.count(t) > 1]
+    return out, problems
+
+
+def marked(f: Fragment) -> str:
+    text = f.text.rstrip()
+    return f"<!-- {f.marker} -->\n{text + chr(10) if text else ''}<!-- END {'GROUP' if f.title else 'ABOUT'} -->"
+
+
+def harvest(page: str, source: str) -> tuple[str, list[str]]:
+    """(the new source text, problems): the page's fragments and markers, in the source's order."""
+    theirs, problems = read_fragments(page)
+    ours, _ = read_fragments(source)
+    a, b = sorted(f.title for f in theirs), sorted(f.title for f in ours)
+    if a != b:
+        problems.append("the page and the source do not hold the same titles, each once: "
+                        + ", ".join(sorted(set(a) ^ set(b)) or ["a title is repeated"]))
+    head = source[:m.start()] if (m := _MARKED.search(source)) else ""
+    by_title = {f.title: f for f in theirs}
+    return head + "\n\n".join(marked(by_title.get(f.title, f)) for f in ours) + "\n", problems
+
+
+def build(libdir: Path, source: Path, bindings: list[dict]) -> tuple[str, list[str]]:
     """(page, problems)."""
     e = html.escape
-    problems: list[str] = []
     symbols = [s for lib in LIBRARIES for s in read_library(libdir / f"{lib}.kicad_sym")]
-    groups = tomllib.loads((prose / "groups.toml").read_text())["group"] if (prose / "groups.toml").exists() else []
+    fragments, problems = read_fragments(source.read_text()) if source.exists() else ([], [f"{source}: not found"])
+    groups = [f for f in fragments if f.title]
     if not groups:
-        problems.append(f"{prose / 'groups.toml'}: no groups")
-    members: dict[str, list[Symbol]] = {g["id"]: [] for g in groups}
+        problems.append(f"{source}: no GROUP marker")
+    members: dict[str, list[Symbol]] = {g.title: [] for g in groups}
     stray: list[Symbol] = []
     for s in symbols:
         facts = s.facts()
-        home = next((g for g in groups if matches(g["match"], facts)), None)
-        (members[home["id"]] if home else stray).append(s)
+        home = next((g for g in groups if matches(g.match, facts)), None)
+        (members[home.title] if home else stray).append(s)
         if not s.units:
             problems.append(f"{s.library}:{s.name}: no rendered unit")
     for s in stray:
@@ -199,21 +269,15 @@ def build(libdir: Path, prose: Path, bindings: list[dict]) -> tuple[str, list[st
     tabs, navs = [], []
     for lib in LIBRARIES:
         body, nav = [], []
-        for g in (g for g in groups if g["library"] == lib):
-            syms = members[g["id"]]
-            frag = prose / f"{g['id']}.html"
+        for g in (g for g in groups if g.tab == lib):
+            syms = members[g.title]
             if not syms:
-                problems.append(f"group {g['id']}: matches no symbol")
-            if frag.exists():
-                text = frag.read_text()
-            else:
-                problems.append(f"group {g['id']}: no fragment {frag.name}")
-                text = '<p class="none">No usage text yet.</p>'
-            gid = f"group-{slug(g['id'])}"
-            body.append(f'<details class="group" id="{gid}" open><summary><h2>{e(g["title"])}</h2>'
-                        f'<span class="match">{e(selector_text(g["match"]))}</span></summary>'
-                        f'<div class="prose">{text}</div>{"".join(symbol_html(s, bindings) for s in syms)}</details>')
-            nav.append(f'<li><a href="#{gid}">{e(g["title"])}</a><ul>'
+                problems.append(f"group {g.title}: matches no symbol")
+            gid = f"group-{slug(g.title)}"
+            body.append(f'<details class="group" id="{gid}" open><summary><h2>{e(g.title)}</h2>'
+                        f'<span class="match">{e(selector_text(g.match))}</span></summary>'
+                        f'<div class="prose">\n{marked(g)}\n</div>{"".join(symbol_html(s, bindings) for s in syms)}</details>')
+            nav.append(f'<li><a href="#{gid}">{e(g.title)}</a><ul>'
                        + "".join(f'<li><a href="#{s.anchor}">{e(s.name)}</a></li>' for s in syms) + "</ul></li>")
         strays = [s for s in stray if s.library == lib]
         if strays:
@@ -221,7 +285,8 @@ def build(libdir: Path, prose: Path, bindings: list[dict]) -> tuple[str, list[st
                         + "".join(symbol_html(s, bindings) for s in strays) + "</details>")
         tabs.append(f'<section class="tab" id="tab-{slug(lib)}" hidden>{"".join(body)}</section>')
         navs.append(f'<ul class="index" data-tab="tab-{slug(lib)}" hidden>{"".join(nav)}</ul>')
-    intro = (prose / "intro.html").read_text() if (prose / "intro.html").exists() else ""
+    about = next((f for f in fragments if not f.title), None)
+    intro = f"\n{marked(about)}\n" if about else ""
     buttons = ('<button data-tab="tab-about">About</button>' if intro else "") + "".join(
         f'<button data-tab="tab-{slug(lib)}">{e(lib.removeprefix("Railroad-"))}</button>' for lib in LIBRARIES)
     page = f"""<!doctype html>
@@ -244,13 +309,28 @@ def build(libdir: Path, prose: Path, bindings: list[dict]) -> tuple[str, list[st
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--libdir", type=Path, default=LIBDIR)
-    ap.add_argument("--prose", type=Path, default=None, help="groups.toml and the fragments (default <libdir>/manual)")
+    ap.add_argument("--source", type=Path, default=None, help="the marked fragments (default <libdir>/manual.html)")
     ap.add_argument("--out", type=Path, default=None, help="output directory (default <libdir>/production/manual)")
     ap.add_argument("--bindings", type=Path, default=None, help="JSON list of rule links (see the module text)")
+    ap.add_argument("--harvest", type=Path, nargs="?", const=Path(), default=None, metavar="PAGE",
+                    help="copy the fragments of a generated page (default <out>/index.html) back into the source")
     a = ap.parse_args(argv)
     out = a.out or a.libdir / "production" / "manual"
+    source = a.source or a.libdir / "manual.html"
+    if a.harvest is not None:
+        page = out / "index.html" if a.harvest == Path() else a.harvest
+        text, problems = harvest(page.read_text(), source.read_text())
+        for p in problems:
+            print(p, file=sys.stderr)
+        if problems:
+            print(f"{source}: not changed", file=sys.stderr)
+            return 1
+        changed = text != source.read_text()
+        source.write_text(text)
+        print(f"{source}: {'updated from' if changed else 'already equal to'} {page}")
+        return 0
     bindings = json.loads(a.bindings.read_text()) if a.bindings else []
-    page, problems = build(a.libdir, a.prose or a.libdir / "manual", bindings)
+    page, problems = build(a.libdir, source, bindings)
     out.mkdir(parents=True, exist_ok=True)
     (out / "index.html").write_text(page)
     for p in problems:
