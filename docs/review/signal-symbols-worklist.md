@@ -241,7 +241,9 @@ Open for ADR 0013:
    plant: the seam's outbound port `requested` (§13, "a leaving signal at this end has an active direction request into
    the block"). A block's direction is which end has its lever accepted into it; each end knows its own directly and
    the other's from that end's signal lever indications (already in the packet under eavesdropping) or the wires; one
-   or neither, never both. ADR 0013 states this as the definition of the indication. (An earlier reading here looked
+   or neither, never both. Which lever sets direction is the profile's: western roads with long runs and light traffic
+   used the signal lever (SP, `hd_chain`); eastern high-traffic lines often had a separate traffic lever working with
+   fleeting (`traffic_line`, `field_fr`). ADR 0013 states this as the definition of the indication. (An earlier reading here looked
    only at `cleared`, which drops behind the train, and wrongly concluded neither end holds direction.)
 2. Extent of the approach section of a home signal facing a block. With an intermediate interlocking's signal lined
    through, a train leaving the far end on Clear has accepted an indication that depended on it through the D chain:
