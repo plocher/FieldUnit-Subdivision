@@ -35,6 +35,7 @@ The symbol libraries are registered globally in
 uv sync                                        # once per checkout: .venv with Python 3.14, jbom (the PyPI release) and sexpdata
 uv run python -m unittest discover -s tests -q # 346 tests; the SPCoast gates export a fresh netlist with kicad-cli and skip without it
 uv run tools/run_plant_graph_smoke.sh          # Luchessa end-to-end; needs kicad-cli. Fails today: the old compiler reports 5 known diagnostics on the archived drawing (#15)
+cd schemas/layout-model/rules/features && uv run behave --tags='not @pending'   # the model rules as features; tools/layout_compiler/features is the importer's root; tests/test_rule_features.py runs both
 ```
 
 - Python is managed per repo with `uv` (`pyproject.toml`, `.python-version`, `uv.lock`; `.venv` is gitignored). Never rely on the system `python3`: a Homebrew or macOS update replaced it with 3.15 without the dependencies (2026-10-16). Run every script as `uv run python <script>`, or `uv run --project ~/Dropbox/workspace/FieldUnit-Subdivision python <script>` from another repo (the Railroad `edits/` scripts import `tools/kicad_services` this way).
