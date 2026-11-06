@@ -282,7 +282,9 @@ Settled in conversation; nothing below is implemented in the importer yet (it be
     DIVERGING_APPROACH Home Signal Yellow for Diverging Route; DIVERGING_RESTRICTING Home Signal Red over Lunar (red
     over yellow in later eras, when lunar was dropped: an edit to the row). ADVANCE_APPROACH and the speed-signalling
     words have no row; the owner expects them absent on western roads.
-- **Open:** where the signal system is stated. Proposed, not yet answered: a field on `Encoding-JMRI` for every JMRI
-  mast under it, and a driver states its own only when its appliance differs.
+- **Where the signal system is stated.** Eras never end, they only start (owner): SP ran old and new signals side by
+  side through each transition. So the signal system is a fact about each installation, never a mode of the layout.
+  `Encoding-JMRI` names the usual one; a `Driver-JMRI-SignalMast` states its own when its appliance is of another
+  era. (My reading of the owner's remark; the field names are not chosen yet.)
 - **Follow-on:** FieldUnit `src/drivers/MqttApplianceBus.h` `aspectName()` hard-codes names; it should take them from
   this table. Four SPCoast drawing gates fail on the take 3 sheets until the model step lands.
