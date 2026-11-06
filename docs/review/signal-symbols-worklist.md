@@ -171,7 +171,7 @@ Names (784A) are dropped. Scripted, lock-gated, with a compile diff.
 - Train order boards (Time Table and Train Order territory, never CTC): one trackplan `Train Order Mast` with Station
   and no head pin; a field `Device-TrainOrder`, one unit per face (N/W, S/E), inputs STOP, SLOW, CALLON from any
   driver, output IND to an anonymous head; nothing asserted = CLEAR, SLOW = APPROACH (orders on the fly), CALLON =
-  RESTRICTING, the most restrictive asserted input wins. The fascia control is local, no code line. A one-faced
+  RESTRICTING, the most restrictive asserted input wins (most to least: STOP, CALLON, SLOW; owner, 2026-11-05). The fascia control is local, no code line. A one-faced
   board places one unit.
 - AUXILIARY and Contact: the `MC` pin was copied from MaintainerCall by mistake; it becomes an optional `TRACK` pin.
   Wired to a track net, the importer writes the circuit as the appliance's relation and the derivation checks it is

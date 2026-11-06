@@ -3,7 +3,7 @@ Feature: The faces of a train order board
   A board with one face has one unit.
   Each unit has the inputs STOP, SLOW and CALLON and gives its face's indication to a head.
   Nothing asserted is CLEAR. SLOW is APPROACH. CALLON is RESTRICTING.
-  The most restrictive asserted input wins.
+  The most restrictive asserted input wins. From most to least restrictive: STOP, CALLON, SLOW.
   The control is local. No code line carries it.
 
   @pending
@@ -32,3 +32,4 @@ Feature: The faces of a train order board
       | STOP            | STOP        |
       | STOP and SLOW   | STOP        |
       | STOP and CALLON | STOP        |
+      | SLOW and CALLON | RESTRICTING |
