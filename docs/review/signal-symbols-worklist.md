@@ -204,16 +204,16 @@ generator, never written in the feature. First features: the four rulings above 
   says which symbols a group holds. The page is `symbols/production/manual/index.html` and repeats the markers, so
   prose edited in the page is copied back with `symbol_manual.py --harvest`. `symbols/README.symbols.md` was the
   interim draft, retired when the page landed.
-- Examples in use are a curated KiCad project `Railroad/Examples` (branch feat/examples-project): one page per
-  compiler pattern, bands TRACKPLAN / FIELD / OFFICE, each page its own Interlocking and House, a sidecar `.md` with
-  the intent paragraph and the facts the compiler must derive, `TODO:` text wherever the script guessed. Drafted by
-  `tools/examples/build_examples.py` from SPCoast patterns, tidied by the owner in KiCad. Consumers: the manual
-  (render), functional tests (fresh netlist, compile), talks. Project scaffolding (Railroad, OfficeUnit, processors,
-  transports, encodings) sits once on the root sheet, so a page does not compile alone (recorded, not fixed). Order:
-  01 track circuit, 02 powered switch, 03 single mast (drafted d92f385), 04 double mast 3MUX2A + siding dwarf,
-  05 semaphore servo+lamp, 06 pixel chain, 07 control point complete, 08 desk column, 09 code line three ways,
-  10 AUXILIARY/Contact/MaintainerCall, 11 hand switch + derail (empty office band), 12 train order board + station,
-  13 ABS/APB + END_CTC + HD line (with #62). The talk outline is a quarry of ideas; its history figures are slides.
+- Examples in use are root sheets in the KiCad project `Railroad/Tutorial` (owner, 2026-11-06): a story that starts
+  simple and builds to more complex arrangements, each sheet a building block for functional tests, documentation
+  and tutorials. Every sheet is a top-level sheet and a complete small system (Railroad, OfficeUnit, processors,
+  transport, encoding, trackplan, field and office wiring), so no sheet depends on another; a tutorial that needs a
+  hierarchy has its own. Sheet 1 teaches with text beside the drawing (a controlled siding); sheet 2 is the same
+  drawing without the text, the template for the next ones. Sheet-local nets use hierarchical labels, which are
+  easy to see; the ERC complaint about a hierarchical label on a root sheet is excluded. The owner draws the sheets
+  in KiCad. This replaces the `Railroad/Examples` project and its generator `tools/examples/build_examples.py`
+  (one root sheet of shared scaffolding, 13 planned pages that did not compile alone), removed 2026-11-06; the old
+  text and the page order are in commit 84f508b. The talk outline is a quarry of ideas; its history figures are slides.
 
 ## Blocks, direction of traffic and lamps (owner, 2026-11-05; feeds #62 and ADR 0013 pending item 6)
 
