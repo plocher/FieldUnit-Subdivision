@@ -198,9 +198,12 @@ generator, never written in the feature. First features: the four rulings above 
   come from the six libraries through the contact-sheet tooling: Description, fields and pins per symbol, who sets
   each field (an empty library value = the user fills it; a literal or `${...}` = fixed), per-unit SVGs from
   kicad-cli. Only a usage paragraph per group is hand-written. Each pin or field links to the rule feature that binds
-  it; the symbols a feature touches are computed from library fields. `symbols/README.symbols.md` is the interim draft
-  and retires when the page lands. Open: prose as HTML fragments in `symbols/manual/` with output in `production/`
-  (default) or one page with marked regions.
+  it; the symbols a feature touches are computed from library fields. The hand-written text is one file, Railroad
+  `symbols/manual.html`: HTML fragments between `<!-- GROUP: title | selector -->` and `<!-- END GROUP -->` markers
+  (owner, 2026-11-05: markdown is too weak, a file per fragment is hard to edit). The selector over library fields
+  says which symbols a group holds. The page is `symbols/production/manual/index.html` and repeats the markers, so
+  prose edited in the page is copied back with `symbol_manual.py --harvest`. `symbols/README.symbols.md` was the
+  interim draft, retired when the page landed.
 - Examples in use are a curated KiCad project `Railroad/Examples` (branch feat/examples-project): one page per
   compiler pattern, bands TRACKPLAN / FIELD / OFFICE, each page its own Interlocking and House, a sidecar `.md` with
   the intent paragraph and the facts the compiler must derive, `TODO:` text wherever the script guessed. Drafted by
