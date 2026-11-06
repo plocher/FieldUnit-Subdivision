@@ -249,3 +249,40 @@ Open for ADR 0013:
    through, a train leaving the far end on Clear has accepted an indication that depended on it through the D chain:
    the tumble-down continues to the next control point and the signal and switch must be held (restoring needs time).
    The section must cover every block circuit whose signals its proceed upgraded. Not stated in the ADR.
+
+## JMRI-style MQTT masts (owner, 2026-11-05)
+
+Settled in conversation; nothing below is implemented in the importer yet (it belongs with the model step, #80).
+
+- **One way to draw a mast.** A field mast device's position pins A, B, C are passive. What is wired to a pin says
+  what it takes: a head takes that position's head word; a whole-mast consumer (`Driver-JMRI-SignalMast`) takes the
+  mast's indication, and the pins on its net are the positions it stands in for. Mixed wiring (A and B to a JMRI mast,
+  C to a local head) is allowed. Lint requires passive (d26bf09).
+- **One device per consumer.** Position pins tied together are one net, so a second consumer that needs the positions
+  apart (anonymous heads) gets its own mast device with the same Name. Gilroy Interchange is drawn this way: per
+  signal, one mast device to the JMRI driver and one to H2 heads, `Encoder-Pixel-RGB` and the D2 pixel chain
+  (addresses 1 to 6).
+- **We publish; JMRI does not run.** The field unit stands where JMRI would and the appliance subscribes, so JMRI's
+  system name and mast model do not enter the model. The mast model is the appliance's own business.
+- **The seam** (JMRI `java/src/jmri/jmrix/mqtt/MqttSignalMast.java`, opened): topic = prefix (JMRI default
+  `track/signalmast/`) + the mast's ordinal or name, which is the driver's `Address`; payload =
+  `<"aspect name">; Lit; Unheld`. Lit and Held are constants for now.
+- **Translation table**, keyed (signal system, indication, mast Kind) -> JMRI "aspect name". Kind is in the key
+  because SP's names fold the plate in (STOP is "Home Signal Red" on an absolute or controlled mast, "Stop and
+  Proceed" on a permissive one); our indication vocabulary does not change. A word with no row is not presentable in
+  that system (a rule check). The tables are ours and editable; JMRI's `xml/signals/<system>/aspects.xml` is a source
+  for names, not an authority. JMRI's appearance files and `aspectMappings` are not adopted (they are our head tables
+  and our derivation, multiplied out); the appearance files may serve later as a check on our head tables.
+- **First two maps**, to exercise the railroad and era tags:
+  - `basic`: CLEAR Clear; APPROACH Approach; STOP Stop; DIVERGING_CLEAR Diverging Clear; DIVERGING_APPROACH Diverging
+    Approach; plus our own row RESTRICTING Restricting (not in JMRI's `basic`).
+  - `SPTCO-1969`: CLEAR Block Signal Green; APPROACH Approach Signal Yellow; RESTRICTING Restricting; STOP Home Signal
+    Red (CONTROLLED, ABSOLUTE) or Stop and Proceed (PERMISSIVE); DIVERGING_CLEAR Block Signal Green for Diverging
+    Route; APPROACH_DIVERGING Block Signal Yellow over Green; APPROACH_MEDIUM Approach Medium - Flashing Yellow;
+    DIVERGING_APPROACH Home Signal Yellow for Diverging Route; DIVERGING_RESTRICTING Home Signal Red over Lunar (red
+    over yellow in later eras, when lunar was dropped: an edit to the row). ADVANCE_APPROACH and the speed-signalling
+    words have no row; the owner expects them absent on western roads.
+- **Open:** where the signal system is stated. Proposed, not yet answered: a field on `Encoding-JMRI` for every JMRI
+  mast under it, and a driver states its own only when its appliance differs.
+- **Follow-on:** FieldUnit `src/drivers/MqttApplianceBus.h` `aspectName()` hard-codes names; it should take them from
+  this table. Four SPCoast drawing gates fail on the take 3 sheets until the model step lands.
