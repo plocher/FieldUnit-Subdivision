@@ -447,11 +447,14 @@ def identity_field(s: Symbol) -> str | None:
     """G2: the field the KiCad importer keys the symbol by (`layout_compiler.seams.key_field`), or None where it reads
     none: a TRACK or POLICY row is identified by its id (a TRACK name is optional), the importer reads no SETTING, and
     an encoded driver and a CMRInet bit (IC CMRI, Kind IB or OB) have computed keys; a CMRInet node (Kind NODE) is keyed
-    by its Address."""
+    by its Address. The anonymous symbols (owner, 2026-11-04) carry no Name: a head that presents a head word (an
+    output pin of kind indication) is keyed by the mast pin it is wired to, and an ENCODER by the head it serves."""
     role = s.fields.get("Role", "")
     ic = s.fields.get("IC")
-    if role in ("TRACK", "POLICY", "SETTING") or (role == "IODRIVER" and ((ic == "CMRI" and s.fields.get("Kind") in CMRI_BIT_KINDS)
-                                                                          or ic in ENCODING_OF_IC)):
+    anonymous_head = (role == "DEVICE" and s.fields.get("Appliance") == "head"
+                      and any(ty == "output" and s.fields.get("Pin." + n.strip("~{}")) == "indication" for n, _, ty in s.pins))
+    if role in ("TRACK", "POLICY", "SETTING", "ENCODER") or anonymous_head or (role == "IODRIVER" and ((ic == "CMRI" and s.fields.get("Kind") in CMRI_BIT_KINDS)
+                                                                                                      or ic in ENCODING_OF_IC)):
         return None
     return KEYS.get((role, s.fields.get("Kind"))) or KEYS.get((role, None)) or "Name"
 

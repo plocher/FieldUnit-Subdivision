@@ -759,6 +759,17 @@ class ConventionsTests(unittest.TestCase):
         for name in ("IRJ", "Rule251", "IB"):                               # a row's id, or a computed key
             self.assertEqual(cells[name]["Name"].flags, [], name)
         self.assertIn("missing Address; the KiCad importer keys a IODRIVER by it", cells["Node"]["Name"].flags)   # Kind NODE, not NodeType
+        head = sym("Head", {"Role": "DEVICE", "Appliance": "head", "Style": "TypeD", "Pin.IND": "indication",
+                            "Pin.APP": "indication"}, {1: ["IND", "APP"]}, outputs=("APP",))
+        old_head = sym("OldHead", {"Role": "DEVICE", "Appliance": "head", "Style": "CPL", "Pin.IND": "indication",
+                                   "Pin.R": "binary"}, {1: ["IND", "~{R}"]})
+        cells = {s.name: c for k in overview.convention_kinds([head, old_head]) for s, c in zip(k.symbols, k.cells)}
+        self.assertEqual(cells["Head"]["Name"].flags, [])                   # anonymous: keyed by the mast pin (2026-11-04)
+        encoder = sym("Encoder-RYG", {"Role": "ENCODER", "Kind": "RYG", "Pin.APP": "indication", "Pin.R": "binary"},
+                      {1: ["APP", "~{R}"]})
+        enc_cells = {s.name: c for k in overview.convention_kinds([encoder]) for s, c in zip(k.symbols, k.cells)}
+        self.assertEqual(enc_cells["Encoder-RYG"]["Name"].flags, [])        # anonymous: keyed by the head it serves
+        self.assertIn("missing Name; the KiCad importer keys a DEVICE by it", cells["OldHead"]["Name"].flags)
 
     def test_g3_never_asks_for_a_field_only_another_style_carries(self):
         plain = sym("TC", {"Role": "APPLIANCE", "Appliance": "track_circuit", "Name": "${Value}",
@@ -837,6 +848,148 @@ class LintMessagesTests(unittest.TestCase):
         self.assertEqual(lint_symbol("L", "Odd", driver(Kind="SENSOR", Bit="")),
                          [("error", "L:Odd: a CMRInet driver states what it is in Kind, one of NODE, IB, OB; this has SENSOR")])
         self.assertEqual(lint_symbol("L", "Node", driver(Kind="NODE", NodeType="C")), [("error", "L:Node: Address missing on a bus device")])
+
+    def test_an_encoder_takes_one_head_word_and_states_its_hardware(self):
+        """The owner's Railroad-Field-Signals (2026-11-04): Role ENCODER, Kind required, no Appliance, no Name, one
+        indication input, every hardware pin an input of kind binary or position with Pin.*, CHAIN a bus attachment
+        without Pin.*, Address and Address.<colour> contract fields, no Code, settings lower_snake_case."""
+        from contract.lint_symbol_fields import lint_symbol
+
+        def encoder(props, pins):
+            return {"properties": {"Role": "ENCODER", **props}, "pins": pins,
+                    "units": {1: [n for n, _, _ in pins]}, "locked": False, "value_autoplace": False}
+        ryg = encoder({"Kind": "RYG", "Pin.APP": "indication", "Pin.R": "binary", "Pin.Y": "binary", "Pin.G": "binary"},
+                      [("APP", "1", "input"), ("~{R}", "2", "input"), ("~{Y}", "3", "input"), ("~{G}", "4", "input")])
+        self.assertEqual(lint_symbol("L", "Encoder-RYG", ryg), [])                  # the library's Encoder-RYG shape
+        lamp = encoder({"Kind": "LAMP", "Pin.APP": "indication", "Pin.LAMP": "binary"},
+                       [("APP", "1", "input"), ("~{LAMP}", "2", "input")])
+        self.assertEqual(lint_symbol("L", "Encoder-Lamp", lamp), [])                # the library's Encoder-Lamp shape
+        pixel = encoder({"Kind": "PIXEL_RYG", "Pin.APP": "indication", "Address.R": "", "Address.Y": "", "Address.G": ""},
+                        [("APP", "1", "input"), ("CHAIN", "2", "passive")])
+        self.assertEqual(lint_symbol("L", "Pixel", pixel), [])                       # CHAIN carries no Pin.*
+        mux = encoder({"Kind": "3MUX2A", "Pin.APP": "indication", "Pin.S0": "binary", "Pin.S1": "binary"},
+                      [("APP", "1", "input"), ("S0", "2", "input"), ("S1", "3", "input")])
+        self.assertEqual(lint_symbol("L", "3MUX2A", mux), [])
+        servo = encoder({"Kind": "SERVO", "Pin.APP": "indication", "Pin.ARM": "position", "stop_deg": ""},
+                        [("APP", "1", "input"), ("ARM", "2", "input")])
+        self.assertEqual(lint_symbol("L", "Servo", servo), [])
+        coded = encoder({**mux["properties"], "Code": ""}, mux["pins"])
+        self.assertEqual(lint_symbol("L", "Coded", coded), [("error", "L:Coded: setting Code is not lower_snake_case")])
+        two_inputs = encoder({"Kind": "RYG", "Pin.APP": "indication", "Pin.IND": "indication", "Pin.R": "binary"},
+                             [("APP", "1", "input"), ("IND", "2", "input"), ("~{R}", "3", "input")])
+        self.assertEqual(lint_symbol("L", "Two", two_inputs),
+                         [("error", "L:Two: an encoder takes exactly one indication input, the head word; this has 2")])
+        bare = encoder({"Appliance": "head", "Pin.APP": "indication", "Pin.R": "binary", "Pin.R_lamp": "binary"},
+                       [("APP", "1", "input"), ("~{R}", "2", "input")])
+        msgs = [m for _, m in lint_symbol("L", "Bare", bare)]
+        self.assertIn("L:Bare: an encoder serves a head through the wire; it has no Appliance", msgs)
+        self.assertIn("L:Bare: an encoder states Kind, the hardware it makes (RYG, PIXEL, SERVO, ...)", msgs)
+        self.assertIn("L:Bare: Pin.R_lamp names no pin", msgs)
+        camel = encoder({"Kind": "SERVO", "Pin.APP": "indication", "Pin.ARM": "position", "stopDeg": ""},
+                        [("APP", "1", "input"), ("ARM", "2", "input")])
+        self.assertEqual(lint_symbol("L", "Camel", camel), [("error", "L:Camel: setting stopDeg is not lower_snake_case")])
+
+    def test_an_encoder_is_anonymous_and_its_hardware_pins_are_inputs(self):
+        """The gaps the owner's intermediate saves slipped through (2026-11-04): no Kind, no Pin.APP, a Name, and an
+        output function pin are each an error; a hardware pin of a kind no driver hands over is too."""
+        from contract.lint_symbol_fields import lint_symbol
+
+        def encoder(props, pins):
+            return {"properties": {"Role": "ENCODER", **props}, "pins": pins,
+                    "units": {1: [n for n, _, _ in pins]}, "locked": False, "value_autoplace": False}
+        pins = [("APP", "1", "input"), ("~{R}", "2", "input")]
+        kindless = encoder({"Pin.APP": "indication", "Pin.R": "binary"}, pins)
+        self.assertEqual(lint_symbol("L", "Kindless", kindless),
+                         [("error", "L:Kindless: an encoder states Kind, the hardware it makes (RYG, PIXEL, SERVO, ...)")])
+        empty_kind = encoder({"Kind": "", "Pin.APP": "indication", "Pin.R": "binary"}, pins)
+        self.assertEqual([m for _, m in lint_symbol("L", "Empty", empty_kind)],
+                         ["L:Empty: an encoder states Kind, the hardware it makes (RYG, PIXEL, SERVO, ...)"])
+        no_app = encoder({"Kind": "RYG", "Pin.R": "binary"}, pins)
+        msgs = [m for _, m in lint_symbol("L", "NoApp", no_app)]
+        self.assertIn("L:NoApp: an encoder takes exactly one indication input, the head word; this has 0", msgs)
+        self.assertIn("L:NoApp: pin APP has no Pin.APP", msgs)
+        named = encoder({"Kind": "RYG", "Name": "${Value}", "Pin.APP": "indication", "Pin.R": "binary"}, pins)
+        self.assertEqual(lint_symbol("L", "Named", named),
+                         [("error", "L:Named: an encoder is keyed by the head it serves; it has no name")])
+        outward = encoder({"Kind": "RYG", "Pin.APP": "indication", "Pin.R": "binary"},
+                          [("APP", "1", "input"), ("~{R}", "2", "output")])
+        self.assertEqual(lint_symbol("L", "Outward", outward),
+                         [("error", "L:Outward: pin ~{R} is an output; encoder hardware pins are inputs, driven by the driver")])
+        coloured = encoder({"Kind": "RGB", "Pin.APP": "indication", "Pin.LED": "color"},
+                           [("APP", "1", "input"), ("LED", "2", "input")])
+        self.assertEqual(lint_symbol("L", "Coloured", coloured),
+                         [("error", "L:Coloured: Pin.LED = 'color'; an encoder's hardware pin takes binary or position from the driver")])
+
+    def test_a_head_device_presents_one_head_word_or_makes_its_lamps(self):
+        """Worklist 2026-11-04: the Signals-library head has one indication input and one indication output, nothing
+        else; the older Railroad-Field head (indication in, lamp pins out) keeps its rule until the sheets migrate."""
+        from contract.lint_symbol_fields import lint_symbol
+
+        def head(props, pins):
+            return {"properties": {"Role": "DEVICE", "Appliance": "head", "Style": "TypeD", **props},   # no Name: anonymous since take 3
+                    "pins": pins, "units": {1: [n for n, _, _ in pins]}, "locked": False, "value_autoplace": False}
+        word = head({"Pin.IND": "indication", "Pin.APP": "indication"}, [("IND", "1", "input"), ("APP", "2", "output")])
+        self.assertEqual(lint_symbol("L", "Word", word), [])
+        extra = head({"Pin.IND": "indication", "Pin.APP": "indication", "Pin.R": "binary"},
+                     [("IND", "1", "input"), ("APP", "2", "output"), ("~{R}", "3", "output")])
+        self.assertEqual(lint_symbol("L", "Extra", extra),
+                         [("error", "L:Extra: a head device presents a head word and nothing else; it has pins ~{R}")])
+        setting = head({"Pin.IND": "indication", "Pin.APP": "indication", "stop_deg": ""},
+                       [("IND", "1", "input"), ("APP", "2", "output")])
+        self.assertEqual(lint_symbol("L", "Setting", setting),
+                         [("error", "L:Setting: a head device of this shape has no settings; it has stop_deg")])
+        old = head({"Name": "${Value}", "Pin.IND": "indication", "Pin.R": "binary", "Pin.Y": "binary", "Pin.G": "binary"},
+                   [("IND", "1", "input"), ("~{R}", "2", "input"), ("~{Y}", "3", "input"), ("~{G}", "4", "input")])
+        self.assertEqual(lint_symbol("L", "Old", old), [])                           # the Railroad-Field shape still passes
+        mixed = head({"Name": "${Value}", "Pin.IND": "indication", "Pin.R": "binary", "Pin.ARM": "position"},
+                     [("IND", "1", "input"), ("~{R}", "2", "input"), ("ARM", "3", "input")])
+        self.assertEqual(lint_symbol("L", "Mixed", mixed),
+                         [("error", "L:Mixed: a head device produces one kind; this produces binary, position")])
+
+    def test_a_head_that_presents_a_head_word_has_no_name(self):
+        """Owner, 2026-11-04: a head is a position on its mast, keyed by the pin it is wired to; the old-shape head keeps
+        its Name (the head letter is its last letter)."""
+        from contract.lint_symbol_fields import lint_symbol
+
+        def head(props, pins):
+            return {"properties": {"Role": "DEVICE", "Appliance": "head", "Style": "TypeD", **props},
+                    "pins": pins, "units": {1: [n for n, _, _ in pins]}, "locked": False, "value_autoplace": False}
+        word_pins = [("IND", "1", "input"), ("APP", "2", "output")]
+        anonymous = head({"Pin.IND": "indication", "Pin.APP": "indication"}, word_pins)
+        self.assertEqual(lint_symbol("L", "Anon", anonymous), [])
+        named = head({"Name": "${Value}", "Pin.IND": "indication", "Pin.APP": "indication"}, word_pins)
+        self.assertEqual(lint_symbol("L", "Named", named),
+                         [("error", "L:Named: a head has no name; it is keyed by the mast pin it is wired to")])
+        old = head({"Name": "${Value}", "Pin.IND": "indication", "Pin.R": "binary"},
+                   [("IND", "1", "input"), ("~{R}", "2", "input")])
+        self.assertEqual(lint_symbol("L", "Old", old), [])                           # the Railroad-Field shape keeps its Name
+
+    def test_a_field_mast_device_hands_each_head_its_word_on_a_lettered_pin(self):
+        """Take 3, 2026-11-04: Role DEVICE, Appliance mast, outputs A, B, C of kind indication in order from A, one to
+        three; no Style, Kind or Indications (the pin set states the head count). The old Railroad-Field:Mast, one IND
+        output, has no lettered pin and keeps the plain DEVICE rules."""
+        from contract.lint_symbol_fields import lint_symbol
+
+        def mast(props, pins):
+            return {"properties": {"Role": "DEVICE", "Appliance": "mast", "Name": "${Value}", **props},
+                    "pins": pins, "units": {1: [n for n, _, _ in pins]}, "locked": False, "value_autoplace": False}
+        double = mast({"Pin.A": "indication", "Pin.B": "indication"}, [("A", "1", "passive"), ("B", "2", "passive")])
+        self.assertEqual(lint_symbol("L", "Device-Mast-Double", double), [])
+        single = mast({"Pin.A": "indication"}, [("A", "1", "passive")])
+        self.assertEqual(lint_symbol("L", "Device-Mast-Single", single), [])
+        gap = mast({"Pin.A": "indication", "Pin.C": "indication"}, [("A", "1", "passive"), ("C", "2", "passive")])
+        self.assertEqual(lint_symbol("L", "Gap", gap),
+                         [("error", "L:Gap: a field mast's pins are A, B, C in order from A, one per head position; this has A, C")])
+        styled = mast({"Style": "double", "Pin.A": "indication", "Pin.B": "indication"},
+                      [("A", "1", "passive"), ("B", "2", "passive")])
+        self.assertEqual(lint_symbol("L", "Styled", styled),
+                         [("error", "L:Styled: a field mast states no Style; the pin set states the head count")])
+        inward = mast({"Pin.A": "indication", "Pin.B": "binary"}, [("A", "1", "passive"), ("B", "2", "input")])
+        msgs = [m for _, m in lint_symbol("L", "Inward", inward)]
+        self.assertIn("L:Inward: pin B is input; a field mast's position pin is passive, so a consumer may take one position or several tied together", msgs)
+        self.assertIn("L:Inward: Pin.B = 'binary'; a field mast's pins are kind indication", msgs)
+        old = mast({"Pin.IND": "indication"}, [("IND", "1", "output")])
+        self.assertEqual(lint_symbol("L", "Mast", old), [])                          # Railroad-Field:Mast untouched
 
 
 if __name__ == "__main__":

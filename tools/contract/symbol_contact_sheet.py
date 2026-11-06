@@ -23,7 +23,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from kicad_services.sch_text import library_symbols  # noqa: E402
 
 LIBDIR = Path.home() / "Dropbox/KiCad/Railroad/symbols"
-LIBRARIES = ("Railroad-Trackplan", "Railroad-Office", "Railroad-Field", "Railroad-HardwareIO")
+LIBRARIES = ("Railroad-Trackplan", "Railroad-Trackplan-Signals", "Railroad-Office", "Railroad-Field", "Railroad-Field-Signals",
+             "Railroad-HardwareIO")
 KICAD_CLI = os.environ.get("KICAD_CLI") or shutil.which("kicad-cli") or "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
 STYLE = ("body{font:13px sans-serif}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px;"
          "vertical-align:top}img{max-width:260px;max-height:200px;background:#fff;margin:2px}")

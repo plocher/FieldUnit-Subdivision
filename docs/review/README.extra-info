@@ -1,0 +1,72 @@
+I’d split it into three layers:
+
+Operations, chosen per railroad and era. What the signals and levers do. That covers the rule (251 or 261), whether fleeting is allowed, whether an idle block keeps its last direction (CB&Q) or has none (SP), and whether opposing signals tumble down when the leaving signal clears (CTC) or when the train passes it (APB). These are settings the layout owner picks. They shouldn’t affect the wiring or the model’s structure.
+The model: the same for every railroad. It holds a line circuit for each direction between neighbouring signal locations. Each one asks: “is everything ahead clear in this direction, and is the opposing signal at stop?” Each location computes its own answer from:
+its own track circuits
+its own signals’ state
+its stick relay
+the line circuit coming in from the next location
+
+That’s why it isn’t just a longer track circuit. A track circuit is a sensor reading. A line circuit is computed, it has a direction, and each location works it out again and passes it along.
+
+The layout: the owner’s hardware. How a line circuit gets from one location to the next is up to the owner:
+nothing has to travel, when both locations run on one processor
+a field bus
+a second set of MQTT topics
+
+Nobody has to wire SP’s pole line.
+
+So SP’s practice is evidence that layer 2 has the right shape, not something layouts have to copy. One prototype-specific point: SP’s two line circuits per block, one each way, would be a layer 1 setting if a railroad did it differently.
+
+
+
+
+Hypothesis. A line signal runs between each pair of neighbouring signal locations, one for each direction: 830–832, 832–834 and 834–836. That makes six line signals for this block. Interlockings are just the locations at the two ends of the chain.
+
+Each line signal carries two values:
+
+Energized (yes or no): every track circuit in that segment is clear, and the opposing signals behind are at stop: not running time, and no opposing stick relay up.
+Next signal (stop or proceed): this lets the consumer choose between approach and clear. On SP this was the circuit’s polarity.
+
+Which end produces it gives the direction. Each location works out its outgoing line signal from the incoming one, its own track circuits, its signals and its stick relay. That’s the daisy chain. Track circuits never travel one by one, only their combination for each segment. That last point is inference.
+
+What the hardware needs, with your wiring (832T, 834T, 830, 832 and 834 on Corporal’s processor; 836T and 836 on Sargent’s): only the 834–836 segment crosses between processors, so two line signals run between them.
+
+Produced by Sargent, consumed by Corporal: the northward line signal into 834NA. It’s energized if 836T is clear, 836SA is at stop and not running time, and no opposing stick relay is up. Its next-signal value is the indication of Sargent’s home, 836NA.
+Produced by Corporal, consumed by Sargent: the southward line signal into 836SA. It’s energized if 834T and 832T are clear, 830 and 828 are at stop and not running time, and no stick relay at 832 or 834 is up. Its next-signal value is 834SA’s indication.
+
+These can run over physical wires, or virtually over a bus.
+
+Side effect: SP used the same two circuits to detect “block occupied as a whole”. So the model board’s 831T could be derived from the line signals, and Corporal wouldn’t need 836T itself.
+
+
+
+Each line signal needs two digital wires: ENERGIZED and NEXT_PROCEED. It’s driven by the producer and read by the consumer, over a common ground.
+
+Electrical form, chosen so a failure reads as the restrictive state:
+
+Asserted means the producer actively pulls the line to 0 V. Released means the producer drives nothing (open-drain, or an input), and a pull-up at the consumer holds the line at +V.
+This is the asserted-low rule we already use for the desk and the field. A broken wire, an unpowered producer or a processor in reset all read as released.
+So “released” must always be the restrictive meaning.
+
+ENERGIZED. Asserted (0 V) means the producer has found all of these true:
+
+every track circuit in the segment is unoccupied, after debounce
+each opposing signal at the producer’s location is indicated at stop and is not running time
+no opposing directional stick relay is set at the producer
+
+Released (+V) means any of them is false, or the producer is dead. The consumer then treats the signal it governs as having no permission: that signal shows stop.
+
+NEXT_PROCEED. Asserted (0 V) means the next signal in this direction, at the producer’s location, indicates anything other than stop. Released (+V) means it indicates stop, or the wire is broken.
+
+It’s read only while ENERGIZED is asserted. When ENERGIZED is released, the consumer ignores it.
+A broken NEXT_PROCEED wire gives approach where clear was due: more restrictive, so safe.
+
+The consumer’s signal logic, for the signal it governs:
+
+ENERGIZED	NEXT_PROCEED	Indication allowed
+released	(ignored)	stop
+asserted	released	approach
+asserted	asserted	clear
+
+Each of these is further limited by the consumer’s own conditions (its stick relay, the route, and so on).
