@@ -237,9 +237,12 @@ Settled in discussion:
   direction. A `Rule261-DoT` marker only delineates one end of a section; it is not the fact and gives no place.
 
 Open for ADR 0013:
-1. The direction-of-traffic indication needs a definition per profile in terms of the seam ports (§13). Direction is
-   not one of the seven ports; under `hd_chain` each end holds only complementary views, and after the stick picks up
-   the sending end holds nothing that says which way traffic runs. `field_fr` and `traffic_line` carry an explicit term.
+1. Closed (owner, 2026-11-05): direction of traffic is a held fact, found in the signal lever position accepted by the
+   plant: the seam's outbound port `requested` (§13, "a leaving signal at this end has an active direction request into
+   the block"). A block's direction is which end has its lever accepted into it; each end knows its own directly and
+   the other's from that end's signal lever indications (already in the packet under eavesdropping) or the wires; one
+   or neither, never both. ADR 0013 states this as the definition of the indication. (An earlier reading here looked
+   only at `cleared`, which drops behind the train, and wrongly concluded neither end holds direction.)
 2. Extent of the approach section of a home signal facing a block. With an intermediate interlocking's signal lined
    through, a train leaving the far end on Clear has accepted an indication that depended on it through the D chain:
    the tumble-down continues to the next control point and the signal and switch must be held (restoring needs time).
