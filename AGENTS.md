@@ -195,3 +195,17 @@ with the data model if Studio would need it, with the importer if only reading K
   - Legacy stations still named `CP_<X>` are renamed when each is cut over, after checking whether it is an interlocking or a single CP.
 - `secrets.h` is gitignored everywhere. Never commit credentials.
 - **Before editing any `.kicad_sch`/`.kicad_pro`**, check for `~*.lck` or a running KiCad; the user often has it open. Prefer reading the drawing through a netlist, under the netlist rule in Commands.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues in `plocher/FieldUnit-Subdivision`, through the `gh` CLI; wayfinder maps are issues labelled `wayfinder:map` with sub-issues as tickets. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context. The glossary is FieldUnit's `docs/GLOSSARY.md` (shared with FieldUnit and FieldUnit-Studio); decisions are `docs/adr/`. See `docs/agents/domain.md`.
