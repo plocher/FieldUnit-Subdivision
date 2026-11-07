@@ -41,6 +41,9 @@ per instance except the mast's Name, an encoder's Address and settings. Value is
 
 ## Symbols
 
+- 2026-11-06: Railroad PR 20 merged `Railroad-Trackplan-Signals` into `Railroad-Trackplan` and `Railroad-Field-Signals` into
+  `Railroad-Field` (four libraries, 117 symbols); the headings below name the libraries as they were when written.
+
 ### Railroad-Trackplan-Signals (hand-maintained)
 
 `Signal Mast Single`, `Signal Mast Single ABSOLUTE`, `Signal Mast Single PERMISSIVE`, `Signal Mast Double`,

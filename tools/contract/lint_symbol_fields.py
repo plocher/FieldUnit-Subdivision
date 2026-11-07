@@ -69,8 +69,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from kicad_services.sch_text import blocks, library_symbols  # noqa: E402
 
 LIBDIR = Path.home() / "Dropbox/KiCad/Railroad/symbols"
-LIBRARIES = ("Railroad-Trackplan", "Railroad-Trackplan-Signals", "Railroad-Office", "Railroad-Field", "Railroad-Field-Signals",
-             "Railroad-HardwareIO")
+LIBRARIES = ("Railroad-Trackplan", "Railroad-Office", "Railroad-Field", "Railroad-HardwareIO")
 VOCABULARY = {"binary", "level", "position", "color", "indication", "message"}
 SOURCE_KINDS = {"indication"}  # a cast's one input
 FUNCTION_ETYPES = {"input", "output", "bidirectional"}
