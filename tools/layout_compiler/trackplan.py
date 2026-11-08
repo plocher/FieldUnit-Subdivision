@@ -48,6 +48,14 @@ levers wired to them (``seams._mast_on_ind``). Its ``Station`` field names the t
 is the import error ``train_order.track``. Which way a single board faces is its glyph's turn on the sheet,
 ``relations.facing`` (``emit.facts`` writes it from the geometry, ``geometry.facing``).
 
+A lamp, contact or actuator (``Appliance lamp``, ``contact``, ``actuator``; #82) has one pin, SENSOR, LAMP or ACTUATOR,
+a maintainer call's MC. On a track net it states the circuit the appliance is at, ``relations.circuit``: the one name
+the piece of track there carries, a marker's or a switch's TC, qualified (``net_circuits``). On a house's MC pin it
+is the house's maintainer call, ``relations.house``. On any other wire, or on track with no name or two, it is the
+import error ``appliance.track_pin``. Not wired, the appliance states no circuit and stands at its Milepost and CP
+Name. The three are read alike; no rule tells an actuator from a lamp (the map's fog). That the circuit is one of the
+appliance's own interlocking is the reference derivation's check.
+
 A name qualified with another interlocking's scope is a one-sided reference: it is no appliance here, and nothing is
 written back to the thing it names (the owner, 2026-10-27). A track circuit marker so named (Sargent's ``Corporal:2NAT``)
 is a consumer of that station's indication: a row of ``track.consumers`` with its symbol's UUID as ``id``, its fields
@@ -81,6 +89,7 @@ ENDS = frozenset({"END_CTC", "NEXT_CP", "BUMPER", "INDUSTRY"})
 SIGNAL_PINS = frozenset({"SIGNAL", "SIGNAL_A", "SIGNAL_B"})       # a signal joint's pins that carry a mast, never track
 PLATES = frozenset({"RULE_290_G", "RULE_290_R"})                   # a POLICY on a mast's SIGNAL net, not on the track (ADR 0013 §5)
 BOUNDARY_PINS = ("A", "B")                                         # a boundary track circuit's two track pins (ADR 0013 §10)
+AT_A_CIRCUIT = frozenset({"lamp", "contact", "actuator"})         # appliances that state the circuit they are at by their one pin (#82)
 
 
 def on_trackplan(s: Symbol) -> bool:
@@ -181,11 +190,12 @@ class Trackplan:
 def read(sm: Seams) -> Trackplan:
     out = Trackplan()
     on_track = track_nets(sm)
+    circuits = net_circuits(sm)
     for ix in sm.interlockings.values():
         syms = [s for s in sm.source.under(ix.sym.sheet, "APPLIANCE") + sm.source.under(ix.sym.sheet, "TRACK")
                 + sm.source.under(ix.sym.sheet, "POLICY") if unit_of(sm, s) == ix.name]
         if syms:
-            out.plans[ix.name] = _plan(sm, ix, syms, on_track)
+            out.plans[ix.name] = _plan(sm, ix, syms, on_track, circuits)
     return out
 
 
@@ -197,15 +207,56 @@ def track_nets(sm: Seams) -> frozenset[str]:
                      for pin, n in src.pins_of(s.ref).items() if is_track_pin(s, pin))
 
 
+def net_circuits(sm: Seams) -> dict[str, frozenset[str]]:
+    """Each track net to the circuit names stated on its piece of track, as a lamp's, contact's or actuator's pin reads
+    them (#82): the nets a switch's ports join are one piece, named by the track circuit marker on it (a consumer marker
+    by the name it draws, ``Corporal:2NAT``) or by a switch's ``TC`` (its OS circuit), each qualified in its symbol's own
+    interlocking, read across sheets like any track net (ADR 0013 §7.1). An empty set is dark track; two or more names
+    are the reference derivation's ``circuit.names``. A boundary circuit names none (ADR 0013 §10), nor does a switch
+    whose ``TC`` lists several (``switch.tc_block``)."""
+    src = sm.source
+    parent: dict[str, str] = {}
+
+    def find(x: str) -> str:
+        parent.setdefault(x, x)
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    names: dict[str, set[str]] = {}
+    for s in src.symbols.values():
+        ix = unit_of(sm, s) if on_trackplan(s) else None
+        if ix is None:
+            continue
+        pins = src.pins_of(s.ref)
+        on = [p for p in pins if is_track_pin(s, p)]
+        for p in on:
+            find(pins[p].name)
+        if is_switch(s):
+            for p in on[1:]:
+                parent[find(pins[on[0]].name)] = find(pins[p].name)
+            if on and s.get("TC") and "," not in s.get("TC"):
+                names.setdefault(pins[on[0]].name, set()).add(qualify(s.get("TC"), ix))
+        elif s.get("Appliance") == "track_circuit" and not is_boundary(s) and "TC" in pins and key_of(s):
+            names.setdefault(pins["TC"].name, set()).add(qualify(key_of(s), ix))
+    by_root: dict[str, set[str]] = {}
+    for net, stated in names.items():
+        by_root.setdefault(find(net), set()).update(stated)
+    return {net: frozenset(by_root.get(find(net), ())) for net in list(parent)}
+
+
 def unit_of(sm: Seams, s: Symbol) -> Optional[str]:
     """The interlocking whose sheet is the nearest at or above the symbol's (ADR 0004 D12)."""
     hits = [ix for ix in sm.interlockings.values() if s.sheet.startswith(ix.sym.sheet)]
     return max(hits, key=lambda ix: len(ix.sym.sheet)).name if hits else None
 
 
-def _plan(sm: Seams, ix, syms: list[Symbol], track_nets: frozenset[str] = frozenset()) -> Plan:
+def _plan(sm: Seams, ix, syms: list[Symbol], track_nets: frozenset[str] = frozenset(),
+          circuits: Optional[dict[str, frozenset[str]]] = None) -> Plan:
     src, report = sm.source, sm.report
     plan = Plan(ix.name)
+    circuits = net_circuits(sm) if circuits is None else circuits
     units: dict[str, Optional[str]] = {}
 
     def unit(s: Symbol) -> Optional[str]:
@@ -274,11 +325,10 @@ def _plan(sm: Seams, ix, syms: list[Symbol], track_nets: frozenset[str] = frozen
         elif appliance == "track_circuit":
             for p in circuit_pins(s):                                   # a marker's TC; a boundary's A and B (ADR 0013 §10)
                 relations[p] = pin_refs(s, p)
-        elif appliance in ("lamp", "contact"):
+        elif appliance in AT_A_CIRCUIT:                                 # one pin: the track it is at, or its house's MC (#82)
             houses = [cp for cp, h in ix.houses.items() if h.maintainer_call == qualify(name, ix.name)]
             relations["house"] = f"{ix.name}:{houses[0]}" if len(houses) == 1 else None      # its MC wire (D8)
-        if appliance in ("lamp", "contact") and net(s, "MC") and net(s, "MC").name in track_nets:
-            report.info("appliance.on_track", f"{ix.name}: {appliance} {name}'s MC pin is on the track; not written", source=loc(s))
+            relations["circuit"] = _circuit_at(s, src, circuits, report, f"{ix.name}: {appliance} {name}")
         plan.appliances[name] = _maps(row)
         plan.sources[f"appliances/{name}"] = s
 
@@ -316,6 +366,24 @@ def _plan(sm: Seams, ix, syms: list[Symbol], track_nets: frozenset[str] = frozen
             report.info("track.kind", f"{ix.name}: TRACK Kind {s.kind!r} is not one the KiCad importer reads; written with the ends", source=loc(s))
     plan.track = {k: v for k, v in {"joints": joints, "ends": ends, "policies": policies, "consumers": consumers}.items() if v}
     return plan
+
+
+def _circuit_at(s: Symbol, src, circuits: dict[str, frozenset[str]], report, what: str) -> Optional[str]:
+    """The circuit a lamp, contact or actuator is at: the one name stated on the track its pin is wired to
+    (``net_circuits``). Its pin on a house's MC pin is its maintainer-call wire, stated as ``relations.house``. Its pin
+    on any other wire, or on track that names no circuit or several, is the import error ``appliance.track_pin``: the
+    drawing states a place the model cannot hold. Not wired, it states none and stands at its Milepost and CP Name."""
+    for pin, n in src.pins_of(s.ref).items():
+        if n.name in circuits:
+            names = circuits[n.name]
+            if len(names) == 1:
+                return next(iter(names))
+            report.error("appliance.track_pin", f"{what}'s {pin} pin is on {'dark track, which names no circuit' if not names else 'track that carries the names ' + ', '.join(sorted(names))}"
+                         "; it cannot state the circuit it is at", source=loc(s))
+        elif not any(src.symbols[p.ref].role == "STRUCTURE" and src.symbols[p.ref].kind == "CONTROL_POINT" for p in n.others(s.ref)):
+            report.error("appliance.track_pin", f"{what}'s {pin} pin is on a wire that is not track; a lamp, contact or actuator is "
+                         "wired to the track it is at, to its house's MC pin, or not at all", source=loc(s))
+    return None
 
 
 def _mast_on(joint: Symbol, pin: str, others, report, unit) -> Optional[str]:

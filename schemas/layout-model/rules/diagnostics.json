@@ -4,7 +4,7 @@
   "codes": {
     "appliance.circuit": {
       "level": "error",
-      "lifecycle": "proposed",
+      "lifecycle": "active",
       "since": "0.1.0",
       "feature": "logical/trackplan/appliance_lamp_contact.feature#a contact at a track circuit of another interlocking",
       "replacedBy": null

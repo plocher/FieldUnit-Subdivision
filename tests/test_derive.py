@@ -259,6 +259,30 @@ class Checks(unittest.TestCase):
         self.assertEqual(only(diags, "switch"), [("switch.tc_block", "835")])
 
 
+class AtACircuit(unittest.TestCase):
+    """A lamp, contact or actuator at a circuit (#82): the circuit is one of its own interlocking, by any of the names the
+    interlocking has, else ``appliance.circuit``."""
+
+    def test_a_circuit_the_track_names_a_marker_a_virtual_circuit_or_a_switchs_tc(self):
+        things = ONE_SWITCH + """
+HTR  | appliance | Appliance=contact rel.circuit=X:835T1
+NFL  | appliance | Appliance=lamp rel.circuit=X:1NAT
+ACT  | appliance | Appliance=actuator rel.circuit=X:V1
+V1   | appliance | Appliance=track_circuit Style=virtual Members=1NAT,1SAT
+"""
+        _, diags = run(layout(X=interlocking(things, ONE_SWITCH_WIRES, "East")))
+        self.assertEqual(only(diags, "appliance"), [])
+
+    def test_another_interlockings_circuit_or_none_of_this_one_is_an_error(self):
+        things = ONE_SWITCH + """
+HTR  | appliance | Appliance=contact rel.circuit=Y:2NAT
+NFL  | appliance | Appliance=lamp rel.circuit=X:9NAT
+"""
+        _, diags = run(layout(X=interlocking(things, ONE_SWITCH_WIRES, "East"),
+                              Y=interlocking("2NAT | appliance | Appliance=track_circuit\n", "", "West", name="Y")))
+        self.assertEqual(only(diags, "appliance"), [("appliance.circuit", "HTR"), ("appliance.circuit", "NFL")])
+
+
 class DoubleJoint(unittest.TestCase):
     """ADR 0013 §6: a joint of Kind IRJ_SIGNALS with relations.masts counts as the signal joint of each mast; each mast's
     governed circuit is the side its pin names, its approach the other."""

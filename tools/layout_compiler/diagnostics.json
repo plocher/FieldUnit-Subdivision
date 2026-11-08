@@ -18,14 +18,14 @@
     },
     "appliance.on_track": {
       "level": "info",
-      "lifecycle": "active",
+      "lifecycle": "retired",
       "since": "0.4.0",
       "feature": null,
       "replacedBy": null
     },
     "appliance.track_pin": {
       "level": "error",
-      "lifecycle": "proposed",
+      "lifecycle": "active",
       "since": "0.1.0",
       "feature": "trackplan/appliance_lamp_contact.feature#a lamp wired to a net that is not track",
       "replacedBy": null

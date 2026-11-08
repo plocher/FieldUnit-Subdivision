@@ -1224,7 +1224,7 @@
       }
     },
     "appliance": {
-      "description": "A named thing on the trackplan (ADR 0010 §4.1, by Role APPLIANCE), keyed by its Name: given.Appliance is switch (Style derail for a derail), mast, track_circuit (Style virtual for a virtual circuit, boundary for a detector at a joint, ADR 0013 §10), lamp, contact or train_order (a train order signal: an operator-controlled, non-vital indicator with heads for a face, never a signal in the interlocking sense, in a route or in a control point; the owner, 2026-11-03). A reference to another interlocking's appliance is not an appliance of this one.",
+      "description": "A named thing on the trackplan (ADR 0010 §4.1, by Role APPLIANCE), keyed by its Name: given.Appliance is switch (Style derail for a derail), mast, track_circuit (Style virtual for a virtual circuit, boundary for a detector at a joint, ADR 0013 §10), lamp, contact, actuator (three one-pin appliances read alike, each at the circuit its pin is wired to; no rule tells an actuator from a lamp yet; #82) or train_order (a train order signal: an operator-controlled, non-vital indicator with heads for a face, never a signal in the interlocking sense, in a route or in a control point; the owner, 2026-11-03). A reference to another interlocking's appliance is not an appliance of this one.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -1243,6 +1243,7 @@
                     "track_circuit",
                     "lamp",
                     "contact",
+                    "actuator",
                     "train_order"
                   ]
                 },
@@ -1290,6 +1291,10 @@
                 "house": {
                   "$ref": "#/$defs/qualifiedName",
                   "description": "A maintainer call's house, by its MC wire (three-maps D8)."
+                },
+                "circuit": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "The track circuit a lamp, contact or actuator is at, by the wire on its one pin (#82): the circuit named on that piece of track, a marker's name or a switch's TC, qualified. A circuit of the appliance's own interlocking (rule check appliance.circuit). Absent, the appliance stands at its Milepost and CP Name."
                 },
                 "station": {
                   "$ref": "#/$defs/layoutName",

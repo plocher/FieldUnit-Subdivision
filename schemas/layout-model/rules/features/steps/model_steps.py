@@ -243,6 +243,13 @@ def not_reported(context):
     assert not hits, f"{code} is reported: {[str(d) for d in hits]}"
 
 
+@then('"{name}" is on circuit "{circuit}"')
+def on_circuit(context, name, circuit):
+    """A lamp's, contact's or actuator's circuit relation, kept as stated once the rule checks accept it (#82)."""
+    got = _named(context, name).get("relations", {}).get("circuit")
+    assert got == circuit, f"{name}: relations.circuit is {got!r}, not {circuit!r}"
+
+
 # ------------------------------------------------------------------- rules stated before the derivation has them
 
 @then('a route through "{name}" {position} shows no better than "{word}"')
@@ -258,11 +265,6 @@ def derived_ceiling(context, name, position):
 @then('a route through "{name}" {position} takes the reference data\'s ceiling for a hand-operated switch')
 def hand_ceiling(context, name, position):
     raise Pending("the hand-switch rule moves to reference data, issue #81")
-
-
-@then('"{name}" is on circuit "{circuit}"')
-def on_circuit(context, name, circuit):
-    raise Pending("the circuit relation of a lamp or contact, issue #82")
 
 
 @then('"{name}" has faces "{faces}"')

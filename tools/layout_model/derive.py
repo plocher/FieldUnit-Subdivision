@@ -74,6 +74,10 @@ names every other track pin its wire reaches, so the relation is symmetric):
 - **The code line** is checked, not stored (the owner, 2026-10-28): what each station receives and must send is the
   domain library ``tools/railroad/codeline.py``'s, computed on demand; every token a consumer states (a desk lever's,
   a desk lamp's, a consumer row's) must be one an appliance of the named interlocking can report there.
+- **A lamp, contact or actuator at a circuit** (#82): its ``relations.circuit``, the circuit named on the track its one
+  pin is wired to, is a circuit of its own interlocking by any name the interlocking has (what its track names, a
+  track circuit appliance, a switch's ``TC``); another interlocking's, or none of this one's, is ``appliance.circuit``
+  at error. The three are checked alike; no rule tells an actuator from a lamp.
 - **Block track across sheets** (ADR 0013 §7.1, amending ADR 0009 §3.12): a track net that joins two interlockings
   (a pin of one names a pin of the other) is block track and is accepted when it is plain track; a foreign marker's
   TC on it names the component as a marker would (Sargent's 834 joint has ``Corporal:834T`` on its side A). It stays
@@ -316,6 +320,18 @@ class _Plan:
             self.name_of[root] = marker or os_name
             if root in namer:
                 self.namer[root] = namer[root]
+
+    def circuit_names(self) -> set[str]:
+        """Every circuit this interlocking has by name, qualified: what its track names, its track circuit appliances
+        (a virtual circuit included, a boundary not: it names none, ADR 0013 §10) and its switches' OS circuits (``TC``)."""
+        out = {c for c in self.name_of.values() if c and not foreign(c, self.name)}
+        for name, a in self.appliances.items():
+            g = a.get("given", {})
+            if g.get("Appliance") == "track_circuit" and g.get("Style") != "boundary" and not foreign(name, self.name):
+                out.add(qualify(name, self.name))
+            elif g.get("Appliance") == "switch" and g.get("TC") and "," not in g["TC"]:
+                out.add(qualify(g["TC"], self.name))
+        return out
 
     def consumers(self) -> list[dict[str, Any]]:
         return self.track.get("consumers", [])
@@ -608,6 +624,7 @@ class _Plan:
         letters_of_signal: dict[str, dict[str, str]] = defaultdict(dict)
         own = {c for c in self.name_of.values() if c} | {qualify(k, self.name) for k, v in self.appliances.items()
                                                          if v.get("given", {}).get("Appliance") == "track_circuit"}   # what a Members may name: any circuit, a boundary too (ADR 0013 §10 names it like any circuit)
+        circuits = self.circuit_names()
         for name, a in self.appliances.items():
             g = a.get("given", {})
             where = self.where("appliances", name)
@@ -622,6 +639,13 @@ class _Plan:
                     if not foreign(t, self.name) and qualify(t, self.name) not in own:
                         self.r.add("circuit.member", f"{self.name}: virtual circuit {name} lists {t} in Members, which is no circuit of "
                                    f"{self.name}", where)
+            circuit = a.get("relations", {}).get("circuit")                # a lamp, contact or actuator at a circuit (#82)
+            if circuit and foreign(circuit, self.name):
+                self.r.add("appliance.circuit", f"{self.name}: {g.get('Appliance') or 'appliance'} {name} is at {circuit}, a circuit of "
+                           f"another interlocking; it is at a circuit of its own", where)
+            elif circuit and circuit not in circuits:
+                self.r.add("appliance.circuit", f"{self.name}: {g.get('Appliance') or 'appliance'} {name} is at {circuit}, which is no "
+                           f"circuit of {self.name}", where)
             if g.get("Appliance") != "mast":
                 continue
             if g.get("Kind") not in MAST_KINDS:

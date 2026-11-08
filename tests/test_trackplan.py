@@ -390,6 +390,51 @@ MC1  | MaintainerCall  | APPLIANCE | Appliance=lamp Style=maintainer_call Name=M
             self.assertEqual(layout_model.errors(emit.emit(sm)), [])
 
 
+class AtACircuit(unittest.TestCase):
+    """A lamp's, contact's or actuator's one pin (#82): the circuit named on the track it is wired to, as the importer
+    resolves it; the maintainer-call wire; the pins that are errors. What the circuit must be is ``test_derive``'s."""
+
+    def test_through_a_switch_port_the_piece_of_track_is_named_by_the_marker_on_its_other_port(self):
+        given = ONE_SWITCH + "K1 | Sensor | APPLIANCE | Appliance=contact Name=HTR\n"
+        sm, ix = compile_(given, ONE_SWITCH_NETS.replace("r    | SW1.R J3.A", "r    | SW1.R J3.A K1.SENSOR"))
+        self.assertEqual(ix["appliances"]["HTR"]["relations"], {"circuit": "X:835T1"})
+        self.assertEqual(diags(sm, "appliance"), [])
+
+    def test_the_three_appliances_read_alike_whatever_their_pin_is_called(self):
+        given = ONE_SWITCH + """
+K1   | Sensor   | APPLIANCE | Appliance=contact Name=HTR
+L1   | Lamp     | APPLIANCE | Appliance=lamp Name=NFL
+A1   | Actuator | APPLIANCE | Appliance=actuator Name=HTR2
+"""
+        sm, ix = compile_(given, ONE_SWITCH_NETS.replace("e1   | J2.B TC2.TC", "e1   | J2.B TC2.TC K1.SENSOR L1.LAMP A1.ACTUATOR"))
+        self.assertEqual({n: ix["appliances"][n]["relations"]["circuit"] for n in ("HTR", "NFL", "HTR2")},
+                         {"HTR": "X:1SAT", "NFL": "X:1SAT", "HTR2": "X:1SAT"})
+        self.assertEqual(ix["appliances"]["HTR2"]["given"], {"Appliance": "actuator"})
+        self.assertEqual(layout_model.errors(emit.emit(sm)), [])
+
+    def test_a_pin_on_track_with_no_name_or_two_names_states_nothing_and_is_an_error(self):
+        given = ONE_SWITCH + """
+L1   | Lamp          | APPLIANCE | Appliance=lamp Name=NFL
+L2   | Lamp          | APPLIANCE | Appliance=lamp Name=SFL
+TC9  | Track Circuit | APPLIANCE | Appliance=track_circuit Name=9T
+J9   | IRJ           | TRACK     | Kind=IRJ
+"""
+        nets_ = ONE_SWITCH_NETS.replace("e2   | J3.B TC3.TC", "e2   | J3.B TC3.TC TC9.TC L2.LAMP") + "dark | J9.A L1.LAMP\n"
+        sm, ix = compile_(given, nets_)
+        self.assertEqual([a.get("relations") for a in (ix["appliances"]["NFL"], ix["appliances"]["SFL"])], [None, None])
+        self.assertEqual(diags(sm, "appliance"), [("appliance.track_pin", "L1"), ("appliance.track_pin", "L2")])
+
+    def test_a_maintainer_call_on_its_house_is_no_error_and_a_lamp_on_a_signal_wire_is(self):
+        given = ONE_SWITCH + """
+MC1  | MaintainerCall | APPLIANCE | Appliance=lamp Style=maintainer_call Name=1MC
+L1   | Lamp           | APPLIANCE | Appliance=lamp Name=NFL
+"""
+        sm, ix = compile_(given, ONE_SWITCH_NETS.replace("s1   | J1.SIGNAL M1.SIGNAL", "s1   | J1.SIGNAL M1.SIGNAL L1.LAMP") + "mc | H1.MC MC1.MC\n")
+        self.assertEqual(ix["appliances"]["1MC"]["relations"], {"house": "X:East"})
+        self.assertEqual(ix["appliances"]["NFL"].get("relations"), None)
+        self.assertEqual(diags(sm, "appliance"), [("appliance.track_pin", "L1")])
+
+
 class Attributes(unittest.TestCase):
     def test_an_appliance_states_its_milepost(self):
         given = """
