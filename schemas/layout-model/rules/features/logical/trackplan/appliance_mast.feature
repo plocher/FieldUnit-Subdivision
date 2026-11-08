@@ -73,15 +73,22 @@ Feature: What a mast is
     Then it is reported as a warning on "832SA"
 
   @mast.powered
-  Scenario: a hand-throw switch may lie in an automatic mast's route
+  Scenario Outline: a switch that is not powered may lie in an automatic mast's route
     Given interlocking "X" has these appliances:
-      | Name | Appliance | Style | CP Name |
-      | 9    | switch    | lock  | East    |
+      | Name | Appliance | Style   | CP Name |
+      | 9    | switch    | <style> | East    |
     And interlocking "X" has these wires:
       | Wire | Pins             |
       | b    | J1.B 834T.TC 9.C |
     When the layout is derived
     Then it is not reported
+
+    Examples: hand-throw, sensed hand-throw, spring and electrically locked hand-throw
+      | style         |
+      | manual        |
+      | manual_sensed |
+      | spring        |
+      | lock          |
 
   @plate.mast
   Scenario: a plate on a permissive mast

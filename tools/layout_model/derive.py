@@ -33,7 +33,7 @@ names every other track pin its wire reaches, so the relation is symmetric):
 - **A virtual circuit's members** (ADR 0013 §7.2): a track circuit of Style ``virtual`` is the one indication of the
   circuits its ``Members`` lists, resolved into ``derived.members``. One that lists none is ``circuit.members`` at
   missing; a member that is no circuit of this interlocking is ``circuit.member`` at error (one of another
-  interlocking is checked as a reference). Which station qualifies it, and that it is at one end of the block, is
+  interlocking is checked as a reference). A boundary circuit is named like any circuit (§10) and may be a member. Which station qualifies it, and that it is at one end of the block, is
   the ``blocks`` library's.
 - **A sign states its rule for the track it stands on** (ADR 0013 §8): a policy row that is not a plate states its
   Kind and Direction as given and the track pins it is on; its circuit is ``derived.circuits.track``. One on no track
@@ -607,8 +607,7 @@ class _Plan:
                         powered_at[r].append(n)
         letters_of_signal: dict[str, dict[str, str]] = defaultdict(dict)
         own = {c for c in self.name_of.values() if c} | {qualify(k, self.name) for k, v in self.appliances.items()
-                                                         if v.get("given", {}).get("Appliance") == "track_circuit"
-                                                         and v["given"].get("Style") != "boundary"}   # the circuits a Members may name
+                                                         if v.get("given", {}).get("Appliance") == "track_circuit"}   # what a Members may name: any circuit, a boundary too (ADR 0013 §10 names it like any circuit)
         for name, a in self.appliances.items():
             g = a.get("given", {})
             where = self.where("appliances", name)
@@ -883,7 +882,7 @@ class _Derivation:
                 plan_b = self.plans[b]
                 circuits = {c for c in plan_b.name_of.values() if c} | {
                     f"{b}:{k}" for k, v in plan_b.appliances.items()
-                    if v.get("given", {}).get("Appliance") == "track_circuit" and v["given"].get("Style") != "boundary"}
+                    if v.get("given", {}).get("Appliance") == "track_circuit"}          # a boundary is named like any circuit (ADR 0013 §10)
                 if name not in circuits:
                     self.r.add("reference.unresolved", f"{a}: {what} {name} names {b}, which has no circuit {n}", where, target)
 

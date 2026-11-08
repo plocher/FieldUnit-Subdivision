@@ -2,7 +2,9 @@ Feature: A joint with a mast on each side
   A joint of Kind IRJ_SIGNALS keeps its sides A and B and states the mast on each side.
   Each mast governs into the side its pin names and approaches over the other side:
   approach and governed are relative to a mast, never to the joint. The joint is the
-  signal joint of each of its masts; it belongs to no control point. (ADR 0013 §6)
+  signal joint of each of its masts. A signal location is a block boundary: one joint with
+  its masts, and the track circuits on each side; a control point is a signal location with
+  one side toward the block. (ADR 0013 §6)
 
   Background: signal location 832, two masts back to back
     Given interlocking "X" has house "East"

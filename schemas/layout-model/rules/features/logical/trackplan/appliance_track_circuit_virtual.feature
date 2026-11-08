@@ -28,6 +28,16 @@ Feature: The block's one indication, a virtual track circuit
     Then it is reported as missing on "831T"
 
   @circuit.member
+  Scenario: a boundary circuit may be a member
+    Given interlocking "X" has these appliances:
+      | Name | Appliance     | Style    | Members        |
+      | 833T | track_circuit | boundary |                |
+      | 831T | track_circuit | virtual  | 832T,833T,834T |
+    When the layout is derived
+    Then "831T" has members "X:832T, X:833T, X:834T"
+    And it is not reported
+
+  @circuit.member
   Scenario: a member that is no circuit of the interlocking
     Given interlocking "X" has these appliances:
       | Name | Appliance     | Style   | Members   |

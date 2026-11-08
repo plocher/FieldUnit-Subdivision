@@ -29,16 +29,23 @@ Feature: Block track between control points
     And it is not reported
 
   @reference.track
-  Scenario: a hand-throw switch may lie in the block
+  Scenario Outline: a switch that is not powered may lie in the block
     Given interlocking "Y" has these appliances:
-      | Name | Appliance | Style | CP Name |
-      | 5    | switch    | lock  | West    |
+      | Name | Appliance | Style   | CP Name |
+      | 5    | switch    | <style> | West    |
     And interlocking "X" has these wires:
       | Wire | Pins                |
       | g    | J1.governed 1SAT.TC |
       | b    | J1.approach Y:5.R   |
     When the layout is derived
     Then it is not reported
+
+    Examples: hand-throw, sensed hand-throw, spring and electrically locked hand-throw
+      | style         |
+      | manual        |
+      | manual_sensed |
+      | spring        |
+      | lock          |
 
   @reference.track
   Scenario: a powered switch on the wire that joins the interlockings
