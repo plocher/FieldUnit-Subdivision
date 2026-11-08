@@ -56,16 +56,18 @@ def _source(project: Optional[Path]) -> dict[str, Any]:
     return _clean({"path": path, "describe": _git(["describe", "--always", "--dirty"], project.parent)})
 
 
-def _bindings(d) -> dict[str, Any]:
+def _bindings(bindings) -> dict[str, Any]:
     """A device's wires to driver pins, function to route (three-maps D3); a function bound twice keeps both routes."""
     out: dict[str, list[str]] = {}
-    for b in d.bindings:
+    for b in bindings:
         out.setdefault(b.function, []).append(b.route)
     return {f: routes[0] if len(routes) == 1 else sorted(routes) for f, routes in out.items()}
 
 
 def _device(d) -> dict:
-    return _entity(d.given, {"column": d.column, "interlocking": d.interlocking, "mast": d.mast, "signal": d.signal, "bindings": _bindings(d)})
+    faces = {face: _entity(None, {"bindings": _bindings(bs)}) for face, bs in d.faces.items()}   # a train order device's units (the owner, 2026-11-05)
+    return _entity(d.given, {"column": d.column, "interlocking": d.interlocking, "mast": d.mast, "signal": d.signal, "bindings": _bindings(d.bindings)},
+                   **({"faces": faces} if faces else {}))
 
 
 def emit(sm: Seams, source_path: Optional[Path] = None, geometry: Optional[Geometry] = None) -> dict[str, Any]:

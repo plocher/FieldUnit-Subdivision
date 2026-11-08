@@ -18,6 +18,7 @@ import re
 from dataclasses import dataclass, field, replace
 from typing import Optional
 
+from tools.layout_model.grammar import direction_of
 from tools.layout_model.reference import ENCODING_OF_IC, TRANSPORT_OF_ENCODING
 from tools.layout_model.report import Report
 
@@ -162,8 +163,9 @@ class Device:
     column: Optional[str] = None                                      # relation: the OfficeUnit-qualified column
     interlocking: Optional[str] = None                                # relation: the folder, for a device in no column (D6)
     mast: Optional[str] = None                                        # relation: a head device's IND wire to its Mast
-    signal: Optional[str] = None                                      # relation: a head device's IND wire to its train order signal device (the owner, 2026-11-03)
+    signal: Optional[str] = None                                      # relation: a head device's IND wire to its train order board device (the owner, 2026-11-03)
     bindings: list[Binding] = field(default_factory=list)
+    faces: dict[str, list[Binding]] = field(default_factory=dict)     # a train order device's faces, each unit's bindings by its name (the owner, 2026-11-05)
 
 
 @dataclass
@@ -696,6 +698,30 @@ def _columns(sm: Seams) -> None:
         ou.columns[number] = c
 
 
+def _faces(sm: Seams, s: Symbol, dev: Device) -> None:
+    """A train order board's field device has one unit per face, the unit named for the face it serves, N, S, E or W
+    (the owner, 2026-11-05; ADR 0003 D1 reads the letter's direction). Each face's pins (STOP, SLOW, CALLON in,
+    IND out) bind to the driver pins their wires reach, kept by face since every face has the same pin names. A
+    wired pin in a unit that is unnamed, or whose name is no direction, is ``train_order.unit`` at error: the face
+    is unknown, and a face of no name is no fact."""
+    for unit, pins in sorted(sm.source.pins_of_units(s.ref).items()):
+        if not unit:
+            sm.report.error("train_order.unit", f"train order device {s.value!r}: its pin{'s' * (len(pins) > 1)} {', '.join(sorted(pins))} "
+                            f"{'are' if len(pins) > 1 else 'is'} in a unit with no name; a face is a unit named N, S, E or W", source=loc(s))
+            continue
+        if direction_of(unit) is None:
+            sm.report.error("train_order.unit", f"train order device {s.value!r}: unit {unit!r} names no face; a face is a unit named "
+                            "N, S, E or W", source=loc(s))
+            continue
+        face = dev.faces.setdefault(unit, [])
+        for pin, net in sorted(pins.items()):
+            for p in net.others(s.ref):
+                hit = _driver_route(sm, p)
+                if hit:
+                    face.append(Binding(base(pin), hit[1]))
+        face.sort(key=lambda b: (b.function, b.route))
+
+
 def _driver_route(sm: Seams, p) -> Optional[tuple[Driver, str]]:
     """The driver whose pin this is, and the route owner/address/pin."""
     o = sm.source.symbols[p.ref]
@@ -744,13 +770,13 @@ def _devices(sm: Seams) -> None:
             if ix is None:
                 sm.report.error("device.interlocking", f"device {appliance} {s.value!r}: no Interlocking on its sheet or above", source=at)
                 continue
-            if appliance == "head":                                    # its IND wire reaches its Mast, or its train order signal device (the owner, 2026-11-03)
+            if appliance == "head":                                    # its IND wire reaches its Mast, or its train order board device (the owner, 2026-11-03)
                 ind = sm.source.net_of(s.ref, "IND")
                 masts = [sm.source.symbols[p.ref] for p in ind.others(s.ref)] if ind else []
                 masts = [m for m in masts if m.get("Appliance") in ("mast", "train_order") and m.role == "DEVICE"]
-                m = one(masts, "mast or train order signal devices on one IND net", at, sm.report, "head.masts") if masts else None
+                m = one(masts, "mast or train order board devices on one IND net", at, sm.report, "head.masts") if masts else None
                 if m is None:
-                    sm.report.missing("head.mast", f"head device {s.lib_id.split(':')[1]} letter {s.get('Head')!r}: wired to no Mast or train order signal device", source=at)
+                    sm.report.missing("head.mast", f"head device {s.lib_id.split(':')[1]} letter {s.get('Head')!r}: wired to no Mast or train order board device", source=at)
                 elif m.get("Appliance") == "mast":
                     dev.mast = qualify(device_name(m, sm.report) or "", ix.name)
                 else:
@@ -759,8 +785,12 @@ def _devices(sm: Seams) -> None:
                     sm.report.missing("head.letter", "a head device has no Head letter", source=at)
             ix.devices.append(dev)
         inverted = {x.strip() for x in s.get("Invert").split(",") if x.strip()}
+        if s.role == "DEVICE" and appliance == "train_order":           # one unit per face, named for it (the owner, 2026-11-05)
+            _faces(sm, s, dev)
         for pin, net in sorted(sm.source.pins_of(s.ref).items()):
-            if pin == "Column" or (pin == "IND" and appliance not in ("mast", "train_order")):   # a head's IND wire reaches its Mast or train order signal device, whose own IND is its binding
+            if pin == "Column" or (pin == "IND" and appliance != "mast"):   # a head's IND wire reaches its Mast or train order board device, whose own IND is its binding
+                continue
+            if dev.appliance == "train_order" and s.role == "DEVICE":  # bound by face above
                 continue
             for p in net.others(s.ref):
                 hit = _driver_route(sm, p)

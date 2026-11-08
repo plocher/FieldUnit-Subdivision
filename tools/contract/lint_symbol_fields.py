@@ -19,6 +19,13 @@ Per symbol, by Role:
   C in number order from A with no gap, one to three of them, `Pin.<letter>=indication` each; no Style,
   Kind or Indications field: the pin set states the head count. The older Railroad-Field:Mast (one IND
   output) has no lettered pin and keeps the plain DEVICE rules.
+- DEVICE with Appliance train_order (a train order board's field device; the owner, 2026-11-05): one
+  unit per face, each unit named for its face, N, S, E or W (KiCad's unit name; a one-faced board
+  places one unit); each unit has exactly the pins STOP, SLOW and CALLON, inputs of kind binary, and
+  IND, an output of kind indication, to the face's head; no Style, no Kind; no code line token field
+  (the control is local): no Control, Indication, Control.*, Indication.* or IndicationToken. A face
+  mixes its inputs and its output in one unit by rule, so the one-capability-per-unit check does not
+  apply; the units are still not interchangeable and the Value is not autoplaced.
 - ENCODER (the head word -> hardware step; the owner's hand-edited Railroad-Field-Signals of
   2026-11-04 is the truth): no Appliance; anonymous, keyed by the head it serves, so a `Name` is an
   error (Value is informative, never read); Kind required, any word (RYG, RGB, 3MUX2A, LAMP,
@@ -82,6 +89,9 @@ MAST_KINDS = ("CONTROLLED", "ABSOLUTE", "PERMISSIVE")    # what a mast is: dispa
 HEAD_POSITIONS = "ABC"                              # a field mast device's pins, top down (830SAB, 784EAB; Glossary head1..head3)
 NOT_ON_FIELD_MAST = ("Style", "Kind", "Indications")    # the pin set states the head count; demand lives on the trackplan mast
 CMRI_KINDS = ("NODE", "IB", "OB")                   # what a CMRInet driver is: the node or one of its bits (owner, 2026-10-30)
+TRAIN_ORDER_FACES = ("N", "S", "E", "W")            # a train order device's units, one per face, named for it (owner, 2026-11-05)
+TRAIN_ORDER_INPUTS = ("STOP", "SLOW", "CALLON")     # a face's inputs, binary, from any driver; IND is its indication output
+TRAIN_ORDER_NO_TOKENS = ("Control", "Indication", "IndicationToken")   # the control is local: no code line token on the device
 NOT_SETTINGS = {"Role", "Name", "Kind", "Appliance", "Style", "IC", "Address", "UA", "Bit", "Node", "Head", "Invert", "IndicationToken", "Members", "Color", "CP Name", "Station", "Indications", "Control", "Indication", "TC",
                 "Transport", "NodeType", "InputBytes", "OutputBytes",
                 "IndicationCeiling", "Display", "Processor", "Milepost", "Reference", "Value", "Footprint",
@@ -191,6 +201,32 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
         for f in NOT_ON_FIELD_MAST:
             if f in props:
                 err(f"a field mast states no {f}; the pin set states the head count")
+    train_order = role == "DEVICE" and props.get("Appliance") == "train_order"
+    if train_order:                                                   # a train order board's field device (owner, 2026-11-05)
+        unit_names = sym.get("unit_names", {})
+        for u, names in sorted((u, p) for u, p in sym["units"].items() if p):
+            face = unit_names.get(u, "")
+            if not face:
+                err(f"unit {u} has no name; a face is a unit named one of {', '.join(TRAIN_ORDER_FACES)}")
+            elif face not in TRAIN_ORDER_FACES:
+                err(f"unit {u} is named {face!r}; a face is a unit named one of {', '.join(TRAIN_ORDER_FACES)}")
+            have = sorted(base(n) for n in names)
+            if have != sorted(TRAIN_ORDER_INPUTS + ("IND",)):
+                err(f"unit {u} has pins {', '.join(have) or 'none'}; a face has {', '.join(TRAIN_ORDER_INPUTS)} in and IND out")
+            for n in names:
+                b, want = base(n), ("input", "binary") if base(n) in TRAIN_ORDER_INPUTS else ("output", "indication")
+                if b not in TRAIN_ORDER_INPUTS + ("IND",):
+                    continue
+                if etype[n] != want[0]:
+                    err(f"pin {n} is {etype[n]}; a face's {b} is an {want[0]}")
+                if pin_caps.get(b) not in (None, want[1]):            # a missing Pin.* is the generic check's
+                    err(f"Pin.{b} = {pin_caps[b]!r}; a face's {b} is {want[1]}")
+        for f in ("Style", "Kind"):
+            if f in props:
+                err(f"a train order device states no {f}; its faces are its units")
+        for f in sorted(props):
+            if f in TRAIN_ORDER_NO_TOKENS or f.startswith(PIN_TOKENS):
+                err(f"field {f}: a train order board's control is local; no code line token")
     if role == "ENCODER":
         sources = [n for n, _, _ in function_pins if pin_caps.get(base(n)) in SOURCE_KINDS and etype[n] == "input"]
         if len(sources) != 1:
@@ -253,12 +289,13 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
     if role in {"DEVICE", "PANEL"} and not head_device:
         caps = {f"{pin_caps.get(base(n), '?')} {ty}" for n, _, ty in function_pins}
         pin_units = {u: p for u, p in sym["units"].items() if p}
-        for u, names in pin_units.items():
-            unit_caps = {f"{pin_caps.get(base(n), '?')} {etype.get(n)}" for n in names if n not in MEMBERSHIP_PINS}
-            if len(unit_caps) > 1:
-                err(f"unit {u} mixes {', '.join(sorted(unit_caps))}; one capability (word and pin type) per unit")
-        if len(caps) > 1 and len(pin_units) < 2:
-            err(f"pins mix {', '.join(sorted(caps))} in one unit; split the symbol into units")
+        if not train_order:                                           # a face mixes its inputs and its output by rule (owner, 2026-11-05)
+            for u, names in pin_units.items():
+                unit_caps = {f"{pin_caps.get(base(n), '?')} {etype.get(n)}" for n in names if n not in MEMBERSHIP_PINS}
+                if len(unit_caps) > 1:
+                    err(f"unit {u} mixes {', '.join(sorted(unit_caps))}; one capability (word and pin type) per unit")
+            if len(caps) > 1 and len(pin_units) < 2:
+                err(f"pins mix {', '.join(sorted(caps))} in one unit; split the symbol into units")
         if len(pin_units) > 1:
             if not sym["locked"]:
                 err("units must be marked not interchangeable")

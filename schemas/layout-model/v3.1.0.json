@@ -489,15 +489,6 @@
         }
       }
     },
-    "trainOrderState": {
-      "description": "A state of a train order signal (Appliance train_order; the owner, 2026-11-03), from the most restrictive: STOP, the train stops and signs for Form 31 orders; RECEIVE_ORDERS, Form 19 orders handed up on the fly, the train slows; PROCEED, no orders held. Rule 221, Rules 207-208, Form 19/31 of the Standard Code of Operating Rules (via the owner's summary of 2026-11-03, unverified against an opened edition). FieldUnit's enum is the one home of these words; tools/layout_model/reference.py mirrors it (ADR 0012 §6). No blade angle and no lamp colour here: aspect policy comes later.",
-      "type": "string",
-      "enum": [
-        "STOP",
-        "RECEIVE_ORDERS",
-        "PROCEED"
-      ]
-    },
     "station": {
       "description": "A timetable station (STRUCTURE, Kind STATION; the owner, 2026-11-03), keyed by its Name: a place on the line that a train order signal names in its Station field. given holds its Milepost and its other stated fields; relations.interlocking the interlocking whose sheet it is drawn under (ADR 0004 D12), absent for one drawn under none. Not a code line station (reference.STATION: a house or an interlocking addressed on a code line).",
       "type": "object",
@@ -599,7 +590,7 @@
                 },
                 "signal": {
                   "$ref": "#/$defs/qualifiedName",
-                  "description": "A head device's train order signal, by its IND wire to a field device of Appliance train_order named for the signal (the owner, 2026-11-03); never both mast and signal. A mast device is not the signal: a head wired to one named like the signal leaves the signal's head without a device."
+                  "description": "A head device's train order board, by its IND wire to a field device of Appliance train_order named for the board (the owner, 2026-11-03); never both mast and signal. The head is a face's: the wire reaches one face's IND (the owner, 2026-11-05). A mast device is not the board: a head wired to a mast device named like the board names no mast head (head.plan)."
                 }
               }
             }
@@ -615,24 +606,13 @@
               "properties": {
                 "serves": {
                   "$ref": "#/$defs/qualifiedName",
-                  "description": "The appliance this device serves (given.Name in its scope); for a head device, its mast or its train order signal (relations.mast or relations.signal). A train_order device derives nothing else: non-vital, operator-driven."
+                  "description": "The appliance this device serves (given.Name in its scope); for a head device, its mast or its train order board (relations.mast or relations.signal). A train_order device serves its board by Name; its faces derive their own facts."
                 },
                 "controls": {
                   "description": "A lever's controls: the Control.<pin> of each bound pin, qualified by its station's interlocking (Luchessa:783NWS); an empty one binds none.",
                   "type": "array",
                   "items": {
                     "$ref": "#/$defs/qualifiedName"
-                  }
-                },
-                "contacts": {
-                  "description": "A train order signal's local lever (a field device, Appliance lever, Style train_order, serving the signal by Name; the owner, 2026-11-03): its two input contacts, ORDERS and PROCEED (the pins ~{ORDERS} and ~{PROCEED} without their polarity mark; reference.TRAIN_ORDER_CONTACTS). Neither asserted reads STOP, the state a released output shows by the library's output convention: a default for a non-vital indicator, not a safety rule. Not a desk lever's controls: a train order signal is never dispatcher-controlled.",
-                  "type": "array",
-                  "items": {
-                    "type": "string",
-                    "enum": [
-                      "ORDERS",
-                      "PROCEED"
-                    ]
                   }
                 },
                 "expression": {
@@ -649,6 +629,17 @@
               }
             }
           ]
+        },
+        "faces": {
+          "description": "A train order board's field device has one unit per face, named for it: N or W, S or E (the owner, 2026-11-05). Each face is an entity keyed by that letter, with the unit's pins' bindings (STOP, SLOW, CALLON in; IND out, to a head) and what the derivation states about it. Only on a DEVICE of Appliance train_order.",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[A-Z]$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/face"
+          }
         }
       }
     },
@@ -1342,17 +1333,6 @@
                   },
                   "description": "A virtual track circuit's member circuits, its Members resolved."
                 },
-                "states": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/$defs/trainOrderState"
-                  },
-                  "description": "A train order signal's three states (STOP, RECEIVE_ORDERS, PROCEED), written from the reference data (reference.TRAIN_ORDER_STATES; the owner, 2026-11-03) so consumers read the vocabulary from the file. The canonical writer orders every list (ADR 0008 §4.8), so this list carries the set, not the order: the order from the most restrictive is the reference table's, with normal the least restrictive end. Only on Appliance train_order."
-                },
-                "normal": {
-                  "$ref": "#/$defs/trainOrderState",
-                  "description": "A train order signal's normal state, PROCEED: Rule 221 sets Proceed when no orders are held (reference.TRAIN_ORDER_NORMAL; via the owner's summary of 2026-11-03, unverified). Distinct from the state a released output shows (STOP, reference.TRAIN_ORDER_RELEASED: the library's output convention, a default for a non-vital indicator, not a safety rule). Only on Appliance train_order."
-                },
                 "circuits": {
                   "type": "object",
                   "description": "A mast on a double signal joint (IRJ_SIGNALS, ADR 0013 §6): governed is the circuit on the side its SIGNAL pin names, approach the circuit on the other side, the shape a single signal joint's row carries (ADR 0012 §8). A boundary track circuit (ADR 0013 §10): A and B, the circuit on each of its pins, what it counts toward. A side on dark track is absent.",
@@ -1371,13 +1351,21 @@
                       "$ref": "#/$defs/qualifiedName"
                     }
                   }
+                },
+                "faces": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[A-Z]$"
+                  },
+                  "description": "A train order board's faces: the letters of the units of the train_order device that serves it (the owner, 2026-11-05). Only on Appliance train_order; absent while no device serves it (train_order.device)."
                 }
               }
             }
           ]
         },
         "heads": {
-          "description": "A mast's heads by letter; a train order signal's heads by the direction each faces (N, S, E or W; the owner, 2026-11-03).",
+          "description": "A mast's heads by letter. A train order board has none: its faces are its field device's units (the owner, 2026-11-05).",
           "type": "object",
           "propertyNames": {
             "type": "string",
@@ -1547,7 +1535,7 @@
       }
     },
     "head": {
-      "description": "A head of a mast, keyed by its letter: an entity nested under its mast (three-maps D9). given holds its Appliance and Style. A train order signal's head is keyed by the direction it faces (N, S, E or W) and derives direction (the owner, 2026-11-03).",
+      "description": "A head of a mast, keyed by its letter: an entity nested under its mast (three-maps D9). given holds its Appliance and Style.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -1565,16 +1553,7 @@
             },
             {
               "additionalProperties": false,
-              "properties": {
-                "direction": {
-                  "type": "string",
-                  "enum": [
-                    "LEFT",
-                    "RIGHT"
-                  ],
-                  "description": "The direction a train order signal's head faces, from its letter by ADR 0003 D1: N and W are LEFT, S and E RIGHT. Not derived on a mast's head."
-                }
-              }
+              "properties": {}
             }
           ]
         }
@@ -1658,6 +1637,83 @@
                 },
                 "indication": {
                   "$ref": "#/$defs/indicationRef"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "face": {
+      "description": "One face of a train order board: a unit of its field device, keyed by the letter the unit is named (N, S, E or W; the owner, 2026-11-05). relations.bindings are the unit's wires to driver pins; derived.direction is the direction the face serves (ADR 0003 D1: N and W LEFT, S and E RIGHT); derived.indications the words the face can show given the inputs its bindings wire: CLEAR, which nothing asserted shows, then STOP for a bound STOP, RESTRICTING for CALLON, APPROACH for SLOW (reference.TRAIN_ORDER_INPUTS). The run-time rule, the most restrictive asserted input wins, is FieldUnit's.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "given": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/given"
+            }
+          ]
+        },
+        "relations": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/relations"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "bindings": {
+                  "type": "object",
+                  "description": "Each device pin's wire to a driver pin: function (the pin, polarity marks removed) to route.",
+                  "additionalProperties": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/$defs/route"
+                      },
+                      {
+                        "type": "array",
+                        "minItems": 2,
+                        "items": {
+                          "$ref": "#/$defs/route"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "direction": {
+                  "type": "string",
+                  "enum": [
+                    "LEFT",
+                    "RIGHT"
+                  ],
+                  "description": "The direction the face serves, from its letter (ADR 0003 D1)."
+                },
+                "indications": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "CLEAR",
+                      "APPROACH",
+                      "RESTRICTING",
+                      "STOP"
+                    ]
+                  },
+                  "description": "The indication words the face can show from the inputs its bindings wire (the canonical writer orders the list; it carries the set)."
                 }
               }
             }

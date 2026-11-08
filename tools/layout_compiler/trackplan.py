@@ -39,13 +39,13 @@ step exists. The same holds for a signal pin and a head's pin: a mast or a head 
 symbol under no interlocking's sheet is left out, as it was. Whether such a net is block track or an error (a powered
 switch on it) is the reference derivation's check.
 
-A train order signal is ``Appliance train_order`` (the owner, 2026-11-03): an operator-controlled, non-vital indicator
-with signal heads for a face, never a signal in the interlocking sense, never in a route and never in a control point,
-so it has its own appliance word and no code path that reads masts sees it. Its heads sit on its ``H`` pin as a
-mast's do and are read the same way (``_heads``), but their letters are the directions they face, N, S, E or W, each
-at most once (ADR 0003 D1 maps them to LEFT and RIGHT in the reference derivation). Its ``Station`` field names the
-timetable station it stands at, ``relations.station`` (unqualified: stations are layout entities). It has no track
-pin: one with any pin on a track net is the import error ``train_order.track``.
+A train order board is ``Appliance train_order`` (the owner, 2026-11-03, 2026-11-05): an operator-controlled, non-vital
+indicator, never a signal in the interlocking sense, never in a route and never in a control point, so it has its own
+appliance word and no code path that reads masts sees it. The trackplan symbol has no head pin: its faces are the units
+of its field device (``seams._faces``), one per face, N or W and S or E. A trackplan head still wired to it is the
+retired drawing, ``train_order.heads`` at warning; the head is then on no mast and its placement is not written. Its
+``Station`` field names the timetable station it stands at, ``relations.station`` (unqualified: stations are layout
+entities). It has no track pin: one with any pin on a track net is the import error ``train_order.track``.
 
 A name qualified with another interlocking's scope is a one-sided reference: it is no appliance here, and nothing is
 written back to the thing it names (the owner, 2026-10-27). A track circuit marker so named (Sargent's ``Corporal:2NAT``)
@@ -80,7 +80,6 @@ ENDS = frozenset({"END_CTC", "NEXT_CP", "BUMPER", "INDUSTRY"})
 SIGNAL_PINS = frozenset({"SIGNAL", "SIGNAL_A", "SIGNAL_B"})       # a signal joint's pins that carry a mast, never track
 PLATES = frozenset({"RULE_290_G", "RULE_290_R"})                   # a POLICY on a mast's SIGNAL net, not on the track (ADR 0013 §5)
 BOUNDARY_PINS = ("A", "B")                                         # a boundary track circuit's two track pins (ADR 0013 §10)
-TRAIN_ORDER_LETTERS = ("N", "S", "E", "W")                         # a train order signal's heads face a direction (the owner, 2026-11-03)
 
 
 def on_trackplan(s: Symbol) -> bool:
@@ -262,13 +261,17 @@ def _plan(sm: Seams, ix, syms: list[Symbol], track_nets: frozenset[str] = frozen
         row: dict[str, Any] = {"given": given_of(s), "relations": relations}
         if appliance == "mast":
             row["heads"] = _heads(s, others, report, ix.name)
-        elif appliance == "train_order":                                # a train order signal (the owner, 2026-11-03)
-            row["heads"] = _heads(s, others, report, ix.name, letters=TRAIN_ORDER_LETTERS)
+        elif appliance == "train_order":                                # a train order board (the owner, 2026-11-03, 2026-11-05)
             relations["station"] = s.get("Station") or None             # its timetable station, a layout entity
+            heads = sorted(o.ref for pin in src.pins_of(s.ref) for o, p in others(s, pin) if o.get("Appliance") == "head" and p == "M")
+            if heads:                                                   # the retired drawing: faces are the field device's units
+                report.warning("train_order.heads", f"{ix.name}: train order board {name} has trackplan head{'s' * (len(heads) > 1)} "
+                               f"{', '.join(heads)} wired to it; its faces are the units of its field device, and the trackplan head "
+                               "pin is retired (the owner, 2026-11-05)", source=loc(s))
             on = sorted(p for p, n in src.pins_of(s.ref).items() if n.name in track_nets)
             if on:
-                report.error("train_order.track", f"{ix.name}: train order signal {name} has its {', '.join(on)} on the track; "
-                             "a train order signal has no track pin", source=loc(s))
+                report.error("train_order.track", f"{ix.name}: train order board {name} has its {', '.join(on)} on the track; "
+                             "a train order board has no track pin", source=loc(s))
         elif is_switch(s):
             for p in ports_of(s):
                 relations[p] = pin_refs(s, p)
@@ -376,10 +379,9 @@ def _maps(row: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
-def _heads(mast: Symbol, others, report, interlocking: str, letters: Optional[tuple[str, ...]] = None) -> dict[str, Any]:
-    """A mast's heads by letter, each with its own ``given``: the Style the trackplan draws (ADR 0009 §3.7). The same
-    reading serves a train order signal (the owner, 2026-11-03), whose ``letters`` are the directions its heads face
-    (``TRAIN_ORDER_LETTERS``); a mast's letters are any (ADR 0003 D9, A to Z, checked by the schema)."""
+def _heads(mast: Symbol, others, report, interlocking: str) -> dict[str, Any]:
+    """A mast's heads by letter, each with its own ``given``: the Style the trackplan draws (ADR 0009 §3.7). A mast's
+    letters are any (ADR 0003 D9, A to Z, checked by the schema)."""
     heads: dict[str, Any] = {}
     what = f"{mast.get('Appliance').replace('_', ' ')} {key_of(mast)}"
     for pin in ("H", "H1", "H2", "H3", "H4"):
@@ -389,10 +391,6 @@ def _heads(mast: Symbol, others, report, interlocking: str, letters: Optional[tu
             letter = key_of(o)
             if not letter:
                 report.missing("head.letter", f"{interlocking}: a head on {what} has no Name (its letter)", source=loc(o))
-                continue
-            if letters is not None and letter not in letters:         # wrong, not incomplete: an error (the owner, 2026-11-03)
-                report.error("head.direction", f"{interlocking}: head {letter} on {what} names no direction; its letter is one of "
-                             f"{', '.join(letters)}", source=loc(o))
                 continue
             if letter in heads:
                 report.error("head.duplicate", f"{interlocking}: {what} has two heads {letter}", source=loc(o))

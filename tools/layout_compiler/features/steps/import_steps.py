@@ -2,7 +2,8 @@
 
 A Given states a drawing as netlist fragments: a table of placed symbols (``Ref``, ``Symbol``, ``Role``, every other
 column a field; an empty cell is an empty field) and a table of nets (``Net``, ``Pins`` as ``REF.pin`` separated by
-spaces). The interlocking's declaration and its processor are scaffolding the step adds. The When imports. A Then
+spaces, or ``REF.UNIT.pin`` for a pin drawn in a named unit of a multi-unit symbol). The interlocking's declaration
+and its processor are scaffolding the step adds. The When imports. A Then
 reads the facts written into the model or the import diagnostics. A scenario's diagnostic code is its tag. A step
 whose rule is not in the importer yet raises ``Pending`` with its issue.
 """
@@ -33,10 +34,23 @@ def drawing(context, name):
         context.symbols.append(Symbol(row["Ref"].strip(), row["Symbol"].strip(), "", fields, sheet))
 
 
+@given("these symbols too:")
+def more_symbols(context):
+    for row in context.table:
+        fields = {h: row[h].strip() for h in row.headings if h not in ("Ref", "Symbol") and row[h].strip()}
+        context.symbols.append(Symbol(row["Ref"].strip(), row["Symbol"].strip(), "", fields, f"/{context.interlocking}/"))
+
+
+def _pin(text: str) -> PinRef:
+    """``REF.pin``, or ``REF.UNIT.pin`` for a pin of a named unit (a train order device's face)."""
+    parts = text.split(".")
+    return PinRef(parts[0], parts[2], unit=parts[1]) if len(parts) == 3 else PinRef(parts[0], parts[1])
+
+
 @given("these nets:")
 def nets(context):
     for row in context.table:
-        context.nets.append(Net(row["Net"].strip(), tuple(PinRef(*p.split(".", 1)) for p in row["Pins"].split())))
+        context.nets.append(Net(row["Net"].strip(), tuple(_pin(p) for p in row["Pins"].split())))
 
 
 @when("the drawing is imported")
@@ -89,9 +103,24 @@ def no_circuit(context, name):
     raise Pending("the TRACK pin of a lamp or contact, issue #82")
 
 
+def _train_order_device(context, name: str) -> dict:
+    devs = [d for d in context.model["interlockings"][context.interlocking].get("devices", [])
+            if d.get("given", {}).get("Appliance") == "train_order" and d["given"].get("Name") == name]
+    assert len(devs) == 1, f"{name}: {len(devs)} train order devices"
+    return devs[0]
+
+
 @then('"{name}" has faces "{faces}"')
 def faces(context, name, faces):
-    raise Pending("a train order board's faces come from its device units, issue #83")
+    got = sorted(_train_order_device(context, name).get("faces", {}))
+    want = sorted(f.strip() for f in faces.split(","))
+    assert got == want, f"{name}: faces {got!r}, not {want!r}"
+
+
+@then('face "{face}" of "{name}" binds "{pin}" to "{route}"')
+def binds(context, face, name, pin, route):
+    got = _train_order_device(context, name).get("faces", {}).get(face, {}).get("relations", {}).get("bindings", {}).get(pin)
+    assert got == route, f"{name} face {face}: {pin} binds {got!r}, not {route!r}"
 
 
 @then('the head "{ref}" is position "{position}" of "{mast}"')

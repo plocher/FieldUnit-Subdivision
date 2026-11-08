@@ -3,7 +3,9 @@
 A Given states facts of a Layout Data Model File as a table: one row per entity, the ``Name`` column its key, every
 other column a ``given`` field, and a column ``relations.<key>`` a stated relation. An empty cell states nothing.
 The When derives. A Then reads ``derived`` or the rule checks. A scenario's diagnostic code is its tag, so a Then
-never repeats it. A step whose rule is not in the reference derivation yet raises ``Pending`` with its issue.
+never repeats it. A rule that is a function of facts stated in the scenario alone (what a train order face shows for
+the inputs asserted) is checked without a When. A step whose rule is not in the reference derivation yet raises
+``Pending`` with its issue.
 """
 from __future__ import annotations
 
@@ -139,17 +141,46 @@ def on_circuit(context, name, circuit):
 
 @then('"{name}" has faces "{faces}"')
 def faces(context, name, faces):
-    raise Pending("a train order board's faces come from its device units, issue #83")
+    got = _named(context, name).get("derived", {}).get("faces")
+    want = [f.strip() for f in faces.split(",")]
+    assert got == want, f"{name}: derived faces is {got!r}, not {want!r}"
+
+
+def _face(context, name: str, face: str) -> dict:
+    """The face ``face`` of the train order device named ``name``, in the derived model."""
+    found = [d["faces"][face] for ix in context.derived["interlockings"].values() for d in ix.get("devices", [])
+             if d.get("given", {}).get("Appliance") == "train_order" and d["given"].get("Name") == name and face in d.get("faces", {})]
+    assert len(found) == 1, f"{name}: {len(found)} train order devices state face {face}"
+    return found[0]
+
+
+@then('the "{face}" face of "{name}" serves the direction "{direction}"')
+def face_direction(context, face, name, direction):
+    got = _face(context, name, face).get("derived", {}).get("direction")
+    assert got == direction, f"{name} face {face}: derived direction is {got!r}, not {direction!r}"
+
+
+@then('the "{face}" face of "{name}" can show "{words}"')
+def face_indications(context, face, name, words):
+    got = _face(context, name, face).get("derived", {}).get("indications")
+    want = [w.strip() for w in words.split(",")]
+    assert got == want, f"{name} face {face}: derived indications is {got!r}, not {want!r}"
+
+
+def _inputs(text: str) -> list[str]:
+    """``nothing``, one input, or inputs joined by ``and`` or commas."""
+    return [] if text.strip() == "nothing" else [w.strip() for w in text.replace(" and ", ",").split(",") if w.strip()]
 
 
 @given('the "{face}" face of "{name}" has {inputs} asserted')
 def asserted(context, face, name, inputs):
-    raise Pending("the train order device's local logic is FieldUnit's, issue #83")
+    context.asserted = _inputs(inputs)
 
 
 @then('the "{face}" face of "{name}" shows "{word}"')
 def shows(context, face, name, word):
-    raise Pending("the train order device's local logic is FieldUnit's, issue #83")
+    got = derive.train_order_indication(context.asserted)
+    assert got == word, f"{', '.join(context.asserted) or 'nothing'} asserted shows {got!r}, not {word!r}"
 
 
 @then('"{mast}" has head positions "{positions}"')
@@ -164,7 +195,24 @@ def presents(context, position, mast, words):
 
 @given('train order device "{name}" has units for the faces "{faces}"')
 def units(context, name, faces):
-    raise Pending("a train order device has one unit per face, issue #83")
+    """A field device of Appliance train_order named for its board, with one face per listed letter, in the
+    interlocking that holds the board (else the one interlocking stated so far)."""
+    model = _model(context)
+    holders = [ixn for ixn, ix in model["interlockings"].items() if name in ix.get("appliances", {})]
+    ixn = holders[0] if holders else next(iter(model["interlockings"]), "X")
+    device = {"given": {"Appliance": "train_order", "Name": name},
+              "faces": {f.strip(): {} for f in faces.split(",") if f.strip()}}
+    _interlocking(context, ixn).setdefault("devices", []).append(device)
+
+
+@given('the "{face}" face of "{name}" wires the inputs "{inputs}"')
+def wires(context, face, name, inputs):
+    """The face's STOP, SLOW or CALLON bound to a driver pin each; the route is any, the binding is the fact."""
+    model = _model(context)
+    devs = [d for ix in model["interlockings"].values() for d in ix.get("devices", [])
+            if d["given"].get("Appliance") == "train_order" and d["given"].get("Name") == name and face in d.get("faces", {})]
+    assert len(devs) == 1, f"{name}: {len(devs)} train order devices state face {face}"
+    devs[0]["faces"][face].setdefault("relations", {})["bindings"] = {w: f"Field/0x20/A{i}" for i, w in enumerate(_inputs(inputs))}
 
 
 @given('field mast "{mast}" has these heads:')

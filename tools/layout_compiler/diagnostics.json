@@ -23,6 +23,13 @@
       "feature": null,
       "replacedBy": null
     },
+    "appliance.track_pin": {
+      "level": "error",
+      "lifecycle": "proposed",
+      "since": "0.1.0",
+      "feature": "trackplan/appliance_lamp_contact.feature#a lamp wired to a net that is not track",
+      "replacedBy": null
+    },
     "bit.direction": {
       "level": "error",
       "lifecycle": "retired",
@@ -303,13 +310,6 @@
       "feature": null,
       "replacedBy": null
     },
-    "head.direction": {
-      "level": "error",
-      "lifecycle": "active",
-      "since": "0.4.0",
-      "feature": null,
-      "replacedBy": null
-    },
     "head.letter": {
       "level": "missing",
       "lifecycle": "active",
@@ -329,6 +329,13 @@
       "lifecycle": "active",
       "since": "0.4.0",
       "feature": null,
+      "replacedBy": null
+    },
+    "head.position": {
+      "level": "error",
+      "lifecycle": "proposed",
+      "since": "0.1.0",
+      "feature": "field/device_mast_head.feature#two heads wired to one mast pin",
       "replacedBy": null
     },
     "house.codeline": {
@@ -548,11 +555,25 @@
       "feature": null,
       "replacedBy": null
     },
+    "train_order.heads": {
+      "level": "warning",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": "trackplan/appliance_train_order.feature#a board drawn with trackplan heads",
+      "replacedBy": null
+    },
     "train_order.track": {
       "level": "error",
       "lifecycle": "active",
       "since": "0.4.0",
       "feature": "trackplan/appliance_train_order.feature#a board with a pin on the track",
+      "replacedBy": null
+    },
+    "train_order.unit": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": "field/device_train_order.feature#a unit that names no face",
       "replacedBy": null
     },
     "transport.anchor": {
@@ -595,20 +616,6 @@
       "lifecycle": "active",
       "since": "0.4.0",
       "feature": null,
-      "replacedBy": null
-    },
-    "appliance.track_pin": {
-      "level": "error",
-      "lifecycle": "proposed",
-      "since": "0.1.0",
-      "feature": "trackplan/appliance_lamp_contact.feature#a lamp wired to a net that is not track",
-      "replacedBy": null
-    },
-    "head.position": {
-      "level": "error",
-      "lifecycle": "proposed",
-      "since": "0.1.0",
-      "feature": "field/device_mast_head.feature#two heads wired to one mast pin",
       "replacedBy": null
     }
   }
