@@ -35,6 +35,11 @@ names every other track pin its wire reaches, so the relation is symmetric):
   missing; a member that is no circuit of this interlocking is ``circuit.member`` at error (one of another
   interlocking is checked as a reference). Which station qualifies it, and that it is at one end of the block, is
   the ``blocks`` library's.
+- **A sign states its rule for the track it stands on** (ADR 0013 §8): a policy row that is not a plate states its
+  Kind and Direction as given and the track pins it is on; its circuit is ``derived.circuits.track``. One on no track
+  is ``policy.track`` at missing. A ``RULE_251`` sign's Direction is the current of traffic, ``LEFT`` or ``RIGHT``;
+  any other is ``policy.direction`` at missing. That one block's signs agree with each other and with its masts is
+  the ``blocks`` library's.
 - **A boundary track circuit** (ADR 0013 §10; ``Appliance track_circuit``, Style ``boundary``) states ``relations.A``
   and ``.B``, the two nets at its joint. It names no circuit: the marker on each net does. Its ``derived.circuits``
   are the circuits on its pins, in A, B order: what it counts toward.
@@ -112,6 +117,7 @@ ROW_LISTS = TRACK_LISTS + ("consumers",)          # every row with an id; a cons
 JOINTS = frozenset({"IRJ", "IRJ_SIGNAL", "IRJ_SIGNALS"})
 DOUBLE_SIDES = {"A": "B", "B": "A"}             # a double joint's side to the other (ADR 0013 §6)
 MAST_KINDS = frozenset({"CONTROLLED", "ABSOLUTE", "PERMISSIVE"})   # what a mast states it is (ADR 0013 §5)
+CURRENTS = frozenset({"LEFT", "RIGHT"})                            # a RULE_251 sign's current of traffic (ADR 0013 §8)
 PLATES = frozenset({"RULE_290_G", "RULE_290_R"})                   # a plate on a mast's SIGNAL net (ADR 0013 §5)
 
 
@@ -565,7 +571,13 @@ class _Plan:
                 self.r.add("next_cp.interlocking", f"{self.name}: a NextCP states no Interlocking", where)
         for row in self.track.get("policies", []):
             g, where = row.get("given", {}), self.where("track", "policies", row.get("id", ""))
-            if g.get("Kind") not in PLATES:
+            if g.get("Kind") not in PLATES:                                                 # a sign states a rule for its track (ADR 0013 §8)
+                if not track_pins(row.get("relations", {})):
+                    self.r.add("policy.track", f"{self.name}: a {g.get('Kind') or 'policy'} sign stands on no track; a sign states its "
+                               "rule for the track it stands on (ADR 0013 §8)", where)
+                if g.get("Kind") == "RULE_251" and g.get("Direction") not in CURRENTS:
+                    self.r.add("policy.direction", f"{self.name}: a RULE_251 sign states {'Direction ' + repr(g['Direction']) if g.get('Direction') else 'no Direction'}; "
+                               "the current of traffic is LEFT or RIGHT, the lever direction of the signals that govern with it (ADR 0013 §8)", where)
                 continue
             mast = row.get("relations", {}).get("mast")
             m = self.appliances.get(mast.partition(":")[2]) if mast and not foreign(mast, self.name) else None

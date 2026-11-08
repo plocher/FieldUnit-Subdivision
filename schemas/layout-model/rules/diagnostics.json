@@ -317,6 +317,20 @@
       "feature": "logical/trackplan/appliance_mast.feature#a plate on no mast's signal wire",
       "replacedBy": null
     },
+    "policy.direction": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/policy_sign.feature#a RULE_251 sign whose direction is not a current of traffic",
+      "replacedBy": null
+    },
+    "policy.track": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/policy_sign.feature#a sign on no track",
+      "replacedBy": null
+    },
     "reference.codeline": {
       "level": "missing",
       "lifecycle": "active",
