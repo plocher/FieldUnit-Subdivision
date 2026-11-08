@@ -24,6 +24,8 @@ names every other track pin its wire reaches, so the relation is symmetric):
   point: ADR 0013 §4 puts block track outside every interlocking and §5 has automatic masts state no CP Name.
 - **A mast states Kind** (ADR 0013 §5): ``CONTROLLED``, ``ABSOLUTE`` or ``PERMISSIVE``, a stated fact. A mast with
   none, or with another word, is reported ``mast.kind`` at missing; nothing is inferred from a CP Name or a plate.
+  An ``ABSOLUTE`` or ``PERMISSIVE`` mast that states a CP Name is ``mast.control_point`` at warning: the field is not
+  read, since an automatic mast belongs to no control point.
 - **A mast that is not CONTROLLED over a powered switch** (ADR 0013 §5): an ``ABSOLUTE`` or ``PERMISSIVE`` mast whose
   governed circuit (the side its joint pin names) holds a powered switch's or derail's port (``grammar.is_powered``,
   §4: Style ``powered`` or ``dual``, or a CP Name; spring and hand-throw switches are not powered) is reported
@@ -597,6 +599,9 @@ class _Plan:
             if g.get("Kind") not in MAST_KINDS:
                 self.r.add("mast.kind", f"{self.name}: mast {name} states {'no Kind' if not g.get('Kind') else 'Kind ' + repr(g['Kind'])}; "
                            "a mast is CONTROLLED, ABSOLUTE or PERMISSIVE (ADR 0013 §5)", where)
+            if _automatic_mast(a) and g.get("CP Name"):                                   # a stated fact not read (ADR 0013 §5)
+                self.r.add("mast.control_point", f"{self.name}: mast {name} is {g['Kind']} and states CP Name {g['CP Name']!r}; an "
+                           "automatic mast belongs to no control point (ADR 0013 §5), so the CP Name is not read", where)
             n = masts_of.get(qualify(name, self.name), 0)
             if n == 0:
                 self.r.add("mast.joint", f"{self.name}: mast {name} stands on no signal joint", where)
