@@ -265,35 +265,35 @@
       "level": "warning",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/track_block.feature#a NextCP standing on track that is drawn through to its neighbour",
       "replacedBy": null
     },
     "next_cp.drawn_neighbour": {
       "level": "warning",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/track_block.feature#a NextCP marked off_layout to an interlocking that is in this file",
       "replacedBy": null
     },
     "next_cp.interlocking": {
       "level": "missing",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/track_block.feature#a NextCP that names no interlocking",
       "replacedBy": null
     },
     "next_cp.off_layout": {
       "level": "info",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/track_block.feature#a NextCP to an interlocking that is not in this file",
       "replacedBy": null
     },
     "next_cp.pair": {
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/track_block.feature#a NextCP whose neighbour has none back",
       "replacedBy": null
     },
     "plate.mast": {
@@ -342,7 +342,7 @@
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/track_block.feature#a powered switch on the wire that joins the interlockings",
       "replacedBy": null
     },
     "reference.unresolved": {

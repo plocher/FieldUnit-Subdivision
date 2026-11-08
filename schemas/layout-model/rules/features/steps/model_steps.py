@@ -184,6 +184,12 @@ def joint_sides(context, rid, a, b):
     assert got == {"A": a, "B": b}, f"{rid}: derived circuits are {got!r}"
 
 
+@then('joint "{rid}" governs over "{governed}" and approaches over "{approach}"')
+def joint_governs(context, rid, governed, approach):
+    got = _row_named(context, rid).get("derived", {}).get("circuits")
+    assert got == {"governed": governed, "approach": approach}, f"{rid}: derived circuits are {got!r}"
+
+
 @then('joint "{rid}" has circuit "{a}" on side A and dark track on side B')
 def joint_side_a(context, rid, a):
     got = _row_named(context, rid).get("derived", {}).get("circuits")
