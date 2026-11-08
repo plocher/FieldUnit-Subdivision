@@ -2,10 +2,12 @@
 
 A Given states facts of a Layout Data Model File as a table: one row per entity, the ``Name`` column its key, every
 other column a ``given`` field, and a column ``relations.<key>`` a stated relation. An empty cell states nothing.
-The When derives. A Then reads ``derived`` or the rule checks. A scenario's diagnostic code is its tag, so a Then
-never repeats it. A rule that is a function of facts stated in the scenario alone (what a train order face shows for
-the inputs asserted) is checked without a When. A step whose rule is not in the reference derivation yet raises
-``Pending`` with its issue.
+A track row (a joint, an end, a policy) is keyed by its ``Id``; ``relations.masts`` is ``A=<mast> B=<mast>``. A wire
+joins track pins (``J1.A 832T.TC``): each pin then names every other, the stated adjacency of ADR 0011; a pin of a
+thing the interlocking does not have (``Y:3NAT.TC``) is another interlocking's, named as given. The When derives. A
+Then reads ``derived`` or the rule checks. A scenario's diagnostic code is its tag, so a Then never repeats it. A rule
+that is a function of facts stated in the scenario alone (what a train order face shows for the inputs asserted) is
+checked without a When. A step whose rule is not in the reference derivation yet raises ``Pending`` with its issue.
 """
 from __future__ import annotations
 
@@ -32,17 +34,17 @@ def _interlocking(context, name: str) -> dict:
     return _model(context)["interlockings"].setdefault(name, {"houses": {"House": {}}, "appliances": {}, "track": {}})
 
 
-def _entity(row) -> tuple[str, dict]:
+def _entity(row, key: str = "Name") -> tuple[str, dict]:
     given_, relations = {}, {}
     for heading in row.headings:
         value = row[heading].strip()
-        if heading == "Name" or not value:
+        if heading == key or not value:
             continue
         if heading.startswith("relations."):
             relations[heading.removeprefix("relations.")] = value
         else:
             given_[heading] = value
-    return row["Name"].strip(), {k: v for k, v in (("given", given_), ("relations", relations)) if v}
+    return row[key].strip(), {k: v for k, v in (("given", given_), ("relations", relations)) if v}
 
 
 def code_of(context) -> str:
@@ -74,6 +76,57 @@ def devices(context, name):
         _interlocking(context, name).setdefault("devices", []).append(entity)
 
 
+def _row(context, name: str, kind: str, row) -> None:
+    key, entity = _entity(row, "Id")
+    rel = entity.get("relations", {})
+    if "masts" in rel:                                                   # A=<mast> B=<mast>
+        rel["masts"] = dict(tok.split("=", 1) for tok in rel["masts"].split())
+    _interlocking(context, name)["track"].setdefault(kind, []).append({"id": key, **entity})
+
+
+@given('interlocking "{name}" has these joints:')
+def joints(context, name):
+    for row in context.table:
+        _row(context, name, "joints", row)
+
+
+@given('interlocking "{name}" has these ends:')
+def ends(context, name):
+    for row in context.table:
+        _row(context, name, "ends", row)
+
+
+@given('interlocking "{name}" has these policies:')
+def policies(context, name):
+    for row in context.table:
+        _row(context, name, "policies", row)
+
+
+def _rows(ix: dict) -> dict[str, dict]:
+    return {r["id"]: r for rows in ix.get("track", {}).values() for r in rows}
+
+
+@given('interlocking "{name}" has these wires:')
+def wires(context, name):
+    """Each pin on a wire names every other pin on it: an appliance's pin by its qualified name, a row's by its id."""
+    ix = _interlocking(context, name)
+    rows = _rows(ix)
+
+    def canonical(pin: str) -> str:
+        thing, _, side = pin.rpartition(".")
+        return f"{thing}.{side}" if thing in rows or ":" in thing else f"{name}:{thing}.{side}"
+
+    for row in context.table:
+        pins = row["Pins"].split()
+        for p in pins:
+            thing, _, side = p.rpartition(".")
+            holder = ix["appliances"].get(thing) or rows.get(thing)
+            if holder is None:
+                continue                                                 # another interlocking's pin, named as given
+            others = sorted({canonical(o) for o in pins if o.rpartition(".")[0] != thing})
+            holder.setdefault("relations", {})[side] = others
+
+
 @given('interlocking "{name}" has house "{house}"')
 def house(context, name, house):
     _interlocking(context, name)["houses"] = {house: {}}
@@ -99,6 +152,73 @@ def has_derived(context, name, key, value):
 def has_no_derived(context, name, key):
     got = _named(context, name).get("derived", {}).get(key)
     assert got is None, f"{name}: derived {key} is {got!r}"
+
+
+def _row_named(context, rid: str) -> dict:
+    found = [r for ix in context.derived["interlockings"].values() for r in _rows(ix).values() if r["id"] == rid]
+    assert len(found) == 1, f"{rid}: {len(found)} track rows of that id"
+    return found[0]
+
+
+@then('"{mast}" governs into "{governed}" and approaches over "{approach}"')
+def governs(context, mast, governed, approach):
+    got = _named(context, mast).get("derived", {}).get("circuits")
+    assert got == {"governed": governed, "approach": approach}, f"{mast}: derived circuits are {got!r}"
+
+
+@then('"{name}" counts toward "{a}" on side A and "{b}" on side B')
+def counts_toward(context, name, a, b):
+    got = _named(context, name).get("derived", {}).get("circuits")
+    assert got == {"A": a, "B": b}, f"{name}: derived circuits are {got!r}"
+
+
+@then('"{name}" counts toward "{a}" on side A and nothing on side B')
+def counts_toward_one(context, name, a):
+    got = _named(context, name).get("derived", {}).get("circuits")
+    assert got == {"A": a}, f"{name}: derived circuits are {got!r}"
+
+
+@then('joint "{rid}" has circuit "{a}" on side A and "{b}" on side B')
+def joint_sides(context, rid, a, b):
+    got = _row_named(context, rid).get("derived", {}).get("circuits")
+    assert got == {"A": a, "B": b}, f"{rid}: derived circuits are {got!r}"
+
+
+@then('joint "{rid}" has circuit "{a}" on side A and dark track on side B')
+def joint_side_a(context, rid, a):
+    got = _row_named(context, rid).get("derived", {}).get("circuits")
+    assert got == {"A": a}, f"{rid}: derived circuits are {got!r}"
+
+
+@then('sign "{rid}" stands on circuit "{circuit}"')
+def sign_on(context, rid, circuit):
+    got = _row_named(context, rid).get("derived", {}).get("circuits")
+    assert got == {"track": circuit}, f"{rid}: derived circuits are {got!r}"
+
+
+@then('"{name}" belongs to control point "{cp}"')
+def control_point(context, name, cp):
+    got = _named(context, name).get("derived", {}).get("controlPoint")
+    assert got == cp, f"{name}: derived controlPoint is {got!r}, not {cp!r}"
+
+
+@then('"{name}" belongs to no control point')
+def no_control_point(context, name):
+    got = _named(context, name).get("derived", {})
+    assert "controlPoint" not in got, f"{name}: derived controlPoint is {got['controlPoint']!r}"
+
+
+@then('joint "{rid}" belongs to no control point')
+def joint_no_control_point(context, rid):
+    got = _row_named(context, rid).get("derived", {})
+    assert "controlPoint" not in got, f"{rid}: derived controlPoint is {got['controlPoint']!r}"
+
+
+@then('"{name}" has members "{members}"')
+def members(context, name, members):
+    got = _named(context, name).get("derived", {}).get("members")
+    want = [m.strip() for m in members.split(",")]
+    assert got == want, f"{name}: derived members are {got!r}, not {want!r}"
 
 
 @then('it is reported as {level} on "{name}"')
