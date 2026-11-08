@@ -223,14 +223,14 @@
       "level": "missing",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/track_joint_signals.feature#a side with no mast leaves that mast on no joint",
       "replacedBy": null
     },
     "mast.joints": {
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/track_joint_signals.feature#one mast on both sides of the joint",
       "replacedBy": null
     },
     "mast.kind": {
