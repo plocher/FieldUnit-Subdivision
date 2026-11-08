@@ -34,7 +34,7 @@
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/appliance_track_circuit_boundary.feature#a boundary counts toward the circuit on each side and names none",
       "replacedBy": null
     },
     "column.cp_name": {

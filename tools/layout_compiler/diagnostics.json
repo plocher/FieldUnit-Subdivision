@@ -566,7 +566,7 @@
       "level": "error",
       "lifecycle": "active",
       "since": "0.4.0",
-      "feature": null,
+      "feature": "trackplan/appliance_track_circuit_boundary.feature#both pins of a boundary on one net",
       "replacedBy": null
     },
     "train_order.track": {
