@@ -76,7 +76,7 @@ names every other track pin its wire reaches, so the relation is symmetric):
   a desk lamp's, a consumer row's) must be one an appliance of the named interlocking can report there.
 - **A lamp, contact or actuator at a circuit** (#82): its ``relations.circuit``, the circuit named on the track its one
   pin is wired to, is a circuit of its own interlocking by any name the interlocking has (what its track names, a
-  track circuit appliance, a switch's ``TC``); another interlocking's, or none of this one's, is ``appliance.circuit``
+  track circuit marker, a switch's ``TC``); another interlocking's, or none of this one's, is ``appliance.circuit``
   at error. The three are checked alike; no rule tells an actuator from a lamp.
 - **Block track across sheets** (ADR 0013 §7.1, amending ADR 0009 §3.12): a track net that joins two interlockings
   (a pin of one names a pin of the other) is block track and is accepted when it is plain track; a foreign marker's
@@ -322,12 +322,13 @@ class _Plan:
                 self.namer[root] = namer[root]
 
     def circuit_names(self) -> set[str]:
-        """Every circuit this interlocking has by name, qualified: what its track names, its track circuit appliances
-        (a virtual circuit included, a boundary not: it names none, ADR 0013 §10) and its switches' OS circuits (``TC``)."""
+        """Every circuit this interlocking has by name, qualified: what its track names, its track circuit markers (a
+        boundary names none, ADR 0013 §10; a virtual circuit is not a piece of track a pin is wired to) and its switches'
+        OS circuits (``TC``)."""
         out = {c for c in self.name_of.values() if c and not foreign(c, self.name)}
         for name, a in self.appliances.items():
             g = a.get("given", {})
-            if g.get("Appliance") == "track_circuit" and g.get("Style") != "boundary" and not foreign(name, self.name):
+            if g.get("Appliance") == "track_circuit" and g.get("Style") not in ("boundary", "virtual") and not foreign(name, self.name):
                 out.add(qualify(name, self.name))
             elif g.get("Appliance") == "switch" and g.get("TC") and "," not in g["TC"]:
                 out.add(qualify(g["TC"], self.name))

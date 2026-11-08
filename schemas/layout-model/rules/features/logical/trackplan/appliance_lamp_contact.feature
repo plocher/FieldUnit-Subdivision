@@ -1,7 +1,7 @@
 Feature: Where a lamp, contact or actuator is
   A lamp, contact or actuator appliance can state the track circuit it is at: its circuit relation.
-  That circuit is a circuit of the appliance's own interlocking: a track circuit marker, a virtual
-  circuit, or a switch's OS circuit (its TC) of that interlocking.
+  That circuit is a circuit of the appliance's own interlocking: a track circuit marker or a switch's
+  OS circuit (its TC) of that interlocking.
   One that states no circuit is placed by its Milepost and CP Name.
   Lamp, contact and actuator are read the same way; no rule tells an actuator from a lamp yet.
 

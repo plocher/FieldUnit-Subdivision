@@ -380,7 +380,7 @@ def _circuit_at(s: Symbol, src, circuits: dict[str, frozenset[str]], report, wha
                 return next(iter(names))
             report.error("appliance.track_pin", f"{what}'s {pin} pin is on {'dark track, which names no circuit' if not names else 'track that carries the names ' + ', '.join(sorted(names))}"
                          "; it cannot state the circuit it is at", source=loc(s))
-        elif not any(src.symbols[p.ref].role == "STRUCTURE" and src.symbols[p.ref].kind == "CONTROL_POINT" for p in n.others(s.ref)):
+        elif not any(p.pin == "MC" and src.symbols[p.ref].role == "STRUCTURE" and src.symbols[p.ref].kind == "CONTROL_POINT" for p in n.others(s.ref)):
             report.error("appliance.track_pin", f"{what}'s {pin} pin is on a wire that is not track; a lamp, contact or actuator is "
                          "wired to the track it is at, to its house's MC pin, or not at all", source=loc(s))
     return None

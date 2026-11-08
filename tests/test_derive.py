@@ -263,12 +263,11 @@ class AtACircuit(unittest.TestCase):
     """A lamp, contact or actuator at a circuit (#82): the circuit is one of its own interlocking, by any of the names the
     interlocking has, else ``appliance.circuit``."""
 
-    def test_a_circuit_the_track_names_a_marker_a_virtual_circuit_or_a_switchs_tc(self):
+    def test_a_circuit_the_track_names_a_marker_or_a_switchs_tc(self):
         things = ONE_SWITCH + """
 HTR  | appliance | Appliance=contact rel.circuit=X:835T1
 NFL  | appliance | Appliance=lamp rel.circuit=X:1NAT
-ACT  | appliance | Appliance=actuator rel.circuit=X:V1
-V1   | appliance | Appliance=track_circuit Style=virtual Members=1NAT,1SAT
+ACT  | appliance | Appliance=actuator rel.circuit=X:1SAT
 """
         _, diags = run(layout(X=interlocking(things, ONE_SWITCH_WIRES, "East")))
         self.assertEqual(only(diags, "appliance"), [])

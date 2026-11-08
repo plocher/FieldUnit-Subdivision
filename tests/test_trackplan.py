@@ -424,15 +424,17 @@ J9   | IRJ           | TRACK     | Kind=IRJ
         self.assertEqual([a.get("relations") for a in (ix["appliances"]["NFL"], ix["appliances"]["SFL"])], [None, None])
         self.assertEqual(diags(sm, "appliance"), [("appliance.track_pin", "L1"), ("appliance.track_pin", "L2")])
 
-    def test_a_maintainer_call_on_its_house_is_no_error_and_a_lamp_on_a_signal_wire_is(self):
+    def test_a_maintainer_call_on_its_house_is_no_error_and_a_lamp_on_a_signal_wire_or_a_houses_codeline_pin_is(self):
         given = ONE_SWITCH + """
 MC1  | MaintainerCall | APPLIANCE | Appliance=lamp Style=maintainer_call Name=1MC
 L1   | Lamp           | APPLIANCE | Appliance=lamp Name=NFL
+L2   | Lamp           | APPLIANCE | Appliance=lamp Name=SFL
 """
-        sm, ix = compile_(given, ONE_SWITCH_NETS.replace("s1   | J1.SIGNAL M1.SIGNAL", "s1   | J1.SIGNAL M1.SIGNAL L1.LAMP") + "mc | H1.MC MC1.MC\n")
+        sm, ix = compile_(given, ONE_SWITCH_NETS.replace("s1   | J1.SIGNAL M1.SIGNAL", "s1   | J1.SIGNAL M1.SIGNAL L1.LAMP")
+                          + "mc | H1.MC MC1.MC\ncl | H1.Codeline L2.LAMP\n")
         self.assertEqual(ix["appliances"]["1MC"]["relations"], {"house": "X:East"})
-        self.assertEqual(ix["appliances"]["NFL"].get("relations"), None)
-        self.assertEqual(diags(sm, "appliance"), [("appliance.track_pin", "L1")])
+        self.assertEqual([ix["appliances"][n].get("relations") for n in ("NFL", "SFL")], [None, None])
+        self.assertEqual(diags(sm, "appliance"), [("appliance.track_pin", "L1"), ("appliance.track_pin", "L2")])
 
 
 class Attributes(unittest.TestCase):
