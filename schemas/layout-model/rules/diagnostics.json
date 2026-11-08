@@ -23,6 +23,20 @@
       "feature": "logical/trackplan/appliance_switch_ceiling.feature#a ceiling that is not two indication words",
       "replacedBy": null
     },
+    "circuit.member": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/appliance_track_circuit_virtual.feature#a member that is no circuit of the interlocking",
+      "replacedBy": null
+    },
+    "circuit.members": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/appliance_track_circuit_virtual.feature#a virtual circuit that lists no members",
+      "replacedBy": null
+    },
     "circuit.name.disagree": {
       "level": "error",
       "lifecycle": "active",
@@ -321,7 +335,7 @@
       "level": "warning",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/appliance_track_circuit_virtual.feature#a member of an interlocking that is not in this file",
       "replacedBy": null
     },
     "reference.marker": {
@@ -349,7 +363,7 @@
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/appliance_track_circuit_virtual.feature#a member that the other interlocking does not have",
       "replacedBy": null
     },
     "station.columns": {

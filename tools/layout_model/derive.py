@@ -30,6 +30,11 @@ names every other track pin its wire reaches, so the relation is symmetric):
   governed circuit (the side its joint pin names) holds a powered switch's or derail's port (``grammar.is_powered``,
   §4: Style ``powered`` or ``dual``, or a CP Name; spring and hand-throw switches are not powered) is reported
   ``mast.powered`` at warning. A check, never a source: it sets nothing.
+- **A virtual circuit's members** (ADR 0013 §7.2): a track circuit of Style ``virtual`` is the one indication of the
+  circuits its ``Members`` lists, resolved into ``derived.members``. One that lists none is ``circuit.members`` at
+  missing; a member that is no circuit of this interlocking is ``circuit.member`` at error (one of another
+  interlocking is checked as a reference). Which station qualifies it, and that it is at one end of the block, is
+  the ``blocks`` library's.
 - **A boundary track circuit** (ADR 0013 §10; ``Appliance track_circuit``, Style ``boundary``) states ``relations.A``
   and ``.B``, the two nets at its joint. It names no circuit: the marker on each net does. Its ``derived.circuits``
   are the circuits on its pins, in A, B order: what it counts toward.
@@ -589,11 +594,23 @@ class _Plan:
                     if (r := self.region(self.pin(n, p))) and n not in powered_at[r]:
                         powered_at[r].append(n)
         letters_of_signal: dict[str, dict[str, str]] = defaultdict(dict)
+        own = {c for c in self.name_of.values() if c} | {qualify(k, self.name) for k, v in self.appliances.items()
+                                                         if v.get("given", {}).get("Appliance") == "track_circuit"
+                                                         and v["given"].get("Style") != "boundary"}   # the circuits a Members may name
         for name, a in self.appliances.items():
             g = a.get("given", {})
             where = self.where("appliances", name)
             if g.get("Appliance") == "switch" and not any(p in track_pins(a.get("relations", {})) for p in ports_of(a)):
                 self.r.add("switch.track", f"{self.name}: switch {name} has no track on any port", where)
+            if g.get("Appliance") == "track_circuit" and g.get("Style") == "virtual":        # the block's one indication (ADR 0013 §7.2)
+                members = [t.strip() for t in g.get("Members", "").split(",") if t.strip()]
+                if not members:
+                    self.r.add("circuit.members", f"{self.name}: virtual circuit {name} states no Members; a virtual circuit is the one "
+                               "indication of the circuits it lists (ADR 0013 §7.2)", where)
+                for t in members:
+                    if not foreign(t, self.name) and qualify(t, self.name) not in own:
+                        self.r.add("circuit.member", f"{self.name}: virtual circuit {name} lists {t} in Members, which is no circuit of "
+                                   f"{self.name}", where)
             if g.get("Appliance") != "mast":
                 continue
             if g.get("Kind") not in MAST_KINDS:
