@@ -7,8 +7,10 @@ symbol's ``uuid`` is its per-instance KiCad UUID, the stable opaque identity of 
 
 A pin carries the name of the symbol unit it is drawn in (``PinRef.unit``; KiCad's ``unit_name``, read from the
 library the export names, since the netlist carries only the pin number), empty for a unit with no name. A symbol
-whose units repeat a pin name (a train order device: STOP in each face's unit) is read by unit (``pins_of_units``);
-every other symbol has one pin of each name and is read as before.
+whose units repeat a pin name (a train order device: STOP in each face's unit) is read by unit (``pins_of_units``),
+and ``pins_of`` leaves those pins out; a repeated name with pins in a named unit that are not each in a named unit of
+their own cannot be read and is refused (``ValueError``). A repeated name in unnamed units (a column's membership pins)
+is read as before, the last wire winning; every other symbol has one pin of each name.
 """
 from __future__ import annotations
 
@@ -71,9 +73,20 @@ class Source:
     _by_unit: dict[tuple[str, str, str], Net] = field(default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
+        units: dict[tuple[str, str], list[str]] = {}                  # (ref, pin name) -> the units of the pins so named
         for net in self.nets:
             for p in net.pins:
-                self._by_pin[(p.ref, p.pin)] = net
+                units.setdefault((p.ref, p.pin), []).append(p.unit)
+        for (ref, pin), found in units.items():
+            named = [u for u in found if u]
+            if named and len(found) > 1 and ("" in found or len(set(named)) < len(named)):
+                where = ", ".join(f"unit {u!r}" if u else "a unit with no name" for u in found)
+                raise ValueError(f"{ref}: {len(found)} pins named {pin!r} ({where}); pins of one name in named units are read "
+                                 "by unit, so each must be in a named unit of its own")
+        for net in self.nets:
+            for p in net.pins:
+                if not p.unit or len(units[(p.ref, p.pin)]) == 1:         # read by name; repeats in unnamed units keep the last, as before
+                    self._by_pin[(p.ref, p.pin)] = net
                 if p.unit:
                     self._by_unit[(p.ref, p.unit, p.pin)] = net
 
@@ -87,13 +100,14 @@ class Source:
 
     def pins_of_units(self, ref: str) -> dict[str, dict[str, Net]]:
         """A symbol's wired pins by the name of the unit each is drawn in: {unit name: {pin: net}}. A pin in a unit
-        with no name is under ``""``."""
+        with no name is under ``""``. Two pins of one name in named units are in units of their own (``__post_init__``),
+        so ``pins_of`` has every pin but those, and this has every pin."""
         out: dict[str, dict[str, Net]] = {}
         for (r, unit, pin), net in self._by_unit.items():
             if r == ref and len(net.pins) > 1:
                 out.setdefault(unit, {})[pin] = net
         for (r, pin), net in self._by_pin.items():
-            if r == ref and len(net.pins) > 1 and not any(pin in pins for pins in out.values()):
+            if r == ref and len(net.pins) > 1 and (r, "", pin) not in self._by_unit and not any(pin in pins for pins in out.values()):
                 out.setdefault("", {})[pin] = net
         return out
 

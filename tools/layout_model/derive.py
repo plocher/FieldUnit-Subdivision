@@ -46,9 +46,10 @@ names every other track pin its wire reaches, so the relation is symmetric):
   ``train_order`` that serves it by Name, one unit per face, N or W and S or E. The board derives ``faces``, the
   letters; each face of the device derives ``direction`` from its letter (ADR 0003 D1, ``grammar.direction_of``: N
   and W are LEFT, S and E RIGHT) and ``indications``, the words it can show from the inputs its bindings wire
-  (``reference.TRAIN_ORDER_INPUTS``: nothing asserted is CLEAR, STOP shows STOP, CALLON RESTRICTING, SLOW APPROACH;
-  at run time the most restrictive asserted input wins, ``train_order_indication``, the logic FieldUnit's, its issue
-  #44). A board no such device serves is ``train_order.device`` at missing (the device is a fact not yet drawn); a
+  (``reference.TRAIN_ORDER_INPUTS``: nothing asserted is CLEAR, STOP shows STOP, CALLON RESTRICTING, SLOW APPROACH).
+  Which word a face shows at run time, the most restrictive asserted input winning, is FieldUnit's behaviour (its
+  issue #44), not a model fact: the derivation states only what a face can show. A board no such device serves is
+  ``train_order.device`` at missing (the device is a fact not yet drawn); a
   face letter that names no direction, or one face two devices both state, is ``train_order.face`` at error.
 - **Consumers of another station's indications** (the owner, 2026-10-27): a ``track.consumers`` row is a one-sided
   reference, ``relations.indication`` the token it consumes (``Corporal:2NATK``); a track circuit's token names the
@@ -1201,19 +1202,6 @@ def _train_order(appliance: dict[str, Any]) -> bool:
     """A train order board (``Appliance train_order``; the owner, 2026-11-03): never in a control point, a route or a
     mast rule."""
     return appliance.get("given", {}).get("Appliance") == "train_order"
-
-
-def train_order_indication(asserted) -> str:
-    """What a train order board's face shows for the inputs ``asserted`` (the owner, 2026-11-05): nothing asserted is
-    CLEAR; otherwise the word of the most restrictive asserted input, STOP before CALLON before SLOW
-    (``reference.TRAIN_ORDER_INPUTS``). The run-time logic is FieldUnit's (its issue #44); this is the rule it must
-    agree with. A name that is none of the three inputs is a ``ValueError``."""
-    inputs = dict(reference.TRAIN_ORDER_INPUTS)
-    names = set(asserted)
-    unknown = sorted(names - set(inputs), key=sort_key)
-    if unknown:
-        raise ValueError(f"not a train order input: {', '.join(unknown)}; the inputs are {', '.join(inputs)}")
-    return next((word for pin, word in reference.TRAIN_ORDER_INPUTS if pin in names), reference.TRAIN_ORDER_CLEAR)
 
 
 def _clean(d: dict[str, Any]) -> dict[str, Any]:

@@ -973,17 +973,12 @@ class TrainOrders(unittest.TestCase):
         self.assertTrue(d.text.endswith("face N is stated by two devices"), d.text)
         self.assertEqual(out["interlockings"]["X"]["appliances"]["Gilroy"]["derived"], {"faces": ["N", "S"]})
 
-    def test_the_most_restrictive_asserted_input_wins(self):
-        """The owner, 2026-11-05: nothing asserted is CLEAR; SLOW is APPROACH; CALLON is RESTRICTING; STOP, CALLON, SLOW
-        from the most restrictive. The run-time logic is FieldUnit's (its issue #44); this is the rule it agrees with."""
+    def test_the_input_table_is_ordered_from_the_most_restrictive(self):
+        """The owner, 2026-11-05: STOP, CALLON, SLOW from the most restrictive, each with the word it shows. Which word a
+        face shows at run time is FieldUnit's (its issue #44); the model library holds the table, not the rule."""
         self.assertEqual(reference.TRAIN_ORDER_INPUTS, (("STOP", "STOP"), ("CALLON", "RESTRICTING"), ("SLOW", "APPROACH")))
-        table = {(): "CLEAR", ("SLOW",): "APPROACH", ("CALLON",): "RESTRICTING", ("STOP",): "STOP",
-                 ("STOP", "SLOW"): "STOP", ("STOP", "CALLON"): "STOP", ("SLOW", "CALLON"): "RESTRICTING", ("STOP", "SLOW", "CALLON"): "STOP"}
-        for asserted, word in table.items():
-            self.assertEqual(derive.train_order_indication(asserted), word, asserted)
-            self.assertEqual(derive.train_order_indication(reversed(asserted)), word, asserted)
-        with self.assertRaises(ValueError):
-            derive.train_order_indication(["ORDERS"])
+        self.assertEqual(reference.TRAIN_ORDER_CLEAR, "CLEAR")
+        self.assertFalse(hasattr(derive, "train_order_indication"))
 
     def test_a_station_the_layout_does_not_draw_is_missing(self):
         _, diags = run(self.model(stations=("Lick",)))

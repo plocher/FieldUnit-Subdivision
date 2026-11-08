@@ -12,7 +12,7 @@ from __future__ import annotations
 from behave import given, then, when
 
 from tools import layout_model
-from tools.layout_model import derive
+from tools.layout_model import derive, reference
 
 LEVELS = {"an error": "error", "a warning": "warning", "information": "info", "missing": "missing"}
 
@@ -179,7 +179,12 @@ def asserted(context, face, name, inputs):
 
 @then('the "{face}" face of "{name}" shows "{word}"')
 def shows(context, face, name, word):
-    got = derive.train_order_indication(context.asserted)
+    """The run-time rule is FieldUnit's (its issue #44), not the model library's: the step reads the ordered input
+    table of the reference data, most restrictive first, and the word of the first asserted input, else CLEAR."""
+    asserted = set(context.asserted)
+    unknown = asserted - {pin for pin, _ in reference.TRAIN_ORDER_INPUTS}
+    assert not unknown, f"not a train order input: {', '.join(sorted(unknown))}"
+    got = next((w for pin, w in reference.TRAIN_ORDER_INPUTS if pin in asserted), reference.TRAIN_ORDER_CLEAR)
     assert got == word, f"{', '.join(context.asserted) or 'nothing'} asserted shows {got!r}, not {word!r}"
 
 

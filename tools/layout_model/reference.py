@@ -122,7 +122,7 @@ def code_line_steps(encoding: Optional[str], user: Optional[dict[str, dict]] = N
 # most restrictive asserted input wins, in this table's order from the most restrictive: STOP shows STOP, CALLON
 # RESTRICTING, SLOW APPROACH (orders handed up on the fly). The fascia control is local: no code line carries it. The
 # words are indications (FieldUnit docs/GLOSSARY.md), never a colour or a blade angle. The run-time logic is
-# FieldUnit's (FieldUnit issue #44); the derivation states what a face can show from the inputs its bindings wire
-# (``derive.train_orders``) and the rule the logic must agree with (``derive.train_order_indication``).
+# FieldUnit's (FieldUnit issue #44); the derivation states only what a face can show from the inputs its bindings wire
+# (``derive.train_orders``). The feature's table of what a face shows is checked against this order by its step alone.
 TRAIN_ORDER_INPUTS = (("STOP", "STOP"), ("CALLON", "RESTRICTING"), ("SLOW", "APPROACH"))
 TRAIN_ORDER_CLEAR = "CLEAR"

@@ -95,6 +95,24 @@ class PinUnits(unittest.TestCase):
         self.assertEqual((by_unit["N"]["STOP"].name, by_unit["S"]["STOP"].name), ("ns", "ss"))
         self.assertEqual(src.pins_of_units("X1"), {"": {"A0": by_unit["N"]["STOP"], "A1": by_unit["S"]["STOP"], "A2": by_unit[""]["IND"]}})
 
+    def test_two_pins_of_one_name_are_read_by_unit_only_and_refused_when_a_unit_has_no_name(self):
+        """Same-named pins never overwrite each other: in named units of their own they are read by unit and left out
+        of pins_of; one of them in no named unit, or two in one unit, is refused."""
+        d1 = Symbol("D1", "Railroad-Field:Device-TrainOrder", "", {"Role": "DEVICE", "Appliance": "train_order", "Name": "Gilroy"}, "/X/")
+        x1 = Symbol("X1", "Railroad-HardwareIO:Driver", "", {"Role": "IODRIVER", "IC": "MAX7311", "Address": "0x20"}, "/X/")
+        both = [Net("ns", (PinRef("D1", "STOP", unit="N"), PinRef("X1", "A0"))), Net("ss", (PinRef("D1", "STOP", unit="S"), PinRef("X1", "A1")))]
+        src = from_symbols([d1, x1], both)
+        self.assertEqual(sorted(src.pins_of("D1")), [])
+        self.assertIsNone(src.net_of("D1", "STOP"))
+        self.assertEqual({u: sorted(p) for u, p in src.pins_of_units("D1").items()}, {"N": ["STOP"], "S": ["STOP"]})
+        for second in (PinRef("D1", "STOP"), PinRef("D1", "STOP", unit="N")):
+            with self.assertRaises(ValueError) as e:
+                from_symbols([d1, x1], [both[0], Net("ss", (second, PinRef("X1", "A1")))])
+            self.assertIn("D1: 2 pins named 'STOP'", str(e.exception))
+        unnamed = [Net("a", (PinRef("D1", "STOP"), PinRef("X1", "A0"))), Net("b", (PinRef("D1", "STOP"), PinRef("X1", "A1")))]
+        src = from_symbols([d1, x1], unnamed)                            # repeats in unnamed units read as before: the last wins
+        self.assertEqual(src.net_of("D1", "STOP").name, "b")
+
     def test_a_netlist_names_each_pins_unit_from_the_library_the_export_names(self):
         """The netlist carries pin numbers; the library says which unit each is drawn in and what the unit is called.
         A library that cannot be found names no unit."""
