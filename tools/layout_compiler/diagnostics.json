@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "description": "The import-diagnostic registry of the KiCad importer (ADR 0012 §3.3): every code tools/layout_compiler raises about translating the drawing into a model, its level and lifecycle. Each is located in the drawing (Diag.source: sheet, reference, library symbol, Name) and means nothing to a code generator or to Studio. Rule checks about the model are in schemas/layout-model/rules/diagnostics.json. since is the importer version (layout_compiler 0.4.0).",
+  "description": "The import-diagnostic registry of the KiCad importer (ADR 0012 \u00a73.3): every code tools/layout_compiler raises about translating the drawing into a model, its level and lifecycle. Each is located in the drawing (Diag.source: sheet, reference, library symbol, Name) and means nothing to a code generator or to Studio. Rule checks about the model are in schemas/layout-model/rules/diagnostics.json. since is the importer version (layout_compiler 0.4.0).",
   "codes": {
     "appliance.duplicate": {
       "level": "error",
@@ -328,7 +328,7 @@
       "level": "error",
       "lifecycle": "active",
       "since": "0.4.0",
-      "feature": null,
+      "feature": "field/device_train_order.feature#a head wired to two faces",
       "replacedBy": null
     },
     "head.position": {
@@ -406,6 +406,20 @@
       "lifecycle": "active",
       "since": "0.4.0",
       "feature": null,
+      "replacedBy": null
+    },
+    "lever.face": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": "field/device_train_order.feature#a lever wired to no face",
+      "replacedBy": null
+    },
+    "lever.faces": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": "field/device_train_order.feature#a lever wired to two faces",
       "replacedBy": null
     },
     "macro.field": {
@@ -555,25 +569,11 @@
       "feature": null,
       "replacedBy": null
     },
-    "train_order.heads": {
-      "level": "warning",
-      "lifecycle": "active",
-      "since": "0.4.0",
-      "feature": "trackplan/appliance_train_order.feature#a board drawn with trackplan heads",
-      "replacedBy": null
-    },
     "train_order.track": {
       "level": "error",
       "lifecycle": "active",
       "since": "0.4.0",
       "feature": "trackplan/appliance_train_order.feature#a board with a pin on the track",
-      "replacedBy": null
-    },
-    "train_order.unit": {
-      "level": "error",
-      "lifecycle": "active",
-      "since": "0.4.0",
-      "feature": "field/device_train_order.feature#a unit that names no face",
       "replacedBy": null
     },
     "transport.anchor": {

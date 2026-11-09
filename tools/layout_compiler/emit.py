@@ -18,12 +18,14 @@ from tools.layout_model import derive as derivation
 from tools.layout_model.reference import REFERENCE_DATA
 
 from .geometry import Geometry
+from .geometry import facing as geo_facing
 from .seams import Seams, token_field
 from .source import Symbol
 from .seams import loc as seams_loc
 
 SCHEMA = "layout-model/v3.1.0"                    # reshaped in place to the three maps (ADR 0011 §9; no release yet)
 WRITER = {"name": "layout_compiler", "version": "0.4.0"}
+FACING = ("mast", "train_order")                  # the appliances whose glyph turn the file states (the owner, 2026-11-08)
 
 
 def _clean(d: dict) -> dict:
@@ -65,9 +67,7 @@ def _bindings(bindings) -> dict[str, Any]:
 
 
 def _device(d) -> dict:
-    faces = {face: _entity(None, {"bindings": _bindings(bs)}) for face, bs in d.faces.items()}   # a train order device's units (the owner, 2026-11-05)
-    return _entity(d.given, {"column": d.column, "interlocking": d.interlocking, "mast": d.mast, "signal": d.signal, "bindings": _bindings(d.bindings)},
-                   **({"faces": faces} if faces else {}))
+    return _entity(d.given, {"column": d.column, "interlocking": d.interlocking, "mast": d.mast, "face": d.face, "bindings": _bindings(d.bindings)})
 
 
 def emit(sm: Seams, source_path: Optional[Path] = None, geometry: Optional[Geometry] = None) -> dict[str, Any]:
@@ -156,6 +156,12 @@ def facts(sm: Seams, geometry: Optional[Geometry] = None) -> dict[str, Any]:
         layout["glyphs"] = dict(geometry.glyphs)
 
     plans = sm.trackplan.plans if sm.trackplan else {}
+    if geometry is not None:                                            # which way each mast glyph is turned (the owner, 2026-11-08)
+        for ixn, plan in plans.items():
+            placements = geometry.interlockings.get(ixn, {}).get("appliances", {})
+            for name, row in plan.appliances.items():
+                if row.get("given", {}).get("Appliance") in FACING and name in placements:
+                    row.setdefault("relations", {})["facing"] = geo_facing(placements[name])
     interlockings = {
         ix.name: _entity(ix.given, {"codeline": ix.codeline, "processor": ix.processor},
                          houses={h.cp_name: _entity(h.given, {"maintainerCall": h.maintainer_call, "codeline": h.codeline})

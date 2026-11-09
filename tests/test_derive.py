@@ -894,22 +894,28 @@ class Heads(unittest.TestCase):
 
 
 class TrainOrders(unittest.TestCase):
-    """A train order board (Appliance train_order; the owner, 2026-11-03, 2026-11-05): never in a control point, standing
-    at a timetable station of layout.stations, its faces the units of the field device that serves it."""
+    """A train order board (Appliance train_order; the owner, 2026-11-03, 2026-11-08): never in a control point, standing
+    at a timetable station of layout.stations, its faces the pins of the field mast device that serves it, each with
+    the head and the fascia lever wired to that pin."""
 
-    TO = "Gilroy | appliance | Appliance=train_order Station=Gilroy rel.station=Gilroy\n"
+    TO = "Gilroy | appliance | Appliance=train_order Style=double Station=Gilroy rel.station=Gilroy\n"
+    MAST = {"given": {"Appliance": "train_order_mast", "Name": "Gilroy"}}
 
     @staticmethod
-    def device(*faces: str, name: str = "Gilroy", **bindings: dict[str, str]) -> dict:
-        """A train_order device named for its board with one face per letter; ``N={"STOP": route}`` binds a face's pins."""
-        return {"given": {"Appliance": "train_order", "Name": name},
-                "faces": {f: ({"relations": {"bindings": bindings[f]}} if bindings.get(f) else {}) for f in faces}}
+    def head(face: str, board: str = "Gilroy", style: str = "UQ", letter: str | None = None) -> dict:
+        given = {"Appliance": "head", "Style": style, **({"Head": letter} if letter else {})}
+        return {"given": given, "relations": {"mast": f"X:{board}", **({"face": face} if face else {})}}
 
-    DEVICE = device("N", "S", N={"STOP": "Field/0x20/A0", "SLOW": "Field/0x20/A1", "CALLON": "Field/0x20/A2"}, S={"STOP": "Field/0x20/A3"})
+    @staticmethod
+    def lever(face: str, *inputs: str, board: str = "Gilroy") -> dict:
+        return {"given": {"Appliance": "lever", "Style": "train_order"},
+                "relations": {"mast": f"X:{board}", "face": face, **({"bindings": {w: f"Field/0x20/A{i}" for i, w in enumerate(inputs)}} if inputs else {})}}
 
-    def model(self, plan=(TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH), stations=("Gilroy",), devices: list[dict] = (DEVICE,)) -> dict:
+    DEVICES = (MAST, head("N"), lever("N", "STOP", "SLOW"), head("S"), lever("S", "STOP"))
+
+    def model(self, plan=(TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH), stations=("Gilroy",), devices: list[dict] = DEVICES, to: str = TO) -> dict:
         things, wires, houses = plan
-        ix = interlocking(things + self.TO, wires, houses)
+        ix = interlocking(things + to, wires, houses)
         if devices:
             ix["devices"] = [copy.deepcopy(d) for d in devices]
         m = layout(X=ix)
@@ -924,59 +930,86 @@ class TrainOrders(unittest.TestCase):
             self.assertNotIn("controlPoint", to.get("derived", {}), plan[2])
             self.assertEqual({n: cp for n, cp in control_points(out).items() if n != "Gilroy"}, control_points(run(layout(X=interlocking(*plan)))[0]))
 
-    def test_its_faces_are_its_devices_units_each_facing_a_direction_and_showing_what_its_inputs_ask(self):
-        """The owner, 2026-11-05: the board derives its faces, the letters; each face derives its direction (ADR 0003 D1)
-        and the words it can show: CLEAR, which nothing asserted shows, and the word of each input its bindings wire."""
+    def test_its_faces_are_its_masts_wired_pins_each_facing_a_direction_and_showing_what_its_lever_asks(self):
+        """The owner, 2026-11-08: a double board's face pins name their directions (ADR 0003 D1); each face derives the
+        words it can show: CLEAR, which nothing asserted shows, and the word of each input its lever binds."""
         out, diags = run(self.model())
-        self.assertEqual(only(diags, "train_order", "device", "head"), [])
+        self.assertEqual(only(diags, "train_order", "device", "head", "lever"), [])
         to = out["interlockings"]["X"]["appliances"]["Gilroy"]
-        self.assertEqual(to["derived"], {"faces": ["N", "S"]})                                    # no states, no normal, no heads
+        self.assertEqual(to["derived"], {"faces": {"N": {"direction": "LEFT", "indications": ["APPROACH", "CLEAR", "STOP"]},
+                                                   "S": {"direction": "RIGHT", "indications": ["CLEAR", "STOP"]}}})
         self.assertNotIn("heads", to)
-        faces = out["interlockings"]["X"]["devices"][0]["faces"]
-        self.assertEqual({f: v["derived"] for f, v in faces.items()},
-                         {"N": {"direction": "LEFT", "indications": ["APPROACH", "CLEAR", "RESTRICTING", "STOP"]},
-                          "S": {"direction": "RIGHT", "indications": ["CLEAR", "STOP"]}})
-        self.assertEqual(out["interlockings"]["X"]["devices"][0]["derived"], {"serves": "X:Gilroy"})
+        self.assertEqual([d["derived"] for d in out["interlockings"]["X"]["devices"]], [{"serves": "X:Gilroy"}] * 5)
         self.assertEqual(layout_model.errors(out), [])
-        out, _ = run(self.model(devices=[self.device("W")]))                                      # a one-faced board; nothing wired yet
-        self.assertEqual(out["interlockings"]["X"]["appliances"]["Gilroy"]["derived"], {"faces": ["W"]})
-        self.assertEqual(out["interlockings"]["X"]["devices"][0]["faces"]["W"]["derived"], {"direction": "LEFT", "indications": ["CLEAR"]})
         mast = out["interlockings"]["X"]["appliances"]["814SA"].get("derived", {})
         self.assertNotIn("faces", mast)
 
-    def test_a_board_with_no_field_device_is_missing(self):
+    def test_a_single_board_faces_the_way_its_glyph_is_turned(self):
+        """The owner, 2026-11-08: a single board's one pin names no direction; relations.facing, the glyph's turn, does.
+        A quarter turn (no facing) is train_order.face; a second wired face on a single board is too."""
+        single = "Gilroy | appliance | Appliance=train_order Style=single Station=Gilroy rel.station=Gilroy rel.facing=RIGHT\n"
+        out, diags = run(self.model(devices=[self.MAST, self.head("TO"), self.lever("TO", "STOP")], to=single))
+        self.assertEqual(only(diags, "train_order"), [])
+        self.assertEqual(out["interlockings"]["X"]["appliances"]["Gilroy"]["derived"], {"faces": {"TO": {"direction": "RIGHT", "indications": ["CLEAR", "STOP"]}}})
+        self.assertEqual(layout_model.errors(out), [])
+        unturned = single.replace(" rel.facing=RIGHT", "")
+        m = self.model(devices=[self.MAST, self.lever("TO", "STOP")], to=unturned)
+        self.assertEqual(only(run(m)[1], "train_order"), [("train_order.face", "1")])
+        (d,) = derive.derive(m)[1].by_code("train_order.face")
+        self.assertEqual((d.severity, d.where, d.entities), ("error", "interlockings/X/devices/1", ("interlockings/X/devices/1", "interlockings/X/appliances/Gilroy")))
+        self.assertIn("faces no direction: its glyph is turned a quarter", d.text)
+        m = self.model(devices=[self.MAST, self.lever("E", "STOP"), self.lever("W", "STOP")], to=single)
+        out, diags = run(m)
+        self.assertEqual(only(diags, "train_order"), [("train_order.face", "2")])
+        self.assertIn("is single but faces E, W are wired", derive.derive(m)[1].by_code("train_order.face")[0].text)
+        self.assertEqual(sorted(out["interlockings"]["X"]["appliances"]["Gilroy"]["derived"]["faces"]), ["E"])
+
+    def test_a_board_with_no_field_mast_or_no_wired_face_is_missing(self):
         m = self.model(devices=())
         out, diags = run(m)
         self.assertEqual(only(diags, "train_order"), [("train_order.device", "Gilroy")])
         (d,) = derive.derive(m)[1].by_code("train_order.device")
         self.assertEqual((d.severity, d.where, d.entities), ("missing", "interlockings/X/appliances/Gilroy", ("interlockings/X/appliances/Gilroy",)))
-        self.assertEqual(d.text, "X: train order board Gilroy has no field device; a train_order device named for it, one unit per face "
-                                 "(N or W, S or E; inputs STOP, SLOW, CALLON; output IND), is expected")
+        self.assertEqual(d.text, "X: train order board Gilroy has no field mast device; a train_order_mast device named for it, with a head "
+                                 "and a train_order lever on each face pin, is expected")
         self.assertNotIn("faces", out["interlockings"]["X"]["appliances"]["Gilroy"].get("derived", {}))
         self.assertEqual(layout_model.errors(out), [])
+        m = self.model(devices=[self.MAST])
+        self.assertEqual(only(run(m)[1], "train_order"), [("train_order.device", "Gilroy")])
+        (d,) = derive.derive(m)[1].by_code("train_order.device")
+        self.assertEqual(d.entities, ("interlockings/X/appliances/Gilroy", "interlockings/X/devices/0"))
+        self.assertIn("has no face wired", d.text)
 
-    def test_a_face_that_names_no_direction_or_that_two_devices_state_is_an_error(self):
-        """Wrong, not incomplete (the owner, 2026-11-03): a face A is no direction; one face stated twice is a contradiction.
-        Neither counts as a face of the board."""
-        m = self.model(devices=[self.device("A", "N")])
+    def test_a_face_with_no_lever_is_missing(self):
+        m = self.model(devices=[self.MAST, self.head("N"), self.head("S"), self.lever("S", "STOP")])
         out, diags = run(m)
-        self.assertEqual(only(diags, "train_order"), [("train_order.face", "A")])
-        (d,) = derive.derive(m)[1].by_code("train_order.face")
-        self.assertEqual((d.severity, d.where, d.entities), ("error", "interlockings/X/devices/0/faces/A", ("interlockings/X/devices/0/faces/A", "interlockings/X/appliances/Gilroy")))
-        self.assertEqual(out["interlockings"]["X"]["appliances"]["Gilroy"]["derived"], {"faces": ["N"]})
-        self.assertNotIn("derived", out["interlockings"]["X"]["devices"][0]["faces"]["A"])
-        m = self.model(devices=[self.device("N"), self.device("N", "S")])
+        self.assertEqual(only(diags, "train_order"), [("train_order.lever", "1")])
+        (d,) = derive.derive(m)[1].by_code("train_order.lever")
+        self.assertEqual((d.severity, d.where, d.entities), ("missing", "interlockings/X/devices/1", ("interlockings/X/devices/1", "interlockings/X/appliances/Gilroy")))
+        self.assertEqual(out["interlockings"]["X"]["appliances"]["Gilroy"]["derived"]["faces"]["N"], {"direction": "LEFT", "indications": ["CLEAR"]})
+
+    def test_a_face_that_names_no_direction_or_that_two_levers_serve_is_an_error(self):
+        """Wrong, not incomplete (the owner, 2026-11-03): a double board's face A is no direction; one face two levers
+        serve is a contradiction. A face that names no direction is not a face of the board."""
+        m = self.model(devices=[self.MAST, self.lever("A", "STOP"), self.lever("N", "STOP")])
         out, diags = run(m)
-        self.assertEqual(only(diags, "train_order"), [("train_order.face", "N")])
+        self.assertEqual(only(diags, "train_order"), [("train_order.face", "1")])
         (d,) = derive.derive(m)[1].by_code("train_order.face")
-        self.assertEqual((d.where, d.entities), ("interlockings/X/devices/1/faces/N", ("interlockings/X/devices/1/faces/N", "interlockings/X/devices/0/faces/N", "interlockings/X/appliances/Gilroy")))
-        self.assertTrue(d.text.endswith("face N is stated by two devices"), d.text)
-        self.assertEqual(out["interlockings"]["X"]["appliances"]["Gilroy"]["derived"], {"faces": ["N", "S"]})
+        self.assertEqual((d.severity, d.where, d.entities), ("error", "interlockings/X/devices/1", ("interlockings/X/devices/1", "interlockings/X/appliances/Gilroy")))
+        self.assertEqual(sorted(out["interlockings"]["X"]["appliances"]["Gilroy"]["derived"]["faces"]), ["N"])
+        m = self.model(devices=[self.MAST, self.lever("N", "STOP"), self.lever("N", "SLOW")])
+        out, diags = run(m)
+        self.assertEqual(only(diags, "train_order"), [("train_order.face", "1")])
+        (d,) = derive.derive(m)[1].by_code("train_order.face")
+        self.assertEqual((d.where, d.entities), ("interlockings/X/devices/1", ("interlockings/X/devices/1", "interlockings/X/appliances/Gilroy", "interlockings/X/devices/2")))
+        self.assertIn("face N is served by 2 levers", d.text)
+        self.assertEqual(out["interlockings"]["X"]["appliances"]["Gilroy"]["derived"]["faces"]["N"]["indications"], ["APPROACH", "CLEAR", "STOP"])
 
     def test_the_input_table_is_ordered_from_the_most_restrictive(self):
-        """The owner, 2026-11-05: STOP, CALLON, SLOW from the most restrictive, each with the word it shows. Which word a
-        face shows at run time is FieldUnit's (its issue #44); the model library holds the table, not the rule."""
-        self.assertEqual(reference.TRAIN_ORDER_INPUTS, (("STOP", "STOP"), ("CALLON", "RESTRICTING"), ("SLOW", "APPROACH")))
+        """The owner, 2026-11-08: STOP, then SLOW, each with the word it shows; CALLON is the block signal's indication,
+        not a train order control. Which word a face shows at run time is FieldUnit's (its issue #44); the model library
+        holds the table, not the rule."""
+        self.assertEqual(reference.TRAIN_ORDER_INPUTS, (("STOP", "STOP"), ("SLOW", "APPROACH")))
         self.assertEqual(reference.TRAIN_ORDER_CLEAR, "CLEAR")
         self.assertFalse(hasattr(derive, "train_order_indication"))
 
@@ -989,29 +1022,35 @@ class TrainOrders(unittest.TestCase):
         del m["interlockings"]["X"]["appliances"]["Gilroy"]["relations"]
         self.assertEqual(only(run(m)[1], "train_order.station"), [("train_order.station", "Gilroy")])
 
-    def head(self, letter: str, style: str, via: str = "signal") -> dict:
-        """A head device wired to the train_order device named Gilroy (``relations.signal``), or to a mast device of that
-        name (``relations.mast``)."""
-        return {"given": {"Appliance": "head", "Style": style, "Head": letter}, "relations": {via: "X:Gilroy"}}
-
     def test_a_faces_head_is_not_a_mast_head(self):
-        """A head device on a face's IND (relations.signal) serves the board and is no mast's head: the head checks do
-        not read it (the board has no trackplan head). A head wired to a mast device named like the board names no
-        mast head (head.plan), with the board named in the hint (the owner, 2026-11-03, 2026-11-05)."""
-        out, diags = run(self.model(devices=[self.DEVICE, self.head("N", "LQ"), self.head("S", "LQ")]))
+        """A head on a face pin (relations.face) serves the board and is no mast's head: the head checks do not read it
+        (the board has no trackplan head). A lettered head wired to a mast device named like the board names no mast
+        head (head.plan), with the board named in the hint (the owner, 2026-11-03, 2026-11-08)."""
+        out, diags = run(self.model())
         self.assertEqual(only(diags, "head", "train_order", "device"), [])
-        self.assertEqual([d["derived"] for d in out["interlockings"]["X"]["devices"][1:]], [{"serves": "X:Gilroy"}, {"serves": "X:Gilroy"}])
-        self.assertEqual(layout_model.errors(out), [])
-        m = self.model(devices=[self.DEVICE, self.head("N", "LQ", via="mast")])
-        self.assertEqual(only(run(m)[1], "head"), [("head.plan", "1")])
+        m = self.model(devices=[self.MAST, self.lever("N", "STOP"), self.head("", letter="N")])
+        self.assertEqual(only(run(m)[1], "head"), [("head.plan", "2")])
         (d,) = derive.derive(m)[1].by_code("head.plan")
         self.assertEqual(d.text, "X: head devices for mast Gilroy head N, but the trackplan draws no such head "
-                                 "(Gilroy is a train order board; it has no trackplan head, its faces are the units of its train_order device)")
+                                 "(Gilroy is a train order board; it has no trackplan head: its faces are its field mast's pins, "
+                                 "and a head on a face pin has no letter)")
+
+    def test_a_signal_mast_drawn_facing_against_its_letter_is_a_warning(self):
+        """The owner, 2026-11-08: the glyph's turn (relations.facing) must agree with the Name letter (ADR 0003 D1); the
+        same reading gives a single board its direction, so every signal mast checks the convention."""
+        m = self.model()
+        m["interlockings"]["X"]["appliances"]["814SA"].setdefault("relations", {})["facing"] = "RIGHT"
+        self.assertEqual(only(run(m)[1], "mast.facing"), [])
+        m["interlockings"]["X"]["appliances"]["814SA"]["relations"]["facing"] = "LEFT"
+        self.assertEqual(only(run(m)[1], "mast.facing"), [("mast.facing", "814SA")])
+        (d,) = derive.derive(m)[1].by_code("mast.facing")
+        self.assertEqual(d.severity, "warning")
+        self.assertIn("is drawn facing LEFT but its letter S says RIGHT", d.text)
 
     def test_the_desks_no_lever_rule_never_reads_it(self):
         """interlocking.no_lever keys on switches and locks (grammar.lever_class); a train order board on a code line's
         interlocking is not one of its bare switches, device or no device, and its control is local."""
-        for devices in ((), (self.DEVICE,)):
+        for devices in ((), self.DEVICES):
             m = on_line(self.model(devices=list(devices)), "X")
             desk(m, {"1": "North", "2": "South"}, [lever(n, "NWS", column="Desk:1") for n in ("813", "815", "817")])
             self.assertEqual(only(run(m)[1], "interlocking", "lever"), [], devices)

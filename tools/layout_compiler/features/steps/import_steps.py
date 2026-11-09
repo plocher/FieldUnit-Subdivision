@@ -103,24 +103,25 @@ def no_circuit(context, name):
     raise Pending("the TRACK pin of a lamp or contact, issue #82")
 
 
-def _train_order_device(context, name: str) -> dict:
-    devs = [d for d in context.model["interlockings"][context.interlocking].get("devices", [])
-            if d.get("given", {}).get("Appliance") == "train_order" and d["given"].get("Name") == name]
-    assert len(devs) == 1, f"{name}: {len(devs)} train order devices"
+def _device(context, ref: str):
+    """The importer's device for the symbol ``ref``, in the scenario's interlocking."""
+    devs = [d for d in context.seams.interlockings[context.interlocking].devices if d.sym.ref == ref]
+    assert len(devs) == 1, f"{ref}: {len(devs)} devices"
     return devs[0]
 
 
-@then('"{name}" has faces "{faces}"')
-def faces(context, name, faces):
-    got = sorted(_train_order_device(context, name).get("faces", {}))
-    want = sorted(f.strip() for f in faces.split(","))
-    assert got == want, f"{name}: faces {got!r}, not {want!r}"
+@then('the {kind} "{ref}" is on face "{face}" of "{mast}"')
+def on_face(context, kind, ref, face, mast):
+    """A head's or a train order lever's IND wire reaches a face pin of the train order mast device (the owner, 2026-11-08)."""
+    d = _device(context, ref)
+    assert d.mast == f"{context.interlocking}:{mast}", f"{ref}: its mast is {d.mast!r}, not {mast!r}"
+    assert d.face == face, f"{ref}: its face is {d.face!r}, not {face!r}"
 
 
-@then('face "{face}" of "{name}" binds "{pin}" to "{route}"')
-def binds(context, face, name, pin, route):
-    got = _train_order_device(context, name).get("faces", {}).get(face, {}).get("relations", {}).get("bindings", {}).get(pin)
-    assert got == route, f"{name} face {face}: {pin} binds {got!r}, not {route!r}"
+@then('the lever "{ref}" binds "{pin}" to "{route}"')
+def binds(context, ref, pin, route):
+    got = {b.function: b.route for b in _device(context, ref).bindings}.get(pin)
+    assert got == route, f"{ref}: {pin} binds {got!r}, not {route!r}"
 
 
 @then('the head "{ref}" is position "{position}" of "{mast}"')

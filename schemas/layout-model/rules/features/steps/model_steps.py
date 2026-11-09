@@ -141,28 +141,27 @@ def on_circuit(context, name, circuit):
 
 @then('"{name}" has faces "{faces}"')
 def faces(context, name, faces):
-    got = _named(context, name).get("derived", {}).get("faces")
-    want = [f.strip() for f in faces.split(",")]
-    assert got == want, f"{name}: derived faces is {got!r}, not {want!r}"
+    got = sorted(_named(context, name).get("derived", {}).get("faces", {}))
+    want = sorted(f.strip() for f in faces.split(","))
+    assert got == want, f"{name}: derived faces are {got!r}, not {want!r}"
 
 
 def _face(context, name: str, face: str) -> dict:
-    """The face ``face`` of the train order device named ``name``, in the derived model."""
-    found = [d["faces"][face] for ix in context.derived["interlockings"].values() for d in ix.get("devices", [])
-             if d.get("given", {}).get("Appliance") == "train_order" and d["given"].get("Name") == name and face in d.get("faces", {})]
-    assert len(found) == 1, f"{name}: {len(found)} train order devices state face {face}"
-    return found[0]
+    """The face ``face`` derived on the train order board named ``name``."""
+    faces = _named(context, name).get("derived", {}).get("faces", {})
+    assert face in faces, f"{name}: no derived face {face}; faces: {sorted(faces)}"
+    return faces[face]
 
 
 @then('the "{face}" face of "{name}" serves the direction "{direction}"')
 def face_direction(context, face, name, direction):
-    got = _face(context, name, face).get("derived", {}).get("direction")
+    got = _face(context, name, face).get("direction")
     assert got == direction, f"{name} face {face}: derived direction is {got!r}, not {direction!r}"
 
 
 @then('the "{face}" face of "{name}" can show "{words}"')
 def face_indications(context, face, name, words):
-    got = _face(context, name, face).get("derived", {}).get("indications")
+    got = _face(context, name, face).get("indications")
     want = [w.strip() for w in words.split(",")]
     assert got == want, f"{name} face {face}: derived indications is {got!r}, not {want!r}"
 
@@ -198,26 +197,41 @@ def presents(context, position, mast, words):
     raise Pending("derived.presents from the head model table, issue #80")
 
 
-@given('train order device "{name}" has units for the faces "{faces}"')
-def units(context, name, faces):
-    """A field device of Appliance train_order named for its board, with one face per listed letter, in the
-    interlocking that holds the board (else the one interlocking stated so far)."""
+def _holder(context, name: str) -> str:
+    """The interlocking that holds the appliance ``name``, else the one interlocking stated so far."""
     model = _model(context)
     holders = [ixn for ixn, ix in model["interlockings"].items() if name in ix.get("appliances", {})]
-    ixn = holders[0] if holders else next(iter(model["interlockings"]), "X")
-    device = {"given": {"Appliance": "train_order", "Name": name},
-              "faces": {f.strip(): {} for f in faces.split(",") if f.strip()}}
-    _interlocking(context, ixn).setdefault("devices", []).append(device)
+    return holders[0] if holders else next(iter(model["interlockings"]), "X")
 
 
-@given('the "{face}" face of "{name}" wires the inputs "{inputs}"')
-def wires(context, face, name, inputs):
-    """The face's STOP, SLOW or CALLON bound to a driver pin each; the route is any, the binding is the fact."""
-    model = _model(context)
-    devs = [d for ix in model["interlockings"].values() for d in ix.get("devices", [])
-            if d["given"].get("Appliance") == "train_order" and d["given"].get("Name") == name and face in d.get("faces", {})]
-    assert len(devs) == 1, f"{name}: {len(devs)} train order devices state face {face}"
-    devs[0]["faces"][face].setdefault("relations", {})["bindings"] = {w: f"Field/0x20/A{i}" for i, w in enumerate(_inputs(inputs))}
+@given('train order mast device "{name}" exists')
+def mast_device(context, name):
+    """A field mast device of Appliance train_order_mast named for its board (the owner, 2026-11-08), once."""
+    ixn = _holder(context, name)
+    devices = _interlocking(context, ixn).setdefault("devices", [])
+    if not any(d["given"].get("Appliance") == "train_order_mast" and d["given"].get("Name") == name for d in devices):
+        devices.append({"given": {"Appliance": "train_order_mast", "Name": name}})
+
+
+@given('train order mast "{name}" has a head on face "{face}"')
+def face_head(context, name, face):
+    """A head device whose IND wire reaches the mast's face pin: relations.mast and relations.face as the importer
+    writes them (the owner, 2026-11-08)."""
+    mast_device(context, name)
+    ixn = _holder(context, name)
+    _interlocking(context, ixn)["devices"].append({"given": {"Appliance": "head", "Style": "UQ"},
+                                                   "relations": {"mast": f"{ixn}:{name}", "face": face}})
+
+
+@given('train order mast "{name}" has a lever on face "{face}" wiring "{inputs}"')
+def face_lever(context, name, face, inputs):
+    """A train order lever (Appliance lever, Style train_order) whose IND wire reaches the mast's face pin, its STOP
+    and SLOW bound to a driver pin each; the route is any, the binding is the fact. ``nothing`` binds none."""
+    mast_device(context, name)
+    ixn = _holder(context, name)
+    _interlocking(context, ixn)["devices"].append({"given": {"Appliance": "lever", "Style": "train_order"},
+                                                   "relations": {"mast": f"{ixn}:{name}", "face": face,
+                                                                 "bindings": {w: f"Field/0x20/A{i}" for i, w in enumerate(_inputs(inputs))}}})
 
 
 @given('field mast "{mast}" has these heads:')

@@ -1,5 +1,6 @@
-"""A symbol's units: their names in the libraries, each pin's unit in the importer's input, and the lint of a train
-order board's field device, whose units are its faces (the owner, 2026-11-05)."""
+"""A symbol's units: their names in the libraries and each pin's unit in the importer's input; and the lint of a train
+order board's symbols, the trackplan board, the field mast whose pins are its faces, and the fascia lever (the owner,
+2026-11-08)."""
 from __future__ import annotations
 
 import sys
@@ -36,18 +37,21 @@ def face_pins(unit: int) -> list[tuple[str, str, str]]:
     return [("STOP", str(n + 1), "input"), ("SLOW", str(n + 2), "input"), ("CALLON", str(n + 3), "input"), ("IND", str(n + 4), "output")]
 
 
-def library(units: list[tuple[int, str | None, list]], **props: str) -> str:
-    fields = {"Role": "DEVICE", "Appliance": "train_order", "Name": "${Value}", "Pin.STOP": "binary", "Pin.SLOW": "binary",
-              "Pin.CALLON": "binary", "Pin.IND": "indication", **props}
-    return ('(kicad_symbol_lib\n\t(version 20251024)\n\t(generator "kicad_symbol_editor")\n\t(symbol "Device-TrainOrder"\n'
+def library(units: list[tuple[int, str | None, list]], name: str = "Device-TrainOrder", fields: dict[str, str] | None = None, **props: str) -> str:
+    """A one-symbol library text: ``units`` are (number, unit name or None, pins); ``fields`` replaces the default
+    train order unit device's fields, ``props`` adds to them."""
+    if fields is None:
+        fields = {"Role": "DEVICE", "Appliance": "train_order", "Name": "${Value}", "Pin.STOP": "binary", "Pin.SLOW": "binary",
+                  "Pin.CALLON": "binary", "Pin.IND": "indication"}
+    fields = {**fields, **props}
+    return ('(kicad_symbol_lib\n\t(version 20251024)\n\t(generator "kicad_symbol_editor")\n\t(symbol "' + name + '"\n'
             + _prop("Reference", "D") + '\t\t(property "Value" ""\n\t\t\t(at 0 0 0)\n\t\t\t(do_not_autoplace yes)\n\t\t)\n'
             + "".join(_prop(k, v) for k, v in fields.items())
             + '\t\t(property "ki_locked" ""\n\t\t\t(at 0 0 0)\n\t\t)\n'
-            + "".join(_unit("Device-TrainOrder", u, n, p) for u, n, p in units) + "\t)\n)\n")
+            + "".join(_unit(name, u, n, p) for u, n, p in units) + "\t)\n)\n")
 
 
 TWO_FACES = library([(1, "N", face_pins(1)), (2, "S", face_pins(2))])
-
 
 class UnitNames(unittest.TestCase):
     def test_the_text_reader_lists_the_units_names(self):
@@ -128,39 +132,70 @@ class PinUnits(unittest.TestCase):
             self.assertEqual(src.pins_of_units("D1"), {"": {"STOP": src.net_of("D1", "STOP")}})
 
 
-class TrainOrderDeviceLint(unittest.TestCase):
-    """The lint of a train order board's field device (the owner, 2026-11-05): one unit per face named N, S, E or W;
-    each unit STOP, SLOW, CALLON in (binary) and IND out (indication); no Style, Kind or code line token."""
+MAST = {"Role": "DEVICE", "Appliance": "train_order_mast", "Name": "${Value}"}
+LEVER = {"Role": "DEVICE", "Appliance": "lever", "Style": "train_order", "Name": "${Value}", "Pin.STOP": "binary", "Pin.SLOW": "binary"}
+BOARD = {"Role": "APPLIANCE", "Appliance": "train_order", "Name": "${Value}", "Station": "", "Style": "double"}
+LEVER_PINS = [("IND", "1", "input"), ("~{STOP}", "2", "output"), ("~{SLOW}", "3", "output")]
 
-    def lint(self, text: str) -> list[str]:
-        sym = library_symbols(text)["Device-TrainOrder"]
-        return [m.removeprefix("L:Device-TrainOrder: ") for s, m in lint_symbol("L", "Device-TrainOrder", sym) if s == "error"]
 
-    def test_two_faces_and_one_face_pass(self):
-        self.assertEqual(self.lint(TWO_FACES), [])
-        self.assertEqual(self.lint(library([(1, "W", face_pins(1))])), [])
+class TrainOrderSymbolLint(unittest.TestCase):
+    """The lint of a train order board's symbols (the owner, 2026-11-08): the trackplan board states Style single or
+    double and Station and has no pins; the field mast has one passive pin per face, a double mast's named N, S, E
+    or W, Pin.<pin>=indication; the fascia lever's IND is the face it serves (a membership pin, no Pin.IND) and its
+    function pins are STOP and SLOW, binary outputs; no code line token on the lever."""
 
-    def test_a_unit_without_a_face_name_fails(self):
-        self.assertEqual(self.lint(library([(1, None, face_pins(1))])), ["unit 1 has no name; a face is a unit named one of N, S, E, W"])
-        self.assertEqual(self.lint(library([(1, "A", face_pins(1))])), ["unit 1 is named 'A'; a face is a unit named one of N, S, E, W"])
+    def lint(self, text: str, name: str) -> list[str]:
+        sym = library_symbols(text)[name]
+        return [m.removeprefix(f"L:{name}: ") for s, m in lint_symbol("L", name, sym) if s == "error"]
 
-    def test_a_faces_pins_are_its_three_inputs_and_one_output(self):
-        self.assertIn("unit 1 has pins CALLON, SLOW, STOP; a face has STOP, SLOW, CALLON in and IND out", self.lint(library([(1, "N", face_pins(1)[:3])])))
-        two_ind = library([(1, "N", face_pins(1) + [("IND", "9", "output")])])
-        self.assertEqual(self.lint(two_ind), ["unit 1 has pins CALLON, IND, IND, SLOW, STOP; a face has STOP, SLOW, CALLON in and IND out"])
-        self.assertEqual(self.lint(library([(1, "N", [("STOP", "1", "output"), ("SLOW", "2", "input"), ("CALLON", "3", "input"), ("IND", "4", "output")])])),
-                         ["pin STOP is output; a face's STOP is an input"])
-        self.assertEqual(self.lint(library([(1, "N", face_pins(1))], **{"Pin.SLOW": "level"})),
-                         ["Pin.SLOW = 'level'; a face's SLOW is binary"])
-        self.assertEqual(self.lint(library([(1, "N", face_pins(1))], **{"Pin.IND": "binary"})),
-                         ["Pin.IND = 'binary'; a face's IND is indication"])
+    def mast(self, pins: list[tuple[str, str, str]], **props: str) -> list[str]:
+        fields = {**MAST, **{f"Pin.{n}": "indication" for n, _, _ in pins}}
+        return self.lint(library([(1, None, pins)], "Device-TrainOrder-Mast", fields, **props), "Device-TrainOrder-Mast")
 
-    def test_no_code_line_token_and_no_style_or_kind(self):
-        self.assertEqual(self.lint(library([(1, "N", face_pins(1))], IndicationToken="GilroyK")),
-                         ["field IndicationToken: a train order board's control is local; no code line token"])
-        self.assertIn("field Control.STOP: a train order board's control is local; no code line token",
-                      self.lint(library([(1, "N", face_pins(1))], **{"Control.STOP": "${Value}S"})))
-        self.assertEqual(self.lint(library([(1, "N", face_pins(1))], Style="board")), ["a train order device states no Style; its faces are its units"])
+    def test_a_double_mast_has_two_direction_pins_and_a_single_one_pin_of_any_name(self):
+        self.assertEqual(self.mast([("E", "1", "passive"), ("W", "2", "passive")]), [])
+        self.assertEqual(self.mast([("N", "1", "passive"), ("S", "2", "passive")]), [])
+        self.assertEqual(self.mast([("TO", "1", "passive")]), [])
+        self.assertEqual(self.mast([("A", "1", "passive"), ("B", "2", "passive")]),
+                         ["a double train order mast's pins are two of N, S, E, W, the direction each face serves; this has A, B"])
+        self.assertEqual(self.mast([]), ["a train order mast has one passive pin per face; this has none"])
+        self.assertIn("pin E is input; a field mast's position pin is passive, so a consumer may take one position or several tied together",
+                      self.mast([("E", "1", "input"), ("W", "2", "passive")]))
+        self.assertIn("Pin.E = 'binary'; a field mast's pins are kind indication", self.mast([("E", "1", "passive"), ("W", "2", "passive")], **{"Pin.E": "binary"}))
+        self.assertIn("a field mast states no Style; the pin set states the head count", self.mast([("E", "1", "passive"), ("W", "2", "passive")], Style="double"))
+
+    def lever(self, pins=LEVER_PINS, fields: dict[str, str] = LEVER, **props: str) -> list[str]:
+        return self.lint(library([(1, None, pins)], "Local-TrainOrder", fields, **props), "Local-TrainOrder")
+
+    def test_a_lever_has_ind_for_its_face_and_stop_and_slow_as_binary_outputs(self):
+        self.assertEqual(self.lever(), [])
+        self.assertEqual(self.lever([("~{STOP}", "2", "output"), ("~{SLOW}", "3", "output")]),
+                         ["a train order lever has an IND pin, the face it serves, wired to the mast's face pin"])
+        self.assertEqual(self.lever([("IND", "1", "output"), ("~{STOP}", "2", "output"), ("~{SLOW}", "3", "output")]),
+                         ["pin IND is output; a train order lever's IND is an input, the face it serves"])
+        self.assertIn("Pin.IND: a train order lever's IND is the face it serves, not a capability", self.lever(**{"Pin.IND": "indication"}))
+        self.assertIn("a train order lever's function pins are STOP, SLOW; this has CALLON, SLOW, STOP",
+                      self.lever(LEVER_PINS + [("~{CALLON}", "4", "output")], **{"Pin.CALLON": "binary"}))
+        self.assertIn("pin ~{STOP} is input; a train order lever's STOP is an output",
+                      self.lever([("IND", "1", "input"), ("~{STOP}", "2", "input"), ("~{SLOW}", "3", "output")]))
+        self.assertIn("Pin.SLOW = 'level'; a train order lever's SLOW is binary", self.lever(**{"Pin.SLOW": "level"}))
+
+    def test_no_code_line_token_on_a_lever(self):
+        self.assertEqual(self.lever(IndicationToken="GilroyK"), ["field IndicationToken: a train order board's control is local; no code line token"])
+        self.assertIn("field Control.STOP: a train order board's control is local; no code line token", self.lever(**{"Control.STOP": "${Value}S"}))
+
+    def board(self, pins=(), **props: str) -> list[str]:
+        fields = {**BOARD, **props}
+        return self.lint(library([(1, None, list(pins))], "Train Order Mast Double", fields), "Train Order Mast Double")
+
+    def test_a_trackplan_board_states_style_and_station_and_has_no_pins(self):
+        self.assertEqual(self.board(), [])
+        self.assertEqual(self.board(Style="single"), [])
+        self.assertEqual(self.board(Style="dwarf"), ["a train order board states Style, one of single, double; this has dwarf"])
+        self.assertIn("a train order board has no pins; its faces are its field mast's; this has H", self.board([("H", "1", "passive")]))
+        fields = {k: v for k, v in BOARD.items() if k != "Station"}
+        self.assertEqual(self.lint(library([(1, None, [])], "Train Order Mast Double", fields), "Train Order Mast Double"),
+                         ["a train order board states Station, the timetable station it stands at"])
 
 
 if __name__ == "__main__":

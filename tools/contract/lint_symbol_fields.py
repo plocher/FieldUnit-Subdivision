@@ -19,13 +19,19 @@ Per symbol, by Role:
   C in number order from A with no gap, one to three of them, `Pin.<letter>=indication` each; no Style,
   Kind or Indications field: the pin set states the head count. The older Railroad-Field:Mast (one IND
   output) has no lettered pin and keeps the plain DEVICE rules.
-- DEVICE with Appliance train_order (a train order board's field device; the owner, 2026-11-05): one
-  unit per face, each unit named for its face, N, S, E or W (KiCad's unit name; a one-faced board
-  places one unit); each unit has exactly the pins STOP, SLOW and CALLON, inputs of kind binary, and
-  IND, an output of kind indication, to the face's head; no Style, no Kind; no code line token field
-  (the control is local): no Control, Indication, Control.*, Indication.* or IndicationToken. A face
-  mixes its inputs and its output in one unit by rule, so the one-capability-per-unit check does not
-  apply; the units are still not interchangeable and the Value is not autoplaced.
+- APPLIANCE with Appliance train_order (a trackplan train order board; the owner, 2026-11-08): Style
+  single or double, the symbol drawn, as a signal mast's; a Station field; no pins at all (it stands
+  beside the track; its faces are its field mast device's pins).
+- DEVICE with Appliance train_order_mast (a train order board's field mast; the owner, 2026-11-08): one
+  passive pin per face, `Pin.<pin>=indication` each; a double mast's pins are named N, S, E or W, the
+  direction each face serves; a single mast has one pin of any name (its direction is the trackplan
+  glyph's turn); no Style, Kind or Indications, as a field signal mast.
+- DEVICE with Appliance lever and Style train_order (a train order board's fascia lever; the owner,
+  2026-11-08, Railroad-Field:Local-TrainOrder): IND, an input, is the face the lever serves, wired to
+  the mast's face pin beside the face's head, so it is a membership pin and carries no Pin.IND; the
+  function pins are exactly STOP and SLOW, outputs of kind binary (no CALLON: that is the block
+  signal's indication); no code line token field (the control is local): no Control, Indication,
+  Control.*, Indication.* or IndicationToken.
 - ENCODER (the head word -> hardware step; the owner's hand-edited Railroad-Field-Signals of
   2026-11-04 is the truth): no Appliance; anonymous, keyed by the head it serves, so a `Name` is an
   error (Value is informative, never read); Kind required, any word (RYG, RGB, 3MUX2A, LAMP,
@@ -89,9 +95,10 @@ MAST_KINDS = ("CONTROLLED", "ABSOLUTE", "PERMISSIVE")    # what a mast is: dispa
 HEAD_POSITIONS = "ABC"                              # a field mast device's pins, top down (830SAB, 784EAB; Glossary head1..head3)
 NOT_ON_FIELD_MAST = ("Style", "Kind", "Indications")    # the pin set states the head count; demand lives on the trackplan mast
 CMRI_KINDS = ("NODE", "IB", "OB")                   # what a CMRInet driver is: the node or one of its bits (owner, 2026-10-30)
-TRAIN_ORDER_FACES = ("N", "S", "E", "W")            # a train order device's units, one per face, named for it (owner, 2026-11-05)
-TRAIN_ORDER_INPUTS = ("STOP", "SLOW", "CALLON")     # a face's inputs, binary, from any driver; IND is its indication output
-TRAIN_ORDER_NO_TOKENS = ("Control", "Indication", "IndicationToken")   # the control is local: no code line token on the device
+TRAIN_ORDER_FACES = ("N", "S", "E", "W")            # a double train order mast's face pins, the direction each serves (owner, 2026-11-08)
+TRAIN_ORDER_INPUTS = ("STOP", "SLOW")               # a train order lever's outputs, binary, to any driver; IND is the face it serves
+TRAIN_ORDER_STYLES = ("single", "double")           # a trackplan train order board's Style, the symbol drawn (owner, 2026-11-08)
+TRAIN_ORDER_NO_TOKENS = ("Control", "Indication", "IndicationToken")   # the control is local: no code line token on the lever
 NOT_SETTINGS = {"Role", "Name", "Kind", "Appliance", "Style", "IC", "Address", "UA", "Bit", "Node", "Head", "Invert", "IndicationToken", "Members", "Color", "CP Name", "Station", "Indications", "Control", "Indication", "TC",
                 "Transport", "NodeType", "InputBytes", "OutputBytes",
                 "IndicationCeiling", "Display", "Processor", "Milepost", "Reference", "Value", "Footprint",
@@ -157,7 +164,16 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
     if role == "IODRIVER" and not props.get("IC"):
         err("IC missing")
     pin_caps = {k[4:]: v for k, v in props.items() if k.startswith("Pin.")}
-    function_pins = [(n, num, ty) for n, num, ty in pins if n not in MEMBERSHIP_PINS]
+    to_lever = role == "DEVICE" and props.get("Appliance") == "lever" and "train_order" in props.get("Style", "")
+    membership = MEMBERSHIP_PINS | ({"IND"} if to_lever else set())   # a train order lever's IND is the face it serves (owner, 2026-11-08)
+    function_pins = [(n, num, ty) for n, num, ty in pins if n not in membership]
+    if role == "APPLIANCE" and props.get("Appliance") == "train_order":    # a trackplan train order board (owner, 2026-11-08)
+        if props.get("Style") not in TRAIN_ORDER_STYLES:
+            err(f"a train order board states Style, one of {', '.join(TRAIN_ORDER_STYLES)}; this has {props.get('Style') or 'none'}")
+        if "Station" not in props:
+            err("a train order board states Station, the timetable station it stands at")
+        if pins:
+            err(f"a train order board has no pins; its faces are its field mast's; this has {', '.join(n for n, _, _ in pins)}")
     bases = {base(n) for n, _, _ in function_pins}
     etype = {n: ty for n, _, ty in pins}
     if role == "DEVICE" and props.get("Appliance") == "head":        # a head device (ADR 0009 §3.6; Role CAST until 2026-10-23)
@@ -187,11 +203,18 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
             err("a head device is one head; units would hide the head letter")
     lettered = [p for p in function_pins if len(p[0]) == 1 and p[0].isupper()]
     mast_positions = []                                               # a field mast's position pins, passive by rule
-    if role == "DEVICE" and props.get("Appliance") == "mast" and lettered:     # a field mast device (take 3, 2026-11-04)
+    to_mast = role == "DEVICE" and props.get("Appliance") == "train_order_mast"    # a train order board's field mast (owner, 2026-11-08)
+    if (role == "DEVICE" and props.get("Appliance") == "mast" and lettered) or to_mast:     # a field mast device (take 3, 2026-11-04)
         mast_positions = list(function_pins)
         by_number = sorted(function_pins, key=lambda p: (len(p[1]), p[1]))
         names = "".join(n for n, _, _ in by_number)
-        if not (1 <= len(names) <= len(HEAD_POSITIONS) and names == HEAD_POSITIONS[:len(names)]):
+        if to_mast:
+            faces = [n for n, _, _ in function_pins]
+            if not faces:
+                err("a train order mast has one passive pin per face; this has none")
+            elif len(faces) > 1 and (len(faces) > 2 or any(f not in TRAIN_ORDER_FACES for f in faces)):
+                err(f"a double train order mast's pins are two of {', '.join(TRAIN_ORDER_FACES)}, the direction each face serves; this has {', '.join(faces)}")
+        elif not (1 <= len(names) <= len(HEAD_POSITIONS) and names == HEAD_POSITIONS[:len(names)]):
             err(f"a field mast's pins are {', '.join(HEAD_POSITIONS)} in order from A, one per head position; this has {', '.join(names) or 'none'}")
         for n, _, ty in function_pins:
             if ty != "passive":                                       # owner, 2026-11-05: what is wired says what it takes
@@ -201,29 +224,21 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
         for f in NOT_ON_FIELD_MAST:
             if f in props:
                 err(f"a field mast states no {f}; the pin set states the head count")
-    train_order = role == "DEVICE" and props.get("Appliance") == "train_order"
-    if train_order:                                                   # a train order board's field device (owner, 2026-11-05)
-        unit_names = sym.get("unit_names", {})
-        for u, names in sorted((u, p) for u, p in sym["units"].items() if p):
-            face = unit_names.get(u, "")
-            if not face:
-                err(f"unit {u} has no name; a face is a unit named one of {', '.join(TRAIN_ORDER_FACES)}")
-            elif face not in TRAIN_ORDER_FACES:
-                err(f"unit {u} is named {face!r}; a face is a unit named one of {', '.join(TRAIN_ORDER_FACES)}")
-            have = sorted(base(n) for n in names)
-            if have != sorted(TRAIN_ORDER_INPUTS + ("IND",)):
-                err(f"unit {u} has pins {', '.join(have) or 'none'}; a face has {', '.join(TRAIN_ORDER_INPUTS)} in and IND out")
-            for n in names:
-                b, want = base(n), ("input", "binary") if base(n) in TRAIN_ORDER_INPUTS else ("output", "indication")
-                if b not in TRAIN_ORDER_INPUTS + ("IND",):
-                    continue
-                if etype[n] != want[0]:
-                    err(f"pin {n} is {etype[n]}; a face's {b} is an {want[0]}")
-                if pin_caps.get(b) not in (None, want[1]):            # a missing Pin.* is the generic check's
-                    err(f"Pin.{b} = {pin_caps[b]!r}; a face's {b} is {want[1]}")
-        for f in ("Style", "Kind"):
-            if f in props:
-                err(f"a train order device states no {f}; its faces are its units")
+    if to_lever:                                                      # a train order board's fascia lever (owner, 2026-11-08)
+        if "IND" not in etype:
+            err("a train order lever has an IND pin, the face it serves, wired to the mast's face pin")
+        elif etype["IND"] != "input":
+            err(f"pin IND is {etype['IND']}; a train order lever's IND is an input, the face it serves")
+        if "IND" in pin_caps:
+            err("Pin.IND: a train order lever's IND is the face it serves, not a capability")
+        have = sorted(base(n) for n, _, _ in function_pins)
+        if have != sorted(TRAIN_ORDER_INPUTS):
+            err(f"a train order lever's function pins are {', '.join(TRAIN_ORDER_INPUTS)}; this has {', '.join(have) or 'none'}")
+        for n, _, ty in function_pins:
+            if base(n) in TRAIN_ORDER_INPUTS and ty != "output":
+                err(f"pin {n} is {ty}; a train order lever's {base(n)} is an output")
+            if base(n) in TRAIN_ORDER_INPUTS and pin_caps.get(base(n)) not in (None, "binary"):
+                err(f"Pin.{base(n)} = {pin_caps[base(n)]!r}; a train order lever's {base(n)} is binary")
         for f in sorted(props):
             if f in TRAIN_ORDER_NO_TOKENS or f.startswith(PIN_TOKENS):
                 err(f"field {f}: a train order board's control is local; no code line token")
@@ -289,11 +304,10 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
     if role in {"DEVICE", "PANEL"} and not head_device:
         caps = {f"{pin_caps.get(base(n), '?')} {ty}" for n, _, ty in function_pins}
         pin_units = {u: p for u, p in sym["units"].items() if p}
-        if not train_order:                                           # a face mixes its inputs and its output by rule (owner, 2026-11-05)
-            for u, names in pin_units.items():
-                unit_caps = {f"{pin_caps.get(base(n), '?')} {etype.get(n)}" for n in names if n not in MEMBERSHIP_PINS}
-                if len(unit_caps) > 1:
-                    err(f"unit {u} mixes {', '.join(sorted(unit_caps))}; one capability (word and pin type) per unit")
+        for u, names in pin_units.items():
+            unit_caps = {f"{pin_caps.get(base(n), '?')} {etype.get(n)}" for n in names if n not in membership}
+            if len(unit_caps) > 1:
+                err(f"unit {u} mixes {', '.join(sorted(unit_caps))}; one capability (word and pin type) per unit")
             if len(caps) > 1 and len(pin_units) < 2:
                 err(f"pins mix {', '.join(sorted(caps))} in one unit; split the symbol into units")
         if len(pin_units) > 1:

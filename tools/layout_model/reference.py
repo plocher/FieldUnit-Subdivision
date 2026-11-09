@@ -8,7 +8,7 @@ from typing import Optional
 
 # Versioned so provenance can name it.
 REFERENCE_DATA = {"encodingTransportPairing": "2026-10-23", "driverEncodings": "2026-10-23", "indicationTokens": "2026-10-27.2", "stations": "2026-10-27", "codeLineCapacity": "2026-11-01", "codeLineSteps": "2026-11-01.3",
-                  "trainOrderInputs": "2026-11-05"}
+                  "trainOrderInputs": "2026-11-08"}
 # An encoding's Kind pairs with its transport's Kind (ADR 0009 §3.10).
 TRANSPORT_OF_ENCODING = {"AAR": "MQTT", "USS506": "TIMECODE", "BITS": "TIMECODE", "JMRI": "MQTT", "CMRI": "CMRI"}
 # A driver whose IC is an encoding needs that I/O encoding on its processor (ADR 0009 §3.3, §3.6, §3.12 "IC native or encoded").
@@ -116,13 +116,15 @@ def code_line_steps(encoding: Optional[str], user: Optional[dict[str, dict]] = N
     return {**(shipped or {}), **(own or {})}
 
 
-# A train order board's face (the owner, 2026-11-05, docs/review/signal-symbols-worklist.md "Rulings 2026-11-05"): the
-# field device of Appliance ``train_order`` has one unit per face, N or W and S or E, each with the inputs STOP, SLOW
-# and CALLON from any driver and the output IND to an anonymous head. Nothing asserted shows CLEAR; otherwise the
-# most restrictive asserted input wins, in this table's order from the most restrictive: STOP shows STOP, CALLON
-# RESTRICTING, SLOW APPROACH (orders handed up on the fly). The fascia control is local: no code line carries it. The
-# words are indications (FieldUnit docs/GLOSSARY.md), never a colour or a blade angle. The run-time logic is
-# FieldUnit's (FieldUnit issue #44); the derivation states only what a face can show from the inputs its bindings wire
-# (``derive.train_orders``). The feature's table of what a face shows is checked against this order by its step alone.
-TRAIN_ORDER_INPUTS = (("STOP", "STOP"), ("CALLON", "RESTRICTING"), ("SLOW", "APPROACH"))
+# A train order board's face (the owner, 2026-11-05 and 2026-11-08, docs/review/signal-symbols-worklist.md "Rulings
+# 2026-11-08: train order boards"): a fascia lever (Appliance ``lever``, Style ``train_order``) serves one face and
+# has the inputs STOP and SLOW. Nothing asserted shows CLEAR; otherwise the most restrictive asserted input wins, in
+# this table's order from the most restrictive: STOP shows STOP (orders to pick up), SLOW APPROACH (orders handed up
+# on the fly). CALLON is not a train order control: it is the block signal's indication, used with the board to bring
+# a train stopped at the block boundary up to the station (the owner, 2026-11-08). The fascia control is local: no
+# code line carries it. The words are indications (FieldUnit docs/GLOSSARY.md), never a colour or a blade angle. The
+# run-time logic is FieldUnit's (FieldUnit issue #44); the derivation states only what a face can show from the
+# inputs its lever binds (``derive.train_orders``). The feature's table of what a face shows is checked against this
+# order by its step alone.
+TRAIN_ORDER_INPUTS = (("STOP", "STOP"), ("SLOW", "APPROACH"))
 TRAIN_ORDER_CLEAR = "CLEAR"

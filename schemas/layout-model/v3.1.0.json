@@ -586,11 +586,11 @@
                 },
                 "mast": {
                   "$ref": "#/$defs/qualifiedName",
-                  "description": "A head device's mast, by its IND wire to a mast device."
+                  "description": "A head device's or a train order lever's mast, by its IND wire to a field mast device: a signal mast (Appliance mast) or a train order mast (Appliance train_order_mast; the owner, 2026-11-08)."
                 },
-                "signal": {
-                  "$ref": "#/$defs/qualifiedName",
-                  "description": "A head device's train order board, by its IND wire to a field device of Appliance train_order named for the board (the owner, 2026-11-03); never both mast and signal. The head is a face's: the wire reaches one face's IND (the owner, 2026-11-05). A mast device is not the board: a head wired to a mast device named like the board names no mast head (head.plan)."
+                "face": {
+                  "type": "string",
+                  "description": "The train order mast pin a head's or a train order lever's IND wire reaches: the face it is on (the owner, 2026-11-08). A double board's face pins are named N, S, E or W; a single board's one pin has any name. Absent for a head on a signal mast (its position is issue #80)."
                 }
               }
             }
@@ -606,7 +606,7 @@
               "properties": {
                 "serves": {
                   "$ref": "#/$defs/qualifiedName",
-                  "description": "The appliance this device serves (given.Name in its scope); for a head device, its mast or its train order board (relations.mast or relations.signal). A train_order device serves its board by Name; its faces derive their own facts."
+                  "description": "The appliance this device serves (given.Name in its scope); for a head device or a train order lever, the mast device its IND wire reaches (relations.mast). A train_order_mast device serves its board by Name; the board's faces derive on the appliance."
                 },
                 "controls": {
                   "description": "A lever's controls: the Control.<pin> of each bound pin, qualified by its station's interlocking (Luchessa:783NWS); an empty one binds none.",
@@ -629,17 +629,6 @@
               }
             }
           ]
-        },
-        "faces": {
-          "description": "A train order board's field device has one unit per face, named for it: N or W, S or E (the owner, 2026-11-05). Each face is an entity keyed by that letter, with the unit's pins' bindings (STOP, SLOW, CALLON in; IND out, to a head) and what the derivation states about it. Only on a DEVICE of Appliance train_order.",
-          "type": "object",
-          "propertyNames": {
-            "type": "string",
-            "pattern": "^[A-Z]$"
-          },
-          "additionalProperties": {
-            "$ref": "#/$defs/face"
-          }
         }
       }
     },
@@ -1305,6 +1294,14 @@
                 "station": {
                   "$ref": "#/$defs/layoutName",
                   "description": "A train order signal's timetable station (Appliance train_order; the owner, 2026-11-03): its Station field, naming a layout.stations entry by Name. Unqualified: stations are layout entities."
+                },
+                "facing": {
+                  "type": "string",
+                  "enum": [
+                    "LEFT",
+                    "RIGHT"
+                  ],
+                  "description": "Which way a mast's glyph is turned on the sheet (the owner, 2026-11-08): unturned faces the LEFT trains, a half turn RIGHT, a mirror across y swaps them; absent for a quarter turn. On Appliance mast and train_order. A signal mast's Name letter must agree (mast.facing); a single train order board's one face takes this direction."
                 }
               }
             }
@@ -1353,19 +1350,18 @@
                   }
                 },
                 "faces": {
-                  "type": "array",
-                  "items": {
-                    "type": "string",
-                    "pattern": "^[A-Z]$"
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/$defs/face"
                   },
-                  "description": "A train order board's faces: the letters of the units of the train_order device that serves it (the owner, 2026-11-05). Only on Appliance train_order; absent while no device serves it (train_order.device)."
+                  "description": "A train order board's faces, keyed by the face pin of its field mast device something is wired to (the owner, 2026-11-08). Only on Appliance train_order; absent while no device serves it or no face is wired (train_order.device)."
                 }
               }
             }
           ]
         },
         "heads": {
-          "description": "A mast's heads by letter. A train order board has none: its faces are its field device's units (the owner, 2026-11-05).",
+          "description": "A mast's heads by letter. A train order board has none: its faces are its field mast device's pins (the owner, 2026-11-08).",
           "type": "object",
           "propertyNames": {
             "type": "string",
@@ -1645,79 +1641,22 @@
       }
     },
     "face": {
-      "description": "One face of a train order board: a unit of its field device, keyed by the letter the unit is named (N, S, E or W; the owner, 2026-11-05). relations.bindings are the unit's wires to driver pins; derived.direction is the direction the face serves (ADR 0003 D1: N and W LEFT, S and E RIGHT); derived.indications the words the face can show given the inputs its bindings wire: CLEAR, which nothing asserted shows, then STOP for a bound STOP, RESTRICTING for CALLON, APPROACH for SLOW (reference.TRAIN_ORDER_INPUTS). The run-time rule, the most restrictive asserted input wins, is FieldUnit's.",
+      "description": "One face of a train order board, derived on the board (the owner, 2026-11-08): keyed by the field mast pin its head and lever are wired to. direction is the direction the face serves: a double board's from its pin letter (ADR 0003 D1: N and W LEFT, S and E RIGHT), a single board's from the board's relations.facing. indications are the words the face can show given the inputs its lever binds: CLEAR, which nothing asserted shows, then STOP for a bound STOP, APPROACH for SLOW (reference.TRAIN_ORDER_INPUTS). The run-time rule, the most restrictive asserted input wins, is FieldUnit's.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "given": {
-          "allOf": [
-            {
-              "$ref": "#/$defs/given"
-            }
+        "direction": {
+          "type": "string",
+          "enum": [
+            "LEFT",
+            "RIGHT"
           ]
         },
-        "relations": {
-          "allOf": [
-            {
-              "$ref": "#/$defs/relations"
-            },
-            {
-              "additionalProperties": false,
-              "properties": {
-                "bindings": {
-                  "type": "object",
-                  "description": "Each device pin's wire to a driver pin: function (the pin, polarity marks removed) to route.",
-                  "additionalProperties": {
-                    "oneOf": [
-                      {
-                        "$ref": "#/$defs/route"
-                      },
-                      {
-                        "type": "array",
-                        "minItems": 2,
-                        "items": {
-                          "$ref": "#/$defs/route"
-                        }
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-          ]
-        },
-        "derived": {
-          "allOf": [
-            {
-              "$ref": "#/$defs/derived"
-            },
-            {
-              "additionalProperties": false,
-              "properties": {
-                "direction": {
-                  "type": "string",
-                  "enum": [
-                    "LEFT",
-                    "RIGHT"
-                  ],
-                  "description": "The direction the face serves, from its letter (ADR 0003 D1)."
-                },
-                "indications": {
-                  "type": "array",
-                  "items": {
-                    "type": "string",
-                    "enum": [
-                      "CLEAR",
-                      "APPROACH",
-                      "RESTRICTING",
-                      "STOP"
-                    ]
-                  },
-                  "description": "The indication words the face can show from the inputs its bindings wire (the canonical writer orders the list; it carries the set)."
-                }
-              }
-            }
-          ]
+        "indications": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }

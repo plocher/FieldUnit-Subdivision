@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "description": "The rule-check registry of the reference derivation and the domain libraries (ADR 0012 §3.3): every code tools/layout_model/derive.py and tools/railroad raise about the model's facts, its level and lifecycle. Each finding names every entity it is about by model path. Pre-release with the rules (0.1.0); a code's feature is named when the features exist. Import diagnostics, the KiCad importer's problems translating the drawing, are in its own registry, tools/layout_compiler/diagnostics.json.",
+  "description": "The rule-check registry of the reference derivation and the domain libraries (ADR 0012 \u00a73.3): every code tools/layout_model/derive.py and tools/railroad raise about the model's facts, its level and lifecycle. Each finding names every entity it is about by model path. Pre-release with the rules (0.1.0); a code's feature is named when the features exist. Import diagnostics, the KiCad importer's problems translating the drawing, are in its own registry, tools/layout_compiler/diagnostics.json.",
   "codes": {
     "appliance.circuit": {
       "level": "error",
@@ -191,6 +191,13 @@
       "feature": "physical/field/device_mast_head.feature#a mast with no field mast device",
       "replacedBy": null
     },
+    "mast.facing": {
+      "level": "warning",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "physical/field/device_train_order.feature#a signal mast drawn facing against its letter",
+      "replacedBy": null
+    },
     "mast.grammar": {
       "level": "info",
       "lifecycle": "active",
@@ -363,14 +370,21 @@
       "level": "missing",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": "physical/field/device_train_order.feature#a board with no field device",
+      "feature": "physical/field/device_train_order.feature#a board with no field mast device",
       "replacedBy": null
     },
     "train_order.face": {
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": "physical/field/device_train_order.feature#a face that names no direction",
+      "feature": "physical/field/device_train_order.feature#a double board's face that names no direction",
+      "replacedBy": null
+    },
+    "train_order.lever": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "physical/field/device_train_order.feature#a face with no lever",
       "replacedBy": null
     },
     "train_order.station": {

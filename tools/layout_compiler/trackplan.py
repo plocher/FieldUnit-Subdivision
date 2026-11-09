@@ -39,13 +39,14 @@ step exists. The same holds for a signal pin and a head's pin: a mast or a head 
 symbol under no interlocking's sheet is left out, as it was. Whether such a net is block track or an error (a powered
 switch on it) is the reference derivation's check.
 
-A train order board is ``Appliance train_order`` (the owner, 2026-11-03, 2026-11-05): an operator-controlled, non-vital
+A train order board is ``Appliance train_order`` (the owner, 2026-11-03, 2026-11-08): an operator-controlled, non-vital
 indicator, never a signal in the interlocking sense, never in a route and never in a control point, so it has its own
-appliance word and no code path that reads masts sees it. The trackplan symbol has no head pin: its faces are the units
-of its field device (``seams._faces``), one per face, N or W and S or E. A trackplan head still wired to it is the
-retired drawing, ``train_order.heads`` at warning; the head is then on no mast and its placement is not written. Its
-``Station`` field names the timetable station it stands at, ``relations.station`` (unqualified: stations are layout
-entities). It has no track pin: one with any pin on a track net is the import error ``train_order.track``.
+appliance word and no code path that reads masts sees it. Its Style, ``single`` or ``double``, is the symbol drawn, as a
+signal mast's is. The trackplan symbol has no pins: its faces are the pins of its field mast device, and the heads and
+levers wired to them (``seams._mast_on_ind``). Its ``Station`` field names the timetable station it stands at,
+``relations.station`` (unqualified: stations are layout entities). It has no track pin: one with any pin on a track net
+is the import error ``train_order.track``. Which way a single board faces is its glyph's turn on the sheet,
+``relations.facing`` (``emit.facts`` writes it from the geometry, ``geometry.facing``).
 
 A name qualified with another interlocking's scope is a one-sided reference: it is no appliance here, and nothing is
 written back to the thing it names (the owner, 2026-10-27). A track circuit marker so named (Sargent's ``Corporal:2NAT``)
@@ -261,13 +262,8 @@ def _plan(sm: Seams, ix, syms: list[Symbol], track_nets: frozenset[str] = frozen
         row: dict[str, Any] = {"given": given_of(s), "relations": relations}
         if appliance == "mast":
             row["heads"] = _heads(s, others, report, ix.name)
-        elif appliance == "train_order":                                # a train order board (the owner, 2026-11-03, 2026-11-05)
+        elif appliance == "train_order":                                # a train order board (the owner, 2026-11-03, 2026-11-08)
             relations["station"] = s.get("Station") or None             # its timetable station, a layout entity
-            heads = sorted(o.ref for pin in src.pins_of(s.ref) for o, p in others(s, pin) if o.get("Appliance") == "head" and p == "M")
-            if heads:                                                   # the retired drawing: faces are the field device's units
-                report.warning("train_order.heads", f"{ix.name}: train order board {name} has trackplan head{'s' * (len(heads) > 1)} "
-                               f"{', '.join(heads)} wired to it; its faces are the units of its field device, and the trackplan head "
-                               "pin is retired (the owner, 2026-11-05)", source=loc(s))
             on = sorted(p for p, n in src.pins_of(s.ref).items() if n.name in track_nets)
             if on:
                 report.error("train_order.track", f"{ix.name}: train order board {name} has its {', '.join(on)} on the track; "

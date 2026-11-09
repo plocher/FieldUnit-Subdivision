@@ -2,7 +2,7 @@ Feature: A train order board stands at a station
   A train order board is used in Time Table and Train Order territory, never in CTC.
   It names the timetable station it stands at.
   It is in no control point.
-  It has no head of its own: its faces are the units of its field device.
+  It has no head of its own: its faces are the pins of its field mast device.
 
   @train_order.station
   Scenario: a board that names no station

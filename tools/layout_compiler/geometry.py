@@ -157,6 +157,23 @@ def page_of(placement: dict[str, Any], local: Point) -> Point:
     return placement["at"]["x"] + x * math.cos(a) + y * math.sin(a), placement["at"]["y"] - x * math.sin(a) + y * math.cos(a)
 
 
+def facing(placement: dict[str, Any]) -> Optional[str]:
+    """Which way a placed mast glyph faces, ``LEFT`` or ``RIGHT`` (the owner, 2026-11-08): a mast glyph unturned faces
+    the LEFT trains, as the drawings place every N and W mast; turned a half turn it faces RIGHT; a mirror across y
+    swaps them. A quarter turn faces neither (None). The same transform as ``page_of`` on the glyph's own facing
+    vector, so what the file says is what the sheet shows. Read for signal masts and train order boards: a signal
+    mast's Name letter must agree (``mast.facing``); a single train order board has nothing else to say which way it
+    faces (``train_order.face``)."""
+    x = -1.0
+    if placement.get("mirror") == "y":
+        x = -x
+    a = math.radians(placement.get("rotation", 0))
+    fx = x * math.cos(a)
+    if abs(fx) < 0.5:
+        return None
+    return "LEFT" if fx < 0 else "RIGHT"
+
+
 def _rounded(p: Point) -> Point:
     return (_r(p[0], COORDINATE_DECIMALS), _r(p[1], COORDINATE_DECIMALS))
 

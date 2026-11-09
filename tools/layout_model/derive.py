@@ -37,20 +37,25 @@ names every other track pin its wire reaches, so the relation is symmetric):
   ``PERMISSIVE`` mast belongs to no control point (ADR 0013 §5: automatic masts state no CP Name; §4: block track is
   outside every interlocking): it derives no ``controlPoint``, under one house as under several, and no chain runs
   through it. A mast with no Kind keeps today's handling (``mast.kind`` reports it).
-- **A train order board** (``Appliance train_order``; the owner, 2026-11-03 and 2026-11-05) is an operator-controlled,
+- **A train order board** (``Appliance train_order``; the owner, 2026-11-03 and 2026-11-08) is an operator-controlled,
   non-vital indicator used in Time Table and Train Order territory: never a signal in the interlocking sense, never
   in a route, never in a control point. It derives no ``controlPoint`` and no chain runs through it (the exclusion an
   automatic mast has, ADR 0013 §5). Its ``relations.station`` names a timetable station of ``layout.stations``; one
   that names none is ``train_order.station`` at missing. No mast rule, lever rule or code line token reads it: the
-  fascia control is local. The trackplan symbol has no head: its faces are the units of the field device of Appliance
-  ``train_order`` that serves it by Name, one unit per face, N or W and S or E. The board derives ``faces``, the
-  letters; each face of the device derives ``direction`` from its letter (ADR 0003 D1, ``grammar.direction_of``: N
-  and W are LEFT, S and E RIGHT) and ``indications``, the words it can show from the inputs its bindings wire
-  (``reference.TRAIN_ORDER_INPUTS``: nothing asserted is CLEAR, STOP shows STOP, CALLON RESTRICTING, SLOW APPROACH).
-  Which word a face shows at run time, the most restrictive asserted input winning, is FieldUnit's behaviour (its
-  issue #44), not a model fact: the derivation states only what a face can show. A board no such device serves is
-  ``train_order.device`` at missing (the device is a fact not yet drawn); a
-  face letter that names no direction, or one face two devices both state, is ``train_order.face`` at error.
+  fascia control is local. The trackplan symbol has no pins, Style ``single`` or ``double`` as drawn. Its faces are
+  the pins of the field mast device (Appliance ``train_order_mast``) that serves it by Name: a head device or a train
+  order lever (Appliance ``lever``, Style ``train_order``) whose IND wire reaches a face pin is that face's
+  (``relations.mast`` and ``relations.face``), so a face exists when something is wired to its pin. A double board's
+  face pins name directions, N or W and S or E (ADR 0003 D1, ``grammar.direction_of``); a single board's one face
+  takes the direction the glyph is turned to on the sheet, ``relations.facing``. The board derives ``faces``, each
+  with ``direction`` and ``indications``, the words it can show: CLEAR, which nothing asserted shows, and the word of
+  each input its lever binds (``reference.TRAIN_ORDER_INPUTS``: STOP shows STOP, SLOW APPROACH). Which word a face
+  shows at run time, the most restrictive asserted input winning, is FieldUnit's behaviour (its issue #44), not a
+  model fact. A board no field mast device serves, or whose device has no face wired, is ``train_order.device`` at
+  missing; a face with no lever is ``train_order.lever`` at missing (facts not yet drawn); a face that names no
+  direction, a single board's two faces, or a face two levers serve is ``train_order.face`` at error. A signal mast
+  drawn facing against its Name letter is ``mast.facing`` at warning: the turn of a single board's glyph is read the
+  same way, so the convention is checked on every mast.
 - **Consumers of another station's indications** (the owner, 2026-10-27): a ``track.consumers`` row is a one-sided
   reference, ``relations.indication`` the token it consumes (``Corporal:2NATK``); a track circuit's token names the
   circuit the row stands on.
@@ -608,6 +613,10 @@ class _Plan:
             if m is None:
                 self.r.add("mast.grammar", f"{self.name}: mast {name} is not a signal and its head letters (ADR 0003); not checked", where)
                 continue
+            facing = a.get("relations", {}).get("facing")
+            if facing and direction_of(m.group(1)[-1]) not in (None, facing):      # the glyph's turn against the letter (the owner, 2026-11-08)
+                self.r.add("mast.facing", f"{self.name}: mast {name} is drawn facing {facing} but its letter {m.group(1)[-1]} says "
+                           f"{direction_of(m.group(1)[-1])} (ADR 0003 D1); turn the glyph or rename the mast", where)
             heads = sorted(a.get("heads", {}))
             if heads and list(m.group(2)) != heads:
                 self.r.add("mast.heads", f"{self.name}: mast {name} names heads {m.group(2)}, but the heads drawn on it are "
@@ -893,9 +902,9 @@ class _Derivation:
     # ------------------------------------------------------------------------------------------- devices
 
     def devices(self) -> None:
-        """A device serves the appliance its ``Name`` names in its scope, a head device the mast or the train order board
-        device its IND wire reaches (``relations.mast`` or ``relations.signal``; a ``train_order`` device serves the
-        board by Name, and its faces derive in ``train_orders``: the owner, 2026-11-03, 2026-11-05); a
+        """A device serves the appliance its ``Name`` names in its scope, a head device or a train order lever the mast
+        device its IND wire reaches (``relations.mast``; the face, ``relations.face``, derives in ``train_orders``: the
+        owner, 2026-11-03, 2026-11-08); a
         lamp consumes the tokens of its ``Indication`` expression, resolved in its scope (``lamp``). A lever's scope is
         its column's interlocking, else its own ``relations.interlocking``. A model board lamp (Appliance ``lamp``, Style
         ``board``) never uses a column: its scope is its own ``relations.interlocking``, the panel sheet it is drawn on
@@ -906,9 +915,8 @@ class _Derivation:
             for i, dev in enumerate(ix.get("devices", [])):
                 g = dev.get("given", {})
                 derived: dict[str, Any] = {}
-                if g.get("Appliance") == "head":                       # its mast, or its train order board device (the owner, 2026-11-03)
-                    rel = dev.get("relations", {})
-                    derived["serves"] = rel.get("mast") or rel.get("signal")
+                if g.get("Appliance") == "head" or (g.get("Appliance") == "lever" and "train_order" in styles(g)):
+                    derived["serves"] = dev.get("relations", {}).get("mast")     # the mast device its IND wire reaches (the owner, 2026-11-03, 2026-11-08)
                 elif g.get("Name"):
                     derived["serves"] = qualify(g["Name"], name)
                 else:
@@ -1044,10 +1052,10 @@ class _Derivation:
         """A head device to its trackplan head by mast name and letter; the vocabularies must match (ADR 0009 §3.7):
         one device of the drawn style per head, another style ``head.vocabulary`` at error (wrong). A mast head with
         no device stays unreported, as today (an automatic mast's devices are not yet drawn). A head device reaches
-        its mast through ``relations.mast``; one wired to a train order board device (``relations.signal``) is a
-        face's head, not a mast's, and is not read here: the board has no trackplan head (the owner, 2026-11-05). A
-        mast device is not the board, so a head wired to a mast device named like the board is ``head.plan`` (no mast
-        of that name has that head)."""
+        its mast through ``relations.mast``; one wired to a train order mast's face pin (``relations.face``) is a
+        face's head, not a mast's, and is not read here: the board has no trackplan head (the owner, 2026-11-08). A
+        head with a letter wired to a signal mast device named like a board is ``head.plan`` (no mast of that name
+        has that head)."""
         for name, ix in self.m.get("interlockings", {}).items():
             plan: dict[tuple[str, str], str] = {}
             for mast, a in ix.get("appliances", {}).items():
@@ -1057,7 +1065,7 @@ class _Derivation:
             for i, d in enumerate(ix.get("devices", [])):
                 g, rel = d.get("given", {}), d.get("relations", {})
                 serves = d.get("derived", {}).get("serves")
-                if g.get("Appliance") == "head" and serves and g.get("Head") and not rel.get("signal"):
+                if g.get("Appliance") == "head" and serves and g.get("Head") and not rel.get("face"):
                     by_head[(serves.partition(":")[2], g["Head"])].append((i, d))
             for (mast, letter), devs in sorted(by_head.items()):
                 where = f"interlockings/{name}/devices/{devs[0][0]}"
@@ -1067,8 +1075,8 @@ class _Derivation:
                 if style is None:
                     board = _train_order(ix.get("appliances", {}).get(mast, {}))
                     self.r.add("head.plan", f"{name}: head devices for mast {mast} head {letter}, but the trackplan draws no such head"
-                               + (f" ({mast} is a train order board; it has no trackplan head, its faces are the units of its "
-                                  "train_order device)" if board else ""), where, others + mast_path)
+                               + (f" ({mast} is a train order board; it has no trackplan head: its faces are its field mast's pins, "
+                                  "and a head on a face pin has no letter)" if board else ""), where, others + mast_path)
                     continue
                 primary = [d for _, d in devs if style in styles(d["given"])]
                 lamps = [d for _, d in devs if style not in styles(d["given"]) and style in ("UQ", "LQ")
@@ -1090,20 +1098,29 @@ class _Derivation:
         an entry of ``layout.stations`` (names fold case, as every name does). One that names none, or states none,
         is ``train_order.station`` at missing: the station is a fact not yet drawn, not a contradiction.
 
-        Its faces are the units of the field device of Appliance ``train_order`` that serves it by Name (the owner,
-        2026-11-05), one unit per face named N, S, E or W. The board derives ``faces``, the letters; each face of the
-        device derives ``direction`` (ADR 0003 D1) and ``indications``, the words it can show from the inputs its
-        bindings wire: CLEAR, which nothing asserted shows, and the word of each bound input
-        (``reference.TRAIN_ORDER_INPUTS``). A board no such device serves is ``train_order.device`` at missing: the
-        device is a fact not yet drawn. A face whose letter names no direction, or one face that two devices both
-        state, is ``train_order.face`` at error: wrong, not incomplete."""
+        Its faces are the pins of the field mast device (Appliance ``train_order_mast``) that serves it by Name (the
+        owner, 2026-11-08): a head device or a train order lever whose IND wire reaches a face pin states
+        ``relations.face``, so the faces are the pins something is wired to. A double board's face pins name
+        directions (ADR 0003 D1); a single board's one face takes ``relations.facing``, the way its glyph is turned.
+        Each face derives ``direction`` and ``indications``, the words it can show: CLEAR, which nothing asserted
+        shows, and the word of each input its lever binds (``reference.TRAIN_ORDER_INPUTS``). A board no device
+        serves, or whose device has no face wired, is ``train_order.device`` at missing, and a face with no lever
+        ``train_order.lever`` at missing: facts not yet drawn. A face that names no direction, a single board's second
+        face, or a face two levers serve is ``train_order.face`` at error: wrong, not incomplete."""
         stations = {n.casefold() for n in self.m.get("layout", {}).get("stations", {})}
         for name, ix in self.m.get("interlockings", {}).items():
-            devices: dict[str, list[tuple[int, dict[str, Any]]]] = defaultdict(list)    # served name -> its train order devices
+            masts: dict[str, list[int]] = defaultdict(list)                     # board -> its train_order_mast devices
+            on_face: dict[tuple[str, str], dict[str, list[int]]] = defaultdict(lambda: defaultdict(list))   # (board, face) -> heads, levers
             for i, dev in enumerate(ix.get("devices", [])):
-                g, serves = dev.get("given", {}), dev.get("derived", {}).get("serves")
-                if g.get("Appliance") == "train_order" and serves and serves.partition(":")[0] == name:
-                    devices[serves.partition(":")[2]].append((i, dev))
+                g, rel = dev.get("given", {}), dev.get("relations", {})
+                serves = dev.get("derived", {}).get("serves") or ""
+                if serves.partition(":")[0] != name:
+                    continue
+                board = serves.partition(":")[2]
+                if g.get("Appliance") == "train_order_mast":
+                    masts[board].append(i)
+                elif rel.get("face") and g.get("Appliance") in ("head", "lever"):
+                    on_face[(board, rel["face"])][g["Appliance"]].append(i)
             for n, a in ix.get("appliances", {}).items():
                 if not _train_order(a):
                     continue
@@ -1115,30 +1132,45 @@ class _Derivation:
                     self.r.add("train_order.station", f"{name}: train order board {n} stands at station {station!r}, which the layout "
                                f"does not draw ({', '.join(sorted(self.m.get('layout', {}).get('stations', {}), key=sort_key)) or 'no stations'})",
                                here)
-                if not devices.get(n):
-                    self.r.add("train_order.device", f"{name}: train order board {n} has no field device; a train_order device named "
-                               f"for it, one unit per face (N or W, S or E; inputs STOP, SLOW, CALLON; output IND), is expected", here)
+                if not masts.get(n):
+                    self.r.add("train_order.device", f"{name}: train order board {n} has no field mast device; a train_order_mast device "
+                               "named for it, with a head and a train_order lever on each face pin, is expected", here)
                     continue
-                seen: dict[str, str] = {}                                 # face -> the device path that states it
-                faces: list[str] = []
-                for i, dev in devices[n]:
-                    at = f"interlockings/{name}/devices/{i}"
-                    for face, f in sorted(dev.get("faces", {}).items(), key=lambda kv: sort_key(kv[0])):
-                        direction = direction_of(face)
-                        if direction is None:
-                            self.r.add("train_order.face", f"{name}: train order board {n} face {face!r} names no direction; a face is "
-                                       "N, S, E or W", f"{at}/faces/{face}", (here,))
-                            continue
-                        if face in seen:
-                            self.r.add("train_order.face", f"{name}: train order board {n} face {face} is stated by two devices",
-                                       f"{at}/faces/{face}", (seen[face], here))
-                            continue
-                        seen[face] = f"{at}/faces/{face}"
-                        faces.append(face)
-                        bound = set(f.get("relations", {}).get("bindings", {}))
-                        words = [reference.TRAIN_ORDER_CLEAR] + [word for pin, word in reference.TRAIN_ORDER_INPUTS if pin in bound]
-                        _set_derived(f, {"direction": direction, "indications": sorted(words, key=sort_key)})   # the list carries the set
-                _set_derived(a, {**a.get("derived", {}), "faces": sorted(faces, key=sort_key)})
+                mast_paths = tuple(f"interlockings/{name}/devices/{i}" for i in masts[n])
+                wired = sorted({f for (b, f) in on_face if b == n}, key=sort_key)
+                if not wired:
+                    self.r.add("train_order.device", f"{name}: train order board {n}: its field mast device has no face wired; a head "
+                               "or a train_order lever on a face pin makes the face", here, mast_paths)
+                    continue
+                single = "double" not in styles(a.get("given", {}))
+                faces: dict[str, Any] = {}
+                for k, face in enumerate(wired):
+                    parties = on_face[(n, face)]
+                    paths = tuple(f"interlockings/{name}/devices/{i}" for kind in ("head", "lever") for i in parties[kind])
+                    at = paths[0]
+                    if single and k:
+                        self.r.add("train_order.face", f"{name}: train order board {n} is single but faces {', '.join(wired)} are wired; "
+                                   "a single board has one face", at, (here,) + paths[1:])
+                        continue
+                    direction = direction_of(face) if not single or direction_of(face) else a.get("relations", {}).get("facing")
+                    if direction is None:
+                        text = (f"{name}: train order board {n} face {face!r} names no direction; a double board's face pins are N, S, E or W"
+                                if not single else
+                                f"{name}: train order board {n} faces no direction: its glyph is turned a quarter; a single board faces "
+                                "the way it is drawn, left or right")
+                        self.r.add("train_order.face", text, at, (here,) + paths[1:])
+                        continue
+                    levers = parties["lever"]
+                    if not levers:
+                        self.r.add("train_order.lever", f"{name}: train order board {n} face {face} has no lever; a train_order lever with "
+                                   "its IND on the face pin is expected", at, (here,) + paths[1:])
+                    elif len(levers) > 1:
+                        self.r.add("train_order.face", f"{name}: train order board {n} face {face} is served by {len(levers)} levers; one "
+                                   "expected", f"interlockings/{name}/devices/{levers[0]}", (here,) + tuple(f"interlockings/{name}/devices/{i}" for i in levers[1:]))
+                    bound = {b for i in levers for b in ix["devices"][i].get("relations", {}).get("bindings", {})}
+                    words = [reference.TRAIN_ORDER_CLEAR] + [word for pin, word in reference.TRAIN_ORDER_INPUTS if pin in bound]
+                    faces[face] = {"direction": direction, "indications": sorted(words, key=sort_key)}   # the list carries the set
+                _set_derived(a, {**a.get("derived", {}), "faces": faces})
 
     # --------------------------------------------------------------------------------------------- reach
 
