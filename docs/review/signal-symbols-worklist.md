@@ -171,11 +171,33 @@ Names (784A) are dropped. Scripted, lock-gated, with a compile diff.
   Filled, it is an override, two indication words NORMAL/REVERSE ("a route through this appliance in this position
   can never show better than X"). The hand-switch library default RESTRICTING/RESTRICTING is removed (owner's edit);
   its rule moves to reference data for the heuristics. A derail keeps STOP/RESTRICTING: NORMAL is derailing.
-- Train order boards (Time Table and Train Order territory, never CTC): one trackplan `Train Order Mast` with Station
-  and no head pin; a field `Device-TrainOrder`, one unit per face (N/W, S/E), inputs STOP, SLOW, CALLON from any
-  driver, output IND to an anonymous head; nothing asserted = CLEAR, SLOW = APPROACH (orders on the fly), CALLON =
-  RESTRICTING, the most restrictive asserted input wins (most to least: STOP, CALLON, SLOW; owner, 2026-11-05). The fascia control is local, no code line. A one-faced
-  board places one unit.
+- Train order boards (Time Table and Train Order territory, never CTC). Ruled 2026-11-05, reworked 2026-11-08 from the
+  owner's worked example in Gilroy Interchange (the 2026-11-05 form, faces as named units of one field device, is in
+  commit e48eec0 and was not drawn): the shape is the signal mast's.
+  1. Trackplan: `Train Order Mast Single` and `Train Order Mast Double`, Appliance `train_order`, Style `single` or
+     `double`, Name and Station, no pins. A single board faces the way its glyph is turned (unturned LEFT, a half
+     turn RIGHT, mirror swaps), `relations.facing`; the importer reads the same facing from every signal mast and
+     warns when it disagrees with the Name letter (`mast.facing`).
+  2. Field mast: `Device-TrainOrder-Mast-Single` and `-Double`, Appliance `train_order_mast`, Name matching the
+     board; one passive pin per face, `Pin.X: indication`; a double mast's pins are named for the directions, E and
+     W or N and S; a single mast's one pin carries no direction. A face exists when something is wired to its pin.
+  3. Head: a `Device-Head-*` whose IND is on a face pin's net is that face's head, as a head on a signal mast; a
+     three-position head (UQ, or an LQ three-position symbol still to draw) for a face that shows STOP, APPROACH and
+     CLEAR. No Head letter: the face names it.
+  4. Lever: `Local-TrainOrder`, Appliance `lever`, Style `train_order` (the `Local-` family: Appliance says what the
+     device is, Style what it works). Its IND is on the face pin's net beside the head, so the wire says which face
+     it serves and no name is typed twice; outputs STOP and SLOW, asserted low, to any driver. No CALLON: CALLON is
+     the block signal's indication, used with the board to bring a train stopped at the block boundary up to the
+     station; not a train order control (owner, 2026-11-08).
+  5. Words: nothing asserted CLEAR, SLOW APPROACH, STOP STOP, in reference data (`reference.TRAIN_ORDER_INPUTS`,
+     dated), never in code; the run-time precedence (STOP over SLOW) is FieldUnit's (its issue #44).
+  6. Findings: board with no field mast, or a mast with no face wired, `train_order.device` missing; face with no
+     lever `train_order.lever` missing; lever on no face `lever.face` missing, on two faces `lever.faces` error; a
+     double board's face pin naming no direction, a single board turned a quarter or with two faces wired, or a face
+     two levers serve, `train_order.face` error.
+  The fascia control is local, no code line. A nameless head or lever serves under its mast's name, so a JMRI object
+  wired to one is keyed by the mast (`SIGNALMAST.Gilroy`, `SENSOR.Gilroy`); per-face or per-pin JMRI names are the
+  JMRI naming item, not this one.
 - AUXILIARY and Contact: the `MC` pin was copied from MaintainerCall by mistake; it becomes an optional `TRACK` pin.
   Wired to a track net, the importer writes the circuit as the appliance's relation and the derivation checks it is
   a circuit of the same interlocking; wired elsewhere is an import error; unwired, Milepost and CP Name place it.

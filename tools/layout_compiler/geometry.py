@@ -37,7 +37,7 @@ from .trackplan import TRACKPLAN_ROLES, is_boundary, is_consumer, is_switch, pin
 COORDINATE_DECIMALS = 2     # placements and runs sit on the drawing's grid (§4.2)
 GLYPH_DECIMALS = 4          # a glyph's primitives have up to four
 LABEL_END = "label:"        # a run's end on a hierarchical label: ``label:<Name>`` (ADR 0013 §7.1)
-HEADED = frozenset({"mast", "train_order"})   # the appliances a head nests under by letter (§4.5; a train order signal's face, the owner, 2026-11-03)
+HEADED = frozenset({"mast"})   # the appliances a head nests under by letter (§4.5); a train order board has no trackplan head (the owner, 2026-11-05)
 
 Point = tuple[float, float]
 
@@ -155,6 +155,23 @@ def page_of(placement: dict[str, Any], local: Point) -> Point:
         y = -y
     a = math.radians(placement.get("rotation", 0))
     return placement["at"]["x"] + x * math.cos(a) + y * math.sin(a), placement["at"]["y"] - x * math.sin(a) + y * math.cos(a)
+
+
+def facing(placement: dict[str, Any]) -> Optional[str]:
+    """Which way a placed mast glyph faces, ``LEFT`` or ``RIGHT`` (the owner, 2026-11-08): a mast glyph unturned faces
+    the LEFT trains, as the drawings place every N and W mast; turned a half turn it faces RIGHT; a mirror across y
+    swaps them. A quarter turn faces neither (None). The same transform as ``page_of`` on the glyph's own facing
+    vector, so what the file says is what the sheet shows. Read for signal masts and train order boards: a signal
+    mast's Name letter must agree (``mast.facing``); a single train order board has nothing else to say which way it
+    faces (``train_order.face``)."""
+    x = -1.0
+    if placement.get("mirror") == "y":
+        x = -x
+    a = math.radians(placement.get("rotation", 0))
+    fx = x * math.cos(a)
+    if abs(fx) < 0.5:
+        return None
+    return "LEFT" if fx < 0 else "RIGHT"
 
 
 def _rounded(p: Point) -> Point:
@@ -364,7 +381,7 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         return pin_ref(ix.name, s, pin) if is_switch(s) or is_boundary(s) or s.role in ("TRACK", "POLICY") else None
 
     appliances: dict[str, Any] = {}
-    with_heads: dict[str, str] = {}                                       # a mast or a train order signal: what a head nests under
+    with_heads: dict[str, str] = {}                                       # a mast: what a head nests under
     consumer_markers: list[dict[str, Any]] = []
     for s in trackplan:
         if s.role != "APPLIANCE" or s.get("Appliance") == "head" or s.ref not in placed:
@@ -379,13 +396,13 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         appliances[name] = placement(s.ref)
         if s.get("Appliance") in HEADED:
             with_heads[s.ref] = name
-    for s in trackplan:                                                   # a head nests under its mast by letter (§4.5), or under
-        if s.get("Appliance") != "head" or s.ref not in placed:           # its train order signal the same way (the owner, 2026-11-03)
+    for s in trackplan:                                                   # a head nests under its mast by letter (§4.5)
+        if s.get("Appliance") != "head" or s.ref not in placed:
             continue
         net = net_of(s.ref, "M")
         owner = next((p.ref for p in net.others(s.ref) if p.ref in with_heads), None) if net else None
         if owner is None:
-            report.missing("geometry.head", f"{ix.name}: head {s.ref} is on no mast's or train order signal's M pin; its placement is not written", source=loc(s))
+            report.missing("geometry.head", f"{ix.name}: head {s.ref} is on no mast's M pin; its placement is not written", source=loc(s))
             continue
         appliances[with_heads[owner]].setdefault("heads", {})[key_of(s, report)] = placement(s.ref)
 
@@ -448,6 +465,8 @@ def check_transform(geometry: Geometry, sm: Seams, project_dir: Optional[Path] =
         model = project.sheet(src.sheet_files[ix.sym.sheet])
         for s in trackplan + houses:                                      # page coordinates on both sides: the frame cancels
             pl = model.placements[s.ref]
+            if pl.lib_id not in geometry.glyphs:                          # a placement the file does not write (a head on no mast): nothing to land
+                continue
             sym = project.symbol(pl.lib_id)
             glyph = geometry.glyphs[pl.lib_id]
             anchor = kicad_place(pl, anchor_of({p.name: (p.x, p.y) for p in sym.pins}))

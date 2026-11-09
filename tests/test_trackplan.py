@@ -42,12 +42,17 @@ def symbols(table: str, sheet: str = SHEET) -> list[Symbol]:
 
 
 def nets(table: str) -> list[Net]:
-    """Rows of ``net | REF.pin REF.pin ...``."""
+    """Rows of ``net | REF.pin REF.pin ...``; ``REF.UNIT.pin`` is a pin drawn in a named unit."""
     out = []
     for line in filter(str.strip, table.splitlines()):
         name, members = (c.strip() for c in line.split("|"))
-        out.append(Net(name, tuple(PinRef(*m.split(".", 1)) for m in members.split())))
+        out.append(Net(name, tuple(_pin(m) for m in members.split())))
     return out
+
+
+def _pin(text: str) -> PinRef:
+    parts = text.split(".")
+    return PinRef(parts[0], parts[2], unit=parts[1]) if len(parts) == 3 else PinRef(parts[0], parts[1])
 
 
 def compile_(sym_table: str, net_table: str):
@@ -675,9 +680,11 @@ class Shorted(unittest.TestCase):
 
 
 class TrainOrder(unittest.TestCase):
-    """A train order signal (Appliance train_order; the owner, 2026-11-03): an operator-controlled non-vital indicator
-    with heads for a face, at a timetable station, with no track pin. The importer's part: the appliance row, its
-    heads read from its H pin as a mast's are, its station relation, and the diagnostics about the drawing."""
+    """A train order board (Appliance train_order; the owner, 2026-11-03, 2026-11-08): an operator-controlled non-vital
+    indicator at a timetable station, Style single or double as drawn, with no pins. Its faces are the pins of its
+    field mast device (Appliance train_order_mast): a head or a fascia lever (Appliance lever, Style train_order) whose
+    IND wire reaches a face pin is that face's. The importer's part: the appliance row with its station relation, each
+    head's and lever's mast and face, the lever's bindings, and the diagnostics about the drawing."""
 
     STATION = """
 ST1  | Station          | STRUCTURE | Kind=STATION Name=Gilroy Milepost=77.9
@@ -685,72 +692,66 @@ H1   | House            | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
 TC1  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=1NAT
 NX1  | NextCP           | TRACK     | Kind=NEXT_CP Interlocking=Lick
 """
-    SIGNAL = """
-TO1  | Train Order Mast | APPLIANCE | Appliance=train_order Name=Gilroy Station=Gilroy
-HN   | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=N
-HS   | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=S
-"""
+    SIGNAL = "TO1  | Train Order Mast Double | APPLIANCE | Appliance=train_order Style=double Name=Gilroy Station=Gilroy\n"
     TRACK = "w | TC1.TC NX1.To\n"
+    FIELD = """
+DM1  | Device-TrainOrder-Mast-Double | DEVICE   | Appliance=train_order_mast Name=Gilroy
+HE   | Device-Head-Semaphore-UQ      | DEVICE   | Appliance=head Style=UQ
+HW   | Device-Head-Semaphore-UQ      | DEVICE   | Appliance=head Style=UQ
+LE   | Local-TrainOrder              | DEVICE   | Appliance=lever Style=train_order
+LW   | Local-TrainOrder              | DEVICE   | Appliance=lever Style=train_order
+X1   | Driver-I2C-MAX7311            | IODRIVER | IC=MAX7311 Address=0x20
+"""
+    BUS = "bus | P1.IOBus X1.IOBus\n"
+    FACES = "e | DM1.E HE.IND LE.IND\nw | DM1.W HW.IND LW.IND\nes | LE.STOP X1.A0\nel | LE.SLOW X1.A1\nws | LW.STOP X1.A2\n"
 
-    def test_the_signal_is_an_appliance_with_its_heads_on_h_and_its_station(self):
-        sm, ix = compile_(self.STATION + self.SIGNAL, self.TRACK + "h | TO1.H HN.M HS.M\n")
+    @staticmethod
+    def by_ref(sm, ix) -> dict[str, dict]:
+        return {d.sym.ref: row for d, row in zip(sm.interlockings["X"].devices, ix["devices"])}
+
+    def test_the_board_is_an_appliance_with_its_station_and_no_heads(self):
+        sm, ix = compile_(self.STATION + self.SIGNAL, self.TRACK)
         self.assertEqual(sm.report.errors, [])
         to = ix["appliances"]["Gilroy"]
-        self.assertEqual(to["given"], {"Appliance": "train_order", "Station": "Gilroy"})
-        self.assertEqual(to["relations"], {"station": "Gilroy"})
-        self.assertEqual({k: v["given"] for k, v in to["heads"].items()}, {"N": {"Appliance": "head", "Style": "LQ"}, "S": {"Appliance": "head", "Style": "LQ"}})
+        self.assertEqual(to["given"], {"Appliance": "train_order", "Style": "double", "Station": "Gilroy"})
+        self.assertEqual(to["relations"], {"station": "Gilroy"})                            # facing is the geometry's; none in a fragment
+        self.assertNotIn("heads", to)                                                        # the trackplan symbol has no pins
         self.assertEqual(emit.emit(sm)["layout"]["stations"]["Gilroy"], {"given": {"Kind": "STATION", "Milepost": "77.9"}, "relations": {"interlocking": "X"}})
         self.assertEqual(layout_model.errors(emit.emit(sm)), [])
 
-    def test_a_head_letter_is_a_direction_each_at_most_once(self):
-        """Incomplete is missing, wrong is an error (the owner, 2026-11-03): a head with no Name is head.letter; one whose
-        letter is no direction (A, or the L and R of a mast's name grammar) can never work, head.direction, and is left
-        out; a direction twice is head.duplicate."""
-        heads = """
-HA   | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=A
-HL   | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=L
-H0   | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=
-HN2  | Signal Head - Semaphore-LQ | APPLIANCE | Appliance=head Style=LQ Name=N
-"""
-        sm, ix = compile_(self.STATION + self.SIGNAL + heads, self.TRACK + "h | TO1.H HN.M HS.M HA.M HL.M H0.M HN2.M\n")
-        self.assertEqual([d for d in diags(sm, "head.") if d[0] != "head.device"],                  # no head devices drawn here: derive's head.device
-                         [("head.direction", "HA"), ("head.direction", "HL"), ("head.duplicate", "HN2"), ("head.letter", "H0")])
-        self.assertEqual({d.code: d.severity for d in sm.report.diags if d.code.startswith("head.")},
-                         {"head.direction": "error", "head.duplicate": "error", "head.letter": "missing", "head.device": "missing"})
-        self.assertEqual(sorted(ix["appliances"]["Gilroy"]["heads"]), ["N", "S"])
-
-    FIELD = """
-D1   | Train Order Signal | DEVICE | Appliance=train_order Name=Gilroy
-DN   | Signal Head - Semaphore-LQ | DEVICE | Appliance=head Style=LQ Head=N
-DS   | Signal Head - Semaphore-LQ | DEVICE | Appliance=head Style=LQ Head=S
-"""
-
-    def test_its_head_devices_reach_it_by_their_ind_wire_to_its_train_order_device(self):
-        """The field side mirrors a mast's (the owner, 2026-11-03): a DEVICE of Appliance train_order named for the signal
-        serves it by Name; a head device's IND wire reaches that device, relations.signal (a mast device's is
-        relations.mast); one and only one such device on the net, as for a mast."""
-        sm, ix = compile_(self.STATION + self.SIGNAL + self.FIELD, self.TRACK + "h | TO1.H HN.M HS.M\ni | D1.IND DN.IND DS.IND\n")
+    def test_its_faces_are_its_field_masts_pins_each_with_its_head_and_its_lever(self):
+        """The owner, 2026-11-08: a head's or a lever's IND wire reaches a face pin of the train order mast device; the
+        lever's STOP and SLOW bind to the driver pins their wires reach; the mast device itself binds nothing."""
+        sm, ix = compile_(self.STATION + self.SIGNAL + self.FIELD, self.TRACK + self.BUS + self.FACES)
         self.assertEqual(sm.report.errors, [])
-        self.assertEqual([d for d in diags(sm, "head.", "train_order.") if d[0] != "train_order.lever"], [])
-        devs = {d["given"].get("Head", d["given"].get("Name")): d for d in ix["devices"]}
-        self.assertEqual(devs["Gilroy"]["derived"], {"serves": "X:Gilroy"})
-        self.assertEqual({k: (devs[k]["relations"], devs[k]["derived"]) for k in ("N", "S")},
-                         {k: ({"signal": "X:Gilroy"}, {"serves": "X:Gilroy"}) for k in ("N", "S")})
+        self.assertEqual(diags(sm, "train_order.", "head.", "lever."), [])
+        devs = self.by_ref(sm, ix)
+        self.assertEqual(devs["DM1"], {"given": {"Appliance": "train_order_mast", "Name": "Gilroy"}, "derived": {"serves": "X:Gilroy"}})
+        self.assertEqual(devs["HE"]["relations"], {"mast": "X:Gilroy", "face": "E"})
+        self.assertEqual(devs["HW"]["relations"], {"mast": "X:Gilroy", "face": "W"})
+        self.assertEqual(devs["LE"]["relations"], {"mast": "X:Gilroy", "face": "E", "bindings": {"SLOW": "Alpha/0x20/A1", "STOP": "Alpha/0x20/A0"}})
+        self.assertEqual(devs["LW"]["relations"], {"mast": "X:Gilroy", "face": "W", "bindings": {"STOP": "Alpha/0x20/A2"}})
+        self.assertEqual({r: d["derived"] for r, d in devs.items() if r != "X1"}, {r: {"serves": "X:Gilroy"} for r in ("DM1", "HE", "HW", "LE", "LW")})
         self.assertEqual(layout_model.errors(emit.emit(sm)), [])
 
-    def test_a_head_wired_to_no_device_or_to_two_is_reported(self):
-        two = self.FIELD + "M1  | Mast | DEVICE | Appliance=mast Name=Gilroy\n"
-        sm, _ = compile_(self.STATION + self.SIGNAL + two, self.TRACK + "h | TO1.H HN.M HS.M\ni | D1.IND DN.IND DS.IND M1.IND\n")
-        self.assertEqual(diags(sm, "head.masts"), [("head.masts", "DN"), ("head.masts", "DS")])
-        self.assertIn("2 mast or train order signal devices on one IND net where one is expected", sm.report.by_code("head.masts")[0].text)
-        sm, _ = compile_(self.STATION + self.SIGNAL + self.FIELD, self.TRACK + "h | TO1.H HN.M HS.M\n")
-        self.assertEqual(diags(sm, "head.mast"), [("head.mast", "DN"), ("head.mast", "DS")])
-        self.assertIn("wired to no Mast or train order signal device", sm.report.by_code("head.mast")[0].text)
-        self.assertEqual(diags(sm, "head.device"), [("head.device", "Gilroy"), ("head.device", "Gilroy")])
+    def test_a_lever_wired_to_no_face_is_missing_and_to_two_faces_an_error(self):
+        """Not yet drawn, then wrong (the owner, 2026-11-08). A head on two face pins is head.masts, as on two masts."""
+        sm, ix = compile_(self.STATION + self.SIGNAL + self.FIELD, self.TRACK + self.BUS + "es | LE.STOP X1.A0\n")
+        self.assertEqual(diags(sm, "lever."), [("lever.face", "LE"), ("lever.face", "LW")])
+        self.assertEqual(sm.report.by_code("lever.face")[0].severity, "missing")
+        self.assertNotIn("mast", self.by_ref(sm, ix)["LE"].get("relations", {}))
+        sm, ix = compile_(self.STATION + self.SIGNAL + self.FIELD, self.TRACK + self.BUS + "ew | DM1.E DM1.W LE.IND\n")
+        self.assertEqual(diags(sm, "lever.faces"), [("lever.faces", "LE")])
+        (d,) = sm.report.by_code("lever.faces")
+        self.assertEqual(d.severity, "error")
+        self.assertIn("2 faces of train order mast 'Gilroy' (E, W)", d.text)
+        sm, _ = compile_(self.STATION + self.SIGNAL + self.FIELD, self.TRACK + "ew | DM1.E DM1.W HE.IND\n")
+        self.assertEqual(diags(sm, "head.masts"), [("head.masts", "HE")])
+        self.assertEqual(diags(sm, "head.letter"), [("head.letter", "HE"), ("head.letter", "HW")])   # a head on no face has no letter either
 
     def test_a_pin_on_the_track_is_an_error(self):
-        sm, ix = compile_(self.STATION + self.SIGNAL, "w | TC1.TC NX1.To TO1.H HN.M HS.M\n")
-        self.assertEqual(diags(sm, "train_order.track"), [("train_order.track", "TO1")])   # train_order.lever is derive's, reported too
+        sm, ix = compile_(self.STATION + self.SIGNAL, "w | TC1.TC NX1.To TO1.H\n")
+        self.assertEqual(diags(sm, "train_order.track"), [("train_order.track", "TO1")])
         self.assertEqual(ix["track"]["ends"][0]["relations"]["track"], ["X:1NAT.TC"])     # the H pin is no track pin
 
 
@@ -914,7 +915,7 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(self.sm.report.by_code("reference.track") + self.sm.report.by_code("reference.marker"), [])
         self.assertEqual(len(self.sm.report.by_code("next_cp.drawn")), 0)
         self.assertEqual(len(self.sm.report.by_code("mast.powered")), 0)
-        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 0, "missing": 5})   # 2 interlocking.no_lever; train_order.lever and 2 head.device for Gilroy, whose lever and head devices are not drawn yet; no mast.kind, and Lick and Hollister marked off_layout (Railroad 5715653)
+        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 1, "info": 0, "missing": 5})   # 2 interlocking.no_lever; train_order.device for Gilroy, whose field device is not drawn yet, and train_order.heads with 2 geometry.head for its retired trackplan heads; no mast.kind, and Lick and Hollister marked off_layout (Railroad 5715653)
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):
         """ADR 0013 §5. The library's mast symbols carry a fixed Kind (Railroad 1695d48), but that commit touched no placed

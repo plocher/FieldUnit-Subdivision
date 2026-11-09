@@ -21,8 +21,8 @@ the same file names as the model features of the same rule.
 ## Steps
 
 `steps/import_steps.py`. A Given is netlist fragments: a table of placed symbols (`Ref`, `Symbol`, `Role`, every
-other column a field) and a table of nets (`Net`, `Pins` as `REF.pin`). The interlocking's declaration and its
-processor are scaffolding the step adds.
+other column a field) and a table of nets (`Net`, `Pins` as `REF.pin`, or `REF.UNIT.pin` for a pin drawn in a
+named unit of a multi-unit symbol). The interlocking's declaration and its processor are scaffolding the step adds.
 
 ## Run
 

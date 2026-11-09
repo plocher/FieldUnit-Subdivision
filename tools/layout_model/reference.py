@@ -8,7 +8,7 @@ from typing import Optional
 
 # Versioned so provenance can name it.
 REFERENCE_DATA = {"encodingTransportPairing": "2026-10-23", "driverEncodings": "2026-10-23", "indicationTokens": "2026-10-27.2", "stations": "2026-10-27", "codeLineCapacity": "2026-11-01", "codeLineSteps": "2026-11-01.3",
-                  "trainOrderStates": "2026-11-03"}
+                  "trainOrderInputs": "2026-11-08"}
 # An encoding's Kind pairs with its transport's Kind (ADR 0009 §3.10).
 TRANSPORT_OF_ENCODING = {"AAR": "MQTT", "USS506": "TIMECODE", "BITS": "TIMECODE", "JMRI": "MQTT", "CMRI": "CMRI"}
 # A driver whose IC is an encoding needs that I/O encoding on its processor (ADR 0009 §3.3, §3.6, §3.12 "IC native or encoded").
@@ -116,25 +116,15 @@ def code_line_steps(encoding: Optional[str], user: Optional[dict[str, dict]] = N
     return {**(shipped or {}), **(own or {})}
 
 
-# The three states of a train order signal (Appliance ``train_order``; the owner, 2026-11-03), in order from the most
-# restrictive. Rule 221 of the Standard Code of Operating Rules (ARA, then AAR) sets its normal position at Proceed when
-# no orders are held and Stop for the direction with orders to deliver; Rules 207-208 and the Form 19 / Form 31 orders
-# give the middle state (Form 19 is picked up on the fly, Form 31 requires a full stop): Rule 221, Rules 207-208, Form
-# 19/31 (via the owner's summary of 2026-11-03, unverified against an opened edition of the Standard Code).
-# FieldUnit's enum is the one home of these words; this table mirrors it (ADR 0012 §6 placeholder reference data).
-# Derive writes the list and the normal state into the file (a train order appliance's ``derived.states`` and
-# ``derived.normal``) so consumers read them there; the canonical file orders every list (ADR 0008 §4.8), so the order
-# from the most restrictive is this table's. No blade angle and no lamp colour: that is aspect policy, later.
-#   STOP            the train stops and signs for Form 31 orders
-#   RECEIVE_ORDERS  Form 19 orders handed up on the fly; the train slows
-#   PROCEED         no orders held
-TRAIN_ORDER_STATES = ("STOP", "RECEIVE_ORDERS", "PROCEED")
-TRAIN_ORDER_NORMAL = "PROCEED"              # Rule 221: Proceed when no orders are held (via the owner's summary, unverified)
-# The state the signal shows when its output is released or its lever asserts no contact, by the library's output
-# convention that a released output shows its most restrictive state; a default for a non-vital indicator, not a safety
-# rule (FieldUnit ADR 0002: a non-vital control cannot affect a safety protection).
-TRAIN_ORDER_RELEASED = "STOP"
-# The two input contacts of a train order signal's local lever (a field DEVICE, Appliance ``lever``, Style
-# ``train_order``; the owner, 2026-11-03): pins ``~{ORDERS}`` and ``~{PROCEED}``, named without their polarity mark.
-# Neither asserted reads ``TRAIN_ORDER_RELEASED``.
-TRAIN_ORDER_CONTACTS = ("ORDERS", "PROCEED")
+# A train order board's face (the owner, 2026-11-05 and 2026-11-08, docs/review/signal-symbols-worklist.md "Rulings
+# 2026-11-08: train order boards"): a fascia lever (Appliance ``lever``, Style ``train_order``) serves one face and
+# has the inputs STOP and SLOW. Nothing asserted shows CLEAR; otherwise the most restrictive asserted input wins, in
+# this table's order from the most restrictive: STOP shows STOP (orders to pick up), SLOW APPROACH (orders handed up
+# on the fly). CALLON is not a train order control: it is the block signal's indication, used with the board to bring
+# a train stopped at the block boundary up to the station (the owner, 2026-11-08). The fascia control is local: no
+# code line carries it. The words are indications (FieldUnit docs/GLOSSARY.md), never a colour or a blade angle. The
+# run-time logic is FieldUnit's (FieldUnit issue #44); the derivation states only what a face can show from the
+# inputs its lever binds (``derive.train_orders``). The feature's table of what a face shows is checked against this
+# order by its step alone.
+TRAIN_ORDER_INPUTS = (("STOP", "STOP"), ("SLOW", "APPROACH"))
+TRAIN_ORDER_CLEAR = "CLEAR"

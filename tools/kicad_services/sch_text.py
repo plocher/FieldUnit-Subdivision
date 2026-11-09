@@ -74,7 +74,8 @@ def library_symbols(text: str) -> dict[str, dict]:
     """Top-level symbols of a .kicad_sym text.
 
     Returns {name: {"properties": {...}, "pins": [(name, number, electrical_type)], "extends": str|None,
-    "units": {unit number: [pin names]}, "locked": bool, "value_autoplace": bool}};
+    "units": {unit number: [pin names]}, "unit_names": {unit number: KiCad's unit_name, for the units that have one},
+    "locked": bool, "value_autoplace": bool}};
     "properties" omits KiCad's standard fields; "locked" is KiCad's "units are not interchangeable".
     """
     out = {}
@@ -87,14 +88,18 @@ def library_symbols(text: str) -> dict[str, dict]:
                 re.findall(r'\(pin (\w+) \w+[\s\S]*?\(name "([^"]*)"[\s\S]*?\(number "([^"]*)"', b)]
         ext = re.search(r'\n\t\t\(extends "([^"]+)"', b)
         units: dict[int, list[str]] = {}
+        unit_names: dict[int, str] = {}
         for us, ue in blocks(b, "symbol", 2):
             ub = b[us:ue]
             unit = int(re.match(r'\(symbol "(?:[^"\\]|\\.)*_(\d+)_\d+"', ub).group(1))
             units.setdefault(unit, []).extend(re.findall(r'\(pin \w+ \w+[\s\S]*?\(name "([^"]*)"', ub))
+            unit_name = re.search(r'\(unit_name "([^"]*)"', ub)
+            if unit_name:
+                unit_names[unit] = unit_name.group(1)
         value = re.search(r'\n\t\t\(property "Value" ', b)
         value_block = b[value.start() + 1:end_of(b, value.start() + 3)] if value else ""
         out[name] = {"properties": props, "pins": pins, "extends": ext.group(1) if ext else None,
-                     "units": units, "locked": '\n\t\t(property "ki_locked"' in b,
+                     "units": units, "unit_names": unit_names, "locked": '\n\t\t(property "ki_locked"' in b,
                      "value_autoplace": "(do_not_autoplace yes)" not in value_block}
     return out
 

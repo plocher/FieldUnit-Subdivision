@@ -101,12 +101,18 @@ class SymbolLibraryReader:
         parts = name.rsplit("_", 2)
         return len(parts) == 3 and parts[1].isdigit() and parts[2].isdigit()
 
+    def _unit_number(self, name: str) -> int:
+        """The unit a body ``Name_<unit>_<style>`` draws; 0 for a name of another shape."""
+        parts = name.rsplit("_", 2)
+        return int(parts[1]) if self._is_unit_symbol_name(name) else 0
+
     def _parse_top_symbol(self, node: List[Any], name: str) -> ktypes.LibrarySymbol:
         from sexpdata import Symbol
 
         properties: dict[str, str] = {}
         pins: list[ktypes.SymbolPin] = []
         graphics: list[ktypes.SymbolGraphic] = []
+        unit_names: dict[int, str] = {}
         seen: set[tuple[str, str]] = set()
 
         for item in node[1:]:
@@ -118,8 +124,12 @@ class SymbolLibraryReader:
                 if isinstance(key, str) and isinstance(val, str):
                     properties[key] = val
             elif tag == Symbol("symbol"):
-                # Unit body: collect pins and graphics.
-                for pin in self._parse_unit_pins(item):
+                # Unit body: collect pins and graphics; its name is Name_<unit>_<style>.
+                unit = self._unit_number(item[1]) if len(item) > 1 and isinstance(item[1], str) else 0
+                unit_name = self._child(item, "unit_name")
+                if unit and unit_name and len(unit_name) >= 2 and isinstance(unit_name[1], str):
+                    unit_names[unit] = unit_name[1]
+                for pin in self._parse_unit_pins(item, unit):
                     key = (pin.number, pin.name)
                     if key not in seen:
                         seen.add(key)
@@ -133,6 +143,7 @@ class SymbolLibraryReader:
             pins=tuple(pins),
             properties=properties,
             graphics=tuple(graphics),
+            unit_names=unit_names,
         )
 
     @staticmethod
@@ -198,7 +209,7 @@ class SymbolLibraryReader:
                     justify=" ".join(str(v) for v in justify[1:]) if justify else ""))
         return out
 
-    def _parse_unit_pins(self, unit_node: List[Any]) -> list[ktypes.SymbolPin]:
+    def _parse_unit_pins(self, unit_node: List[Any], unit: int = 0) -> list[ktypes.SymbolPin]:
         from sexpdata import Symbol
 
         pins: list[ktypes.SymbolPin] = []
@@ -244,6 +255,7 @@ class SymbolLibraryReader:
                         rotation=rotation,
                         length=length,
                         hidden=hidden,
+                        unit=unit,
                     )
                 )
         return pins

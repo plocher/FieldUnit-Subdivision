@@ -19,6 +19,7 @@ class SymbolPin:
     rotation: float = 0.0          # the direction the pin's line is drawn from (x, y), degrees, KiCad's library frame (y up)
     length: float = 0.0
     hidden: bool = False
+    unit: int = 0                  # the unit body the pin is drawn in (KiCad's ``Name_<unit>_<style>``); 0 when unknown
 
 
 @dataclass(frozen=True)
@@ -52,6 +53,12 @@ class LibrarySymbol:
     pins: tuple[SymbolPin, ...]
     properties: dict[str, str] = field(default_factory=dict)
     graphics: tuple[SymbolGraphic, ...] = ()
+    unit_names: dict[int, str] = field(default_factory=dict)   # KiCad's per-unit display name (``unit_name``), by unit number
+
+    def unit_name_of(self, pin_number: str) -> str:
+        """The name of the unit the numbered pin is drawn in; empty when the unit has no name or the pin is unknown."""
+        unit = next((p.unit for p in self.pins if p.number == pin_number), 0)
+        return self.unit_names.get(unit, "")
 
 
 @dataclass

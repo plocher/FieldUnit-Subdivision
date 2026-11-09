@@ -318,5 +318,19 @@ class SPCoastGeometry(unittest.TestCase):
         self.assertEqual(self.model["provenance"]["libraries"].keys(), {"Railroad-Trackplan"})
 
 
+class Facing(unittest.TestCase):
+    """Which way a mast glyph faces (the owner, 2026-11-08): unturned LEFT, a half turn RIGHT, a mirror across y swaps
+    them, a quarter turn neither. The same transform as the file's placement transform, so the sheet and the file agree."""
+
+    def test_the_glyphs_turn_says_which_trains_it_faces(self):
+        self.assertEqual(geometry.facing({"at": {"x": 0, "y": 0}}), "LEFT")
+        self.assertEqual(geometry.facing({"at": {"x": 0, "y": 0}, "rotation": 180}), "RIGHT")
+        self.assertEqual(geometry.facing({"at": {"x": 0, "y": 0}, "mirror": "y"}), "RIGHT")
+        self.assertEqual(geometry.facing({"at": {"x": 0, "y": 0}, "rotation": 180, "mirror": "y"}), "LEFT")
+        self.assertEqual(geometry.facing({"at": {"x": 0, "y": 0}, "rotation": 180, "mirror": "x"}), "RIGHT")
+        self.assertIsNone(geometry.facing({"at": {"x": 0, "y": 0}, "rotation": 90}))
+        self.assertIsNone(geometry.facing({"at": {"x": 0, "y": 0}, "rotation": 270}))
+
+
 if __name__ == "__main__":
     unittest.main()
