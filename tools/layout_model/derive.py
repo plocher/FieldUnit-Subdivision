@@ -24,10 +24,22 @@ names every other track pin its wire reaches, so the relation is symmetric):
   point: ADR 0013 §4 puts block track outside every interlocking and §5 has automatic masts state no CP Name.
 - **A mast states Kind** (ADR 0013 §5): ``CONTROLLED``, ``ABSOLUTE`` or ``PERMISSIVE``, a stated fact. A mast with
   none, or with another word, is reported ``mast.kind`` at missing; nothing is inferred from a CP Name or a plate.
+  An ``ABSOLUTE`` or ``PERMISSIVE`` mast that states a CP Name is ``mast.control_point`` at warning: the field is not
+  read, since an automatic mast belongs to no control point.
 - **A mast that is not CONTROLLED over a powered switch** (ADR 0013 §5): an ``ABSOLUTE`` or ``PERMISSIVE`` mast whose
   governed circuit (the side its joint pin names) holds a powered switch's or derail's port (``grammar.is_powered``,
   §4: Style ``powered`` or ``dual``, or a CP Name; spring and hand-throw switches are not powered) is reported
   ``mast.powered`` at warning. A check, never a source: it sets nothing.
+- **A virtual circuit's members** (ADR 0013 §7.2): a track circuit of Style ``virtual`` is the one indication of the
+  circuits its ``Members`` lists, resolved into ``derived.members``. One that lists none is ``circuit.members`` at
+  missing; a member that is no circuit of this interlocking is ``circuit.member`` at error (one of another
+  interlocking is checked as a reference). A boundary circuit is named like any circuit (§10) and may be a member. Which station qualifies it, and that it is at one end of the block, is
+  the ``blocks`` library's.
+- **A sign states its rule for the track it stands on** (ADR 0013 §8): a policy row that is not a plate states its
+  Kind and Direction as given and the track pins it is on; its circuit is ``derived.circuits.track``. One on no track
+  is ``policy.track`` at missing. A ``RULE_251`` sign's Direction is the current of traffic, ``LEFT`` or ``RIGHT``;
+  any other is ``policy.direction`` at missing. That one block's signs agree with each other and with its masts is
+  the ``blocks`` library's.
 - **A boundary track circuit** (ADR 0013 §10; ``Appliance track_circuit``, Style ``boundary``) states ``relations.A``
   and ``.B``, the two nets at its joint. It names no circuit: the marker on each net does. Its ``derived.circuits``
   are the circuits on its pins, in A, B order: what it counts toward.
@@ -105,6 +117,7 @@ ROW_LISTS = TRACK_LISTS + ("consumers",)          # every row with an id; a cons
 JOINTS = frozenset({"IRJ", "IRJ_SIGNAL", "IRJ_SIGNALS"})
 DOUBLE_SIDES = {"A": "B", "B": "A"}             # a double joint's side to the other (ADR 0013 §6)
 MAST_KINDS = frozenset({"CONTROLLED", "ABSOLUTE", "PERMISSIVE"})   # what a mast states it is (ADR 0013 §5)
+CURRENTS = frozenset({"LEFT", "RIGHT"})                            # a RULE_251 sign's current of traffic (ADR 0013 §8)
 PLATES = frozenset({"RULE_290_G", "RULE_290_R"})                   # a plate on a mast's SIGNAL net (ADR 0013 §5)
 
 
@@ -558,7 +571,13 @@ class _Plan:
                 self.r.add("next_cp.interlocking", f"{self.name}: a NextCP states no Interlocking", where)
         for row in self.track.get("policies", []):
             g, where = row.get("given", {}), self.where("track", "policies", row.get("id", ""))
-            if g.get("Kind") not in PLATES:
+            if g.get("Kind") not in PLATES:                                                 # a sign states a rule for its track (ADR 0013 §8)
+                if not track_pins(row.get("relations", {})):
+                    self.r.add("policy.track", f"{self.name}: a {g.get('Kind') or 'policy'} sign stands on no track; a sign states its "
+                               "rule for the track it stands on (ADR 0013 §8)", where)
+                if g.get("Kind") == "RULE_251" and g.get("Direction") not in CURRENTS:
+                    self.r.add("policy.direction", f"{self.name}: a RULE_251 sign states {'Direction ' + repr(g['Direction']) if g.get('Direction') else 'no Direction'}; "
+                               "the current of traffic is LEFT or RIGHT, the lever direction of the signals that govern with it (ADR 0013 §8)", where)
                 continue
             mast = row.get("relations", {}).get("mast")
             m = self.appliances.get(mast.partition(":")[2]) if mast and not foreign(mast, self.name) else None
@@ -587,16 +606,30 @@ class _Plan:
                     if (r := self.region(self.pin(n, p))) and n not in powered_at[r]:
                         powered_at[r].append(n)
         letters_of_signal: dict[str, dict[str, str]] = defaultdict(dict)
+        own = {c for c in self.name_of.values() if c} | {qualify(k, self.name) for k, v in self.appliances.items()
+                                                         if v.get("given", {}).get("Appliance") == "track_circuit"}   # what a Members may name: any circuit, a boundary too (ADR 0013 §10 names it like any circuit)
         for name, a in self.appliances.items():
             g = a.get("given", {})
             where = self.where("appliances", name)
             if g.get("Appliance") == "switch" and not any(p in track_pins(a.get("relations", {})) for p in ports_of(a)):
                 self.r.add("switch.track", f"{self.name}: switch {name} has no track on any port", where)
+            if g.get("Appliance") == "track_circuit" and g.get("Style") == "virtual":        # the block's one indication (ADR 0013 §7.2)
+                members = [t.strip() for t in g.get("Members", "").split(",") if t.strip()]
+                if not members:
+                    self.r.add("circuit.members", f"{self.name}: virtual circuit {name} states no Members; a virtual circuit is the one "
+                               "indication of the circuits it lists (ADR 0013 §7.2)", where)
+                for t in members:
+                    if not foreign(t, self.name) and qualify(t, self.name) not in own:
+                        self.r.add("circuit.member", f"{self.name}: virtual circuit {name} lists {t} in Members, which is no circuit of "
+                                   f"{self.name}", where)
             if g.get("Appliance") != "mast":
                 continue
             if g.get("Kind") not in MAST_KINDS:
                 self.r.add("mast.kind", f"{self.name}: mast {name} states {'no Kind' if not g.get('Kind') else 'Kind ' + repr(g['Kind'])}; "
                            "a mast is CONTROLLED, ABSOLUTE or PERMISSIVE (ADR 0013 §5)", where)
+            if _automatic_mast(a) and g.get("CP Name"):                                   # a stated fact not read (ADR 0013 §5)
+                self.r.add("mast.control_point", f"{self.name}: mast {name} is {g['Kind']} and states CP Name {g['CP Name']!r}; an "
+                           "automatic mast belongs to no control point (ADR 0013 §5), so the CP Name is not read", where)
             n = masts_of.get(qualify(name, self.name), 0)
             if n == 0:
                 self.r.add("mast.joint", f"{self.name}: mast {name} stands on no signal joint", where)
@@ -849,7 +882,7 @@ class _Derivation:
                 plan_b = self.plans[b]
                 circuits = {c for c in plan_b.name_of.values() if c} | {
                     f"{b}:{k}" for k, v in plan_b.appliances.items()
-                    if v.get("given", {}).get("Appliance") == "track_circuit" and v["given"].get("Style") != "boundary"}
+                    if v.get("given", {}).get("Appliance") == "track_circuit"}          # a boundary is named like any circuit (ADR 0013 §10)
                 if name not in circuits:
                     self.r.add("reference.unresolved", f"{a}: {what} {name} names {b}, which has no circuit {n}", where, target)
 

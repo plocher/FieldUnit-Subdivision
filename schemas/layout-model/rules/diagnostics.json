@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "description": "The rule-check registry of the reference derivation and the domain libraries (ADR 0012 \u00a73.3): every code tools/layout_model/derive.py and tools/railroad raise about the model's facts, its level and lifecycle. Each finding names every entity it is about by model path. Pre-release with the rules (0.1.0); a code's feature is named when the features exist. Import diagnostics, the KiCad importer's problems translating the drawing, are in its own registry, tools/layout_compiler/diagnostics.json.",
+  "description": "The rule-check registry of the reference derivation and the domain libraries (ADR 0012 §3.3): every code tools/layout_model/derive.py and tools/railroad raise about the model's facts, its level and lifecycle. Each finding names every entity it is about by model path. Pre-release with the rules (0.1.0); a code's feature is named when the features exist. Import diagnostics, the KiCad importer's problems translating the drawing, are in its own registry, tools/layout_compiler/diagnostics.json.",
   "codes": {
     "appliance.circuit": {
       "level": "error",
@@ -23,6 +23,20 @@
       "feature": "logical/trackplan/appliance_switch_ceiling.feature#a ceiling that is not two indication words",
       "replacedBy": null
     },
+    "circuit.member": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/appliance_track_circuit_virtual.feature#a member that is no circuit of the interlocking",
+      "replacedBy": null
+    },
+    "circuit.members": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/appliance_track_circuit_virtual.feature#a virtual circuit that lists no members",
+      "replacedBy": null
+    },
     "circuit.name.disagree": {
       "level": "error",
       "lifecycle": "active",
@@ -34,7 +48,7 @@
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/appliance_track_circuit_boundary.feature#a boundary counts toward the circuit on each side and names none",
       "replacedBy": null
     },
     "column.cp_name": {
@@ -184,6 +198,13 @@
       "feature": null,
       "replacedBy": null
     },
+    "mast.control_point": {
+      "level": "warning",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/appliance_mast.feature#an automatic mast that states a CP Name",
+      "replacedBy": null
+    },
     "mast.device": {
       "level": "missing",
       "lifecycle": "proposed",
@@ -202,7 +223,7 @@
       "level": "info",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/appliance_mast.feature#a mast whose name is not a signal number and its head letters",
       "replacedBy": null
     },
     "mast.heads": {
@@ -216,21 +237,21 @@
       "level": "missing",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/track_joint_signals.feature#a side with no mast leaves that mast on no joint",
       "replacedBy": null
     },
     "mast.joints": {
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/track_joint_signals.feature#one mast on both sides of the joint",
       "replacedBy": null
     },
     "mast.kind": {
       "level": "missing",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/appliance_mast.feature#a mast with no Kind",
       "replacedBy": null
     },
     "mast.letters": {
@@ -244,7 +265,7 @@
       "level": "warning",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/appliance_mast.feature#an automatic mast whose route passes a powered switch",
       "replacedBy": null
     },
     "mast.presents": {
@@ -258,42 +279,56 @@
       "level": "warning",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/track_block.feature#a NextCP standing on track that is drawn through to its neighbour",
       "replacedBy": null
     },
     "next_cp.drawn_neighbour": {
       "level": "warning",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/track_block.feature#a NextCP marked off_layout to an interlocking that is in this file",
       "replacedBy": null
     },
     "next_cp.interlocking": {
       "level": "missing",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/track_block.feature#a NextCP that names no interlocking",
       "replacedBy": null
     },
     "next_cp.off_layout": {
       "level": "info",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/track_block.feature#a NextCP to an interlocking that is not in this file",
       "replacedBy": null
     },
     "next_cp.pair": {
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/track_block.feature#a NextCP whose neighbour has none back",
       "replacedBy": null
     },
     "plate.mast": {
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/appliance_mast.feature#a plate on no mast's signal wire",
+      "replacedBy": null
+    },
+    "policy.direction": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/policy_sign.feature#a RULE_251 sign whose direction is not a current of traffic",
+      "replacedBy": null
+    },
+    "policy.track": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/policy_sign.feature#a sign on no track",
       "replacedBy": null
     },
     "reference.codeline": {
@@ -314,7 +349,7 @@
       "level": "warning",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/appliance_track_circuit_virtual.feature#a member of an interlocking that is not in this file",
       "replacedBy": null
     },
     "reference.marker": {
@@ -335,14 +370,14 @@
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/track_block.feature#a powered switch on the wire that joins the interlockings",
       "replacedBy": null
     },
     "reference.unresolved": {
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/trackplan/appliance_track_circuit_virtual.feature#a member that the other interlocking does not have",
       "replacedBy": null
     },
     "station.columns": {

@@ -405,7 +405,7 @@
       "level": "error",
       "lifecycle": "active",
       "since": "0.4.0",
-      "feature": null,
+      "feature": "trackplan/track_joint_signals.feature#two masts on one SIGNAL pin",
       "replacedBy": null
     },
     "lever.face": {
@@ -566,7 +566,7 @@
       "level": "error",
       "lifecycle": "active",
       "since": "0.4.0",
-      "feature": null,
+      "feature": "trackplan/appliance_track_circuit_boundary.feature#both pins of a boundary on one net",
       "replacedBy": null
     },
     "train_order.track": {
