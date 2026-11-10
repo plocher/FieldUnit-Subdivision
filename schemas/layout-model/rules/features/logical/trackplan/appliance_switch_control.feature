@@ -5,11 +5,13 @@ Feature: What works a switch
   What works it is read from the lever devices named for it, on the desk or in the field, never assumed:
   a powered switch has a desk lever; a dual switch has the desk lever and, for the crew's release and throw by
   hand, a Local-Lock and a Local-Switch; a local switch has a Local-Switch alone, no desk lever and no lock;
-  an electrically locked switch is thrown by hand, the dispatcher's lock lever and a Local-Lock asking the release;
-  a sensed or plain manual switch has no lever at all.
-  A powered, dual or local switch no switch lever works is missing its control source.
-  A local switch with a desk lever, a dual switch without a Local-Lock, and a hand-throw switch with any lever
-  are findings. (The owner, 2026-11-09; GLOSSARY: powered switch, dual-control switch, electric lock)
+  an electrically locked switch has the dispatcher's lock lever and the same field pair: a Local-Lock asking the
+  release and a Local-Switch throwing the model's points, the switch device reporting the position (Christopher
+  813 and 817 are the reference drawing); a sensed or plain manual switch has no lever at all.
+  A powered, dual or local switch no switch lever works, and a locked switch with no Local-Switch, is missing its
+  control source. A local switch with a desk lever, a dual or locked switch without a Local-Lock, and a hand-throw
+  switch with any lever are findings. (The owner, 2026-11-09; GLOSSARY: powered switch, dual-control switch,
+  electric lock)
 
   Background:
     Given interlocking "X" has house "East"
@@ -63,22 +65,57 @@ Feature: What works a switch
     Then "5" is powered
     And nothing is reported on "5"
 
-  Scenario: an electrically locked hand-throw switch
+  Scenario: an electrically locked switch, as Christopher's 813
     Given interlocking "X" has these appliances:
-      | Name | Appliance | Style | TC  |
-      | 5    | switch    | lock  | 5T1 |
+      | Name | Appliance | Style | TC    |
+      | 813  | switch    | lock  | 813T1 |
     And interlocking "X" has these wires:
-      | Pins      |
-      | 5.N 1T.TC |
+      | Pins        |
+      | 813.N 1T.TC |
     And the desk has these levers for interlocking "X":
       | Name | Style |
-      | 5    | lock  |
+      | 813  | lock  |
+    And interlocking "X" has these devices:
+      | Name | Appliance | Style  |
+      | 813  | lever     | lock   |
+      | 813  | lever     | switch |
+    When the layout is derived
+    Then "813" is not powered
+    And nothing is reported on "813"
+
+  @switch.lever
+  Scenario: a locked switch with no Local-Switch
+    Given interlocking "X" has these appliances:
+      | Name | Appliance | Style | TC    |
+      | 813  | switch    | lock  | 813T1 |
+    And interlocking "X" has these wires:
+      | Pins        |
+      | 813.N 1T.TC |
+    And the desk has these levers for interlocking "X":
+      | Name | Style |
+      | 813  | lock  |
     And interlocking "X" has these devices:
       | Name | Appliance | Style |
-      | 5    | lever     | lock  |
+      | 813  | lever     | lock  |
     When the layout is derived
-    Then "5" is not powered
-    And nothing is reported on "5"
+    Then it is reported as missing on "813"
+
+  @switch.lock.local
+  Scenario: a locked switch with no Local-Lock
+    Given interlocking "X" has these appliances:
+      | Name | Appliance | Style | TC    |
+      | 813  | switch    | lock  | 813T1 |
+    And interlocking "X" has these wires:
+      | Pins        |
+      | 813.N 1T.TC |
+    And the desk has these levers for interlocking "X":
+      | Name | Style |
+      | 813  | lock  |
+    And interlocking "X" has these devices:
+      | Name | Appliance | Style  |
+      | 813  | lever     | switch |
+    When the layout is derived
+    Then it is reported as missing on "813"
 
   Scenario Outline: a hand-throw switch, sensed or not, with no lever
     Given interlocking "X" has these appliances:

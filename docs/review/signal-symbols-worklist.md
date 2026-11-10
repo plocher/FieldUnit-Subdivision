@@ -349,7 +349,7 @@ STOP/RESTRICTING". The Subdivision code change is #105 on map #94; the FieldUnit
    | Switch_Powered (+ Diag, Small, NO_TC) | `powered` | a desk lever on its column |
    | Switch_Dual | `dual` | the desk lever; the crew releases and throws with Local-Lock + Local-Switch |
    | Switch_Local (new) | `local` (new word) | a Local-Switch alone; no desk lever, no lock |
-   | Switch_Lock | `lock` | hand; Local-Lock requests the release |
+   | Switch_Lock | `lock` | the desk lock lever; in the field a Local-Lock asking the release and a Local-Switch throwing the points, the switch device reporting NWK/RWK, and its TC (owner, 2026-11-09: "a fascia pair of lock/switch lever/lamps and a remote switch with point feedback and a TC"; Christopher 813 and 817 are the reference) |
    | Switch_Manual_Sensed | `manual_sensed` | hand; a contact reports the position |
    | Switch_Manual | `manual` | hand; nothing reported |
    | Derail | `derail,powered` | its switch's lever when the gang id names a switch; else a desk lever |
@@ -362,8 +362,8 @@ STOP/RESTRICTING". The Subdivision code change is #105 on map #94; the FieldUnit
    `local` differs from `manual_sensed` in having a machine: the field unit drives it from the local lever
    (NWS/RWS out) and reads NWK/RWK back; a sensed manual one it can only read. A dependent derail takes its switch's
    regime whatever its own word; a dependent derail drawn `local` or `manual` is a finding. A powered appliance with
-   no lever of either kind named for it is `missing` (no control source); a `local` one with a desk lever, or a
-   `dual` one with no Local-Lock, is a finding.
+   no lever of either kind named for it is `missing` (no control source), and so is a `lock` one with no Local-Switch;
+   a `local` one with a desk lever, or a `dual` or `lock` one with no Local-Lock, is a finding.
 4. **Lever devices are unchanged.** A lever's Style names its token set, the same word on the desk and in the field:
    `switch` (NWS/RWS out, NWK/RWK in: PanelSwitch, Local-Switch, Local-Derail), `lock` (WLQ out, WLK/WLQK in:
    PanelLock, Local-Lock), `train_order`. Local-Switch with Local-Lock is the crew's release-and-throw pair of a

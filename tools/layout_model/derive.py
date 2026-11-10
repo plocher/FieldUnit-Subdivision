@@ -1092,11 +1092,13 @@ class _Derivation:
         lever (an OfficeUnit device) or a field lever (an interlocking device: Local-Switch, Local-Lock, Local-Derail),
         each serving the appliance its Name names, Style ``switch`` or ``lock``. The regime (``grammar.regime``) says
         what to expect: ``powered`` a desk lever; ``dual`` the desk lever with a Local-Lock and Local-Switch for the
-        crew's release and throw; ``local`` a Local-Switch alone; ``lock`` the dispatcher's lock lever and a Local-Lock;
-        a hand-throw one nothing. A gang follower and a dependent derail are worked through their lead and are not
+        crew's release and throw; ``local`` a Local-Switch alone; ``lock`` the dispatcher's lock lever and the same
+        field pair, a Local-Lock asking the release and a Local-Switch throwing the model's points, the switch device
+        reporting NWK/RWK (the owner, 2026-11-09: Christopher 813 and 817 are the reference); a hand-throw one nothing. A gang follower and a dependent derail are worked through their lead and are not
         read. Reported: a powered, dual or local one that no switch lever of either kind serves, ``switch.lever`` at
-        missing (no control source yet); a ``local`` one a desk lever serves, ``switch.lever.desk`` at error; a
-        ``dual`` one with no Local-Lock, ``switch.lock.local`` at missing; a hand-throw one (``manual``,
+        missing (no control source yet), and so is a ``lock`` one with no Local-Switch; a ``local`` one a desk lever
+        serves, ``switch.lever.desk`` at error; a ``dual`` or ``lock`` one with no Local-Lock, ``switch.lock.local`` at
+        missing; a hand-throw one (``manual``,
         ``manual_sensed``, ``spring``) any lever serves, ``switch.lever.hand`` at error; a dependent derail drawn
         ``local`` or ``manual``, ``derail.regime`` at error (it takes its switch's regime)."""
         def levers_of(devices: list[dict[str, Any]]) -> dict[str, list[set[str]]]:
@@ -1128,12 +1130,15 @@ class _Derivation:
                 if r in POWERED and not any("lock" not in st for st in levers):
                     self.r.add("switch.lever", f"{b}: {what} is {r} but no switch lever is named for it, on the desk or in the field; "
                                "what works it is not drawn yet", where)
+                if r == "lock" and not any("lock" not in st for st in local[q]):
+                    self.r.add("switch.lever", f"{b}: {what} is an electric lock but no Local-Switch is named for it; the crew's throw "
+                               "of the points after the release is not drawn yet", where)
                 if r == "local" and desk[q]:
                     self.r.add("switch.lever.desk", f"{b}: {what} is local, worked from its Local-Switch alone, but a desk lever "
                                f"({', '.join(sorted(set().union(*desk[q])))}) is named for it", where)
-                if r == "dual" and not any("lock" in st for st in local[q]):
-                    self.r.add("switch.lock.local", f"{b}: {what} is dual but has no Local-Lock; the crew's release before throwing it "
-                               "by hand is not drawn yet", where)
+                if r in ("dual", "lock") and not any("lock" in st for st in local[q]):
+                    self.r.add("switch.lock.local", f"{b}: {what} is {'dual' if r == 'dual' else 'an electric lock'} but has no Local-Lock; "
+                               "the crew's release before throwing it by hand is not drawn yet", where)
                 if r in HAND and levers:
                     self.r.add("switch.lever.hand", f"{b}: {what} is {r}, worked by hand, but a lever ({', '.join(words) or 'no Style'}) is "
                                "named for it", where)
