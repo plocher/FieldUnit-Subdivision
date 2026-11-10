@@ -18,8 +18,9 @@
    vitality markings, and context for consumers. If the model is missing or misstating something, codegen cannot fix
    it (§13).
 2. **A station-to-station block** is a piece of the track graph cut at every `CONTROLLED` and `ABSOLUTE` signal joint
-   that holds no powered switch or derail and lies under a block signal rule (`RULE_251`, `RULE_261`, or `ABSOLUTE`
-   ends). Hand-throw, spring, and electrically locked hand-throw switches may lie in a block. It belongs to the layout,
+   that holds no dispatcher-controlled switch or derail (`powered` or `dual`) and lies under a block signal rule
+   (`RULE_251`, `RULE_261`, or `ABSOLUTE` ends). Hand-throw, spring, electrically locked hand-throw and local switches
+   may lie in a block. It belongs to the layout,
    not to an interlocking, and the `blocks` library computes it on demand (§4).
 3. **ABS, APB or CTC is derived, never stated.** APB is derived from `ABSOLUTE` ends alone; a `RULE_261` sign on
    `ABSOLUTE` ends is reported at warning (§4).
@@ -112,13 +113,16 @@ hardware).
 
 ## 4. The station-to-station block (decisions 2, 3)
 
-Cut the track graph at every `CONTROLLED` and `ABSOLUTE` signal joint. Each piece that holds no powered switch or
-derail and lies under a block signal rule (`RULE_251`, `RULE_261`, or `ABSOLUTE` ends) is one station-to-station block.
-A powered switch is one whose position the field unit knows and may move: `Style` `powered`, `dual` or `local`
-(GLOSSARY: powered switch, dual-control switch). A `local` switch is a machine the field unit drives from a Local-Switch
-alone, with no desk lever (owner, 2026-11-09).[^local] A `CP Name` on a switch says which control point serves it and makes nothing powered: a
-hand-throw switch (`manual`, `manual_sensed`), a spring switch, and an electrically locked hand-throw switch (`lock`)
-may lie in a block whatever `CP Name` they state.[^powered] A block holds:
+Cut the track graph at every `CONTROLLED` and `ABSOLUTE` signal joint. Each piece that holds no dispatcher-controlled
+switch or derail and lies under a block signal rule (`RULE_251`, `RULE_261`, or `ABSOLUTE` ends) is one
+station-to-station block. A dispatcher-controlled switch is a machine the dispatcher throws from the desk: `Style`
+`powered` or `dual`. It lies within a control point, delimited among other things by signal IRJs and END CTC IRJs
+(owner, 2026-11-09).[^dispatcher] A powered switch is one whose position the field unit knows and may move: `Style`
+`powered`, `dual` or `local` (GLOSSARY: powered switch, dual-control switch). A `local` switch is a machine the field
+unit drives from a Local-Switch alone, with no desk lever (owner, 2026-11-09).[^local] A `CP Name` on a switch says
+which control point serves it and makes nothing the dispatcher's: a hand-throw switch (`manual`, `manual_sensed`), a
+spring switch, an electrically locked hand-throw switch (`lock`) and a local switch (a machine the crew works from a
+fascia lever, not the dispatcher's) may lie in a block whatever `CP Name` they state.[^powered] A block holds:
 
 - its track circuits, in order;
 - its signal locations and their masts, in order;
@@ -673,6 +677,11 @@ Each consumer input, the Part 1 section that states it, and its form:
 [^powered]: Until commit `d4ffddf` this read "has a machine (`Style` `powered` or `dual`) or a `CP Name`". On SPCoast every
     switch states the control point that senses it, so that wording made a hand-throw switch powered by inference from
     a field that does another job, the inference §5 rejects for signals (owner, 2026-11-02).
+
+[^dispatcher]: Until commit `b88423f` the piece was cut on "no powered switch or derail", and from PR #107 that word
+    included `local`, which put Corporal's and Sargent's Switch_Local 1 outside any block. The rule is about a
+    dispatcher-controlled switch needing to lie within a control point; "powered" is the seam word, not "motorized",
+    and a local switch is not the dispatcher's (owner, 2026-11-09).
 
 [^local]: Until commit `dcfc50a` this read "one the dispatcher throws from the desk: `Style` `powered` or `dual`". The seam
     word says what the field unit knows and may move, not who throws it; `local` joined the powered words with the

@@ -91,6 +91,15 @@ def is_powered(name: str, appliances: dict[str, dict[str, Any]]) -> bool:
     return regime(name, appliances) in POWERED
 
 
+def dispatcher_controlled(name: str, appliances: dict[str, dict[str, Any]]) -> bool:
+    """A dispatcher-controlled switch or derail: one whose regime is ``powered`` or ``dual``, a machine the dispatcher
+    throws from the desk, which must lie within a control point (the owner, 2026-11-09). A ``local`` switch is powered
+    (``is_powered``) but not the dispatcher's: the crew works it from a fascia lever, and like a hand-throw, spring or
+    electrically locked hand-throw switch it may lie in a station-to-station block (ADR 0013 §4). A dependent derail
+    follows its switch. False for a switch that states no regime word and for anything that is no switch."""
+    return regime(name, appliances) in ("powered", "dual")
+
+
 def leads_gang(name: str, switches: set[str] | frozenset[str]) -> bool:
     """A switch that is no gang follower: its name is its gang id, or no switch is named by the id alone."""
     lead = GANG.sub("", name)

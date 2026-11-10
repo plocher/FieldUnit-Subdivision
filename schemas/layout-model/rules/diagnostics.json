@@ -370,7 +370,7 @@
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": "logical/trackplan/track_block.feature#a powered switch on the wire that joins the interlockings",
+      "feature": "logical/trackplan/track_block.feature#a dispatcher-controlled switch on the wire that joins the interlockings",
       "replacedBy": null
     },
     "reference.unresolved": {
