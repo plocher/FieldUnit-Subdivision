@@ -385,3 +385,12 @@ it"), no OS default and no `TC` reading for a derail, the lever-consistency find
 table row. FieldUnit: the local control source (a lever that is not on the code line asserts NWS/RWS), the release
 flow of `dual` (ADR 0006, proposed) applied to a derail, `manual_sensed` as a read-only position, derail dependence
 taken from the model (FieldUnit #29), and the glossary's powered-switch and derail entries.
+
+## Queued: encoder Value cleanup (owner, 2026-11-09)
+
+An encoder is anonymous (no `Name`; keyed by `Kind` and the net on its `APP` pin), so nothing reads its `Value`.
+The libraries now carry `Value` empty and `Kind` literal on every encoder, and every placed encoder has a literal
+`Kind` (checked 2026-11-09 after the Sargent hand edits). Fifty placements still carry text in `Value`: `3MUX2A` on
+40 (all six 3MUX2A sheets), `PIXEL` on 7 (GilroyInterchange, Sargent), `RYG` on 3 (GilroyCalTrain). Blank them in
+one scripted, lock-gated pass with a field diff before the commit (the field-reset incidents of 2026-10-17/18),
+not through Update Symbols, which the owner does not want touching `Value`. Railroad repo edit, separate commit.
