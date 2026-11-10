@@ -42,7 +42,7 @@ class LayoutModelFileTests(unittest.TestCase):
         bad["interlockings"]["Sargent"]["devices"][0]["derived"]["serves"] = "835"
         self.assertTrue(any("serves" in e for e in layout_model.errors(bad)))
         bad = copy.deepcopy(self.model)
-        bad["officeUnits"]["SPCoast South"]["devices"][0]["relations"]["column"] = "12"     # a column is qualified by its OfficeUnit (D19)
+        bad["officeUnits"]["SouthCTC"]["devices"][0]["relations"]["column"] = "12"     # a column is qualified by its OfficeUnit (D19)
         self.assertTrue(any("column" in e for e in layout_model.errors(bad)))
 
     def test_a_device_row_has_no_identity(self):

@@ -116,13 +116,13 @@ TC1  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=1NAT CP_Name=
 TC2  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=1SAT CP_Name=East
 TC3  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=2SAT CP_Name=East
 NX1  | NextCP           | TRACK     | Kind=NEXT_CP
-R1   | Rule261-DoT-BiDirectional | POLICY | Kind=RULE_261 Direction=BOTH
+R1   | GCOR Rule 9.14 DoT_Right | POLICY | Kind=GCOR_RULE_9_14 Direction=RIGHT
 """
 ONE_SWITCH_NETS = """
 c    | SW1.C J1.A
 n    | SW1.N J2.A
 r    | SW1.R J3.A
-w    | J1.B TC1.TC NX1.To R1.Track
+w    | J1.B TC1.TC NX1.To R1.To
 e1   | J2.B TC2.TC
 e2   | J3.B TC3.TC
 s1   | J1.SIGNAL M1.SIGNAL
@@ -148,7 +148,7 @@ class Circuits(unittest.TestCase):
         ])
         self.assertEqual(rows(ix, "ends"), [{"given": {"Kind": "NEXT_CP"}, "derived": {"circuits": {"track": "X:1NAT"}},
                                              "relations": {"track": sorted([at(sm, "J1", "approach"), at(sm, "R1", "track"), "X:1NAT.TC"])}}])
-        self.assertEqual(rows(ix, "policies"), [{"given": {"Kind": "RULE_261", "Direction": "BOTH"}, "derived": {"circuits": {"track": "X:1NAT"}},
+        self.assertEqual(rows(ix, "policies"), [{"given": {"Kind": "GCOR_RULE_9_14", "Direction": "RIGHT"}, "derived": {"circuits": {"track": "X:1NAT"}},
                                                  "relations": {"track": sorted([at(sm, "J1", "approach"), at(sm, "NX1", "track"), "X:1NAT.TC"])}}])
 
     def test_a_signal_joints_sides_are_approach_and_governed(self):
@@ -160,16 +160,17 @@ class Circuits(unittest.TestCase):
         self.assertEqual(j["derived"], {"circuits": {"governed": "X:835T1", "approach": "X:1SAT"}, "controlPoint": "X:East"})
         self.assertEqual(j["given"], {"Kind": "IRJ_SIGNAL", "CP Name": "East"})
 
-    def test_a_policy_signs_and_a_next_cps_pin_is_the_track_side_whatever_the_library_calls_it(self):
-        """RULE_261 draws its pin as Track, the others as To: one meaning, one side name (D15)."""
+    def test_a_policy_signs_and_a_next_cps_pin_is_the_track_side(self):
+        """Every sign and a NextCP draw their one pin as To; the model names the side track: one meaning, one side
+        name (D15). A regime marker and the current-of-traffic sign are read alike."""
         given = """
 H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
 TC1  | Track Circuit   | APPLIANCE | Appliance=track_circuit Name=1NAT
-R1   | Rule261-DoT-BiDirectional | POLICY | Kind=RULE_261 Direction=BOTH
-R2   | Rule251-DoT-Right | POLICY | Kind=RULE_251 Direction=RIGHT
+R1   | GCOR Rule 6.13 Yard Limits | POLICY | Kind=GCOR_RULE_6_13
+R2   | GCOR Rule 9.14 DoT_Right | POLICY | Kind=GCOR_RULE_9_14 Direction=RIGHT
 NX1  | NextCP          | TRACK     | Kind=NEXT_CP Interlocking=Lick
 """
-        sm, ix = compile_(given, "w | TC1.TC R1.Track R2.To NX1.To\n")
+        sm, ix = compile_(given, "w | TC1.TC R1.To R2.To NX1.To\n")
         self.assertEqual({str(r["derived"]) for r in ix["track"]["policies"] + ix["track"]["ends"]}, {str({"circuits": {"track": "X:1NAT"}})})
 
     def test_every_track_row_carries_its_symbols_uuid_as_its_id(self):
@@ -180,23 +181,25 @@ NX1  | NextCP          | TRACK     | Kind=NEXT_CP Interlocking=Lick
         self.assertEqual(sorted(ids), sorted(by_ref[r] for r in ("J1", "J2", "J3", "NX1", "R1")))
 
     def test_dark_track_has_no_circuit_and_an_end_names_the_port_it_meets(self):
+        """Track beyond a plain joint with nothing to name it has no circuit (ADR 0013 §7.1: a regime boundary is a
+        plain IRJ; the END_CTC end is retired)."""
         given = """
 H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
 SW1  | Switch_Manual   | APPLIANCE | Appliance=switch Style=manual Name=1
-E1   | IRJ-END_CTC     | TRACK     | Kind=END_CTC
+J1   | IRJ             | TRACK     | Kind=IRJ
 TC1  | Track Circuit   | APPLIANCE | Appliance=track_circuit Name=2SAT
 I1   | Industry        | TRACK     | Kind=INDUSTRY
 I2   | Industry        | TRACK     | Kind=INDUSTRY
 """
         sm, ix = compile_(given, """
-ctc  | E1.CTC TC1.TC
-dark | E1.DARK SW1.C
+ctc  | J1.B TC1.TC
+dark | J1.A SW1.C
 in   | I1.EoT SW1.N
 ir   | I2.EoT SW1.R
 """)
         self.assertEqual(sm.report.errors, [])
+        self.assertEqual(rows(ix, "joints"), [{"given": {"Kind": "IRJ"}, "derived": {"circuits": {"B": "X:2SAT"}}, "relations": {"A": ["X:1.C"], "B": ["X:2SAT.TC"]}}])
         self.assertEqual(sorted_rows(rows(ix, "ends")), sorted_rows([
-            {"given": {"Kind": "END_CTC"}, "derived": {"circuits": {"CTC": "X:2SAT"}}, "relations": {"CTC": ["X:2SAT.TC"], "DARK": ["X:1.C"]}},
             {"given": {"Kind": "INDUSTRY"}, "relations": {"EoT": ["X:1.N"]}},
             {"given": {"Kind": "INDUSTRY"}, "relations": {"EoT": ["X:1.R"]}},
         ]))
@@ -207,15 +210,15 @@ ir   | I2.EoT SW1.R
         Two unnamed rows on dark track with nothing between them state their connection; nothing is reported."""
         given = """
 H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
-E1   | IRJ-END_CTC     | TRACK     | Kind=END_CTC
+J1   | IRJ             | TRACK     | Kind=IRJ
 B1   | Bumper          | TRACK     | Kind=BUMPER
 """
-        sm, ix = compile_(given, "dark | E1.DARK B1.EoT\n")
+        sm, ix = compile_(given, "dark | J1.A B1.EoT\n")
         self.assertEqual(sm.report.errors, [])
         self.assertEqual(diags(sm, "track"), [])
         rel = track_relations(ix)
-        self.assertEqual(rel[at(sm, "E1", "DARK")], [at(sm, "B1", "EoT")])
-        self.assertEqual(rel[at(sm, "B1", "EoT")], [at(sm, "E1", "DARK")])
+        self.assertEqual(rel[at(sm, "J1", "A")], [at(sm, "B1", "EoT")])
+        self.assertEqual(rel[at(sm, "B1", "EoT")], [at(sm, "J1", "A")])
 
     def test_a_derail_joins_its_switchs_circuit_and_ports_that_meet_are_a_link(self):
         given = """
@@ -482,18 +485,24 @@ L2   | AUXILIARY       | APPLIANCE | Appliance=lamp Name=NFL
 
 class Ends(unittest.TestCase):
     def test_a_named_end_is_what_a_dark_pin_meets(self):
-        """Luchessa's shape: an industry on END CTC's DARK pin, no switch and no circuit between them."""
+        """Luchessa's shape (Railroad 0ddd395): a regime boundary, a plain IRJ with END CTC on the circuit side and
+        Rule 6.28 beyond, and the industry on the far side with no switch and no circuit between them."""
         given = """
 H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
-E1   | IRJ-END_CTC     | TRACK     | Kind=END_CTC
+J1   | IRJ             | TRACK     | Kind=IRJ
+R1   | GCOR Rule 10 END_CTC | POLICY | Kind=GCOR_RULE_10
+R2   | GCOR Rule 6.28 RestrictedSpeed | POLICY | Kind=GCOR_RULE_6_28
 TC1  | Track Circuit   | APPLIANCE | Appliance=track_circuit Name=02T
 I1   | Industry        | TRACK     | Kind=INDUSTRY Name="Gilroy Industry"
 """
-        sm, ix = compile_(given, "ctc | E1.CTC TC1.TC\ndark | E1.DARK I1.EoT\n")
+        sm, ix = compile_(given, "ctc | J1.B TC1.TC R1.To\ndark | J1.A R2.To I1.EoT\n")
         self.assertEqual(sm.report.errors, [])
-        self.assertEqual(sorted_rows(rows(ix, "ends")), sorted_rows([
-            {"given": {"Kind": "END_CTC"}, "derived": {"circuits": {"CTC": "X:02T"}}, "relations": {"CTC": ["X:02T.TC"], "DARK": ["X:Gilroy Industry.EoT"]}},
-            {"name": "X:Gilroy Industry", "given": {"Kind": "INDUSTRY"}, "relations": {"EoT": [at(sm, "E1", "DARK")]}},
+        self.assertEqual(rows(ix, "joints"), [{"given": {"Kind": "IRJ"}, "derived": {"circuits": {"B": "X:02T"}},
+                                               "relations": {"A": sorted([at(sm, "R2", "track"), "X:Gilroy Industry.EoT"]), "B": sorted([at(sm, "R1", "track"), "X:02T.TC"])}}])
+        self.assertEqual(rows(ix, "ends"), [{"name": "X:Gilroy Industry", "given": {"Kind": "INDUSTRY"}, "relations": {"EoT": sorted([at(sm, "J1", "A"), at(sm, "R2", "track")])}}])
+        self.assertEqual(sorted_rows(rows(ix, "policies")), sorted_rows([
+            {"given": {"Kind": "GCOR_RULE_10"}, "derived": {"circuits": {"track": "X:02T"}}, "relations": {"track": sorted([at(sm, "J1", "B"), "X:02T.TC"])}},
+            {"given": {"Kind": "GCOR_RULE_6_28"}, "relations": {"track": sorted([at(sm, "J1", "A"), "X:Gilroy Industry.EoT"])}},
         ]))
         self.assertEqual(layout_model.errors(emit.emit(sm)), [])
 
@@ -864,9 +873,10 @@ class SPCoastTrackplan(unittest.TestCase):
 
     def test_every_track_row_has_its_own_id(self):
         ids = [r["id"] for ix in self.model["interlockings"].values() for k in ("joints", "ends", "policies") for r in ix.get("track", {}).get(k, [])]
-        # IRJ, IRJ_SIGNAL, IRJ_SIGNALS; NEXT_CP, END_CTC, BUMPER, INDUSTRY; policies with the one plate: the Corporal to
-        # Sargent block drawn across sheets (Railroad 56ff2e1, 2a1696e, 31954c5) replaced that NextCP pair and its END_CTCs.
-        self.assertEqual(len(ids), 54 + 36 + 2 + 16 + 3 + 3 + 5 + 30)
+        # IRJ, IRJ_SIGNAL, IRJ_SIGNALS; NEXT_CP, BUMPER, INDUSTRY; policies (10 x 9.14, 3 x 10, 2 x 14, 5 x 6.13, 4 x 6.28)
+        # with the one plate: the Corporal to Sargent block drawn across sheets (Railroad 56ff2e1, 2a1696e, 31954c5)
+        # replaced that NextCP pair; the three CTC boundaries are plain IRJs with a marker each side (Railroad 0ddd395).
+        self.assertEqual(len(ids), 57 + 36 + 2 + 16 + 3 + 5 + 25)
         self.assertEqual(len(set(ids)), len(ids))
 
     def test_every_appliance_has_its_control_point_and_no_chain_is_broken(self):
@@ -883,15 +893,32 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(sorted(b for a, b in ends if a == "Christopher"), ["Corporal", "Corporal", "Luchessa", "Luchessa"])
         self.assertEqual(self.sm.report.by_code("next_cp.pair"), [])
 
-    def test_luchessas_industry_is_what_end_ctcs_dark_pin_meets(self):
-        ends = self.ix("Luchessa")["track"]["ends"]
-        end_ctc = next(e for e in ends if e["relations"].get("DARK") == ["Luchessa:Gilroy Industry.EoT"])
-        self.assertEqual((end_ctc["given"], end_ctc["derived"]), ({"Kind": "END_CTC"}, {"circuits": {"CTC": "Luchessa:02T"}}))
-        industry = next(e for e in ends if e.get("name") == "Luchessa:Gilroy Industry")
-        self.assertEqual((industry["given"], industry["relations"]), ({"Kind": "INDUSTRY"}, {"EoT": [f"{end_ctc['id']}.DARK"]}))
+    def test_luchessas_industry_lead_is_beyond_a_regime_boundary(self):
+        """Railroad 0ddd395: a plain IRJ with END CTC on the circuit side (02T) and Rule 6.28 beyond, where the one-ended
+        lead to Gilroy Industry lies under its own regime (ADR 0013 §7.1)."""
+        ix = self.ix("Luchessa")
+        industry = next(e for e in ix["track"]["ends"] if e.get("name") == "Luchessa:Gilroy Industry")
+        joint = next(j for j in ix["track"]["joints"] if f"{j['id']}.A" in industry["relations"]["EoT"])
+        self.assertEqual((joint["given"], joint["derived"]), ({"Kind": "IRJ"}, {"circuits": {"B": "Luchessa:02T"}}))
+        signs = {p["given"]["Kind"]: p for p in ix["track"]["policies"] if p["given"]["Kind"].startswith("GCOR_RULE_") and p["given"]["Kind"] != "GCOR_RULE_9_14"}
+        self.assertEqual(signs["GCOR_RULE_6_28"]["relations"]["track"], sorted([f"{joint['id']}.A", "Luchessa:Gilroy Industry.EoT"]))
+        self.assertIn(f"{joint['id']}.B", signs["GCOR_RULE_10"]["relations"]["track"])
+        pieces = {p["derived"]["name"]: p["derived"] for p in ix["track"]["pieces"]}
+        self.assertEqual(pieces["Luchessa:Gilroy Industry"], {"name": "Luchessa:Gilroy Industry", "regime": "GCOR_RULE_6_28", "by": "marker"})
+        self.assertEqual(pieces["Luchessa:02T"], {"name": "Luchessa:02T", "circuit": "Luchessa:02T", "regime": "GCOR_RULE_10", "by": "marker"})
+
+    def test_the_beet_loader_and_gilroy_caltrains_yard_carry_their_regimes(self):
+        """Railroad 0ddd395: TWC beyond Corporal's and Sargent's boundaries, where the Beet Loader tracks rejoin the two
+        sheets; yard limits on Gilroy Caltrain's bumper tracks (ADR 0013 §7.1)."""
+        for name in ("Corporal", "Sargent"):
+            pieces = {p["derived"]["name"]: p["derived"] for p in self.ix(name)["track"]["pieces"]}
+            self.assertEqual(pieces[f"{name}:1T1"], {"name": f"{name}:1T1", "circuit": f"{name}:1T1", "regime": "GCOR_RULE_14", "by": "marker"}, name)
+        yard = [p["derived"] for p in self.ix("Gilroy Caltrain")["track"]["pieces"] if p["derived"].get("regime") == "GCOR_RULE_6_13"]
+        self.assertEqual(len(yard), 3)
+        self.assertEqual({p["by"] for p in yard}, {"marker"})
 
     def test_sargents_hot_box_alarm_states_its_milepost(self):
-        self.assertEqual(self.ix("Sargent")["appliances"]["HBA"]["given"]["Milepost"], "83.4")
+        self.assertEqual(self.ix("Sargent")["appliances"]["HBA"]["given"]["Milepost"], "83.5")      # moved in Railroad 0ddd395
 
     def test_sargents_os_circuit_is_on_its_three_signal_joints(self):
         joints = [j for j in self.ix("Sargent")["track"]["joints"] if j["given"]["Kind"] == "IRJ_SIGNAL"]

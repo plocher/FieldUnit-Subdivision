@@ -8,7 +8,7 @@ from typing import Optional
 
 # Versioned so provenance can name it.
 REFERENCE_DATA = {"encodingTransportPairing": "2026-10-23", "driverEncodings": "2026-10-23", "indicationTokens": "2026-10-27.2", "stations": "2026-10-27", "codeLineCapacity": "2026-11-01", "codeLineSteps": "2026-11-01.3",
-                  "trainOrderInputs": "2026-11-08"}
+                  "trainOrderInputs": "2026-11-08", "regimes": "2026-11-10"}
 # An encoding's Kind pairs with its transport's Kind (ADR 0009 §3.10).
 TRANSPORT_OF_ENCODING = {"AAR": "MQTT", "USS506": "TIMECODE", "BITS": "TIMECODE", "JMRI": "MQTT", "CMRI": "CMRI"}
 # A driver whose IC is an encoding needs that I/O encoding on its processor (ADR 0009 §3.3, §3.6, §3.12 "IC native or encoded").
@@ -128,3 +128,20 @@ def code_line_steps(encoding: Optional[str], user: Optional[dict[str, dict]] = N
 # order by its step alone.
 TRAIN_ORDER_INPUTS = (("STOP", "STOP"), ("SLOW", "APPROACH"))
 TRAIN_ORDER_CLEAR = "CLEAR"
+
+
+# The regimes a piece of track may be under (ADR 0013 §7.1 and decision 3; the owner, 2026-11-10; Railroad 0ddd395): each
+# a GCOR Rule POLICY marker's Kind, with the chapter or rule title of the GCOR 8th edition as the owner opened it
+# (2026-11-10, ticket #113). The GCOR prefix scopes the vocabulary to one rulebook; a later Studio presents the era's
+# set. Nothing era-specific yet. A regime is stated by its marker, never derived from signals (GCOR 10.1: CTC limits
+# are designated in the timetable); the marker's extent is derived (``derive.regimes``). The current-of-traffic sign
+# is a direction fact, not a regime, and may share a piece with one (§8).
+REGIMES: dict[str, str] = {
+    "GCOR_RULE_10": "CTC",                                         # Chapter 10
+    "GCOR_RULE_14": "TWC",                                         # Chapter 14, track warrant control
+    "GCOR_RULE_16": "DTC",                                         # Chapter 16, direct traffic control
+    "GCOR_RULE_6_13": "Yard Limits",
+    "GCOR_RULE_6_28": "Movement on Other than Main Track",
+}
+CTC = "GCOR_RULE_10"                                               # the regime of track within a control point
+CURRENT_OF_TRAFFIC = "GCOR_RULE_9_14"                              # "Movement with the Current of Traffic": Direction LEFT or RIGHT

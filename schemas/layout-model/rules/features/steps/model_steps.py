@@ -105,12 +105,12 @@ def policies(context, name):
 
 
 def _rows(ix: dict) -> dict[str, dict]:
-    return {r["id"]: r for rows in ix.get("track", {}).values() for r in rows}
+    return {r["id"]: r for rows in ix.get("track", {}).values() for r in rows if "id" in r}      # a piece row has no id
 
 
 def _named_rows(ix: dict) -> dict[str, dict]:
     """The named track rows by their unqualified name: a wire names their pins as it names an appliance's."""
-    return {r["name"].partition(":")[2]: r for rows in ix.get("track", {}).values() for r in rows if r.get("name")}
+    return {r["name"].partition(":")[2]: r for rows in ix.get("track", {}).values() for r in rows if "id" in r and r.get("name")}
 
 
 @given('interlocking "{name}" has these wires:')
@@ -208,6 +208,29 @@ def joint_side_a(context, rid, a):
 def sign_on(context, rid, circuit):
     got = _row_named(context, rid).get("derived", {}).get("circuits")
     assert got == {"track": circuit}, f"{rid}: derived circuits are {got!r}"
+
+
+BY = {"a marker": "marker", "its interlocking": "interlocking", "inheritance": "inherited"}
+
+
+def _piece(context, name: str) -> dict:
+    """The piece row called ``name`` in the interlocking whose name qualifies it (ADR 0013 §7.1)."""
+    ix = context.derived["interlockings"][name.partition(":")[0]]
+    found = [p["derived"] for p in ix.get("track", {}).get("pieces", []) if p["derived"]["name"] == name]
+    assert len(found) == 1, f"{name}: {len(found)} pieces of that name in {[p['derived']['name'] for p in ix.get('track', {}).get('pieces', [])]}"
+    return found[0]
+
+
+@then('the piece "{name}" is under regime "{kind}" by {how}')
+def piece_regime(context, name, kind, how):
+    got = _piece(context, name)
+    assert (got.get("regime"), got.get("by")) == (kind, BY[how]), f"{name}: regime {got.get('regime')!r} by {got.get('by')!r}"
+
+
+@then('the piece "{name}" is under no regime')
+def piece_no_regime(context, name):
+    got = _piece(context, name)
+    assert "regime" not in got and "by" not in got, f"{name}: regime {got.get('regime')!r} by {got.get('by')!r}"
 
 
 @then('"{name}" belongs to control point "{cp}"')

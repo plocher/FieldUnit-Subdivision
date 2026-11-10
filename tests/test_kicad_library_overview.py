@@ -115,7 +115,7 @@ FIXTURE = '''(kicad_symbol_lib
 \t\t(property "Role" "TRACK"
 \t\t\t(at 0 0 0)
 \t\t)
-\t\t(property "Kind" "END_CTC"
+\t\t(property "Kind" "BUMPER"
 \t\t\t(at 0 0 0)
 \t\t)
 \t\t(symbol "Marker_1_1"
@@ -243,7 +243,7 @@ class OverviewTests(unittest.TestCase):
         self.assertEqual(gadget["Units"], "common: (no pins) unit 1: ~{OCC} unit 2: EN")
         marker = self.row("Marker")
         self.assertEqual(marker["Value"], "MARK")
-        self.assertEqual(marker["Kind"], "END_CTC")
+        self.assertEqual(marker["Kind"], "BUMPER")
         self.assertEqual(marker["Pins"], "T (1) passive")
         self.assertEqual(marker["Units"], "unit 1: T")
 
@@ -749,14 +749,14 @@ class ConventionsTests(unittest.TestCase):
         bare = sym("BareHouse", {"Role": "STRUCTURE", "Kind": "CONTROL_POINT"}, {1: ["MC"]})
         joint = sym("IRJ", {"Role": "TRACK", "Kind": "IRJ"}, {1: ["A", "B"]})
         industry = sym("Industry", {"Role": "TRACK", "Kind": "INDUSTRY", "Name": "${Value}"}, {1: ["A"]})
-        sign = sym("Rule251", {"Role": "POLICY", "Kind": "RULE_251"}, {1: ["A"]})
+        sign = sym("Rule914", {"Role": "POLICY", "Kind": "GCOR_RULE_9_14"}, {1: ["A"]})
         bit = sym("IB", {"Role": "IODRIVER", "IC": "CMRI", "Kind": "IB", "Bit": ""}, {1: ["D"]})
         node = sym("Node", {"Role": "IODRIVER", "IC": "CMRI", "Kind": "NODE", "NodeType": "C"}, {1: ["IOBus"]})
         cells = {s.name: c for k in overview.convention_kinds([house, bare, joint, industry, sign, bit, node])
                  for s, c in zip(k.symbols, k.cells)}
         self.assertEqual(cells["House"]["Name"].flags, [])                  # keyed by CP Name, not Name
         self.assertIn("missing CP Name; the KiCad importer keys a STRUCTURE by it", cells["BareHouse"]["Name"].flags)
-        for name in ("IRJ", "Rule251", "IB"):                               # a row's id, or a computed key
+        for name in ("IRJ", "Rule914", "IB"):                               # a row's id, or a computed key
             self.assertEqual(cells[name]["Name"].flags, [], name)
         self.assertIn("missing Address; the KiCad importer keys a IODRIVER by it", cells["Node"]["Name"].flags)   # Kind NODE, not NodeType
         head = sym("Head", {"Role": "DEVICE", "Appliance": "head", "Style": "TypeD", "Pin.IND": "indication",
