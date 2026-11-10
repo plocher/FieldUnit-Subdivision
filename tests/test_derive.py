@@ -130,7 +130,7 @@ class Circuits(unittest.TestCase):
     def test_components_stop_at_joints_and_a_switchs_ports_are_one_circuit(self):
         out, diags = run(layout(X=interlocking(ONE_SWITCH, ONE_SWITCH_WIRES, "East")))
         ix = out["interlockings"]["X"]
-        self.assertEqual(diags, [("next_cp.off_layout", "X")])
+        self.assertEqual(diags, [("next_cp.off_layout", "X"), ("switch.lever", "835"), ("switch.lock.local", "835")])   # the lock switch's field pair is not drawn here (the owner, 2026-11-09)
         self.assertEqual({j: row(ix, j)["derived"]["circuits"] for j in ("J1", "J2", "J3")}, {
             "J1": {"governed": "X:835T1", "approach": "X:1NAT"},
             "J2": {"governed": "X:835T1", "approach": "X:1SAT"},
@@ -252,12 +252,12 @@ class Checks(unittest.TestCase):
 
     def test_a_switch_with_no_track_and_a_next_cp_that_names_nothing(self):
         out, diags = run(layout(X=interlocking("9 | appliance | Appliance=switch Style=lock TC=9T1\nN1 | ends | Kind=NEXT_CP\n", "", "East")))
-        self.assertEqual(diags, [("next_cp.interlocking", "N1"), ("switch.track", "9")])
+        self.assertEqual(diags, [("next_cp.interlocking", "N1"), ("switch.lever", "9"), ("switch.lock.local", "9"), ("switch.track", "9")])
         self.assertNotIn("osCircuit", out["interlockings"]["X"]["appliances"]["9"]["derived"])
 
     def test_a_detection_block_in_tc_is_an_error(self):
         _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("TC=835T1", "TC=835T1,835T2"), ONE_SWITCH_WIRES, "East")))
-        self.assertEqual(only(diags, "switch"), [("switch.tc_block", "835")])
+        self.assertEqual(only(diags, "switch"), [("switch.lever", "835"), ("switch.lock.local", "835"), ("switch.tc_block", "835")])
 
 
 class OnTheTrack(unittest.TestCase):
@@ -1153,7 +1153,7 @@ class SPCoastExample(unittest.TestCase):
         self.assertNotIn("rules", stripped["provenance"])
         out, report = derive.derive(stripped)
         self.assertEqual(layout_model.dumps(out), text)
-        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 0, "missing": 14})   # switch.lever on 13 switches (Watsonville, Gilroy Caltrain 771), train_order.device for Gilroy (Railroad 5715653); the importer's train_order.heads and geometry.head are not the derivation's
+        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 0, "missing": 18})   # switch.lever on 13 switches (Watsonville, Gilroy Caltrain 771) and on the locks 777 and 781 with switch.lock.local (no field pair drawn), train_order.device for Gilroy (Railroad 5715653); the importer's train_order.heads and geometry.head are not the derivation's
 
 
 if __name__ == "__main__":
