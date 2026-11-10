@@ -325,3 +325,63 @@ Settled in conversation; nothing below is implemented in the importer yet (it be
   era. (My reading of the owner's remark; the field names are not chosen yet.)
 - **Follow-on:** FieldUnit `src/drivers/MqttApplianceBus.h` `aspectName()` hard-codes names; it should take them from
   this table. Four SPCoast drawing gates fail on the take 3 sheets until the model step lands.
+
+## Rulings 2026-11-09 (derails, local control, heads on one pin)
+
+Owner, in conversation while reviewing the Sargent edge cases. Supersedes the 2026-11-05 line "A derail keeps
+STOP/RESTRICTING". The Subdivision code change is one ticket on map #94; the FieldUnit side is a FieldUnit issue.
+
+1. **Heads on one mast pin.** A mast demands a set of indications, I[mast]. Each head wired to a mast pin presents a
+   subset, I[head], from the head table keyed by its Style; a demanded word outside that subset is the table's
+   business (its indication filter), never a model finding. Any number of heads may share a pin, and the model does
+   not tell a head on the mast from a fascia repeater. Two heads on one pin with I[H1] ≠ I[H2] is an informational
+   finding naming the pin, both heads and the difference: a normal configuration (a head upgrade with both in
+   service; a cheap fascia repeater of a mast hidden from the aisle). No error, no warning, no head-count rule.
+   Semaphore Styles name the arm positions: `LQ2`, `LQ3`, `UQ3`. Recorded on #80.
+2. **"Powered" is ADR 0013 §4's seam word**, not "has a motor": a powered switch or derail is an interlocking
+   appliance whose position the field unit knows and may move. A CP Name makes nothing powered (ADR 0013 §4);
+   `grammar.is_powered` still reads one on an independent derail and loses that reading.
+3. **A derail is a switch with the word `derail` in its Style**, ports C and R, and the switch vocabulary names every
+   regime; dependency is the one extra and comes from the name (gang id names a switch, ADR 0003 D8):
+
+   | Trackplan symbol | Style | Control source stated by |
+   | --- | --- | --- |
+   | Switch_Powered (+ Diag, Small, NO_TC) | `powered` | a desk lever on its column |
+   | Switch_Dual | `dual` | the desk lever; the crew releases and throws with Local-Lock + Local-Switch |
+   | Switch_Local (new) | `local` (new word) | a Local-Switch alone; no desk lever, no lock |
+   | Switch_Lock | `lock` | hand; Local-Lock requests the release |
+   | Switch_Manual_Sensed | `manual_sensed` | hand; a contact reports the position |
+   | Switch_Manual | `manual` | hand; nothing reported |
+   | Derail | `derail,powered` | its switch's lever when the gang id names a switch; else a desk lever |
+   | Derail Dual (new) | `derail,dual` | as Switch_Dual |
+   | Derail Local (new) | `derail,local` | as Switch_Local |
+   | Derail Manual Sensed (new) | `derail,manual_sensed` | as Switch_Manual_Sensed |
+   | Derail Manual | `derail,manual` | as Switch_Manual |
+
+   `dual` is the glossary's dual-control switch: hand operation only under a release, never both sources at once.
+   `local` differs from `manual_sensed` in having a machine: the field unit drives it from the local lever
+   (NWS/RWS out) and reads NWK/RWK back; a sensed manual one it can only read. A dependent derail takes its switch's
+   regime whatever its own word; a dependent derail drawn `local` or `manual` is a finding. A powered appliance with
+   no lever of either kind named for it is `missing` (no control source); a `local` one with a desk lever, or a
+   `dual` one with no Local-Lock, is a finding.
+4. **Lever devices are unchanged.** A lever's Style names its token set, the same word on the desk and in the field:
+   `switch` (NWS/RWS out, NWK/RWK in: PanelSwitch, Local-Switch, Local-Derail), `lock` (WLQ out, WLK/WLQK in:
+   PanelLock, Local-Lock), `train_order`. Local-Switch with Local-Lock is the crew's release-and-throw pair of a
+   dual-control switch; alone it is the control of a `local` one. The appliance a lever serves comes from its Name;
+   a derail lever is a `switch` lever named for the derail. No `derail` lever word.
+5. **A derail owns no OS circuit.** The OS circuit (`<switch>T1`, `TC` overriding) is a switch idea: where a train is
+   "at", and detector locking of the points. A derail lies in the circuit of the net its ports are on, as Sensor,
+   Lamp and Actuator do (`relations.circuit` from the track net on the pin, PR #100); a Track Circuit marker on that
+   track names it when detection is wanted. `Derail TC` is removed from the library, and the `TC` and `Indication`
+   fields leave the derail symbols. An independent derail still reports its position to the field unit: it figures
+   in routes and other field logic whether or not the dispatcher controls it.
+6. **IndicationCeiling on derails is empty** like every other switch; the derail rule (NORMAL is derailing) lives in
+   reference data for the route heuristics (#81).
+
+Subdivision code (one ticket): `grammar.is_powered` (drop the CP Name reading; `local` joins the powered words;
+`derail` matched by word, as the two `== "derail"` port readings in `derive.py` and `trackplan.py` must be), the
+lever function in `grammar.py` ("a derail has no lever" becomes "a derail has whatever lever device is named for
+it"), no OS default and no `TC` reading for a derail, the lever-consistency findings above, and one scenario per
+table row. FieldUnit: the local control source (a lever that is not on the code line asserts NWS/RWS), the release
+flow of `dual` (ADR 0006, proposed) applied to a derail, `manual_sensed` as a read-only position, derail dependence
+taken from the model (FieldUnit #29), and the glossary's powered-switch and derail entries.
