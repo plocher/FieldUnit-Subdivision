@@ -114,8 +114,9 @@ hardware).
 
 Cut the track graph at every `CONTROLLED` and `ABSOLUTE` signal joint. Each piece that holds no powered switch or
 derail and lies under a block signal rule (`RULE_251`, `RULE_261`, or `ABSOLUTE` ends) is one station-to-station block.
-A powered switch is one the dispatcher throws from the desk: `Style` `powered` or `dual` (GLOSSARY: powered switch,
-dual-control switch). A `CP Name` on a switch says which control point serves it and makes nothing powered: a
+A powered switch is one whose position the field unit knows and may move: `Style` `powered`, `dual` or `local`
+(GLOSSARY: powered switch, dual-control switch). A `local` switch is a machine the field unit drives from a Local-Switch
+alone, with no desk lever (owner, 2026-11-09).[^local] A `CP Name` on a switch says which control point serves it and makes nothing powered: a
 hand-throw switch (`manual`, `manual_sensed`), a spring switch, and an electrically locked hand-throw switch (`lock`)
 may lie in a block whatever `CP Name` they state.[^powered] A block holds:
 
@@ -672,5 +673,9 @@ Each consumer input, the Part 1 section that states it, and its form:
 [^powered]: Until commit `d4ffddf` this read "has a machine (`Style` `powered` or `dual`) or a `CP Name`". On SPCoast every
     switch states the control point that senses it, so that wording made a hand-throw switch powered by inference from
     a field that does another job, the inference §5 rejects for signals (owner, 2026-11-02).
+
+[^local]: Until commit `dcfc50a` this read "one the dispatcher throws from the desk: `Style` `powered` or `dual`". The seam
+    word says what the field unit knows and may move, not who throws it; `local` joined the powered words with the
+    derail and local-control rulings (owner, 2026-11-09; `docs/review/signal-symbols-worklist.md`, Subdivision #105).
 
 [^rev]: See §24 (Record) for the revision history from commit `96d3765` through rev 4.
