@@ -14770,24 +14770,48 @@
             }
           },
           "SIGNALMAST.778NAB": {
+            "derived": {
+              "mast": "Gilroy Interchange:778NAB",
+              "positions": [
+                "IND"
+              ]
+            },
             "given": {
               "IC": "MQTT-JMRI",
               "Kind": "SIGNALMAST"
             }
           },
           "SIGNALMAST.778NC": {
+            "derived": {
+              "mast": "Gilroy Interchange:778NC",
+              "positions": [
+                "IND"
+              ]
+            },
             "given": {
               "IC": "MQTT-JMRI",
               "Kind": "SIGNALMAST"
             }
           },
           "SIGNALMAST.778SAB": {
+            "derived": {
+              "mast": "Gilroy Interchange:778SAB",
+              "positions": [
+                "IND"
+              ]
+            },
             "given": {
               "IC": "MQTT-JMRI",
               "Kind": "SIGNALMAST"
             }
           },
           "SIGNALMAST.778SC": {
+            "derived": {
+              "mast": "Gilroy Interchange:778SC",
+              "positions": [
+                "IND"
+              ]
+            },
             "given": {
               "IC": "MQTT-JMRI",
               "Kind": "SIGNALMAST"

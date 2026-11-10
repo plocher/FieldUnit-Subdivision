@@ -839,6 +839,7 @@ class _Derivation:
         self.heads()
         self.train_orders()
         self.reach()
+        self.jmri_masts()
         if "provenance" in self.m:
             self.m["provenance"]["rules"] = RULES
 
@@ -1346,6 +1347,64 @@ class _Derivation:
                            f"{', '.join(x for x, _ in units)} already reach{'es' * (len(units) == 1)} {t} through code line"
                            f"{'s' * (len(lines) > 1)} {', '.join(lines)}",
                            f"layout/transports/{t}", (f"layout/processors/{p}",) + tuple(f"interlockings/{x}" for x, _ in units))
+
+    # ------------------------------------------------------------------------------------- JMRI signal mast drivers
+
+    def jmri_masts(self) -> None:
+        """A JMRI signal mast driver (IC an encoding, Kind ``SIGNALMAST``) is a whole-mast consumer (the owner,
+        2026-11-05, issue #96): it takes the mast's indication for the positions on its net. The device rows whose
+        bindings reach it say which: a mast device's bound position pins, or the face of a head whose own pin reaches it
+        (the owner, 2026-11-10); written as ``derived.mast`` and ``derived.positions``. It publishes on the topic the
+        JMRI encoding's ``Topic`` prefixes and its ``Address`` ends (``derived.topic``; without an Address the tail is
+        the published name, whose form is issue #99's, so nothing is written). Its signal system is its own
+        ``SignalSystem``, else its encoding's (``derived.signalSystem``): neither stated is ``driver.signal_system`` at
+        missing; a system no table names (``reference.signal_systems``) is ``driver.signal_system.unknown`` at error."""
+        layout = self.m.get("layout", {})
+        reached: dict[str, dict[str, Any]] = {}                                  # processor/address -> {mast, positions}
+        for name, ix in self.m.get("interlockings", {}).items():
+            for dev in ix.get("devices", []):
+                g, rel = dev.get("given", {}), dev.get("relations", {})
+                if g.get("Appliance") not in ("mast", "train_order_mast", "head"):
+                    continue
+                for pin, routes in rel.get("bindings", {}).items():
+                    for route in (routes if isinstance(routes, list) else [routes]):
+                        parts = route.split("/")
+                        if len(parts) != 3:
+                            continue
+                        hit = reached.setdefault(f"{parts[0]}/{parts[1]}", {"mast": None, "positions": set()})
+                        if g.get("Appliance") == "head":
+                            hit["mast"] = rel.get("mast")
+                            if rel.get("face"):
+                                hit["positions"].add(rel["face"])
+                        else:
+                            hit["mast"] = dev.get("derived", {}).get("serves")
+                            hit["positions"].add(pin)
+        systems = reference.signal_systems(self.ref.get("aspectNames"))
+        for p, proc in layout.get("processors", {}).items():
+            for address, d in proc.get("drivers", {}).items():
+                g = d.get("given", {})
+                if reference.ENCODING_OF_IC.get(g.get("IC")) is None or g.get("Kind") != "SIGNALMAST":
+                    continue
+                where = f"layout/processors/{p}/drivers/{address}"
+                enc = next((e for e in layout.get("ioEncodings", {}).values()
+                            if e.get("given", {}).get("Kind") == reference.ENCODING_OF_IC[g["IC"]] and e.get("relations", {}).get("processor") == p), {})
+                derived: dict[str, Any] = {}
+                hit = reached.get(f"{p}/{address}")
+                if hit and hit["mast"]:
+                    derived["mast"] = hit["mast"]
+                    derived["positions"] = sorted(hit["positions"], key=sort_key)
+                if g.get("Address") and enc.get("given", {}).get("Topic"):
+                    derived["topic"] = enc["given"]["Topic"] + g["Address"]
+                system = g.get("SignalSystem") or enc.get("given", {}).get("SignalSystem")
+                if not system:
+                    self.r.add("driver.signal_system", f"driver {g['IC']} {address} on {p}: no SignalSystem on it or on its JMRI encoding; "
+                               "the aspect names it publishes are not stated", where)
+                elif system not in systems:
+                    self.r.add("driver.signal_system.unknown", f"driver {g['IC']} {address} on {p}: signal system {system!r} names no "
+                               f"aspect name table ({', '.join(sorted(systems))})", where)
+                else:
+                    derived["signalSystem"] = system
+                _set_derived(d, derived)
 
 
 def _off_layout(row: dict[str, Any]) -> bool:

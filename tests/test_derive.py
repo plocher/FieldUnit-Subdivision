@@ -1156,7 +1156,7 @@ class SPCoastExample(unittest.TestCase):
         self.assertNotIn("rules", stripped["provenance"])
         out, report = derive.derive(stripped)
         self.assertEqual(layout_model.dumps(out), text)
-        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 0, "missing": 18})   # switch.lever on 13 switches (Watsonville, Gilroy Caltrain 771) and on the locks 777 and 781 with switch.lock.local (no field pair drawn), train_order.device for Gilroy (Railroad 5715653); the importer's train_order.heads and geometry.head are not the derivation's
+        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 0, "missing": 22})   # switch.lever on 13 switches (Watsonville, Gilroy Caltrain 771) and on the locks 777 and 781 with switch.lock.local (no field pair drawn), train_order.device for Gilroy (Railroad 5715653), driver.signal_system on Gilroy's four JMRI signal masts (no SignalSystem drawn yet, #85); the importer's train_order.heads and geometry.head are not the derivation's
 
 
 if __name__ == "__main__":
