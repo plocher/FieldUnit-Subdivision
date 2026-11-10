@@ -9,13 +9,6 @@
       "feature": "logical/trackplan/appliance_lamp_contact.feature#a contact on track that another interlocking's circuit names",
       "replacedBy": null
     },
-    "appliance.no_lever": {
-      "level": "warning",
-      "lifecycle": "deprecated",
-      "since": "0.1.0",
-      "feature": null,
-      "replacedBy": "interlocking.no_lever"
-    },
     "appliance.track.unnamed": {
       "level": "info",
       "lifecycle": "active",
@@ -172,13 +165,6 @@
     },
     "head.vocabulary": {
       "level": "error",
-      "lifecycle": "active",
-      "since": "0.1.0",
-      "feature": null,
-      "replacedBy": null
-    },
-    "interlocking.no_lever": {
-      "level": "missing",
       "lifecycle": "active",
       "since": "0.1.0",
       "feature": null,

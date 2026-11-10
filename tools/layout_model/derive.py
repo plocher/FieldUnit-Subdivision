@@ -98,7 +98,7 @@ names every other track pin its wire reaches, so the relation is symmetric):
   ``switch.lever``, ``switch.lever.desk``, ``switch.lock.local``, ``switch.lever.hand`` and ``derail.regime``.
 - An OfficeUnit's columns (``house``, ``interlocking``), every device's ``serves``, a desk lamp's ``indications`` and
   ``expression`` (its ``Indication``, ``tools/layout_model/expression.py``), a lever's ``controls`` and ``indications``
-  from its per-pin ``Control.X`` and ``Indication.X``; a dispatcher-controlled switch or lock no desk lever serves.
+  from its per-pin ``Control.X`` and ``Indication.X``.
 
 A track pin is named as the file names it: a switch port, a marker's TC or a named row's side by qualified name
 (``Luchessa:783.R``), an unnamed row's side by the row's id (``<id>.approach``).
@@ -115,7 +115,7 @@ from typing import Any, Optional
 from tools.railroad import codeline
 
 from . import expression, reference
-from .grammar import GANG, HAND, MAST_NAME, POWERED, depends_on, direction_of, is_derail, is_powered, lever_class, lever_of, regime, regime_word, styles
+from .grammar import GANG, HAND, MAST_NAME, POWERED, depends_on, direction_of, is_derail, is_powered, lever_of, regime, regime_word, styles
 from . import sort_key
 from .report import Report
 
@@ -833,7 +833,6 @@ class _Derivation:
         self.devices()
         self.desk()
         self.codeline()
-        self.no_lever()
         self.control_sources()
         self.heads()
         self.train_orders()
@@ -1087,28 +1086,6 @@ class _Derivation:
         """A desk lever's served name is an appliance of the interlocking, or the lever number of its masts."""
         apps = ix.get("appliances", {})
         return n in apps or any(a.get("given", {}).get("Appliance") == "mast" and lever_of(m) == n for m, a in apps.items())
-
-    def no_lever(self) -> None:
-        """The 832 lesson (the owner, 2026-10-28): field switches the dispatcher works over a code line (powered, dual or
-        an electric lock, leading its gang; ``grammar.lever_class``) that no desk lever serves. One fact per
-        interlocking, at missing: they may be worked by an NX (entrance-exit) selection, which the drawing cannot state
-        yet (the owner, 2026-10-28). It names the interlocking and locates its first such switch. Masts are not checked:
-        which signals the dispatcher controls is not yet a stated fact (an automatic signal stands on a signal joint
-        too)."""
-        served = {dev.get("derived", {}).get("serves") for ou in self.m.get("officeUnits", {}).values()
-                  for dev in ou.get("devices", []) if dev.get("given", {}).get("Appliance") == "lever"}
-        for b, plan in self.plans.items():
-            if not plan.ix.get("relations", {}).get("codeline"):
-                continue
-            bare = sorted((n for n in plan.appliances if lever_class(n, plan.appliances) and f"{b}:{n}" not in served), key=sort_key)
-            if not bare:
-                continue
-            counts = {c: sum(1 for n in bare if lever_class(n, plan.appliances) == c) for c in ("switch", "lock")}
-            what = " and ".join(f"{k} {'powered switch' if c == 'switch' else 'electric lock'}{'es' * (c == 'switch' and k > 1)}"
-                                f"{'s' * (c == 'lock' and k > 1)}" for c, k in counts.items() if k)
-            self.r.add("interlocking.no_lever", f"{b}: {what} {'have' if len(bare) > 1 else 'has'} no desk lever in this file; "
-                       f"how the dispatcher works {'them' if len(bare) > 1 else 'it'} (an NX selection, another office unit) is not drawn yet ({', '.join(bare)})", plan.where(),
-                       tuple(plan.where("appliances", n) for n in bare))
 
     def control_sources(self) -> None:
         """What works each switch or derail, read from the lever devices named for it (the owner, 2026-11-09): a desk

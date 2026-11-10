@@ -898,35 +898,6 @@ class Desk(unittest.TestCase):
         self.assertEqual(only(diags, "lever"), [("lever.serves", "3")])
 
 
-class NoLever(unittest.TestCase):
-    """The 832 lesson (the owner, 2026-10-28): switches and locks the dispatcher works over a code line with no desk lever
-    serving them are one missing fact per interlocking, since an NX selection the drawing cannot state yet may work
-    them. A manual switch, a derail and a gang follower need none; masts are not checked yet."""
-
-    def warnings(self, levers: list[str], line: bool = True) -> list[tuple[str, str]]:
-        things = TWO_HOUSES + "1 | appliance | Appliance=switch Style=manual_sensed CP_Name=North\n" \
-                              "795D | appliance | Appliance=switch Style=derail CP_Name=North\n"
-        m = layout(X=interlocking(things, TWO_HOUSES_WIRES, NORTH_SOUTH))
-        if line:
-            on_line(m, "X")
-        desk(m, {"1": "X"}, [lever(n, "NWS", column="Desk:1") for n in levers])
-        self.report = derive.derive(m)[1]
-        return only(run(m)[1], "appliance", "interlocking")
-
-    def test_switches_with_no_lever_are_one_missing_fact_of_their_interlocking(self):
-        self.assertEqual(self.warnings(["813", "815"]), [("interlocking.no_lever", "X")])
-        (d,) = self.report.by_code("interlocking.no_lever")
-        self.assertEqual((d.severity, d.where, d.entities), ("missing", "interlockings/X", ("interlockings/X", "interlockings/X/appliances/817")))
-        self.assertIn("1 powered switch has no desk lever in this file; how the dispatcher works it (an NX selection, another office unit) is not drawn yet (817)", d.text)
-        self.warnings([])
-        self.assertIn("3 powered switches have no desk lever in this file; how the dispatcher works them (an NX selection, another office unit) is not drawn yet (813, 815, 817)",
-                      self.report.by_code("interlocking.no_lever")[0].text)
-        self.assertEqual(self.warnings(["813", "815", "817"]), [])
-
-    def test_an_interlocking_on_no_code_line_has_no_dispatcher(self):
-        self.assertEqual(self.warnings([], line=False), [])
-
-
 class Heads(unittest.TestCase):
     def check(self, mast: str, style: str, devices: list[tuple[str, str]]) -> list[tuple[str, str]]:
         ix = interlocking(f"{mast} | appliance | Appliance=mast Style=single Kind=CONTROLLED\n", "", "East")
@@ -1095,13 +1066,13 @@ class TrainOrders(unittest.TestCase):
         self.assertEqual(d.severity, "warning")
         self.assertIn("is drawn facing LEFT but its letter S says RIGHT", d.text)
 
-    def test_the_desks_no_lever_rule_never_reads_it(self):
-        """interlocking.no_lever keys on switches and locks (grammar.lever_class); a train order board on a code line's
-        interlocking is not one of its bare switches, device or no device, and its control is local."""
+    def test_the_control_source_rule_never_reads_it(self):
+        """switch.lever keys on switches and derails (grammar.regime); a train order board on a code line's interlocking
+        is not one of them, device or no device, and its control is local."""
         for devices in ((), self.DEVICES):
             m = on_line(self.model(devices=list(devices)), "X")
             desk(m, {"1": "North", "2": "South"}, [lever(n, "NWS", column="Desk:1") for n in ("813", "815", "817")])
-            self.assertEqual(only(run(m)[1], "interlocking", "lever"), [], devices)
+            self.assertEqual(only(run(m)[1], "switch", "lever"), [], devices)
 
 
 class Strip(unittest.TestCase):
@@ -1182,7 +1153,7 @@ class SPCoastExample(unittest.TestCase):
         self.assertNotIn("rules", stripped["provenance"])
         out, report = derive.derive(stripped)
         self.assertEqual(layout_model.dumps(out), text)
-        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 0, "missing": 16})   # 2 interlocking.no_lever, switch.lever on the same 13 switches, train_order.device for Gilroy (Railroad 5715653); the importer's train_order.heads and geometry.head are not the derivation's
+        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 0, "missing": 14})   # switch.lever on 13 switches (Watsonville, Gilroy Caltrain 771), train_order.device for Gilroy (Railroad 5715653); the importer's train_order.heads and geometry.head are not the derivation's
 
 
 if __name__ == "__main__":
