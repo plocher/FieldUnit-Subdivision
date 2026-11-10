@@ -463,3 +463,94 @@ def reports(context, name, token, kind):
     ix = next(i for i, x in context.derived["interlockings"].items() if name in x.get("appliances", {}))
     got = codeline.reporters(context.derived, ix, token)
     assert got == [codeline.Reporter(kind, name)], f"{token} of {ix} is reported by {got!r}, not the {kind} {name}"
+
+
+# ------------------------------------------------------------------- JMRI signal mast drivers (the owner, 2026-11-05, 2026-11-10)
+
+@given("the layout has these I/O encodings:")
+def io_encodings(context):
+    """``Name`` the encoding's key, ``relations.transport`` and ``relations.processor`` its wire; every other column given."""
+    encodings = _model(context).setdefault("layout", {}).setdefault("ioEncodings", {})
+    for row in context.table:
+        key, entity = _entity(row)
+        encodings[key] = entity
+
+
+@given('processor "{name}" has these drivers:')
+def drivers(context, name):
+    """``Key`` the driver's key on the processor's bus (an encoded driver's Kind.served); every other column given
+    (IC, Kind, Address, SignalSystem)."""
+    proc = _model(context).setdefault("layout", {}).setdefault("processors", {}).setdefault(name, {"given": {"Board": "cpNode"}})
+    for row in context.table:
+        key, entity = _entity(row, key="Key")
+        proc.setdefault("drivers", {})[key] = entity
+
+
+@given('field mast device "{name}" of interlocking "{ixn}" binds "{pins}" to "{route}"')
+def mast_binds(context, name, ixn, pins, route):
+    """A signal mast device named for its mast, its position pins on the net of a driver pin: the bindings as the
+    importer writes them, one per position the driver's net covers."""
+    devices = _interlocking(context, ixn).setdefault("devices", [])
+    dev = next((d for d in devices if d["given"].get("Appliance") == "mast" and d["given"].get("Name") == name), None)
+    if dev is None:
+        dev = {"given": {"Appliance": "mast", "Name": name}}
+        devices.append(dev)
+    dev.setdefault("relations", {}).setdefault("bindings", {}).update({p.strip(): route for p in pins.split(",")})
+
+
+@given('the head on face "{face}" of "{name}" binds "{pin}" to "{route}"')
+def head_binds(context, face, name, pin, route):
+    ixn = _holder(context, name)
+    heads = [d for d in _interlocking(context, ixn).get("devices", [])
+             if d["given"].get("Appliance") == "head" and d.get("relations", {}).get("mast") == f"{ixn}:{name}" and d["relations"].get("face") == face]
+    assert len(heads) == 1, f"{name} face {face}: {len(heads)} heads"
+    heads[0]["relations"].setdefault("bindings", {})[pin] = route
+
+
+def _driver(context, key: str, proc: str) -> dict:
+    found = context.derived["layout"]["processors"][proc]["drivers"].get(key)
+    assert found is not None, f"{proc}: no driver {key!r}"
+    return found
+
+
+@then('the driver "{key}" on "{proc}" stands in for positions "{positions}" of "{mast}"')
+def stands_in(context, key, proc, positions, mast):
+    d = _driver(context, key, proc).get("derived", {})
+    want = [p.strip() for p in positions.split(",")]
+    assert (d.get("mast"), d.get("positions")) == (mast, want), f"{key}: derived mast {d.get('mast')!r}, positions {d.get('positions')!r}"
+
+
+@then('the driver "{key}" on "{proc}" publishes to the topic "{topic}"')
+def topic(context, key, proc, topic):
+    got = _driver(context, key, proc).get("derived", {}).get("topic")
+    assert got == topic, f"{key}: derived.topic is {got!r}, not {topic!r}"
+
+
+@then('the driver "{key}" on "{proc}" uses the signal system "{system}"')
+def signal_system(context, key, proc, system):
+    got = _driver(context, key, proc).get("derived", {}).get("signalSystem")
+    assert got == system, f"{key}: derived.signalSystem is {got!r}, not {system!r}"
+
+
+# ------------------------------------------------------------------- the aspect name tables (reference data, ADR 0012 §6)
+
+@given('the signal system "{system}"')
+def system(context, system):
+    context.signal_system, context.user_aspects = system, {}
+
+
+@given('the user\'s table says "{indication}" on a {kind} mast is "{name}"')
+def user_aspect(context, indication, kind, name):
+    context.user_aspects.setdefault(context.signal_system, {})[indication] = {kind: name}
+
+
+@then('the indication "{indication}" on a {kind} mast has the aspect name "{name}"')
+def aspect_name(context, indication, kind, name):
+    got = reference.aspect_name(context.signal_system, indication, kind, context.user_aspects or None)
+    assert got == name, f"{context.signal_system}: {indication} on a {kind} mast is {got!r}, not {name!r}"
+
+
+@then('the indication "{indication}" on a {kind} mast has no aspect name')
+def no_aspect_name(context, indication, kind):
+    got = reference.aspect_name(context.signal_system, indication, kind, context.user_aspects or None)
+    assert got is None, f"{context.signal_system}: {indication} on a {kind} mast is {got!r}"
