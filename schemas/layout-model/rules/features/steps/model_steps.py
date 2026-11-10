@@ -14,7 +14,7 @@ from __future__ import annotations
 from behave import given, then, when
 
 from tools import layout_model
-from tools.layout_model import derive, reference
+from tools.layout_model import derive, grammar, reference
 
 LEVELS = {"an error": "error", "a warning": "warning", "information": "info", "missing": "missing"}
 
@@ -385,3 +385,52 @@ def face_lever(context, name, face, inputs):
 @given('field mast "{mast}" has these heads:')
 def heads(context, mast):
     raise Pending("head position = mast pin, issue #80")
+
+
+# ------------------------------------------------------------------- what works a switch or derail (the owner, 2026-11-09)
+
+@given('the desk has these levers for interlocking "{name}":')
+def desk_levers(context, name):
+    """Desk levers (OfficeUnit devices) serving the appliances of ``name``: ``Name`` the appliance, ``Style`` the lever's."""
+    ou = _model(context).setdefault("officeUnits", {}).setdefault("Desk", {"columns": {}, "devices": []})
+    for row in context.table:
+        key, entity = _entity(row)
+        entity.setdefault("given", {}).update({"Appliance": "lever", "Name": key})
+        entity.setdefault("relations", {})["interlocking"] = name
+        ou["devices"].append(entity)
+
+
+def _appliances_of(context, name: str) -> dict:
+    found = [ix["appliances"] for ix in context.derived["interlockings"].values() if name in ix.get("appliances", {})]
+    assert len(found) == 1, f"{name}: {len(found)} appliances of that name"
+    return found[0]
+
+
+@then('"{name}" is powered')
+def powered(context, name):
+    """ADR 0013 §4's seam word, as ``grammar.is_powered`` reads the derived file."""
+    assert grammar.is_powered(name, _appliances_of(context, name)), f"{name} is not powered (regime {grammar.regime(name, _appliances_of(context, name))!r})"
+
+
+@then('"{name}" is not powered')
+def not_powered(context, name):
+    assert not grammar.is_powered(name, _appliances_of(context, name)), f"{name} is powered"
+
+
+@then('"{name}" follows switch "{switch}"')
+def follows(context, name, switch):
+    """A dependent derail (ADR 0003 D8) and the switch whose regime it takes."""
+    got = grammar.depends_on(name, _appliances_of(context, name))
+    assert got == switch, f"{name} follows {got!r}, not {switch!r}"
+
+
+@then('"{name}" follows no switch')
+def follows_none(context, name):
+    got = grammar.depends_on(name, _appliances_of(context, name))
+    assert got is None, f"{name} follows {got!r}"
+
+
+@then('nothing is reported on "{name}"')
+def nothing_on(context, name):
+    hits = [d for d in context.report.diags if any(e.rsplit("/", 1)[-1] == name for e in (d.where, *d.entities))]
+    assert not hits, f"reported on {name}: {[str(d) for d in hits]}"

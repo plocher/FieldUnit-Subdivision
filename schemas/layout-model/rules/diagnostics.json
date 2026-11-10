@@ -9,13 +9,6 @@
       "feature": "logical/trackplan/appliance_lamp_contact.feature#a contact on track that another interlocking's circuit names",
       "replacedBy": null
     },
-    "appliance.no_lever": {
-      "level": "warning",
-      "lifecycle": "deprecated",
-      "since": "0.1.0",
-      "feature": null,
-      "replacedBy": "interlocking.no_lever"
-    },
     "appliance.track.unnamed": {
       "level": "info",
       "lifecycle": "active",
@@ -107,6 +100,13 @@
       "feature": null,
       "replacedBy": null
     },
+    "derail.regime": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/appliance_derail.feature#a dependent derail drawn as if worked on its own",
+      "replacedBy": null
+    },
     "desk.expression": {
       "level": "error",
       "lifecycle": "active",
@@ -165,13 +165,6 @@
     },
     "head.vocabulary": {
       "level": "error",
-      "lifecycle": "active",
-      "since": "0.1.0",
-      "feature": null,
-      "replacedBy": null
-    },
-    "interlocking.no_lever": {
-      "level": "missing",
       "lifecycle": "active",
       "since": "0.1.0",
       "feature": null,
@@ -392,6 +385,34 @@
       "lifecycle": "active",
       "since": "0.1.0",
       "feature": null,
+      "replacedBy": null
+    },
+    "switch.lever": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/appliance_switch_control.feature#a powered switch that no lever works",
+      "replacedBy": null
+    },
+    "switch.lever.desk": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/appliance_switch_control.feature#a local switch with a desk lever",
+      "replacedBy": null
+    },
+    "switch.lever.hand": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/appliance_switch_control.feature#a hand-throw switch with a lever",
+      "replacedBy": null
+    },
+    "switch.lock.local": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/appliance_switch_control.feature#a dual switch with no Local-Lock",
       "replacedBy": null
     },
     "switch.tc_block": {

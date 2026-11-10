@@ -130,7 +130,7 @@ class Circuits(unittest.TestCase):
     def test_components_stop_at_joints_and_a_switchs_ports_are_one_circuit(self):
         out, diags = run(layout(X=interlocking(ONE_SWITCH, ONE_SWITCH_WIRES, "East")))
         ix = out["interlockings"]["X"]
-        self.assertEqual(diags, [("next_cp.off_layout", "X")])
+        self.assertEqual(diags, [("next_cp.off_layout", "X"), ("switch.lever", "835"), ("switch.lock.local", "835")])   # the lock switch's field pair is not drawn here (the owner, 2026-11-09)
         self.assertEqual({j: row(ix, j)["derived"]["circuits"] for j in ("J1", "J2", "J3")}, {
             "J1": {"governed": "X:835T1", "approach": "X:1NAT"},
             "J2": {"governed": "X:835T1", "approach": "X:1SAT"},
@@ -170,7 +170,8 @@ J1   | joints    | Kind=IRJ_SIGNAL
         out, diags = run(layout(X=interlocking(things, "rr | 795.R 795D.R\ndc | 795D.C J1.governed\n", "Gilroy")))
         ix = out["interlockings"]["X"]
         self.assertEqual(ix["track"]["links"], [{"derived": {"ports": ["X:795.R", "X:795D.R"], "circuit": "X:795T1"}}])
-        self.assertEqual(ix["appliances"]["795D"]["derived"]["osCircuit"], "X:795T1")
+        self.assertNotIn("osCircuit", ix["appliances"]["795D"]["derived"])                 # a derail owns no OS circuit (the owner, 2026-11-09)
+        self.assertEqual(ix["appliances"]["795D"]["derived"]["circuits"], {"track": "X:795T1"})   # it lies in its switch's
         self.assertEqual(row(ix, "J1")["derived"]["circuits"], {"governed": "X:795T1"})
 
     def test_a_runs_circuit_is_the_circuit_of_what_its_ends_meet(self):
@@ -251,12 +252,12 @@ class Checks(unittest.TestCase):
 
     def test_a_switch_with_no_track_and_a_next_cp_that_names_nothing(self):
         out, diags = run(layout(X=interlocking("9 | appliance | Appliance=switch Style=lock TC=9T1\nN1 | ends | Kind=NEXT_CP\n", "", "East")))
-        self.assertEqual(diags, [("next_cp.interlocking", "N1"), ("switch.track", "9")])
+        self.assertEqual(diags, [("next_cp.interlocking", "N1"), ("switch.lever", "9"), ("switch.lock.local", "9"), ("switch.track", "9")])
         self.assertNotIn("osCircuit", out["interlockings"]["X"]["appliances"]["9"]["derived"])
 
     def test_a_detection_block_in_tc_is_an_error(self):
         _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("TC=835T1", "TC=835T1,835T2"), ONE_SWITCH_WIRES, "East")))
-        self.assertEqual(only(diags, "switch"), [("switch.tc_block", "835")])
+        self.assertEqual(only(diags, "switch"), [("switch.lever", "835"), ("switch.lock.local", "835"), ("switch.tc_block", "835")])
 
 
 class OnTheTrack(unittest.TestCase):
@@ -376,7 +377,7 @@ class DoubleJoint(unittest.TestCase):
         powered (§4), one that follows a hand-throw lock is not."""
         m = self.block({"A": "X:832NA", "B": "X:832SA"})
         ix = m["interlockings"]["X"]
-        ix["appliances"]["9D"] = {"given": {"Appliance": "switch", "Style": "derail", "CP Name": "East"}, "relations": {"C": ["J1.B", "X:834T.TC"]}}
+        ix["appliances"]["9D"] = {"given": {"Appliance": "switch", "Style": "derail,powered"}, "relations": {"C": ["J1.B", "X:834T.TC"]}}
         row(ix, "J1")["relations"]["B"] = ["X:834T.TC", "X:9D.C"]
         ix["appliances"]["834T"]["relations"]["TC"] = ["J1.B", "X:9D.C"]
         self.assertEqual(only(run(m)[1], "mast"), [("mast.powered", "832SA")])
@@ -704,7 +705,7 @@ class References(unittest.TestCase):
 5    | appliance | Appliance=switch Style=lock TC=5T1 Indication=5T1K
 6    | appliance | Appliance=switch Style=derail
 7    | appliance | Appliance=switch Style=powered TC=7T1 Indication=7T1K
-8    | appliance | Appliance=switch Style=derail CP_Name=West
+8    | appliance | Appliance=switch Style=derail,powered
 3NAT | appliance | Appliance=track_circuit Indication=3NATK
 J5   | joints    | Kind=IRJ
 """, "y1 | 5.C 6.C\ny2 | 5.N J5.A\ny3 | J5.B 3NAT.TC\ny4 | 7.C 8.C\n", "West", "Y")
@@ -762,7 +763,7 @@ J5   | joints    | Kind=IRJ
         d = derive.derive(self.model("", "a | J1.A Y:7.R\n"))[1].by_code("reference.track")[0]
         self.assertEqual(d.entities, ("interlockings/X", "interlockings/Y", "interlockings/Y/appliances/7"))
         self.assertEqual(self.check("9 | appliance | Appliance=switch Style=powered\n", "a | J1.A Y:3NAT.TC 9.C\n"), [("reference.track", "X")])
-        self.assertEqual(self.check("9 | appliance | Appliance=switch Style=derail CP_Name=East\n", "a | J1.A Y:3NAT.TC 9.C\n"), [("reference.track", "X")])
+        self.assertEqual(self.check("9 | appliance | Appliance=switch Style=derail,powered\n", "a | J1.A Y:3NAT.TC 9.C\n"), [("reference.track", "X")])
         self.assertEqual(self.check("9 | appliance | Appliance=switch Style=lock CP_Name=East\n", "a | J1.A Y:3NAT.TC 9.C\n"), [])
         self.assertEqual(self.check("9 | appliance | Appliance=switch Style=manual_sensed CP_Name=East\n", "a | J1.A Y:3NAT.TC 9.C\n"), [])
         dependent = "9 | appliance | Appliance=switch Style=lock CP_Name=East\n9D | appliance | Appliance=switch Style=derail CP_Name=East\n"
@@ -895,35 +896,6 @@ class Desk(unittest.TestCase):
     def test_a_lever_serves_a_switch_a_maintainer_call_or_its_masts(self):
         _, diags = run(self.model([lever("835", "WLS"), lever("836", "HS"), lever("MC1", "S"), lever("999", "HS")]))
         self.assertEqual(only(diags, "lever"), [("lever.serves", "3")])
-
-
-class NoLever(unittest.TestCase):
-    """The 832 lesson (the owner, 2026-10-28): switches and locks the dispatcher works over a code line with no desk lever
-    serving them are one missing fact per interlocking, since an NX selection the drawing cannot state yet may work
-    them. A manual switch, a derail and a gang follower need none; masts are not checked yet."""
-
-    def warnings(self, levers: list[str], line: bool = True) -> list[tuple[str, str]]:
-        things = TWO_HOUSES + "1 | appliance | Appliance=switch Style=manual_sensed CP_Name=North\n" \
-                              "795D | appliance | Appliance=switch Style=derail CP_Name=North\n"
-        m = layout(X=interlocking(things, TWO_HOUSES_WIRES, NORTH_SOUTH))
-        if line:
-            on_line(m, "X")
-        desk(m, {"1": "X"}, [lever(n, "NWS", column="Desk:1") for n in levers])
-        self.report = derive.derive(m)[1]
-        return only(run(m)[1], "appliance", "interlocking")
-
-    def test_switches_with_no_lever_are_one_missing_fact_of_their_interlocking(self):
-        self.assertEqual(self.warnings(["813", "815"]), [("interlocking.no_lever", "X")])
-        (d,) = self.report.by_code("interlocking.no_lever")
-        self.assertEqual((d.severity, d.where, d.entities), ("missing", "interlockings/X", ("interlockings/X", "interlockings/X/appliances/817")))
-        self.assertIn("1 powered switch has no desk lever in this file; how the dispatcher works it (an NX selection, another office unit) is not drawn yet (817)", d.text)
-        self.warnings([])
-        self.assertIn("3 powered switches have no desk lever in this file; how the dispatcher works them (an NX selection, another office unit) is not drawn yet (813, 815, 817)",
-                      self.report.by_code("interlocking.no_lever")[0].text)
-        self.assertEqual(self.warnings(["813", "815", "817"]), [])
-
-    def test_an_interlocking_on_no_code_line_has_no_dispatcher(self):
-        self.assertEqual(self.warnings([], line=False), [])
 
 
 class Heads(unittest.TestCase):
@@ -1094,13 +1066,13 @@ class TrainOrders(unittest.TestCase):
         self.assertEqual(d.severity, "warning")
         self.assertIn("is drawn facing LEFT but its letter S says RIGHT", d.text)
 
-    def test_the_desks_no_lever_rule_never_reads_it(self):
-        """interlocking.no_lever keys on switches and locks (grammar.lever_class); a train order board on a code line's
-        interlocking is not one of its bare switches, device or no device, and its control is local."""
+    def test_the_control_source_rule_never_reads_it(self):
+        """switch.lever keys on switches and derails (grammar.regime); a train order board on a code line's interlocking
+        is not one of them, device or no device, and its control is local."""
         for devices in ((), self.DEVICES):
             m = on_line(self.model(devices=list(devices)), "X")
             desk(m, {"1": "North", "2": "South"}, [lever(n, "NWS", column="Desk:1") for n in ("813", "815", "817")])
-            self.assertEqual(only(run(m)[1], "interlocking", "lever"), [], devices)
+            self.assertEqual(only(run(m)[1], "switch", "lever"), [], devices)
 
 
 class Strip(unittest.TestCase):
@@ -1181,7 +1153,7 @@ class SPCoastExample(unittest.TestCase):
         self.assertNotIn("rules", stripped["provenance"])
         out, report = derive.derive(stripped)
         self.assertEqual(layout_model.dumps(out), text)
-        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 0, "missing": 3})    # 2 interlocking.no_lever and train_order.device for Gilroy (Railroad 5715653); the importer's train_order.heads and geometry.head are not the derivation's
+        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 0, "missing": 18})   # switch.lever on 13 switches (Watsonville, Gilroy Caltrain 771) and on the locks 777 and 781 with switch.lock.local (no field pair drawn), train_order.device for Gilroy (Railroad 5715653); the importer's train_order.heads and geometry.head are not the derivation's
 
 
 if __name__ == "__main__":

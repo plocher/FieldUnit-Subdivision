@@ -221,7 +221,7 @@ B1   | Bumper          | TRACK     | Kind=BUMPER
         given = """
 H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=Gilroy
 SW1  | Switch_Lock     | APPLIANCE | Appliance=switch Style=lock Name=795 TC=795T1 CP_Name=Gilroy
-D1   | Derail          | APPLIANCE | Appliance=switch Style=derail Name=795D IndicationCeiling=STOP/RESTRICTING CP_Name=Gilroy
+D1   | Derail          | APPLIANCE | Appliance=switch Style=derail,powered Name=795D IndicationCeiling=STOP/RESTRICTING CP_Name=Gilroy
 J1   | IRJ-Signal      | TRACK     | Kind=IRJ_SIGNAL CP_Name=Gilroy
 """
         sm, ix = compile_(given, """
@@ -232,9 +232,9 @@ dc   | D1.C J1.A
         self.assertEqual(ix["track"]["links"], [{"derived": {"ports": ["X:795.R", "X:795D.R"], "circuit": "X:795T1"}}])
         self.assertEqual(ix["track"]["joints"][0]["derived"]["circuits"], {"governed": "X:795T1"})
         self.assertEqual(ix["appliances"]["795D"], {
-            "given": {"Appliance": "switch", "Style": "derail", "IndicationCeiling": "STOP/RESTRICTING", "CP Name": "Gilroy"},
+            "given": {"Appliance": "switch", "Style": "derail,powered", "IndicationCeiling": "STOP/RESTRICTING", "CP Name": "Gilroy"},
             "relations": {"C": [at(sm, "J1", "governed")], "R": ["X:795.R"]},
-            "derived": {"osCircuit": "X:795T1", "controlPoint": "X:Gilroy"}})
+            "derived": {"track": "X:795T1", "circuits": {"track": "X:795T1"}, "controlPoint": "X:Gilroy"}})   # no OS circuit of its own: it lies in its switch's (the owner, 2026-11-09)
 
     def test_a_marker_named_for_another_interlockings_circuit_is_a_consumer_row_its_neighbours_name_by_id(self):
         """The owner, 2026-10-27: Sargent's Corporal:2NAT consumes Corporal's indication 2NATK; the K is added at ingest
@@ -972,7 +972,7 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(self.sm.report.by_code("reference.track") + self.sm.report.by_code("reference.marker"), [])
         self.assertEqual(len(self.sm.report.by_code("next_cp.drawn")), 0)
         self.assertEqual(len(self.sm.report.by_code("mast.powered")), 0)
-        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 1, "info": 0, "missing": 5})   # 2 interlocking.no_lever; train_order.device for Gilroy, whose field device is not drawn yet, and train_order.heads with 2 geometry.head for its retired trackplan heads; no mast.kind, and Lick and Hollister marked off_layout (Railroad 5715653)
+        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 1, "info": 0, "missing": 20})  # 15 switch.lever (Watsonville, Gilroy Caltrain 771, Gilroy Interchange's locks 777 and 781) and 2 switch.lock.local; train_order.device for Gilroy, whose field device is not drawn yet, and train_order.heads with 2 geometry.head for its retired trackplan heads; no mast.kind, and Lick and Hollister marked off_layout (Railroad 5715653)
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):
         """ADR 0013 §5. The library's mast symbols carry a fixed Kind (Railroad 1695d48), but that commit touched no placed

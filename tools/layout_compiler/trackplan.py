@@ -78,7 +78,7 @@ from typing import Any, Optional
 
 from tools.layout_model.reference import indication_tokens
 
-from .seams import Seams, check_milepost, given_of, key_of, loc, qualify, token_field
+from .seams import Seams, check_milepost, given_of, key_of, loc, qualify, styles_of, token_field
 from .source import Net, Symbol
 
 TRACKPLAN_ROLES = frozenset({"APPLIANCE", "TRACK", "POLICY"})
@@ -102,10 +102,10 @@ def is_switch(s: Symbol) -> bool:
 
 
 def ports_of(s: Symbol) -> tuple[str, ...]:
-    """The track ports of a switch, a derail's two (Style ``derail``); none for anything else."""
+    """The track ports of a switch, a derail's two (the word ``derail`` in its Style); none for anything else."""
     if not is_switch(s):
         return ()
-    return DERAIL_PORTS if s.get("Style") == "derail" else SWITCH_PORTS
+    return DERAIL_PORTS if "derail" in styles_of(s) else SWITCH_PORTS
 
 
 def is_boundary(s: Symbol) -> bool:

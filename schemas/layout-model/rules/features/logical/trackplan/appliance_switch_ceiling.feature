@@ -26,7 +26,7 @@ Feature: The indication ceiling of a switch
   Scenario: a derail is derailing in its normal position
     Given interlocking "Luchessa" has these appliances:
       | Name | Appliance | Style  | IndicationCeiling |
-      | 795D | switch    | derail | STOP/RESTRICTING  |
+      | 795D | switch    | derail,powered | STOP/RESTRICTING |
     When the layout is derived
     Then a route through "795D" NORMAL shows no better than "STOP"
     And a route through "795D" REVERSE shows no better than "RESTRICTING"

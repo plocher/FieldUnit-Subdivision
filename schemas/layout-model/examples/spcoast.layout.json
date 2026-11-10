@@ -1669,8 +1669,11 @@
         },
         "829D": {
           "derived": {
+            "circuits": {
+              "track": "Corporal:829T1"
+            },
             "controlPoint": "Corporal:Corporal",
-            "osCircuit": "Corporal:829T1"
+            "track": "Corporal:829T1"
           },
           "given": {
             "Appliance": "switch",
@@ -5749,8 +5752,11 @@
         },
         "795D": {
           "derived": {
+            "circuits": {
+              "track": "Luchessa:795T1"
+            },
             "controlPoint": "Luchessa:Gilroy",
-            "osCircuit": "Luchessa:795T1"
+            "track": "Luchessa:795T1"
           },
           "given": {
             "Appliance": "switch",
