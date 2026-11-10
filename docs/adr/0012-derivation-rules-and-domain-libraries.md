@@ -244,6 +244,15 @@ them all.
 The rules with the registry, and each library, carry a semantic version. Dates live in changelogs and git tags
 (`rules-v1.0.0`). `provenance.rules` (ADR 0011 §3) carries the rules version.
 
+**Pre-release until there is a model consumer** (the owner, 2026-11-09). Until a program other than this repo's own
+tools reads a Layout Data Model File, there is nothing to stay compatible with: the schema, the rules and the
+libraries change in place, breaking changes included, with no major bump and no migration note. The first consumer
+is FieldUnit's generators, which arrive once the compiler is accepted; the table below applies from the first version
+they read.[^prerelease]
+
+[^prerelease]: Before this paragraph (commit 875cea7) the table applied from the first release, 1.0.0, and PR #102's
+    in-place removals at schema 3.1.0 were out of step with it.
+
 | Change | Bump |
 |---|---|
 | A `derived` key removed or changing meaning; a code retired; a level raised (a clean file now has an error); a library result changing for an unchanged file | MAJOR |
