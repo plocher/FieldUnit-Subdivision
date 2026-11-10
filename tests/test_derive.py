@@ -170,7 +170,8 @@ J1   | joints    | Kind=IRJ_SIGNAL
         out, diags = run(layout(X=interlocking(things, "rr | 795.R 795D.R\ndc | 795D.C J1.governed\n", "Gilroy")))
         ix = out["interlockings"]["X"]
         self.assertEqual(ix["track"]["links"], [{"derived": {"ports": ["X:795.R", "X:795D.R"], "circuit": "X:795T1"}}])
-        self.assertEqual(ix["appliances"]["795D"]["derived"]["osCircuit"], "X:795T1")
+        self.assertNotIn("osCircuit", ix["appliances"]["795D"]["derived"])                 # a derail owns no OS circuit (the owner, 2026-11-09)
+        self.assertEqual(ix["appliances"]["795D"]["derived"]["circuits"], {"track": "X:795T1"})   # it lies in its switch's
         self.assertEqual(row(ix, "J1")["derived"]["circuits"], {"governed": "X:795T1"})
 
     def test_a_runs_circuit_is_the_circuit_of_what_its_ends_meet(self):
@@ -376,7 +377,7 @@ class DoubleJoint(unittest.TestCase):
         powered (§4), one that follows a hand-throw lock is not."""
         m = self.block({"A": "X:832NA", "B": "X:832SA"})
         ix = m["interlockings"]["X"]
-        ix["appliances"]["9D"] = {"given": {"Appliance": "switch", "Style": "derail", "CP Name": "East"}, "relations": {"C": ["J1.B", "X:834T.TC"]}}
+        ix["appliances"]["9D"] = {"given": {"Appliance": "switch", "Style": "derail,powered"}, "relations": {"C": ["J1.B", "X:834T.TC"]}}
         row(ix, "J1")["relations"]["B"] = ["X:834T.TC", "X:9D.C"]
         ix["appliances"]["834T"]["relations"]["TC"] = ["J1.B", "X:9D.C"]
         self.assertEqual(only(run(m)[1], "mast"), [("mast.powered", "832SA")])
@@ -704,7 +705,7 @@ class References(unittest.TestCase):
 5    | appliance | Appliance=switch Style=lock TC=5T1 Indication=5T1K
 6    | appliance | Appliance=switch Style=derail
 7    | appliance | Appliance=switch Style=powered TC=7T1 Indication=7T1K
-8    | appliance | Appliance=switch Style=derail CP_Name=West
+8    | appliance | Appliance=switch Style=derail,powered
 3NAT | appliance | Appliance=track_circuit Indication=3NATK
 J5   | joints    | Kind=IRJ
 """, "y1 | 5.C 6.C\ny2 | 5.N J5.A\ny3 | J5.B 3NAT.TC\ny4 | 7.C 8.C\n", "West", "Y")
@@ -762,7 +763,7 @@ J5   | joints    | Kind=IRJ
         d = derive.derive(self.model("", "a | J1.A Y:7.R\n"))[1].by_code("reference.track")[0]
         self.assertEqual(d.entities, ("interlockings/X", "interlockings/Y", "interlockings/Y/appliances/7"))
         self.assertEqual(self.check("9 | appliance | Appliance=switch Style=powered\n", "a | J1.A Y:3NAT.TC 9.C\n"), [("reference.track", "X")])
-        self.assertEqual(self.check("9 | appliance | Appliance=switch Style=derail CP_Name=East\n", "a | J1.A Y:3NAT.TC 9.C\n"), [("reference.track", "X")])
+        self.assertEqual(self.check("9 | appliance | Appliance=switch Style=derail,powered\n", "a | J1.A Y:3NAT.TC 9.C\n"), [("reference.track", "X")])
         self.assertEqual(self.check("9 | appliance | Appliance=switch Style=lock CP_Name=East\n", "a | J1.A Y:3NAT.TC 9.C\n"), [])
         self.assertEqual(self.check("9 | appliance | Appliance=switch Style=manual_sensed CP_Name=East\n", "a | J1.A Y:3NAT.TC 9.C\n"), [])
         dependent = "9 | appliance | Appliance=switch Style=lock CP_Name=East\n9D | appliance | Appliance=switch Style=derail CP_Name=East\n"

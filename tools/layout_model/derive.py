@@ -91,6 +91,11 @@ names every other track pin its wire reaches, so the relation is symmetric):
 - **NextCP pairing** and the **cross-interlocking reference** check. A NextCP whose track is also drawn through to
   another interlocking's track is redundant (ADR 0013 §7.1: inside CTC a NextCP is no longer needed; it stays for an
   interlocking whose neighbour is not drawn), reported ``next_cp.drawn`` at warning.
+- **A derail** is a switch with the word ``derail`` in its Style, ports C and R (the owner, 2026-11-09). It owns no OS
+  circuit: its ``TC`` is not read, and like a lamp or contact it gets ``derived.track`` and ``derived.circuits.track``,
+  the piece its ports lie on. Its regime is a switch word (``grammar.regime``); a dependent derail (ADR 0003 D8) takes
+  its switch's. What works a switch or derail is read from the lever devices named for it (``control_sources``):
+  ``switch.lever``, ``switch.lever.desk``, ``switch.lock.local``, ``switch.lever.hand`` and ``derail.regime``.
 - An OfficeUnit's columns (``house``, ``interlocking``), every device's ``serves``, a desk lamp's ``indications`` and
   ``expression`` (its ``Indication``, ``tools/layout_model/expression.py``), a lever's ``controls`` and ``indications``
   from its per-pin ``Control.X`` and ``Indication.X``; a dispatcher-controlled switch or lock no desk lever serves.
@@ -110,7 +115,7 @@ from typing import Any, Optional
 from tools.railroad import codeline
 
 from . import expression, reference
-from .grammar import GANG, MAST_NAME, direction_of, is_powered, lever_class, lever_of, styles
+from .grammar import GANG, HAND, MAST_NAME, POWERED, depends_on, direction_of, is_derail, is_powered, lever_class, lever_of, regime, regime_word, styles
 from . import sort_key
 from .report import Report
 
@@ -146,11 +151,11 @@ def foreign(name: str, scope: str) -> bool:
 
 
 def ports_of(appliance: dict[str, Any]) -> tuple[str, ...]:
-    """A switch's track ports, a derail's two (Style ``derail``); none for anything else."""
+    """A switch's track ports, a derail's two (the word ``derail`` in its Style); none for anything else."""
     g = appliance.get("given", {})
     if g.get("Appliance") != "switch":
         return ()
-    return DERAIL_PORTS if g.get("Style") == "derail" else SWITCH_PORTS
+    return DERAIL_PORTS if is_derail(g) else SWITCH_PORTS
 
 
 def track_pins(relations: dict[str, Any]) -> dict[str, list[str]]:
@@ -290,7 +295,7 @@ class _Plan:
                 root = self.union.find(self.pin(name, "TC"))
                 named[root]["marker"].add(qualify(name, self.name))
                 namer[root] = a
-            elif g.get("Appliance") == "switch" and g.get("TC"):
+            elif g.get("Appliance") == "switch" and g.get("TC") and not is_derail(g):     # a derail owns no OS circuit (the owner, 2026-11-09)
                 port = next((p for p in ports_of(a) if p in pins), None)
                 if port is None:
                     continue
@@ -524,7 +529,11 @@ class _Plan:
         for name, a in self.appliances.items():
             g = a.get("given", {})
             derived: dict[str, Any] = {}
-            if g.get("Appliance") == "switch":
+            if g.get("Appliance") == "switch" and is_derail(g):                 # a derail owns no OS circuit: it lies in the circuit its ports are on (the owner, 2026-11-09)
+                if (node := next((self.pin(name, p) for p in ports_of(a) if self.region(self.pin(name, p))), None)):
+                    derived["track"] = self.piece(node)[0]
+                    derived["circuits"] = {"track": c} if (c := self.circuit(node)) else None
+            elif g.get("Appliance") == "switch":
                 derived["osCircuit"] = next((c for p in ports_of(a) if (c := self.circuit(self.pin(name, p)))), None)
             if g.get("Appliance") == "mast" and name in sides:
                 derived["circuits"] = sides[name]
@@ -738,7 +747,7 @@ class _Plan:
                             f"the {row.get('given', {}).get('Kind', 'track row')}", self.where("track", kind, row.get("id", "")), frozenset()))
         for name, a in self.appliances.items():
             g = a.get("given", {})
-            if g.get("Appliance") == "switch" and g.get("TC") and foreign(g["TC"], self.name) and "," not in g["TC"]:
+            if g.get("Appliance") == "switch" and g.get("TC") and not is_derail(g) and foreign(g["TC"], self.name) and "," not in g["TC"]:
                 out.append(("circuit", g["TC"], frozenset(), f"switch {name}'s TC", self.where("appliances", name), frozenset()))
             if g.get("Appliance") == "track_circuit" and g.get("Style") == "virtual":
                 for t in g.get("Members", "").split(","):
@@ -825,6 +834,7 @@ class _Derivation:
         self.desk()
         self.codeline()
         self.no_lever()
+        self.control_sources()
         self.heads()
         self.train_orders()
         self.reach()
@@ -1099,6 +1109,57 @@ class _Derivation:
             self.r.add("interlocking.no_lever", f"{b}: {what} {'have' if len(bare) > 1 else 'has'} no desk lever in this file; "
                        f"how the dispatcher works {'them' if len(bare) > 1 else 'it'} (an NX selection, another office unit) is not drawn yet ({', '.join(bare)})", plan.where(),
                        tuple(plan.where("appliances", n) for n in bare))
+
+    def control_sources(self) -> None:
+        """What works each switch or derail, read from the lever devices named for it (the owner, 2026-11-09): a desk
+        lever (an OfficeUnit device) or a field lever (an interlocking device: Local-Switch, Local-Lock, Local-Derail),
+        each serving the appliance its Name names, Style ``switch`` or ``lock``. The regime (``grammar.regime``) says
+        what to expect: ``powered`` a desk lever; ``dual`` the desk lever with a Local-Lock and Local-Switch for the
+        crew's release and throw; ``local`` a Local-Switch alone; ``lock`` the dispatcher's lock lever and a Local-Lock;
+        a hand-throw one nothing. A gang follower and a dependent derail are worked through their lead and are not
+        read. Reported: a powered, dual or local one that no switch lever of either kind serves, ``switch.lever`` at
+        missing (no control source yet); a ``local`` one a desk lever serves, ``switch.lever.desk`` at error; a
+        ``dual`` one with no Local-Lock, ``switch.lock.local`` at missing; a hand-throw one (``manual``,
+        ``manual_sensed``, ``spring``) any lever serves, ``switch.lever.hand`` at error; a dependent derail drawn
+        ``local`` or ``manual``, ``derail.regime`` at error (it takes its switch's regime)."""
+        def levers_of(devices: list[dict[str, Any]]) -> dict[str, list[set[str]]]:
+            """Served appliance -> each lever device's Style words. A lever works the switch unless it is a lock lever."""
+            out: dict[str, list[set[str]]] = defaultdict(list)
+            for dev in devices:
+                g = dev.get("given", {})
+                if g.get("Appliance") == "lever" and dev.get("derived", {}).get("serves"):
+                    out[dev["derived"]["serves"]].append(set(styles(g)))
+            return out
+
+        desk = levers_of([dev for ou in self.m.get("officeUnits", {}).values() for dev in ou.get("devices", [])])
+        for b, plan in self.plans.items():
+            local = levers_of(self.m["interlockings"][b].get("devices", []))
+            switches = {n for n, a in plan.appliances.items() if a.get("given", {}).get("Appliance") == "switch"}
+            for n in sorted(switches, key=sort_key):
+                g, q, where = plan.appliances[n]["given"], f"{b}:{n}", plan.where("appliances", n)
+                what = f"derail {n}" if is_derail(g) else f"switch {n}"
+                if (lead := depends_on(n, plan.appliances)):
+                    if regime_word(g) in ("local", "manual"):
+                        self.r.add("derail.regime", f"{b}: {what} is drawn {regime_word(g)} but follows switch {lead} (ADR 0003 D8) and "
+                                   f"takes its regime, {regime(n, plan.appliances) or 'unstated'}; a dependent derail is not worked on its own", where,
+                                   (plan.where("appliances", lead),))
+                    continue
+                if GANG.sub("", n) != n and GANG.sub("", n) in switches:                       # a gang follower
+                    continue
+                r, levers = regime(n, plan.appliances), desk[q] + local[q]
+                words = sorted(set().union(*levers)) if levers else []
+                if r in POWERED and not any("lock" not in st for st in levers):
+                    self.r.add("switch.lever", f"{b}: {what} is {r} but no switch lever is named for it, on the desk or in the field; "
+                               "what works it is not drawn yet", where)
+                if r == "local" and desk[q]:
+                    self.r.add("switch.lever.desk", f"{b}: {what} is local, worked from its Local-Switch alone, but a desk lever "
+                               f"({', '.join(sorted(set().union(*desk[q])))}) is named for it", where)
+                if r == "dual" and not any("lock" in st for st in local[q]):
+                    self.r.add("switch.lock.local", f"{b}: {what} is dual but has no Local-Lock; the crew's release before throwing it "
+                               "by hand is not drawn yet", where)
+                if r in HAND and levers:
+                    self.r.add("switch.lever.hand", f"{b}: {what} is {r}, worked by hand, but a lever ({', '.join(words) or 'no Style'}) is "
+                               "named for it", where)
 
     def lever_tokens(self, g: dict[str, str], bindings: dict[str, Any], b: str, what: str,
                      where: str) -> tuple[list[str], list[str]]:
