@@ -15,6 +15,7 @@ from behave import given, then, when
 
 from tools import layout_model
 from tools.layout_model import derive, grammar, reference
+from tools.railroad import codeline
 
 LEVELS = {"an error": "error", "a warning": "warning", "information": "info", "missing": "missing"}
 
@@ -434,3 +435,31 @@ def follows_none(context, name):
 def nothing_on(context, name):
     hits = [d for d in context.report.diags if any(e.rsplit("/", 1)[-1] == name for e in (d.where, *d.entities))]
     assert not hits, f"reported on {name}: {[str(d) for d in hits]}"
+
+
+# ------------------------------------------------------------------- the code line's tokens
+
+@given('interlocking "{name}" is on a code line')
+def on_code_line(context, name):
+    """One AAR-token code line; the interlocking is its own station."""
+    _model(context)["layout"].setdefault("codelines", {})["Line"] = {"given": {"Kind": "AAR"}}
+    _interlocking(context, name).setdefault("relations", {})["codeline"] = "Line"
+
+
+@given('the desk has these lamps for interlocking "{name}":')
+def desk_lamps(context, name):
+    """Desk lamps on the panel sheet of ``name``: ``Name`` and the ``Indication`` expression each consumes."""
+    ou = _model(context).setdefault("officeUnits", {}).setdefault("Desk", {"columns": {}, "devices": []})
+    for row in context.table:
+        key, entity = _entity(row)
+        entity.setdefault("given", {}).update({"Appliance": "lamp", "Style": "board", "Name": key})
+        entity.setdefault("relations", {})["interlocking"] = name
+        ou["devices"].append(entity)
+
+
+@then('"{name}" reports "{token}" as a {kind}')
+def reports(context, name, token, kind):
+    """The appliance that states a token, as the codeline library reads the derived file."""
+    ix = next(i for i, x in context.derived["interlockings"].items() if name in x.get("appliances", {}))
+    got = codeline.reporters(context.derived, ix, token)
+    assert got == [codeline.Reporter(kind, name)], f"{token} of {ix} is reported by {got!r}, not the {kind} {name}"

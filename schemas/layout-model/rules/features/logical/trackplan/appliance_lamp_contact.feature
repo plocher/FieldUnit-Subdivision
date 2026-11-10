@@ -7,6 +7,8 @@ Feature: Where a lamp, contact or actuator is
   The circuit an appliance stands on is a circuit of its own interlocking.
   One that states no track is placed by its Milepost and CP Name.
   Lamp, contact and actuator are read the same way; no rule tells an actuator from a lamp yet.
+  A contact states its own token, as a field lamp does: a sensor's source is the field contact named for it
+  (the owner, 2026-11-05), so a desk lamp that consumes the token finds it reported by the contact.
 
   Scenario: a contact on the track of a track circuit
     Given interlocking "Luchessa" has these appliances:
@@ -76,6 +78,24 @@ Feature: Where a lamp, contact or actuator is
       | Sargent:2NAT.TC HTR.track |
     When the layout is derived
     Then it is reported as an error on "HTR"
+
+  @reference.unresolved
+  Scenario: a contact states its own token, which a desk lamp consumes
+    Given interlocking "Sargent" has house "Sargent"
+    And interlocking "Sargent" is on a code line
+    And interlocking "Sargent" has these appliances:
+      | Name | Appliance     | Indication |
+      | 2NAT | track_circuit | 2NATK      |
+      | HBA  | contact       | HBAK       |
+    And interlocking "Sargent" has these wires:
+      | Pins              |
+      | 2NAT.TC HBA.track |
+    And the desk has these lamps for interlocking "Sargent":
+      | Name | Indication   |
+      | HBD  | Sargent:HBAK |
+    When the layout is derived
+    Then "HBA" reports "HBAK" as a contact
+    And it is not reported
 
   @appliance.circuit
   Scenario: a lamp that states no track
