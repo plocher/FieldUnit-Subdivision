@@ -172,17 +172,6 @@ def joint_no_mast(context, ref, side):
 
 # ----------------------------------------------------------------------- rules stated before the importer has them
 
-@then('"{name}" states the circuit "{circuit}"')
-def circuit(context, name, circuit):
-    relation(context, name, "circuit", circuit)
-
-
-@then('"{name}" states no circuit')
-def no_circuit(context, name):
-    got = context.model["interlockings"][context.interlocking]["appliances"][name].get("relations", {}).get("circuit")
-    assert got is None, f"{name}: relations.circuit is {got!r}"
-
-
 def _device(context, ref: str):
     """The importer's device for the symbol ``ref``, in the scenario's interlocking."""
     devs = [d for d in context.seams.interlockings[context.interlocking].devices if d.sym.ref == ref]

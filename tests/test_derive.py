@@ -259,27 +259,51 @@ class Checks(unittest.TestCase):
         self.assertEqual(only(diags, "switch"), [("switch.tc_block", "835")])
 
 
-class AtACircuit(unittest.TestCase):
-    """A lamp, contact or actuator at a circuit (#82): the circuit is one of its own interlocking, by any of the names the
-    interlocking has, else ``appliance.circuit``."""
+class OnTheTrack(unittest.TestCase):
+    """A lamp, contact or actuator on the track (#82; the owner, 2026-11-09): the piece it stands on by name, the
+    circuit when one names the piece, ``appliance.track.unnamed`` for a piece nobody named, ``appliance.circuit`` for
+    another interlocking's circuit."""
 
-    def test_a_circuit_the_track_names_a_marker_or_a_switchs_tc(self):
+    def test_the_piece_is_named_by_its_circuit(self):
         things = ONE_SWITCH + """
-HTR  | appliance | Appliance=contact rel.circuit=X:835T1
-NFL  | appliance | Appliance=lamp rel.circuit=X:1NAT
-ACT  | appliance | Appliance=actuator rel.circuit=X:1SAT
+HTR  | appliance | Appliance=contact
+NFL  | appliance | Appliance=lamp
+ACT  | appliance | Appliance=actuator
 """
-        _, diags = run(layout(X=interlocking(things, ONE_SWITCH_WIRES, "East")))
+        wires = ONE_SWITCH_WIRES + "a | 835.R HTR.track\nb | 1NAT.TC NFL.track\nc2 | 1SAT.TC ACT.track\n"
+        model, diags = run(layout(X=interlocking(things, wires, "East")))
+        apps = model["interlockings"]["X"]["appliances"]
+        self.assertEqual({n: (apps[n]["derived"]["track"], apps[n]["derived"]["circuits"]["track"]) for n in ("HTR", "NFL", "ACT")},
+                         {"HTR": ("X:835T1", "X:835T1"), "NFL": ("X:1NAT", "X:1NAT"), "ACT": ("X:1SAT", "X:1SAT")})
         self.assertEqual(only(diags, "appliance"), [])
 
-    def test_another_interlockings_circuit_or_none_of_this_one_is_an_error(self):
+    def test_track_with_no_circuit_is_named_by_its_industry_end_or_by_a_pin(self):
         things = ONE_SWITCH + """
-HTR  | appliance | Appliance=contact rel.circuit=Y:2NAT
-NFL  | appliance | Appliance=lamp rel.circuit=X:9NAT
+9    | appliance | Appliance=switch Style=hand
+E9   | ends      | Kind=INDUSTRY name=BeetLoader
+NFL  | appliance | Appliance=lamp
+SFL  | appliance | Appliance=lamp
 """
-        _, diags = run(layout(X=interlocking(things, ONE_SWITCH_WIRES, "East"),
-                              Y=interlocking("2NAT | appliance | Appliance=track_circuit\n", "", "West", name="Y")))
-        self.assertEqual(only(diags, "appliance"), [("appliance.circuit", "HTR"), ("appliance.circuit", "NFL")])
+        wires = ONE_SWITCH_WIRES + "a | 9.R E9.EoT NFL.track\n"
+        model, diags = run(layout(X=interlocking(things, wires, "East")))
+        nfl = model["interlockings"]["X"]["appliances"]["NFL"]["derived"]
+        self.assertEqual((nfl["track"], nfl.get("circuits")), ("X:BeetLoader", None))
+        self.assertEqual(only(diags, "appliance"), [])
+        things = things.replace("E9   | ends      | Kind=INDUSTRY name=BeetLoader\n", "")
+        model, diags = run(layout(X=interlocking(things, ONE_SWITCH_WIRES + "a | 9.R NFL.track SFL.track\n", "East")))
+        apps = model["interlockings"]["X"]["appliances"]
+        self.assertEqual([apps[n]["derived"]["track"] for n in ("NFL", "SFL")], ["track@X:9.R", "track@X:9.R"])   # never named for another appliance's pin
+        self.assertEqual(only(diags, "appliance"), [("appliance.track.unnamed", "NFL"), ("appliance.track.unnamed", "SFL")])
+
+    def test_another_interlockings_circuit_is_an_error_and_no_track_is_nothing(self):
+        things = ONE_SWITCH + """
+HTR  | appliance | Appliance=contact
+NFL  | appliance | Appliance=lamp
+"""
+        model, diags = run(layout(X=interlocking(things, ONE_SWITCH_WIRES + "a | Y:2NAT.TC HTR.track\n", "East"),
+                                  Y=interlocking("2NAT | appliance | Appliance=track_circuit\n", "", "West", name="Y")))
+        self.assertEqual(only(diags, "appliance"), [("appliance.circuit", "HTR")])
+        self.assertNotIn("track", model["interlockings"]["X"]["appliances"]["NFL"].get("derived", {}))
 
 
 class DoubleJoint(unittest.TestCase):

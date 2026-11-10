@@ -1224,7 +1224,7 @@
       }
     },
     "appliance": {
-      "description": "A named thing on the trackplan (ADR 0010 §4.1, by Role APPLIANCE), keyed by its Name: given.Appliance is switch (Style derail for a derail), mast, track_circuit (Style virtual for a virtual circuit, boundary for a detector at a joint, ADR 0013 §10), lamp, contact, actuator (three one-pin appliances read alike, each at the circuit its pin is wired to; no rule tells an actuator from a lamp yet; #82) or train_order (a train order signal: an operator-controlled, non-vital indicator with heads for a face, never a signal in the interlocking sense, in a route or in a control point; the owner, 2026-11-03). A reference to another interlocking's appliance is not an appliance of this one.",
+      "description": "A named thing on the trackplan (ADR 0010 §4.1, by Role APPLIANCE), keyed by its Name: given.Appliance is switch (Style derail for a derail), mast, track_circuit (Style virtual for a virtual circuit, boundary for a detector at a joint, ADR 0013 §10), lamp, contact, actuator (three one-pin appliances read alike, each on the track its pin is wired to; no rule tells an actuator from a lamp yet; #82) or train_order (a train order signal: an operator-controlled, non-vital indicator with heads for a face, never a signal in the interlocking sense, in a route or in a control point; the owner, 2026-11-03). A reference to another interlocking's appliance is not an appliance of this one.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -1292,9 +1292,9 @@
                   "$ref": "#/$defs/qualifiedName",
                   "description": "A maintainer call's house, by its MC wire (three-maps D8)."
                 },
-                "circuit": {
-                  "$ref": "#/$defs/qualifiedName",
-                  "description": "The track circuit a lamp, contact or actuator is at, by the wire on its one pin (#82): the circuit named on that piece of track, a marker's name or a switch's TC, qualified. A circuit of the appliance's own interlocking (rule check appliance.circuit). Absent, the appliance stands at its Milepost and CP Name."
+                "track": {
+                  "$ref": "#/$defs/portRefs",
+                  "description": "The track a lamp, contact or actuator stands on, by the wire on its one pin (#82; the owner, 2026-11-09): every track pin on that wire. One-sided: no track pin names the appliance's pin back. Track with no circuit is track like any other. Absent, the appliance stands at its Milepost and CP Name."
                 },
                 "station": {
                   "$ref": "#/$defs/layoutName",
@@ -1335,6 +1335,10 @@
                   },
                   "description": "A virtual track circuit's member circuits, its Members resolved."
                 },
+                "track": {
+                  "type": "string",
+                  "description": "The piece of track a lamp, contact or actuator stands on, by the piece's name (#82; the owner, 2026-11-09): the circuit that names it; else the name of an end of track on it (an industry); else a name made from one of its pins, track@<pin>, which nobody stated (rule check appliance.track.unnamed)."
+                },
                 "circuits": {
                   "type": "object",
                   "description": "A mast on a double signal joint (IRJ_SIGNALS, ADR 0013 §6): governed is the circuit on the side its SIGNAL pin names, approach the circuit on the other side, the shape a single signal joint's row carries (ADR 0012 §8). A boundary track circuit (ADR 0013 §10): A and B, the circuit on each of its pins, what it counts toward. A side on dark track is absent.",
@@ -1351,6 +1355,10 @@
                     },
                     "B": {
                       "$ref": "#/$defs/qualifiedName"
+                    },
+                    "track": {
+                      "$ref": "#/$defs/qualifiedName",
+                      "description": "The circuit that names the piece a lamp, contact or actuator stands on (#82), a circuit of its own interlocking (rule check appliance.circuit). Absent where no circuit names the piece."
                     }
                   }
                 },

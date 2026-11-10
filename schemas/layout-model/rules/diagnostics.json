@@ -6,7 +6,7 @@
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": "logical/trackplan/appliance_lamp_contact.feature#a contact at a track circuit of another interlocking",
+      "feature": "logical/trackplan/appliance_lamp_contact.feature#a contact on track that another interlocking's circuit names",
       "replacedBy": null
     },
     "appliance.no_lever": {
@@ -15,6 +15,13 @@
       "since": "0.1.0",
       "feature": null,
       "replacedBy": "interlocking.no_lever"
+    },
+    "appliance.track.unnamed": {
+      "level": "info",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/appliance_lamp_contact.feature#a lamp on track nobody named",
+      "replacedBy": null
     },
     "ceiling.words": {
       "level": "error",
