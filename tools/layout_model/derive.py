@@ -84,9 +84,11 @@ names every other track pin its wire reaches, so the relation is symmetric):
 - **Block track across sheets** (ADR 0013 §7.1, amending ADR 0009 §3.12): a track net that joins two interlockings
   (a pin of one names a pin of the other) is block track and is accepted when it is plain track; a foreign marker's
   TC on it names the component as a marker would (Sargent's 834 joint has ``Corporal:834T`` on its side A). It stays
-  ``reference.track`` at error when the joining net holds a powered switch or derail port of either interlocking
-  (``grammar.is_powered``): such a piece is never block track (§4), and interlocking track leaves an interlocking at
-  a NextCP or an END_CTC. The net creates no consumer and no indication token: the block's token is the codeline
+  ``reference.track`` at error when the joining net holds a dispatcher-controlled switch or derail port of either
+  interlocking (``grammar.dispatcher_controlled``: regime ``powered`` or ``dual``): such a switch lies within a
+  control point, never in block track (§4), and interlocking track leaves an interlocking at a NextCP or an END_CTC.
+  A ``local`` switch is the crew's, not the dispatcher's, and like a hand-throw, spring or electrically locked
+  hand-throw switch it may lie in the block (the owner, 2026-11-09). The net creates no consumer and no indication token: the block's token is the codeline
   library's by R12 (§7.2, §12, §18.1). Blocks and interlocking limits are not computed here (the ``blocks`` library).
 - **NextCP pairing** and the **cross-interlocking reference** check. A NextCP whose track is also drawn through to
   another interlocking's track is redundant (ADR 0013 §7.1: inside CTC a NextCP is no longer needed; it stays for an
@@ -115,7 +117,7 @@ from typing import Any, Optional
 from tools.railroad import codeline
 
 from . import expression, reference
-from .grammar import GANG, HAND, MAST_NAME, POWERED, depends_on, direction_of, is_derail, is_powered, lever_of, regime, regime_word, styles
+from .grammar import GANG, HAND, MAST_NAME, POWERED, depends_on, direction_of, dispatcher_controlled, is_derail, is_powered, lever_of, regime, regime_word, styles
 from . import sort_key
 from .report import Report
 
@@ -898,21 +900,23 @@ class _Derivation:
         plan = self.plans.get(b)
         return (f"interlockings/{b}/appliances/{n}",) if plan is not None and n in plan.appliances else ()
 
-    def powered_port(self, ref: str) -> bool:
-        """Whether a switch port, by its qualified name, is a powered switch's or derail's (ADR 0013 §4,
-        ``grammar.is_powered``). A port of a switch the file does not have cannot be shown not to be: it counts as one."""
+    def dispatcher_port(self, ref: str) -> bool:
+        """Whether a switch port, by its qualified name, is a dispatcher-controlled switch's or derail's (ADR 0013 §4,
+        ``grammar.dispatcher_controlled``: regime ``powered`` or ``dual``). A port of a switch the file does not have
+        cannot be shown not to be: it counts as one."""
         thing, _, side = ref.rpartition(".")
         b, _, n = thing.partition(":")
         plan = self.plans.get(b)
-        return True if plan is None or n not in plan.appliances else is_powered(n, plan.appliances)
+        return True if plan is None or n not in plan.appliances else dispatcher_controlled(n, plan.appliances)
 
     def resolve_references(self) -> None:
         """A qualified name for another interlocking's thing. A track net that joins two interlockings (a pin of one
         names a pin of the other) is block track, drawn across sheets (ADR 0013 §7.1): accepted when it is plain track,
         with no consumer and no token (the block's token is the codeline library's, R12). It is ``reference.track`` at
-        error when the joining net holds a powered switch or derail port of either interlocking: such a piece is never
-        block track (§4), and interlocking track leaves an interlocking at a NextCP or an END_CTC (ADR 0009 §3.12,
-        which §7.1 narrows to interlocking track). A track row named for another interlocking is that error too (the
+        error when the joining net holds a dispatcher-controlled switch or derail port of either interlocking: such a
+        switch lies within a control point, never in block track (§4), and interlocking track leaves an interlocking
+        at a NextCP or an END_CTC (ADR 0009 §3.12, which §7.1 narrows to interlocking track). A local, hand-throw,
+        spring or electrically locked hand-throw switch may lie in the block (the owner, 2026-11-09). A track row named for another interlocking is that error too (the
         owner, 2026-10-28). A circuit named in a field (a switch's TC, a virtual circuit's members) names one that
         exists: an interlocking not in the file is a warning, a circuit missing from one that is an error. Each finding
         names the referring thing, then the interlocking and appliance it names when the file has them."""
@@ -921,12 +925,13 @@ class _Derivation:
                 b, _, n = name.partition(":")
                 target = (f"interlockings/{b}",) if b in self.plans else ()
                 if kind in ("switch", "pin"):
-                    powered = sorted(p for p in switch_ports if self.powered_port(p))
-                    if powered:
+                    controlled = sorted(p for p in switch_ports if self.dispatcher_port(p))
+                    if controlled:
                         self.r.add("reference.track", f"{a}: {what} {name} joins this interlocking's track to {b}'s on a wire that holds "
-                                   f"powered switch port{'s' if len(powered) > 1 else ''} {', '.join(powered)}; a piece with a powered "
-                                   "switch or derail is never block track (ADR 0013 §4), and interlocking track leaves an interlocking "
-                                   "at a NextCP or an END_CTC (ADR 0009 §3.12)", where, target + self._appliance_path(b, n))
+                                   f"dispatcher-controlled switch port{'s' if len(controlled) > 1 else ''} {', '.join(controlled)}; a "
+                                   "dispatcher-controlled switch or derail (powered or dual) lies within a control point, never in block "
+                                   "track (ADR 0013 §4), and interlocking track leaves an interlocking at a NextCP or an END_CTC "
+                                   "(ADR 0009 §3.12)", where, target + self._appliance_path(b, n))
                     continue                                              # plain track across sheets: block track (§7.1)
                 if kind == "track":
                     self.r.add("reference.track", f"{a}: {what} {name} joins this interlocking's track to {b}'s; track leaves an "
