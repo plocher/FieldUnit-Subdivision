@@ -210,14 +210,6 @@ attributes = { CP = "control point" }
 
 [[row]]
 role = "TRACK"
-kind = "END_CTC"
-block = "Limit of CTC: routes beyond it are capped at RESTRICTING"
-delivery = { model = "plant topology" }
-symbols = ["Railroad:IRJ-END_CTC"]
-pins = { CTC = "TRACK", DARK = "TRACK" }
-
-[[row]]
-role = "TRACK"
 kind = "BUMPER"
 block = "Dead end: caps routes at RESTRICTING"
 delivery = { model = "plant topology" }
@@ -240,41 +232,57 @@ delivery = { model = "plant topology" }
 symbols = ["Railroad:Milepost"]
 pins = { Track = "TRACK" }
 
+# Regime markers (ADR 0013 §7.1, decision 3; Railroad 0ddd395): one Kind per regime, shared by its BEGIN and END faces;
+# the extent is derived. A regime boundary is a plain IRJ with a marker on each side.
 [[row]]
 role = "POLICY"
-kind = "RULE_105"
-block = "Restricted speed"
+kind = "GCOR_RULE_10"
+block = "CTC (GCOR Chapter 10)"
 delivery = { model = "plant policy" }
-symbols = ["Railroad:Rule105-RestrictedSpeed"]
+symbols = ["Railroad-Trackplan:GCOR Rule 10 BEGIN_CTC", "Railroad-Trackplan:GCOR Rule 10 END_CTC"]
 pins = { To = "TRACK" }
-attributes = { Direction = "LEFT | RIGHT | BOTH" }
 
 [[row]]
 role = "POLICY"
-kind = "RULE_251"
-block = "Current of traffic"
+kind = "GCOR_RULE_14"
+block = "Track warrant control, TWC (GCOR Chapter 14)"
 delivery = { model = "plant policy" }
-symbols = ["Railroad:Rule251-DoT-Left", "Railroad:Rule251-DoT-Right"]
+symbols = ["Railroad-Trackplan:GCOR Rule 14 BEGIN_TWC", "Railroad-Trackplan:GCOR Rule 14 END_TWC"]
 pins = { To = "TRACK" }
-attributes = { Direction = "LEFT | RIGHT | BOTH" }
 
 [[row]]
 role = "POLICY"
-kind = "RULE_261"
-block = "Signalled for both directions"
+kind = "GCOR_RULE_16"
+block = "Direct traffic control, DTC (GCOR Chapter 16)"
 delivery = { model = "plant policy" }
-symbols = ["Railroad:Rule261-DoT-BiDirectional"]
-pins = { Track = "TRACK" }
-attributes = { Direction = "LEFT | RIGHT | BOTH" }
+symbols = ["Railroad-Trackplan:GCOR Rule 16 BEGIN_DTC", "Railroad-Trackplan:GCOR Rule 16 END_DTC"]
+pins = { To = "TRACK" }
 
 [[row]]
 role = "POLICY"
-kind = "RULE_93"
-block = "Yard limits"
+kind = "GCOR_RULE_6_13"
+block = "Yard limits (GCOR 6.13)"
 delivery = { model = "plant policy" }
-symbols = ["Railroad:Rule93-Yard Limits"]
+symbols = ["Railroad-Trackplan:GCOR Rule 6.13 Yard Limits"]
 pins = { To = "TRACK" }
-attributes = { Direction = "LEFT | RIGHT | BOTH" }
+
+[[row]]
+role = "POLICY"
+kind = "GCOR_RULE_6_28"
+block = "Movement on other than main track (GCOR 6.28)"
+delivery = { model = "plant policy" }
+symbols = ["Railroad-Trackplan:GCOR Rule 6.28 RestrictedSpeed"]
+pins = { To = "TRACK" }
+
+# The current of traffic (ADR 0013 §8): a direction fact, not a regime; it may share a piece with one.
+[[row]]
+role = "POLICY"
+kind = "GCOR_RULE_9_14"
+block = "Movement with the current of traffic (GCOR 9.14)"
+delivery = { model = "plant policy" }
+symbols = ["Railroad-Trackplan:GCOR Rule 9.14 DoT_Left", "Railroad-Trackplan:GCOR Rule 9.14 DoT_Right"]
+pins = { To = "TRACK" }
+attributes = { Direction = "LEFT | RIGHT" }
 
 [[row]]
 role = "STRUCTURE"
