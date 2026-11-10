@@ -220,13 +220,17 @@ piece with one. The prefix scopes the vocabulary to one rulebook; a later Studio
 extent is derived, as a track circuit's is:
 
 - the unit is the joint-bounded piece: track connectivity through nets and switch ports, cut at every IRJ;
-- a piece's regime comes from a marker on it, else from membership in an interlocking (CTC; GCOR 10.1: "Sidings
-  within CTC limits are controlled sidings and are governed by CTC rules"), else by inheritance across a joint from
-  the adjacent piece. Inheritance lets one marker cover a run cut into blocks or circuits;
-- errors, not guesses: two different regime markers on one piece; a regime other than CTC on interlocking track; a
-  piece with no marker reachable from two different regimes. A piece with no regime is missing;
+- a piece's regime comes from a marker on it, else by inheritance across a joint from the adjacent piece.
+  Inheritance lets one marker cover a run cut into blocks or circuits, and it is how a siding inside CTC limits is
+  CTC (GCOR 10.1: "Sidings within CTC limits are controlled sidings and are governed by CTC rules"). Interlocking
+  track inherits like any other track: a control point can be under a control operator without being under
+  Chapter 10, as GCOR 6.4.2 "Movements Within Control Points or Interlockings" and 9.12.2 "Manual Interlockings"
+  place it, and the 1980 Coast Line chart shows at Gilroy and Watsonville Junction;[^membership]
+- errors, not guesses: two different regime markers on one piece; a piece with no marker reachable from two
+  different regimes. A piece with no regime is missing;
 - interlocking limits (GCOR glossary: "the tracks between outer opposing absolute signals of an interlocking", the
-  §13 seam) lie inside the CTC regime; where a regime boundary coincides with them the model keeps two facts.
+  §13 seam) are a derived fact independent of regime; a consumer may be told which regime an interlocking lies
+  under, at info, and it is never an error.
 
 A regime boundary is a plain `IRJ` with a marker on each side where the regime changes; `IRJ-END_CTC` and the Kind
 `END_CTC` are retired. The prototype's signs are rendered from the two adjacent regimes: a face reads END of the regime
@@ -736,5 +740,10 @@ Each consumer input, the Part 1 section that states it, and its form:
     GCOR has no Rule 261; the markers' extent is derived; the sign faces are rendered. Railroad `0ddd395` carries the
     library and the SPCoast conversion (10 x 9.14, 5 x 6.13, 3 x 6.28, nine 261 signs removed, three boundaries as a
     plain IRJ with END CTC and the far regime).
+
+[^membership]: Until commit `521cb90` the second source read "else from membership in an interlocking (CTC)", with the
+    error "a regime other than CTC on interlocking track" and "interlocking limits lie inside the CTC regime". The
+    owner (2026-11-10): a control point can be under dispatcher control without operating under the CTC rulebook;
+    the error made Watsonville's yard switch 3 under yard limits a defect of the drawing instead of a fact of it.
 
 [^rev]: See §24 (Record) for the revision history from commit `96d3765` through rev 4.
