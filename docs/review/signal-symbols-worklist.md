@@ -329,7 +329,7 @@ Settled in conversation; nothing below is implemented in the importer yet (it be
 ## Rulings 2026-11-09 (derails, local control, heads on one pin)
 
 Owner, in conversation while reviewing the Sargent edge cases. Supersedes the 2026-11-05 line "A derail keeps
-STOP/RESTRICTING". The Subdivision code change is one ticket on map #94; the FieldUnit side is a FieldUnit issue.
+STOP/RESTRICTING". The Subdivision code change is #105 on map #94; the FieldUnit side is plocher/FieldUnit#45.
 
 1. **Heads on one mast pin.** A mast demands a set of indications, I[mast]. Each head wired to a mast pin presents a
    subset, I[head], from the head table keyed by its Style; a demanded word outside that subset is the table's
