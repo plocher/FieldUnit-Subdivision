@@ -120,6 +120,8 @@ def _class(name: str, apps: dict[str, dict[str, Any]]) -> str:
     g = apps.get(name, {}).get("given", {})
     if g.get("Appliance") == "lamp":
         return "maintainer_call" if "maintainer_call" in styles(g) else "lamp"
+    if g.get("Appliance") == "contact":                                    # a sensor's source states its own token (the owner, 2026-11-05)
+        return "contact"
     return lever_class(name, apps) or g.get("Appliance", "")
 
 
@@ -141,7 +143,7 @@ def reporters(model: dict[str, Any], interlocking: str, token: str) -> list[Repo
             found(Reporter("track_circuit", n, n))
         elif g.get("Appliance") == "switch" and g.get("TC", "").strip():
             found(Reporter("track_circuit", n, g["TC"].strip()))                 # its OS circuit
-        elif g.get("Appliance") == "lamp":
+        elif g.get("Appliance") in ("lamp", "contact"):                        # a field lamp or contact states its own token
             found(Reporter(_class(n, apps), n))
     for ou in model.get("officeUnits", {}).values():
         for dev in ou.get("devices", []):
