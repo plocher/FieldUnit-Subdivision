@@ -181,6 +181,18 @@ FieldUnit build available.
 
 Target: a playable, operationally credible model railroad subdivision.
 
+Scope (owner, 2026-11-10). A railroad, layout or real, is track connected to track, and every piece of it is
+governed by some set of rules in a rulebook. Which rules govern which track depends on the era (the technology
+available), the operations (the use made of the track) and the railroad itself. FieldUnit captures the prototypical
+behaviour of a full CTC system: office, code line and field. Subdivision fills in what grows beyond, before and after
+the interlockings CTC manages: block track between control points, sidings and track that were never under CTC,
+industry and branch track, and the regimes that governed them, from timetable and train orders with train order
+signals, switch tenders and tower operators, through CTC, to radio-era track warrants (TWC) and block allocation
+(DTC). The data model carries every piece of track with the regime that governs it, so that a layout can be designed
+for modern radio and DTC operation without a lever-based CTC office machine. No part of the model treats the
+dispatcher's horizon as the edge of the railroad; "dark" is a word for what the office does not see, never for what
+is there (ADR 0013 §7.1).
+
 - A physical or virtual CTC machine dispatches the subdivision through the code line
   interface.
 - Native virtual field units apply FieldUnit's interlocking logic and

@@ -195,7 +195,14 @@ continues the run. Pairing comes from netlist connectivity. Inside CTC a NEXT_CP
 interlocking whose neighbour is not drawn.
 
 Consequence for ADR 0009 §3.12's row "track leaves an interlocking only at a NEXT_CP or an END_CTC" (merged in #58): it
-covers interlocking track only. Block track belongs to the layout. Dark track beyond an END_CTC is outside both.
+covers interlocking track only. Block track belongs to the layout, and so does the track beyond an `END_CTC` or an
+`INDUSTRY` end: every piece of track is in the model and carries the regime that governs it (CTC interlocking, a block
+signal rule, timetable and train orders, track warrants, industry working, and others as they are added), and CTC is
+one regime among several. The end markers are regime boundaries, not model boundaries: the track continues, named by
+its net, and may rejoin another interlocking's track (Sargent's and Corporal's `Beet Loader` tracks) or not (Gilroy).
+"Dark" names what the office does not see, nothing on that track is reported to or controlled by the dispatcher, never
+what is there: the track may hold switches, detection and signals worked locally. It is a word for the office's view
+and is not used of track in this model.[^scope]
 
 ### 7.2 The block's one indication
 
@@ -686,5 +693,10 @@ Each consumer input, the Part 1 section that states it, and its form:
 [^local]: Until commit `dcfc50a` this read "one the dispatcher throws from the desk: `Style` `powered` or `dual`". The seam
     word says what the field unit knows and may move, not who throws it; `local` joined the powered words with the
     derail and local-control rulings (owner, 2026-11-09; `docs/review/signal-symbols-worklist.md`, Subdivision #105).
+
+[^scope]: Until commit `b88423f` this read "Dark track beyond an END_CTC is outside both", which made the dispatcher's
+    horizon the model's horizon. The owner's scope statement (2026-11-10): FieldUnit captures the prototypical behaviour
+    of a full CTC system, office, code line and field; Subdivision fills in what grows beyond, before and after the
+    interlockings CTC manages, across eras and operating regimes. Restated in the README under "Aspiration".
 
 [^rev]: See §24 (Record) for the revision history from commit `96d3765` through rev 4.
