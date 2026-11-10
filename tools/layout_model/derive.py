@@ -74,6 +74,13 @@ names every other track pin its wire reaches, so the relation is symmetric):
 - **The code line** is checked, not stored (the owner, 2026-10-28): what each station receives and must send is the
   domain library ``tools/railroad/codeline.py``'s, computed on demand; every token a consumer states (a desk lever's,
   a desk lamp's, a consumer row's) must be one an appliance of the named interlocking can report there.
+- **A lamp, contact or actuator on the track** (#82; the owner, 2026-11-09): its ``relations.track`` names the track
+  pins its one pin is wired to, so it stands on that piece of track. ``derived.track`` is the piece's name: the circuit
+  that names it; else the name of an end of track on it (an industry); else a name made from one of its pins
+  (``track@<pin>``), reported ``appliance.track.unnamed`` at info. ``derived.circuits.track`` is the circuit, absent
+  where none names the piece: track with no circuit is track like any other. A circuit of another interlocking there
+  is ``appliance.circuit`` at error. The relation is one-sided: no track pin names the appliance's pin back. The
+  three are read alike; no rule tells an actuator from a lamp.
 - **Block track across sheets** (ADR 0013 §7.1, amending ADR 0009 §3.12): a track net that joins two interlockings
   (a pin of one names a pin of the other) is block track and is accepted when it is plain track; a foreign marker's
   TC on it names the component as a marker would (Sargent's 834 joint has ``Corporal:834T`` on its side A). It stays
@@ -113,6 +120,7 @@ REGISTRY = Path(__file__).resolve().parents[2] / "schemas" / "layout-model" / "r
 SWITCH_PORTS = ("C", "N", "R")
 DERAIL_PORTS = ("C", "R")
 TRACK_LISTS = ("joints", "ends", "policies")
+STANDS_ON_TRACK = ("lamp", "contact", "actuator")    # appliances that state the track they stand on (#82)
 ROW_LISTS = TRACK_LISTS + ("consumers",)          # every row with an id; a consumer has track but no circuits of its own
 JOINTS = frozenset({"IRJ", "IRJ_SIGNAL", "IRJ_SIGNALS"})
 DOUBLE_SIDES = {"A": "B", "B": "A"}             # a double joint's side to the other (ADR 0013 §6)
@@ -317,6 +325,34 @@ class _Plan:
             if root in namer:
                 self.namer[root] = namer[root]
 
+    def stands_on(self, name: str) -> Optional[str]:
+        """The track pin of a lamp, contact or actuator that states the track it stands on (#82); none for one that
+        states no track."""
+        a = self.appliances[name]
+        on = a.get("given", {}).get("Appliance") in STANDS_ON_TRACK and a.get("relations", {}).get("track")
+        return self.pin(name, "track") if on else None
+
+    def piece(self, node: str) -> tuple[Optional[str], bool]:
+        """The name of the piece of track a pin is on, and whether somebody stated it (the owner, 2026-11-09): the
+        circuit that names the piece; else the name of an end of track on it (an industry), this interlocking's first
+        by name; else a name made from one of its pins, ``track@<pin>``, a named thing's pin before a row's id, which
+        nobody stated. A lamp's, contact's or actuator's own pin is no track pin and never makes the name. None for a
+        pin the track lacks."""
+        r = self.region(node)
+        if r is None:
+            return None, False
+        if self.name_of.get(r):
+            return self.name_of[r], True
+        ends = sorted(row["name"] for prefix, (kind, row) in self.rows.items()
+                      if kind == "ends" and row.get("name") and not foreign(row["name"], self.name)
+                      and row.get("given", {}).get("Kind") not in ("END_CTC", "NEXT_CP")
+                      and any(self.region(f"{prefix}.{side}") == r for side in track_pins(row.get("relations", {}))))
+        if ends:
+            return ends[0], True
+        own = {n for a in self.appliances if (n := self.stands_on(a))}
+        pins = sorted((":" not in n, n) for n in self.component(node) if n not in own)
+        return (f"track@{pins[0][1]}", False) if pins else (None, False)
+
     def consumers(self) -> list[dict[str, Any]]:
         return self.track.get("consumers", [])
 
@@ -496,6 +532,9 @@ class _Plan:
                 derived["circuits"] = {p: self.circuit(self.pin(name, p)) for p in ("A", "B")}
             if g.get("Appliance") == "track_circuit" and g.get("Style") == "virtual":
                 derived["members"] = [qualify(t.strip(), self.name) for t in g.get("Members", "").split(",") if t.strip()]
+            if (node := self.stands_on(name)):                              # the piece it stands on, and its circuit (#82)
+                derived["track"] = self.piece(node)[0]
+                derived["circuits"] = {"track": c} if (c := self.circuit(node)) else None
             cp = self.cp.get(id(a))
             derived["controlPoint"] = f"{self.name}:{cp}" if cp else None
             _set_derived(a, derived)
@@ -622,6 +661,15 @@ class _Plan:
                     if not foreign(t, self.name) and qualify(t, self.name) not in own:
                         self.r.add("circuit.member", f"{self.name}: virtual circuit {name} lists {t} in Members, which is no circuit of "
                                    f"{self.name}", where)
+            if (node := self.stands_on(name)):                              # a lamp, contact or actuator on the track (#82)
+                kind, circuit = g["Appliance"], self.circuit(node)
+                piece, stated = self.piece(node)
+                if circuit and foreign(circuit, self.name):
+                    self.r.add("appliance.circuit", f"{self.name}: {kind} {name} stands on {circuit}, a circuit of another "
+                               "interlocking; it stands on a circuit of its own", where)
+                elif piece and not stated:
+                    self.r.add("appliance.track.unnamed", f"{self.name}: {kind} {name} stands on track nobody named, called "
+                               f"{piece} here; a track circuit marker or a named end of track names it", where)
             if g.get("Appliance") != "mast":
                 continue
             if g.get("Kind") not in MAST_KINDS:

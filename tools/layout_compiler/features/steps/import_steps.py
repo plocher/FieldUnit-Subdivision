@@ -172,16 +172,6 @@ def joint_no_mast(context, ref, side):
 
 # ----------------------------------------------------------------------- rules stated before the importer has them
 
-@then('"{name}" states the circuit "{circuit}"')
-def circuit(context, name, circuit):
-    raise Pending("the TRACK pin of a lamp or contact, issue #82")
-
-
-@then('"{name}" states no circuit')
-def no_circuit(context, name):
-    raise Pending("the TRACK pin of a lamp or contact, issue #82")
-
-
 def _device(context, ref: str):
     """The importer's device for the symbol ``ref``, in the scenario's interlocking."""
     devs = [d for d in context.seams.interlockings[context.interlocking].devices if d.sym.ref == ref]
@@ -202,6 +192,8 @@ def binds(context, ref, pin, route):
     got = {b.function: b.route for b in _device(context, ref).bindings}.get(pin)
     assert got == route, f"{ref}: {pin} binds {got!r}, not {route!r}"
 
+
+# ----------------------------------------------------------------------- rules stated before the importer has them
 
 @then('the head "{ref}" is position "{position}" of "{mast}"')
 def position(context, ref, position, mast):

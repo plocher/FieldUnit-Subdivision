@@ -81,7 +81,8 @@ def _row(context, name: str, kind: str, row) -> None:
     rel = entity.get("relations", {})
     if "masts" in rel:                                                   # A=<mast> B=<mast>
         rel["masts"] = dict(tok.split("=", 1) for tok in rel["masts"].split())
-    _interlocking(context, name)["track"].setdefault(kind, []).append({"id": key, **entity})
+    named = entity.get("given", {}).pop("Name", None)                    # a named row (an industry): its pins go by its name
+    _interlocking(context, name)["track"].setdefault(kind, []).append({"id": key, **({"name": f"{name}:{named}"} if named else {}), **entity})
 
 
 @given('interlocking "{name}" has these joints:')
@@ -106,11 +107,17 @@ def _rows(ix: dict) -> dict[str, dict]:
     return {r["id"]: r for rows in ix.get("track", {}).values() for r in rows}
 
 
+def _named_rows(ix: dict) -> dict[str, dict]:
+    """The named track rows by their unqualified name: a wire names their pins as it names an appliance's."""
+    return {r["name"].partition(":")[2]: r for rows in ix.get("track", {}).values() for r in rows if r.get("name")}
+
+
 @given('interlocking "{name}" has these wires:')
 def wires(context, name):
-    """Each pin on a wire names every other pin on it: an appliance's pin by its qualified name, a row's by its id."""
+    """Each pin on a wire names every other pin on it: an appliance's or a named row's pin by its qualified name, any
+    other row's by its id."""
     ix = _interlocking(context, name)
-    rows = _rows(ix)
+    rows, named = _rows(ix), _named_rows(ix)
 
     def canonical(pin: str) -> str:
         thing, _, side = pin.rpartition(".")
@@ -120,7 +127,7 @@ def wires(context, name):
         pins = row["Pins"].split()
         for p in pins:
             thing, _, side = p.rpartition(".")
-            holder = ix["appliances"].get(thing) or rows.get(thing)
+            holder = ix["appliances"].get(thing) or rows.get(thing) or named.get(thing)
             if holder is None:
                 continue                                                 # another interlocking's pin, named as given
             others = sorted({canonical(o) for o in pins if o.rpartition(".")[0] != thing})
@@ -243,6 +250,26 @@ def not_reported(context):
     assert not hits, f"{code} is reported: {[str(d) for d in hits]}"
 
 
+@then('"{name}" stands on "{piece}"')
+def stands_on(context, name, piece):
+    """The piece of track a lamp, contact or actuator stands on, by the piece's name (#82)."""
+    got = _named(context, name).get("derived", {}).get("track")
+    assert got == piece, f"{name}: derived.track is {got!r}, not {piece!r}"
+
+
+@then('"{name}" is on circuit "{circuit}"')
+def on_circuit(context, name, circuit):
+    """The circuit that names the piece a lamp, contact or actuator stands on (#82)."""
+    got = _named(context, name).get("derived", {}).get("circuits", {}).get("track")
+    assert got == circuit, f"{name}: derived.circuits.track is {got!r}, not {circuit!r}"
+
+
+@then('"{name}" is on no circuit')
+def on_no_circuit(context, name):
+    got = _named(context, name).get("derived", {}).get("circuits", {}).get("track")
+    assert got is None, f"{name}: derived.circuits.track is {got!r}"
+
+
 # ------------------------------------------------------------------- rules stated before the derivation has them
 
 @then('a route through "{name}" {position} shows no better than "{word}"')
@@ -258,11 +285,6 @@ def derived_ceiling(context, name, position):
 @then('a route through "{name}" {position} takes the reference data\'s ceiling for a hand-operated switch')
 def hand_ceiling(context, name, position):
     raise Pending("the hand-switch rule moves to reference data, issue #81")
-
-
-@then('"{name}" is on circuit "{circuit}"')
-def on_circuit(context, name, circuit):
-    raise Pending("the circuit relation of a lamp or contact, issue #82")
 
 
 @then('"{name}" has faces "{faces}"')

@@ -390,6 +390,63 @@ MC1  | MaintainerCall  | APPLIANCE | Appliance=lamp Style=maintainer_call Name=M
             self.assertEqual(layout_model.errors(emit.emit(sm)), [])
 
 
+class OnTheTrack(unittest.TestCase):
+    """A lamp's, contact's or actuator's one pin (#82): the track pins on its wire, the piece of track the derivation
+    then places it on, the maintainer-call wire, and the one pin that is an error. Track with no circuit is track like
+    any other (the owner, 2026-11-09)."""
+
+    def test_through_a_switch_port_the_piece_is_named_by_the_switchs_os_circuit(self):
+        given = ONE_SWITCH + "K1 | Sensor | APPLIANCE | Appliance=contact Name=HTR\n"
+        sm, ix = compile_(given, ONE_SWITCH_NETS.replace("r    | SW1.R J3.A", "r    | SW1.R J3.A K1.SENSOR"))
+        htr = ix["appliances"]["HTR"]
+        self.assertIn("X:835.R", htr["relations"]["track"])
+        self.assertEqual((htr["derived"]["track"], htr["derived"]["circuits"]), ("X:835T1", {"track": "X:835T1"}))
+        self.assertEqual(diags(sm, "appliance"), [])
+
+    def test_the_three_appliances_read_alike_whatever_their_pin_is_called(self):
+        given = ONE_SWITCH + """
+K1   | Sensor   | APPLIANCE | Appliance=contact Name=HTR
+L1   | Lamp     | APPLIANCE | Appliance=lamp Name=NFL
+A1   | Actuator | APPLIANCE | Appliance=actuator Name=HTR2
+"""
+        sm, ix = compile_(given, ONE_SWITCH_NETS.replace("e1   | J2.B TC2.TC", "e1   | J2.B TC2.TC K1.SENSOR L1.LAMP A1.ACTUATOR"))
+        on = {n: ix["appliances"][n] for n in ("HTR", "NFL", "HTR2")}
+        self.assertEqual({n: a["derived"]["track"] for n, a in on.items()}, {"HTR": "X:1SAT", "NFL": "X:1SAT", "HTR2": "X:1SAT"})
+        self.assertEqual(len({tuple(a["relations"]["track"]) for a in on.values()}), 1)            # the same track pins, none of them another appliance's pin
+        self.assertIn("X:1SAT.TC", on["HTR"]["relations"]["track"])
+        self.assertEqual(ix["appliances"]["1SAT"]["relations"]["TC"], compile_(ONE_SWITCH, ONE_SWITCH_NETS)[1]["appliances"]["1SAT"]["relations"]["TC"])   # one-sided: no track pin names them back
+        self.assertEqual(on["HTR2"]["given"], {"Appliance": "actuator"})
+        self.assertEqual(layout_model.errors(emit.emit(sm)), [])
+
+    def test_track_with_no_circuit_is_track_and_the_piece_gets_a_name(self):
+        given = ONE_SWITCH + """
+L1   | Lamp          | APPLIANCE | Appliance=lamp Name=NFL
+L2   | Lamp          | APPLIANCE | Appliance=lamp Name=SFL
+J9   | IRJ           | TRACK     | Kind=IRJ
+I9   | Industry      | TRACK     | Kind=INDUSTRY Name=BeetLoader
+"""
+        sm, ix = compile_(given, ONE_SWITCH_NETS + "dark | J9.A L1.LAMP\nspur | J9.B I9.EoT L2.LAMP\n")
+        nfl, sfl = ix["appliances"]["NFL"], ix["appliances"]["SFL"]
+        self.assertEqual(sfl["derived"], {**sfl["derived"], "track": "X:BeetLoader"})          # an industry end names its track
+        self.assertTrue(nfl["derived"]["track"].startswith("track@"))                          # nobody named this piece
+        self.assertNotIn("circuits", nfl["derived"])
+        self.assertNotIn("circuits", sfl["derived"])
+        self.assertEqual(diags(sm, "appliance"), [("appliance.track.unnamed", "NFL")])        # information; no import error
+        self.assertEqual(layout_model.errors(emit.emit(sm)), [])
+
+    def test_a_maintainer_call_on_its_house_is_no_error_and_a_lamp_on_a_signal_wire_or_a_houses_codeline_pin_is(self):
+        given = ONE_SWITCH + """
+MC1  | MaintainerCall | APPLIANCE | Appliance=lamp Style=maintainer_call Name=1MC
+L1   | Lamp           | APPLIANCE | Appliance=lamp Name=NFL
+L2   | Lamp           | APPLIANCE | Appliance=lamp Name=SFL
+"""
+        sm, ix = compile_(given, ONE_SWITCH_NETS.replace("s1   | J1.SIGNAL M1.SIGNAL", "s1   | J1.SIGNAL M1.SIGNAL L1.LAMP")
+                          + "mc | H1.MC MC1.MC\ncl | H1.Codeline L2.LAMP\n")
+        self.assertEqual(ix["appliances"]["1MC"]["relations"], {"house": "X:East"})
+        self.assertEqual([ix["appliances"][n].get("relations") for n in ("NFL", "SFL")], [None, None])
+        self.assertEqual(diags(sm, "appliance"), [("appliance.track_pin", "L1"), ("appliance.track_pin", "L2")])
+
+
 class Attributes(unittest.TestCase):
     def test_an_appliance_states_its_milepost(self):
         given = """
