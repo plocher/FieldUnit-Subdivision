@@ -2,9 +2,10 @@ Feature: Block track between control points
   Block track is drawn from one control point to the next, across sheets where needed, and
   belongs to the layout, not to an interlocking. A track wire that joins two interlockings is
   block track when it is plain track: the other interlocking's marker names the circuit on
-  this side, and no consumer and no token come of it. A piece that holds a powered switch or
-  derail (Style powered or dual) is never block track; a hand-throw, spring or electrically
-  locked hand-throw switch may lie in a block whatever CP Name it states. Inside CTC the drawn
+  this side, and no consumer and no token come of it. A dispatcher-controlled switch or derail
+  (Style powered or dual) lies within a control point, never in block track; a hand-throw,
+  spring, electrically locked hand-throw or local switch (a machine the crew works from a fascia
+  lever, not the dispatcher's) may lie in a block whatever CP Name it states. Inside CTC the drawn
   block replaces the NextCP; a NextCP stays for a neighbour that is not drawn, and one marked
   off_layout says its neighbour never will be. (ADR 0013 §4, §7.1, §21 gap 7)
 
@@ -29,7 +30,7 @@ Feature: Block track between control points
     And it is not reported
 
   @reference.track
-  Scenario Outline: a switch that is not powered may lie in the block
+  Scenario Outline: a switch that is not dispatcher-controlled may lie in the block
     Given interlocking "Y" has these appliances:
       | Name | Appliance | Style   | CP Name |
       | 5    | switch    | <style> | West    |
@@ -40,15 +41,16 @@ Feature: Block track between control points
     When the layout is derived
     Then it is not reported
 
-    Examples: hand-throw, sensed hand-throw, spring and electrically locked hand-throw
+    Examples: hand-throw, sensed hand-throw, spring, electrically locked hand-throw and local
       | style         |
       | manual        |
       | manual_sensed |
       | spring        |
       | lock          |
+      | local         |
 
   @reference.track
-  Scenario: a powered switch on the wire that joins the interlockings
+  Scenario: a dispatcher-controlled switch on the wire that joins the interlockings
     Given interlocking "Y" has these appliances:
       | Name | Appliance | Style   |
       | 7    | switch    | powered |
@@ -60,7 +62,7 @@ Feature: Block track between control points
     Then it is reported as an error on "X"
 
   @reference.track
-  Scenario: a switch the file does not have cannot be shown unpowered
+  Scenario: a switch the file does not have cannot be shown not dispatcher-controlled
     Given interlocking "X" has these wires:
       | Wire | Pins                |
       | g    | J1.governed 1SAT.TC |

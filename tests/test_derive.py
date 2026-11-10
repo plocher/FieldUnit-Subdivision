@@ -754,18 +754,21 @@ J5   | joints    | Kind=IRJ
         circuit is Y's 5T1 through its TC (named by Y's own switch, so dark here: no marker names it)."""
         self.assertEqual(self.check("", "a | J1.A Y:5.R\n"), [])
 
-    def test_a_joining_wire_with_a_powered_switch_or_derail_is_an_error(self):
-        """ADR 0013 §4 and §7.1: a piece with a powered switch or derail is never block track, so the wire is interlocking
-        track and leaves an interlocking only at a NextCP or an END_CTC (ADR 0009 §3.12); a switch the file lacks counts
-        as powered."""
+    def test_a_joining_wire_with_a_dispatcher_controlled_switch_or_derail_is_an_error(self):
+        """ADR 0013 §4 and §7.1: a dispatcher-controlled switch or derail (powered or dual) lies within a control point,
+        never in block track, so the wire is interlocking track and leaves an interlocking only at a NextCP or an END_CTC
+        (ADR 0009 §3.12); a switch the file lacks counts as one. A local switch is the crew's and may lie in the block
+        (the owner, 2026-11-09)."""
         self.assertEqual(self.check("", "a | J1.A Y:7.R Y:8.R\n"), [("reference.track", "X"), ("reference.track", "X")])
-        self.assertIn("powered switch port Y:7.R", derive.derive(self.model("", "a | J1.A Y:7.R\n"))[1].by_code("reference.track")[0].text)
+        self.assertIn("dispatcher-controlled switch port Y:7.R", derive.derive(self.model("", "a | J1.A Y:7.R\n"))[1].by_code("reference.track")[0].text)
         d = derive.derive(self.model("", "a | J1.A Y:7.R\n"))[1].by_code("reference.track")[0]
         self.assertEqual(d.entities, ("interlockings/X", "interlockings/Y", "interlockings/Y/appliances/7"))
         self.assertEqual(self.check("9 | appliance | Appliance=switch Style=powered\n", "a | J1.A Y:3NAT.TC 9.C\n"), [("reference.track", "X")])
         self.assertEqual(self.check("9 | appliance | Appliance=switch Style=derail,powered\n", "a | J1.A Y:3NAT.TC 9.C\n"), [("reference.track", "X")])
         self.assertEqual(self.check("9 | appliance | Appliance=switch Style=lock CP_Name=East\n", "a | J1.A Y:3NAT.TC 9.C\n"), [])
         self.assertEqual(self.check("9 | appliance | Appliance=switch Style=manual_sensed CP_Name=East\n", "a | J1.A Y:3NAT.TC 9.C\n"), [])
+        self.assertEqual(self.check("9 | appliance | Appliance=switch Style=local CP_Name=East\n", "a | J1.A Y:3NAT.TC 9.C\n"), [])
+        self.assertEqual(self.check("9 | appliance | Appliance=switch Style=dual CP_Name=East\n", "a | J1.A Y:3NAT.TC 9.C\n"), [("reference.track", "X")])
         dependent = "9 | appliance | Appliance=switch Style=lock CP_Name=East\n9D | appliance | Appliance=switch Style=derail CP_Name=East\n"
         self.assertEqual(self.check(dependent, "a | J1.A Y:3NAT.TC 9.C 9D.C\n"), [])   # a dependent derail follows its lock
 
