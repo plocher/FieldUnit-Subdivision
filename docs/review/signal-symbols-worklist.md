@@ -411,3 +411,11 @@ not through Update Symbols, which the owner does not want touching `Value`. Rail
   loses the 261 scenario; the old symbols and Kinds are deleted in the same change, no bridge.
 - Queued after it: the JMRI binding collision at Gilroy (two anonymous Local-TrainOrder levers and two UQ3 heads on one
   appliance route to one JMRI name; distinguishing facts are face E/W and pin STOP/SLOW; with #85/#99).
+
+## Ruling 2026-11-10: keys for encoded drivers on anonymous devices (owner; #85, #99)
+
+An `Address` override for a colliding key is not DRY; the wires state the facts. An anonymous head or train-order lever
+serves under the mast pin its `IND` reaches (`Gilroy.E`), and a driver on one of several function pins carries that
+pin: `SENSOR.Gilroy.E.STOP`, `SIGNALMAST.Gilroy.E`; a whole-mast consumer covering every position keeps
+`SIGNALMAST.Gilroy`. The importer's "drawn twice" merge narrows to a Turnout's command and feedback on one device pin;
+any other collision is `driver.duplicate`, an error. Implementation in #85, name form in the #99 ADR.
