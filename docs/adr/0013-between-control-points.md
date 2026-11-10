@@ -18,20 +18,22 @@
    vitality markings, and context for consumers. If the model is missing or misstating something, codegen cannot fix
    it (§13).
 2. **A station-to-station block** is a piece of the track graph cut at every `CONTROLLED` and `ABSOLUTE` signal joint
-   that holds no dispatcher-controlled switch or derail (`powered` or `dual`) and lies under a block signal rule
-   (`RULE_251`, `RULE_261`, or `ABSOLUTE` ends). Hand-throw, spring, electrically locked hand-throw and local switches
-   may lie in a block. It belongs to the layout,
+   that holds no dispatcher-controlled switch or derail (`powered` or `dual`) and is signalled: a `GCOR_RULE_9_14`
+   sign (one current of traffic), masts facing both ways, or `ABSOLUTE` ends.[^regime] Hand-throw, spring, electrically
+   locked hand-throw and local switches may lie in a block. It belongs to the layout,
    not to an interlocking, and the `blocks` library computes it on demand (§4).
-3. **ABS, APB or CTC is derived, never stated.** APB is derived from `ABSOLUTE` ends alone; a `RULE_261` sign on
-   `ABSOLUTE` ends is reported at warning (§4).
+3. **ABS or APB is derived, never stated; the regime is stated, never derived.** APB is derived from `ABSOLUTE` ends
+   alone. The regime of a piece of track (CTC, TWC, DTC, yard limits, other than main track) is a `GCOR Rule` POLICY
+   marker on it, since no arrangement of signals implies it; a `GCOR_RULE_10` piece with `ABSOLUTE` head-block ends is
+   reported at warning (§4, §7.1).[^regime]
 4. **A mast states what it is:** `Kind` `CONTROLLED`, `ABSOLUTE` or `PERMISSIVE`. A mast with none is missing. Grade
    and restricting plates are POLICY symbols on the mast's net (§5).
 5. **A joint with a mast on each side** is the `IRJ-Signals` symbol: pins A, B, `SIGNAL_A` (its mast governs into A)
    and `SIGNAL_B` (into B). Nothing is read from rotation (§6).
 6. **Block track is drawn** from one control point to the next and replaces NEXT_CP inside CTC. The block's one office
    indication is a virtual track circuit whose members are the block's circuits (§7).
-7. **A `RULE_251` sign's `LEFT` or `RIGHT`** is the lever direction of the signals that govern with the current of
-   traffic. A `RULE_251` sign inside interlocking limits states the current of traffic on that track, and nothing more
+7. **A `GCOR_RULE_9_14` sign's `LEFT` or `RIGHT`** is the lever direction of the signals that govern with the current of
+   traffic. A `GCOR_RULE_9_14` sign inside interlocking limits states the current of traffic on that track, and nothing more
    (§8).
 8. **Names by signal location:** automatic masts and the circuits between them are numbered for their signal
    location (§9).
@@ -114,10 +116,10 @@ hardware).
 ## 4. The station-to-station block (decisions 2, 3)
 
 Cut the track graph at every `CONTROLLED` and `ABSOLUTE` signal joint. Each piece that holds no dispatcher-controlled
-switch or derail and lies under a block signal rule (`RULE_251`, `RULE_261`, or `ABSOLUTE` ends) is one
+switch or derail and is signalled (a `GCOR_RULE_9_14` sign, masts facing both ways, or `ABSOLUTE` ends) is one
 station-to-station block. A dispatcher-controlled switch is a machine the dispatcher throws from the desk: `Style`
-`powered` or `dual`. It lies within a control point, delimited among other things by signal IRJs and END CTC IRJs
-(owner, 2026-11-09).[^dispatcher] A powered switch is one whose position the field unit knows and may move: `Style`
+`powered` or `dual`. It lies within a control point, delimited among other things by signal IRJs and the regime
+boundary joints of §7.1 (owner, 2026-11-09).[^dispatcher] A powered switch is one whose position the field unit knows and may move: `Style`
 `powered`, `dual` or `local` (GLOSSARY: powered switch, dual-control switch). A `local` switch is a machine the field
 unit drives from a Local-Switch alone, with no desk lever (owner, 2026-11-09).[^local] A `CP Name` on a switch says
 which control point serves it and makes nothing the dispatcher's: a hand-throw switch (`manual`, `manual_sensed`), a
@@ -127,27 +129,33 @@ fascia lever, not the dispatcher's) may lie in a block whatever `CP Name` they s
 - its track circuits, in order;
 - its signal locations and their masts, in order;
 - at each end, the control point's leaving signals into it (or `ABSOLUTE` head-block signals) and its home signal facing it;
-- its rule and, under `RULE_251`, its current of traffic (§8).
+- its signal system (ABS or APB, below), its regime (§7.1) and, under `GCOR_RULE_9_14`, its current of traffic (§8).
 
-A piece under `RULE_105` or `RULE_93` alone is a siding or station track. A piece that reaches an END_CTC leads to
-unsignalled track. Neither is a station-to-station block.
+A piece under `GCOR_RULE_6_13` or `GCOR_RULE_6_28` alone is a siding, station or industry track. A piece beyond a
+regime boundary (§7.1) is under its own regime. Neither is a station-to-station block.
 
 The block belongs to no interlocking. The `blocks` library computes it on demand (R5). Its track is drawn across sheets
 (§7.1), so no pairing is needed.
 
-**ABS, APB or CTC is derived, never stated.** It is a property of the block, read from facts already drawn: the
-masts' Kinds at its ends and between, and its sign.
+**ABS or APB is derived, never stated.** It is a property of the block, read from facts already drawn: the masts'
+Kinds at its ends and between, and the current-of-traffic sign.
 
-| Ends | Intermediate masts | Sign | The block is |
+| Ends | Intermediate masts | Sign | The block's signal system is |
 |---|---|---|---|
-| `CONTROLLED` | none, or all `PERMISSIVE` | `RULE_261` | CTC, with automatic intermediate signals where drawn (Corporal to Sargent) |
-| `ABSOLUTE` head blocks | none, or all `PERMISSIVE` | none (or any; `RULE_261` warns) | APB |
-| any | none, or all `PERMISSIVE` | `RULE_251` | ABS, one current of traffic |
+| `CONTROLLED` | none, or all `PERMISSIVE` | none | signalled both ways; under `GCOR_RULE_10` it is CTC with automatic intermediate signals where drawn (Corporal to Sargent) |
+| `ABSOLUTE` head blocks | none, or all `PERMISSIVE` | none | APB |
+| any | none, or all `PERMISSIVE` | `GCOR_RULE_9_14` | ABS, one current of traffic |
 
-The APB row is derived from the `ABSOLUTE` ends alone. The policy sign states movement authority, not the signal
-circuit method. Standard Code Rule 261 (`[PRR56]`) gives signal-indication authority in both directions, whereas an
-automatic signal gives no authority (R10). Therefore, a `RULE_261` sign on `ABSOLUTE` ends is reported at warning
-(allowing a deliberate exception where special rules let APB signals authorize moves, without failing validation).
+The APB row is derived from the `ABSOLUTE` ends alone. **The regime is stated, never derived.** A dispatcher-controlled
+switch and an absolute signal inside APB territory are still not CTC, because the crew's authority to occupy the main
+comes from elsewhere; CTC is where the timetable says it is (GCOR 10.1: "CTC limits are designated in the timetable",
+8th edition, opened 2026-11-10; the 1980 Coast Line chart puts CTC on the single track Corporal to Logan and not on the
+double track either side, `docs/review/coast-line-track-chart-1980-notes.md`). So the regime is a `GCOR Rule` marker
+on the piece (§7.1) and the signal system is read from the masts. A `GCOR_RULE_10` piece whose ends are `ABSOLUTE`
+head blocks is reported at warning, since an automatic signal gives no authority (R10) and Chapter 10 gives
+signal-indication authority: a deliberate exception where special rules let APB signals authorize moves passes
+validation with the warning. There is no 261 sign: GCOR has no Rule 261, its content became Chapter 10, and signalled
+both ways is already stated by the masts.[^regime]
 
 ## 5. What a mast is (decision 4)
 
@@ -157,7 +165,7 @@ What it means to a crew is in Part 2 (§15.5).
 
 - **Representation.** The library has symbols whose Kind is fixed, with graphics that suggest it: Signal Mast Single
   `CONTROLLED`, `ABSOLUTE` and `PERMISSIVE`, and Signal Mast Double and Dwarf `CONTROLLED`. A fixed Kind is part of
-  the symbol's identity, like `Rule251-Left`'s Direction, not a per-instance default. A mast with no Kind is missing.
+  the symbol's identity, like `GCOR Rule 9.14 DoT_Left`'s Direction, not a per-instance default. A mast with no Kind is missing.
 - **Plates.** The number plate symbol is gone: `PERMISSIVE` means the plate. `Plate-G` (Kind `RULE_290_G`, heavy
   freight only) and `Plate-R` (Kind `RULE_290_R`, all trains) are POLICY symbols. Their pin `To` sits on the mast's
   `SIGNAL` net, and each requires a `PERMISSIVE` mast. The Kind names the resulting indication, Rule 290 `[AAR56
@@ -195,14 +203,36 @@ continues the run. Pairing comes from netlist connectivity. Inside CTC a NEXT_CP
 interlocking whose neighbour is not drawn.
 
 Consequence for ADR 0009 §3.12's row "track leaves an interlocking only at a NEXT_CP or an END_CTC" (merged in #58): it
-covers interlocking track only. Block track belongs to the layout, and so does the track beyond an `END_CTC` or an
-`INDUSTRY` end: every piece of track is in the model and carries the regime that governs it (CTC interlocking, a block
+covers interlocking track only. Block track belongs to the layout, and so does the track beyond a regime boundary or
+an `INDUSTRY` end: every piece of track is in the model and carries the regime that governs it (CTC interlocking, a block
 signal rule, timetable and train orders, track warrants, industry working, and others as they are added), and CTC is
 one regime among several. The end markers are regime boundaries, not model boundaries: the track continues, named by
 its net, and may rejoin another interlocking's track (Sargent's and Corporal's `Beet Loader` tracks) or not (Gilroy).
 "Dark" names what the office does not see, nothing on that track is reported to or controlled by the dispatcher, never
 what is there: the track may hold switches, detection and signals worked locally. It is a word for the office's view
 and is not used of track in this model.[^scope]
+
+**Regime markers and their extent** (owner, 2026-11-10; Railroad `0ddd395`).[^regime] A regime is a `GCOR Rule`
+POLICY symbol on a piece of track: `GCOR_RULE_10` (CTC, Chapter 10), `GCOR_RULE_14` (TWC, Chapter 14),
+`GCOR_RULE_16` (DTC, Chapter 16), `GCOR_RULE_6_13` (yard limits), `GCOR_RULE_6_28` (movement on other than main
+track); `GCOR_RULE_9_14` (movement with the current of traffic) is a direction fact, not a regime, and may share a
+piece with one. The prefix scopes the vocabulary to one rulebook; a later Studio presents the era's set. The marker's
+extent is derived, as a track circuit's is:
+
+- the unit is the joint-bounded piece: track connectivity through nets and switch ports, cut at every IRJ;
+- a piece's regime comes from a marker on it, else from membership in an interlocking (CTC; GCOR 10.1: "Sidings
+  within CTC limits are controlled sidings and are governed by CTC rules"), else by inheritance across a joint from
+  the adjacent piece. Inheritance lets one marker cover a run cut into blocks or circuits;
+- errors, not guesses: two different regime markers on one piece; a regime other than CTC on interlocking track; a
+  piece with no marker reachable from two different regimes. A piece with no regime is missing;
+- interlocking limits (GCOR glossary: "the tracks between outer opposing absolute signals of an interlocking", the
+  §13 seam) lie inside the CTC regime; where a regime boundary coincides with them the model keeps two facts.
+
+A regime boundary is a plain `IRJ` with a marker on each side where the regime changes; `IRJ-END_CTC` and the Kind
+`END_CTC` are retired. The prototype's signs are rendered from the two adjacent regimes: a face reads END of the regime
+behind the crew and BEGIN of the one ahead, and the far face reads the mirror pair, so the drawing states no pair that
+could disagree; the BEGIN and END glyph symbols of one regime share one Kind. A DTC `Block Limit` joint, a TRACK marker
+that cuts a regime piece into blocks with no circuits, is added when a layout needs it. Routes carry no regime.
 
 ### 7.2 The block's one indication
 
@@ -217,23 +247,22 @@ cross-interlocking consumer of `Sargent:836TK` (ADR 0011). By R12, that causes S
 codeline indications (where the code line has capacity, §18.1), so Corporal can compute `831TK` without inferring
 occupancy from `H` and `D` (which `834SA`'s `SR` masks while a southbound train occupies `836T`).
 
-## 8. The current of traffic under `RULE_251` (decision 7)
+## 8. The current of traffic under `GCOR_RULE_9_14` (decision 7)
 
 | Sign | Kind | `Direction` |
 |---|---|---|
-| `Rule251-DoT-Left`, `Rule251-DoT-Right` | `RULE_251` | `LEFT`, `RIGHT` |
-| `Rule261-DoT-BiDirectional` | `RULE_261` | `BOTH` |
-| `Rule105-RestrictedSpeed`, `Rule93-Yard Limits` | `RULE_105`, `RULE_93` | `BOTH` |
+| `GCOR Rule 9.14 DoT_Left`, `GCOR Rule 9.14 DoT_Right` | `GCOR_RULE_9_14` | `LEFT`, `RIGHT` |
+| `GCOR Rule 6.28 RestrictedSpeed`, `GCOR Rule 6.13 Yard Limits` | `GCOR_RULE_6_28`, `GCOR_RULE_6_13` | none |
 
-`BOTH` adds nothing to its Kind. The 251 sign's `LEFT` or `RIGHT` is the lever direction of the signals that govern
+The 9.14 sign's `LEFT` or `RIGHT` is the lever direction of the signals that govern
 with the current of traffic (GLOSSARY §7; ADR 0003 D1 maps `N`/`W` to `LEFT` and `S`/`E` to `RIGHT`). SPCoast agrees:
 `Christopher:1NAT` and `Corporal:1SAT` both state `RIGHT`, and trains with the current arrive at a `RIGHT` signal at
-Corporal. The `blocks` library checks that the signs of one block agree with each other and with its masts. Under
-`RULE_261` the direction of traffic is set at run time (§16) and is not a static model fact.
+Corporal. The `blocks` library checks that the signs of one block agree with each other and with its masts. On track
+signalled both ways the direction of traffic is set at run time (§16) and is not a static model fact.
 
-**A `RULE_251` sign inside interlocking limits** states the current of traffic on that track, and nothing more
+**A `GCOR_RULE_9_14` sign inside interlocking limits** states the current of traffic on that track, and nothing more
 (owner, 2026-10-31). Watsonville's arrival and departure tracks are switch 837's two legs, between the home joints of
-838NCD and 838NAB and the switch. Each leg carries a 251 sign with its direction of travel (Railroad `31954c5`). Such
+838NCD and 838NAB and the switch. Each leg carries a 9.14 sign with its direction of travel (Railroad `31954c5`). Such
 a sign makes no block, because its piece holds a powered switch (§4), and it marks neither a block limit nor the end
 of CTC. The same agreement check applies: the sign's direction against the signals that govern on that track.
 
@@ -366,7 +395,7 @@ Feature: Between-interlockings block safety invariants
 
 | Layer | What it holds | Who chooses |
 |---|---|---|
-| Operations | The rule (`RULE_251`, `RULE_261`); the `blockRules` profile below | The layout owner, by `Railroad`, `Era`, and `Rulebook` (ADR 0012 §6) |
+| Operations | The regime (§7.1) and the current of traffic (`GCOR_RULE_9_14`); the `blockRules` profile below | The layout owner, by `Railroad`, `Era`, and `Rulebook` (ADR 0012 §6) |
 | Model | Blocks, signal locations, seam ports, directed `HD` links, and which processor reads or drives each | Railroad-neutral, derived (Part 1) |
 | Layout | How `H`, `D`, `F` and occupancy cross between processors, and whether the carrier is `vital` or `non_vital` | The layout owner's hardware drawing (§18) |
 
@@ -503,7 +532,7 @@ deployment variation, and whether each carrier is **vital** or a **non-vital `R1
 Across all four variations, **the trackplan drawing is identical**: the block track is drawn from one control point to
 the next (with a hierarchical label where it crosses sheets, §7.1), with its `IRJ-Signals` / `IRJ-Signal` joints, its
 `PERMISSIVE` (or `ABSOLUTE`) masts and heads, its track circuits (`832T`, `834T`, `836T`), any `boundary` detector
-(`833T`), its `RULE_251` or `RULE_261` sign, and the block's `virtual` track circuit (`831T`) where the model board
+(`833T`), its `GCOR_RULE_9_14` sign where it has one, and the block's `virtual` track circuit (`831T`) where the model board
 displays the block.
 
 Because `H` (`segment_clear`), `D` (`next_proceed`), and `F` (`traffic_free`) are vital field terms while the code line
@@ -698,5 +727,14 @@ Each consumer input, the Part 1 section that states it, and its form:
     horizon the model's horizon. The owner's scope statement (2026-11-10): FieldUnit captures the prototypical behaviour
     of a full CTC system, office, code line and field; Subdivision fills in what grows beyond, before and after the
     interlockings CTC manages, across eras and operating regimes. Restated in the README under "Aspiration".
+
+[^regime]: Until commit `9516aa0` the block lay "under a block signal rule (`RULE_251`, `RULE_261`, or `ABSOLUTE` ends)",
+    decision 3 read "ABS, APB or CTC is derived, never stated" with a `RULE_261` sign naming CTC, §8 tabled the
+    `Rule251`/`Rule261`/`Rule105`/`Rule93` signs, and track left an interlocking at an `IRJ-END_CTC`. The owner's
+    2026-11-10 rulings (this session, after the GCOR 8th edition and the 1980 Coast Line chart were opened): regimes
+    are stated by `GCOR Rule` markers with the GCOR prefix scoping the vocabulary; CTC is never inferred from signals;
+    GCOR has no Rule 261; the markers' extent is derived; the sign faces are rendered. Railroad `0ddd395` carries the
+    library and the SPCoast conversion (10 x 9.14, 5 x 6.13, 3 x 6.28, nine 261 signs removed, three boundaries as a
+    plain IRJ with END CTC and the far regime).
 
 [^rev]: See §24 (Record) for the revision history from commit `96d3765` through rev 4.

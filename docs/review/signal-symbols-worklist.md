@@ -394,3 +394,20 @@ The libraries now carry `Value` empty and `Kind` literal on every encoder, and e
 40 (all six 3MUX2A sheets), `PIXEL` on 7 (GilroyInterchange, Sargent), `RYG` on 3 (GilroyCalTrain). Blank them in
 one scripted, lock-gated pass with a field diff before the commit (the field-reset incidents of 2026-10-17/18),
 not through Update Symbols, which the owner does not want touching `Value`. Railroad repo edit, separate commit.
+
+## Rulings 2026-11-10: regime markers (owner; ADR 0013 §7.1, decision 3; ADR 0009 §3.12)
+
+- Every piece of track is in the model with the regime that governs it; CTC is one regime among several. "Dark" is
+  the office's view, never a kind of track (README "Aspiration", PR 111).
+- Regimes are `GCOR Rule NN` POLICY symbols, Kind `GCOR_RULE_N` shared by the BEGIN and END glyphs, one passive pin
+  `To`, no Name. The GCOR prefix scopes the vocabulary; Studio will present the era's set. GCOR has no Rule 261: the
+  nine `Rule261` signs are removed, signalled-both-ways is read from the masts. `Rule251` -> 9.14 (Direction kept),
+  `Rule93` -> 6.13, `Rule105` -> 6.28, `IRJ-END_CTC` -> plain `IRJ` plus a marker each side. Railroad `0ddd395`.
+- Extent is derived (joint-bounded pieces; marker, interlocking membership, inheritance; conflicts are errors); sign
+  faces are rendered from the two adjacent regimes. Sources opened: GCOR 8th edition (10.1, 14, 16.1, 6.13, 6.14,
+  6.28, 9.14, glossary "Interlocking Limits"); the 1980 Coast Line track chart
+  (`docs/review/coast-line-track-chart-1980-notes.md`).
+- Compiler pass (ticket on map #94): `trackplan.py` ENDS and `derive.py` read the new Kinds; `policy_sign.feature`
+  loses the 261 scenario; the old symbols and Kinds are deleted in the same change, no bridge.
+- Queued after it: the JMRI binding collision at Gilroy (two anonymous Local-TrainOrder levers and two UQ3 heads on one
+  appliance route to one JMRI name; distinguishing facts are face E/W and pin STOP/SLOW; with #85/#99).
