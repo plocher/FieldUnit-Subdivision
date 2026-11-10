@@ -200,3 +200,24 @@ class TrainOrderSymbolLint(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SwitchSymbolLint(unittest.TestCase):
+    """The lint of a switch or derail symbol (the owner, 2026-11-09): its Style states exactly one regime word from
+    grammar.REGIMES; derail may stand beside it; none or two is a symbol contract defect, caught here and never a
+    model finding."""
+
+    PORTS = [("C", "1", "passive"), ("N", "2", "passive"), ("R", "3", "passive")]
+
+    def lint(self, style: str, name: str = "Switch_Powered") -> list[str]:
+        fields = {"Role": "APPLIANCE", "Appliance": "switch", "Name": "${Value}", "Style": style}
+        sym = library_symbols(library([(1, None, self.PORTS)], name, fields))[name]
+        return [m.removeprefix(f"L:{name}: ") for s, m in lint_symbol("L", name, sym) if s == "error"]
+
+    def test_a_switch_states_one_regime_word_and_a_derail_adds_the_word_derail(self):
+        for style in ("powered", "dual", "local", "lock", "manual_sensed", "manual", "spring", "derail,powered", "derail, manual"):
+            self.assertEqual(self.lint(style), [], style)
+        want = "a switch or derail states exactly one regime word in Style, one of dual, local, lock, manual, manual_sensed, powered, spring, with derail beside it on a derail; this has "
+        self.assertEqual(self.lint("derail"), [want + "none"])
+        self.assertEqual(self.lint(""), [want + "none"])
+        self.assertEqual(self.lint("powered,dual"), [want + "powered, dual"])

@@ -44,7 +44,10 @@ Per symbol, by Role:
   pin); there is no `Code` field (a 3MUX2A truth table is reference data keyed by Kind); settings
   lower_snake_case.
 - APPLIANCE: Appliance present; no Kind, except a mast, which states Kind CONTROLLED, ABSOLUTE or PERMISSIVE
-  (owner, 2026-10-31; ADR 0009 §3.10, ADR 0013).
+  (owner, 2026-10-31; ADR 0009 §3.10, ADR 0013). A switch (Appliance switch, a derail included) states exactly
+  one regime word in its Style, from `grammar.REGIMES` (powered, dual, local, lock, manual_sensed, manual,
+  spring); `derail` may accompany it; none or two is an error (owner, 2026-11-09: a missing word is a symbol
+  contract defect, caught here, never a model finding).
 - DEVICE, PANEL: Appliance present; no Kind; one `Pin.<base>` per function pin (Column excepted) and
   no `Pin.*` without a pin; the capability is one primary word from the vocabulary (binary, level,
   position, color, pixel, message); direction is the KiCad electrical type, which must be input,
@@ -79,7 +82,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from kicad_services.sch_text import blocks, library_symbols  # noqa: E402
+from tools.layout_model.grammar import REGIMES  # noqa: E402  (the switch words: one definition, shared with the derivation)
 
 LIBDIR = Path.home() / "Dropbox/KiCad/Railroad/symbols"
 LIBRARIES = ("Railroad-Trackplan", "Railroad-Office", "Railroad-Field", "Railroad-HardwareIO")
@@ -174,6 +179,11 @@ def lint_symbol(lib: str, name: str, sym: dict, bodies: dict[str, str] | None = 
             err("a train order board states Station, the timetable station it stands at")
         if pins:
             err(f"a train order board has no pins; its faces are its field mast's; this has {', '.join(n for n, _, _ in pins)}")
+    if role == "APPLIANCE" and props.get("Appliance") == "switch":        # a switch or derail states its regime (owner, 2026-11-09)
+        words = [w for w in (x.strip() for x in props.get("Style", "").split(",")) if w in REGIMES]
+        if len(words) != 1:
+            err(f"a switch or derail states exactly one regime word in Style, one of {', '.join(sorted(REGIMES))}, with derail beside "
+                f"it on a derail; this has {', '.join(words) or 'none'}")
     bases = {base(n) for n, _, _ in function_pins}
     etype = {n: ty for n, _, ty in pins}
     if role == "DEVICE" and props.get("Appliance") == "head":        # a head device (ADR 0009 §3.6; Role CAST until 2026-10-23)
