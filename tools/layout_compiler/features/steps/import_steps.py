@@ -198,3 +198,37 @@ def binds(context, ref, pin, route):
 @then('the head "{ref}" is position "{position}" of "{mast}"')
 def position(context, ref, position, mast):
     raise Pending("head position = mast pin, issue #80")
+
+
+# ----------------------------------------------------------------------- encoded drivers (the owner, 2026-11-10)
+
+def _driver_keys(context) -> dict[str, str]:
+    """Each driver symbol's key on its processor: ref -> address, every symbol that draws a driver included."""
+    return {x.ref: a for p in context.seams.processors.values() for a, d in p.drivers.items() for x in d.syms}
+
+
+@then('processor "{name}" has the drivers "{keys}"')
+def has_drivers(context, name, keys):
+    got = set(context.seams.processors[name].drivers)
+    want = {k.strip() for k in keys.split(",")}
+    assert got == want, f"{name}: drivers {sorted(got)}, not {sorted(want)}"
+
+
+@then('the driver "{ref}" is keyed "{key}"')
+def keyed(context, ref, key):
+    got = _driver_keys(context).get(ref)
+    assert got == key, f"{ref}: keyed {got!r}, not {key!r}; drivers: {sorted(set(_driver_keys(context).values()))}"
+
+
+@then('the driver "{key}" on "{name}" is drawn by "{refs}"')
+def drawn_by(context, key, name, refs):
+    d = context.seams.processors[name].drivers[key]
+    got = sorted(x.ref for x in d.syms)
+    assert got == sorted(r.strip() for r in refs.split(",")), f"{key}: drawn by {got}"
+
+
+@then("no driver is written with an Address")
+def no_address(context):
+    written = [(p, a) for p, proc in context.model["layout"]["processors"].items() for a, d in proc.get("drivers", {}).items()
+               if "Address" in d.get("given", {})]
+    assert not written, f"an Address is written on {written}"

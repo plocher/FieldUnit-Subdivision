@@ -218,15 +218,40 @@ class RuleTests(unittest.TestCase):
         self.assertEqual(sm.processors["Alpha"].drivers, {})
         self.assertEqual(len(sm.report.by_code("driver.bus.missing")), 3)
 
-    def test_a_drawn_address_overrides_the_derived_jmri_key(self):
+    def test_a_drawn_address_is_stated_beside_the_key_the_wires_give(self):
+        """The owner (2026-11-10): an encoded driver's key carries the facts the wires state; a drawn Address is a stated
+        field, never the key, reported at info."""
         src = jmri_plant()
         s = src.symbols["J1"]
         src.symbols["J1"] = Symbol(s.ref, s.lib_id, s.value, {**s.fields, "Address": "MT777"}, s.sheet)
         sm = seams.resolve(src)
-        self.assertEqual(set(sm.processors["Alpha"].drivers), {"MT777", "TURNOUT.777", "SIGNALMAST.784EAB"})   # the feedback symbol still derives its key
+        self.assertEqual(set(sm.processors["Alpha"].drivers), {"TURNOUT.777", "SIGNALMAST.784EAB"})
         self.assertTrue(sm.report.by_code("driver.address.override"))
-        self.assertEqual(sm.report.errors, [])
-        self.assertEqual(sm.processors["Alpha"].drivers["MT777"].given["Address"], "MT777")   # an override is stated, not a key field
+        self.assertEqual([d.code for d in sm.report.errors], ["entity.conflict"])     # the command states an Address its feedback does not
+        self.assertEqual(sm.processors["Alpha"].drivers["TURNOUT.777"].given["Address"], "MT777")   # stated, not a key field
+
+    def test_an_anonymous_device_serves_under_its_mast_pin_and_a_driver_carries_its_function_pin(self):
+        """The owner (2026-11-10): Gilroy's double train order mast, two levers and two heads, yields four sensor keys and
+        two mast keys; a whole-mast consumer on every position keeps the mast's key; two sensors on one lever pin are
+        driver.duplicate, never a merge."""
+        src = plant()
+        syms = [sym("DM", "Device-TrainOrder-Mast-Double", "/X/", "Gilroy", Role="DEVICE", Appliance="train_order_mast", Name="Gilroy", **{"Pin.E": "indication", "Pin.W": "indication"}),
+                sym("LE", "Local-TrainOrder", "/X/", "", Role="DEVICE", Appliance="lever", Style="train_order", **{"Pin.STOP": "binary", "Pin.SLOW": "binary"}),
+                sym("HE", "Device-Head-Semaphore-UQ3", "/X/", "", Role="DEVICE", Appliance="head", Style="UQ3", **{"Pin.IND": "indication", "Pin.APP": "indication"}),
+                sym("M2", "Device-Mast-Double", "/X/", "778NAB", Role="DEVICE", Appliance="mast", Name="778NAB", **{"Pin.A": "indication", "Pin.B": "indication"}),
+                sym("S1", "Driver-JMRI-Sensor-Feedback", "/X/", "", Role="IODRIVER", IC="MQTT-JMRI", Kind="SENSOR", Address=""),
+                sym("S2", "Driver-JMRI-Sensor-Feedback", "/X/", "", Role="IODRIVER", IC="MQTT-JMRI", Kind="SENSOR", Address=""),
+                sym("S3", "Driver-JMRI-Sensor-Feedback", "/X/", "", Role="IODRIVER", IC="MQTT-JMRI", Kind="SENSOR", Address=""),
+                sym("J1", "Driver-JMRI-SignalMast", "/X/", "", Role="IODRIVER", IC="MQTT-JMRI", Kind="SIGNALMAST", Address=""),
+                sym("J2", "Driver-JMRI-SignalMast", "/X/", "", Role="IODRIVER", IC="MQTT-JMRI", Kind="SIGNALMAST", Address="")]
+        nets = [net("n1", ("IX1", "Processor"), ("P1", "Processor")),
+                net("bus", ("P1", "IOBus"), ("S1", "IOBus"), ("S2", "IOBus"), ("S3", "IOBus"), ("J1", "IOBus"), ("J2", "IOBus")),
+                net("e", ("DM", "E"), ("LE", "IND"), ("HE", "IND")), net("es", ("LE", "~{STOP}"), ("S1", "S")), net("ew", ("LE", "~{SLOW}"), ("S2", "S"), ("S3", "S")),
+                net("he", ("HE", "APP"), ("J1", "IND")), net("ab", ("M2", "A"), ("M2", "B"), ("J2", "IND"))]
+        sm = seams.resolve(from_symbols(list(src.symbols.values()) + syms, nets))
+        self.assertEqual(set(sm.processors["Alpha"].drivers), {"SENSOR.Gilroy.E.STOP", "SENSOR.Gilroy.E.SLOW", "SIGNALMAST.Gilroy.E", "SIGNALMAST.778NAB"})
+        self.assertEqual([d.source.split(" ")[0] for d in sm.report.by_code("driver.duplicate")], ["/X/S3"])
+        self.assertEqual(len(sm.processors["Alpha"].drivers["SENSOR.Gilroy.E.SLOW"].syms), 1)
 
     def test_an_encoded_driver_without_kind_has_no_key(self):
         src = jmri_plant()

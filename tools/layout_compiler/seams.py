@@ -92,7 +92,7 @@ class Driver:
     owner: Optional[str] = None                                       # route owner: a processor name or transport/UA
     given: dict[str, str] = field(default_factory=dict)
     kind: str = ""                                                    # an encoded driver's object class: TURNOUT, SENSOR, SIGNALMAST, LIGHT
-    syms: list[Symbol] = field(default_factory=list)                  # every symbol that draws it (a JMRI Turnout: command and feedback)
+    syms: list[Symbol] = field(default_factory=list)                  # every symbol that draws it (a JMRI Turnout: command and feedback, the one merge)
 
 
 @dataclass
@@ -625,12 +625,13 @@ def _drivers(sm: Seams) -> None:
                 continue
             if address in p.drivers:
                 first = p.drivers[address]
-                if ic in ENCODING_OF_IC and first.ic == ic and first.kind == d.kind:
-                    first.syms.append(s)                               # one JMRI object drawn twice: a Turnout's command and its feedback
+                if _one_turnout(sm, first, d):                        # one JMRI Turnout drawn twice: its command and its feedback (the owner, 2026-11-10)
+                    first.syms.append(s)
                     if first.given != d.given:
                         sm.report.error("entity.conflict", f"driver {address} on {p.name}: its symbols state different fields", source=at)
                     continue
-                sm.report.error("driver.duplicate", f"processor {p.name}: two drivers at {address}", source=at)
+                sm.report.error("driver.duplicate", f"processor {p.name}: two drivers at {address}; two objects of one key, which is never a merge "
+                                "unless they are a Turnout's command and feedback", source=at)
             p.drivers[address] = d
     for t in sm.transports.values():
         for n in t.nodes.values():
@@ -640,22 +641,50 @@ def _drivers(sm: Seams) -> None:
                     sm.report.error("node.bytes.range", f"CMRInet Node {n.ua}: {prefix} bit {max(used)} used but {declared} byte(s) declared", source=loc(n.sym))
 
 
+def _one_turnout(sm: Seams, first: Driver, second: Driver) -> bool:
+    """Two symbols at one key are one JMRI object only when they are a Turnout's command and its feedback (the owner,
+    2026-11-10): both encoded, Kind ``TURNOUT``, and their wires reach no common device pin (the command drives M, the
+    feedback reads N and R). Anything else at one key is ``driver.duplicate``."""
+    if first.ic not in ENCODING_OF_IC or second.ic != first.ic or first.kind != "TURNOUT" or second.kind != "TURNOUT":
+        return False
+    touched = [set().union(*(_served(sm, x, quiet=True)[2] for x in d.syms)) for d in (first, second)]
+    return not (touched[0] & touched[1])
+
+
+def _anonymous(o: Symbol) -> bool:
+    """A nameless device that serves under its mast: a head, or a train order lever (the owner, 2026-11-04, 2026-11-08)."""
+    return o.get("Appliance") == "head" or (o.get("Appliance") == "lever" and "train_order" in styles_of(o))
+
+
 def _anonymous_served(sm: Seams, o: Symbol) -> Optional[str]:
-    """The name a nameless head or train order lever serves under: its mast's, reached by its IND wire (the owner,
-    2026-11-04: a head is keyed by the mast pin it is wired to; 2026-11-08: a lever by the face). A JMRI object that
-    serves one is keyed by that mast, as a whole-mast consumer is."""
-    if not (o.get("Appliance") == "head" or (o.get("Appliance") == "lever" and "train_order" in styles_of(o))):
+    """The name a nameless head or train order lever serves under: its mast's name and the mast pin its IND wire reaches,
+    ``Gilroy.E`` (the owner, 2026-11-10: the key carries the facts the wires state; #80's head position = mast pin,
+    applied to the lever too). One mast pin reached, or nothing: two is the device's own finding (``_mast_on_ind``)."""
+    if not _anonymous(o):
         return None
     ind = sm.source.net_of(o.ref, "IND")
-    masts = {key_of(sm.source.symbols[p.ref]) for p in ind.others(o.ref)
+    under = {(key_of(sm.source.symbols[p.ref]), base(p.pin)) for p in ind.others(o.ref)
              if sm.source.symbols[p.ref].role == "DEVICE" and sm.source.symbols[p.ref].get("Appliance") in ("mast", "train_order_mast")} if ind else set()
-    return next(iter(masts)) if len(masts) == 1 and all(masts) else None
+    if len(under) != 1:
+        return None
+    mast, pin = next(iter(under))
+    return f"{mast}.{pin}" if mast else None
 
 
-def _served_device(sm: Seams, s: Symbol) -> Optional[str]:
-    """The one device wired to a driver's function pins; two is an error. A nameless head or train order lever serves
-    under its mast's name (``_anonymous_served``)."""
-    names: set[str] = set()
+def _function_pins(o: Symbol) -> set[str]:
+    """A device's function pins: the ones its library's ``Pin.*`` contract declares, less the IND that places a nameless
+    head or lever under its mast (membership, not a function); a symbol with no contract has its wired pins."""
+    declared = {k[4:] for k in o.fields if k.startswith("Pin.")}
+    if _anonymous(o):
+        declared.discard("IND")
+    return declared
+
+
+def _served(sm: Seams, s: Symbol, quiet: bool = False) -> tuple[Optional[str], Optional[Symbol], set[str]]:
+    """The one device wired to a driver's function pins: the name it serves under (a nameless head or lever under its
+    mast pin, ``_anonymous_served``), the device, and the device pins the driver's wires reach. Two devices is
+    ``driver.serves.two``; none is (None, None, set())."""
+    hits: dict[str, tuple[Symbol, set[str]]] = {}
     for pin, net in sm.source.pins_of(s.ref).items():
         if pin == "IOBus":
             continue
@@ -663,31 +692,45 @@ def _served_device(sm: Seams, s: Symbol) -> Optional[str]:
             o = sm.source.symbols[p.ref]
             if o.role in ("DEVICE", "PANEL"):
                 n = key_of(o) or _anonymous_served(sm, o)
-                if n is None and key_field(o) not in o.fields:
+                if n is None and key_field(o) not in o.fields and not quiet:
                     device_name(o, sm.report)                          # reports the missing key field, as before
                 if n:
-                    names.add(n)
-    if len(names) > 1:
-        sm.report.error("driver.serves.two", f"driver {s.get('IC')} {s.kind} serves two devices: {', '.join(sorted(names))}", source=loc(s))
-        return None
-    return next(iter(names), None)
+                    hits.setdefault(n, (o, set()))[1].add(base(p.pin))
+    if len(hits) > 1:
+        if not quiet:
+            sm.report.error("driver.serves.two", f"driver {s.get('IC')} {s.kind} serves two devices: {', '.join(sorted(hits))}", source=loc(s))
+        return None, None, set()
+    if not hits:
+        return None, None, set()
+    name, (o, pins) = next(iter(hits.items()))
+    return name, o, pins
 
 
 def _encoded_address(sm: Seams, s: Symbol, drawn: str) -> str:
     """An encoded driver (a JMRI object) carries no address of its own: it is keyed by its object class, the symbol's
-    Kind, and the name of the device it serves, ``TURNOUT.777`` (ADR 0005 S4 and R11; the owner, 2026-10-24). A drawn
-    Address overrides that, reported at info."""
-    served = _served_device(sm, s)
+    Kind, and what its wires state (ADR 0005 S4 and R11; the owner, 2026-10-24 and 2026-11-10): the name of the device
+    it serves, ``TURNOUT.777``; a nameless head or train order lever under the mast pin its IND reaches,
+    ``SIGNALMAST.Gilroy.E``; then the device pin the driver is on when the device has several function pins and the
+    driver's net does not reach every one, ``SENSOR.Gilroy.E.STOP`` on a lever with STOP and SLOW, ``SIGNALMAST.778NAB.A``
+    on one position of a double mast, while a whole-mast consumer whose net covers every position keeps
+    ``SIGNALMAST.778NAB``. The pin rule applies to a nameless device and to a mast device's positions; a named
+    appliance (a switch, a track circuit) keeps ``Kind.Name``. A drawn Address is a stated field, written as drawn
+    and reported at info; it is not the key."""
+    served, o, touched = _served(sm, s)
     if drawn:
-        sm.report.info("driver.address.override", f"driver {s.get('IC')} {s.kind}: Address {drawn!r} overrides the served device's name {served!r}", source=loc(s))
-        return drawn
+        sm.report.info("driver.address.override", f"driver {s.get('IC')} {s.kind}: Address {drawn!r} is stated beside the key the wires give, {served!r}", source=loc(s))
     if not s.kind:
         sm.report.missing("driver.kind", f"driver {s.get('IC')} serving {served!r}: no Kind, its object class; it has no key", source=loc(s))
         return ""
     if served is None:
         sm.report.missing("driver.serves", f"driver {s.get('IC')} {s.kind}: wired to no device; it has no key", source=loc(s))
         return ""
-    return f"{s.kind}.{served}"
+    key = f"{s.kind}.{served}"
+    if _anonymous(o) or o.get("Appliance") in ("mast", "train_order_mast"):
+        functions = _function_pins(o)
+        if len(functions) > 1 and touched and not functions <= touched:
+            key += "." + ".".join(sorted(touched, key=lambda x: (len(x), x)))
+    return key
 
 
 def _columns(sm: Seams) -> None:

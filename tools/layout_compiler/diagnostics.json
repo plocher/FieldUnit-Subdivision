@@ -167,7 +167,7 @@
       "level": "error",
       "lifecycle": "active",
       "since": "0.4.0",
-      "feature": null,
+      "feature": "field/driver_encoded.feature#two sensors on one lever pin",
       "replacedBy": null
     },
     "driver.ic": {
