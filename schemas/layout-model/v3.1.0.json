@@ -1419,7 +1419,7 @@
       ]
     },
     "trackSymbol": {
-      "description": "A track row (a joint, an end, a policy sign): its id, its name where it has one (an industry), given (Kind as the libraries spell it, CP, Direction, Interlocking), each side's wire as relations.<side> and each side's circuit as derived.circuits.<side>. Sides are named for what they do (ADR 0012 §8): a signal joint's approach and governed; a policy sign's and a NextCP's track; a plain joint's A and B, and a double signal joint's (IRJ_SIGNALS, ADR 0013 §6: approach and governed are relative to each of its masts, derived on the mast); CTC, DARK, EoT as drawn.",
+      "description": "A track row (a joint, an end, a policy sign): its id, its name where it has one (an industry), given (Kind as the libraries spell it, CP, Direction, Interlocking), each side's wire as relations.<side> and each side's circuit as derived.circuits.<side>. Sides are named for what they do (ADR 0012 §8): a signal joint's approach and governed; a policy sign's and a NextCP's track; a plain joint's A and B, and a double signal joint's (IRJ_SIGNALS, ADR 0013 §6: approach and governed are relative to each of its masts, derived on the mast); an end's EoT as drawn.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -1543,14 +1543,14 @@
           }
         },
         "ends": {
-          "description": "END_CTC, NEXT_CP, BUMPER, INDUSTRY: where the drawn track ends, and what lies beyond.",
+          "description": "NEXT_CP, BUMPER, INDUSTRY: where the drawn track ends, and what lies beyond. A regime boundary is no end: it is a plain IRJ with a GCOR Rule marker on each side (ADR 0013 §7.1), and the track beyond it is in the model under its own regime.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/trackSymbol"
           }
         },
         "policies": {
-          "description": "The policy signs (RULE_105, RULE_251, RULE_261, RULE_93) with their Direction, on the circuit at their pin; and the plates (RULE_290_G, RULE_290_R; ADR 0013 §5), each on a mast (relations.mast) and on no track.",
+          "description": "The policy signs on the circuit at their pin: the regime markers (GCOR_RULE_10, GCOR_RULE_14, GCOR_RULE_16, GCOR_RULE_6_13, GCOR_RULE_6_28; ADR 0013 §7.1, their extent in pieces) and the current-of-traffic sign (GCOR_RULE_9_14 with its Direction; §8); and the plates (RULE_290_G, RULE_290_R; ADR 0013 §5), each on a mast (relations.mast) and on no track.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/trackSymbol"
@@ -1561,6 +1561,13 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/link"
+          }
+        },
+        "pieces": {
+          "description": "The joint-bounded pieces of track this interlocking's track touches, one row each, computed (ADR 0013 §7.1): track connectivity through nets and switch ports across every interlocking, cut at every joint. Each is named as this interlocking names its track (its circuit, an end on it, or track@<pin>), carries its circuit where one names it, and its regime, a GCOR Rule Kind, with how it was found: marker (a GCOR Rule sign on it), interlocking (it is inside interlocking limits: a CONTROLLED mast governs into it or it holds a dispatcher-controlled switch's port; CTC), inherited (across a joint from the piece beside it). A piece with no regime, or whose regime is an error, states none.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/piece"
           }
         },
         "consumers": {
@@ -1592,6 +1599,51 @@
             {
               "additionalProperties": false,
               "properties": {}
+            }
+          ]
+        }
+      }
+    },
+    "piece": {
+      "description": "One joint-bounded piece of track with its regime (ADR 0013 §7.1): computed, never stated.",
+      "type": "object",
+      "required": [
+        "derived"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "required": [
+                "name"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "The piece as this interlocking names its track: its circuit, an end on it (an industry), or track@<pin> when nobody stated a name."
+                },
+                "circuit": {
+                  "$ref": "#/$defs/qualifiedName"
+                },
+                "regime": {
+                  "type": "string",
+                  "pattern": "^GCOR_RULE_[0-9_]+$",
+                  "description": "The GCOR Rule Kind the piece is under; absent when none is found or its regime is an error."
+                },
+                "by": {
+                  "type": "string",
+                  "enum": [
+                    "marker",
+                    "interlocking",
+                    "inherited"
+                  ]
+                }
+              }
             }
           ]
         }

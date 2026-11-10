@@ -86,7 +86,7 @@ TRACKPLAN_ROLES = frozenset({"APPLIANCE", "TRACK", "POLICY"})
 SWITCH_PORTS = ("C", "N", "R")
 DERAIL_PORTS = ("C", "R")
 JOINTS = frozenset({"IRJ", "IRJ_SIGNAL", "IRJ_SIGNALS"})
-ENDS = frozenset({"END_CTC", "NEXT_CP", "BUMPER", "INDUSTRY"})
+ENDS = frozenset({"NEXT_CP", "BUMPER", "INDUSTRY"})                # a regime boundary is a plain IRJ with a marker each side (ADR 0013 §7.1)
 SIGNAL_PINS = frozenset({"SIGNAL", "SIGNAL_A", "SIGNAL_B"})       # a signal joint's pins that carry a mast, never track
 PLATES = frozenset({"RULE_290_G", "RULE_290_R"})                   # a POLICY on a mast's SIGNAL net, not on the track (ADR 0013 §5)
 BOUNDARY_PINS = ("A", "B")                                         # a boundary track circuit's two track pins (ADR 0013 §10)
@@ -122,7 +122,7 @@ def circuit_pins(s: Symbol) -> tuple[str, ...]:
 
 # A track symbol's pin, translated to the side it is (ADR 0012 §8; three-maps D15). Any other pin keeps its name.
 SIDES = {"IRJ_SIGNAL": {"A": "governed", "B": "approach"}, "NEXT_CP": {"To": "track"}}
-POLICY_SIDES = {"To": "track", "Track": "track"}
+POLICY_SIDES = {"To": "track"}
 
 
 def side_of(s: Symbol, pin: str) -> str:

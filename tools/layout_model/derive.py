@@ -37,9 +37,23 @@ names every other track pin its wire reaches, so the relation is symmetric):
   the ``blocks`` library's.
 - **A sign states its rule for the track it stands on** (ADR 0013 §8): a policy row that is not a plate states its
   Kind and Direction as given and the track pins it is on; its circuit is ``derived.circuits.track``. One on no track
-  is ``policy.track`` at missing. A ``RULE_251`` sign's Direction is the current of traffic, ``LEFT`` or ``RIGHT``;
-  any other is ``policy.direction`` at missing. That one block's signs agree with each other and with its masts is
-  the ``blocks`` library's.
+  is ``policy.track`` at missing. A ``GCOR_RULE_9_14`` sign's Direction is the current of traffic, ``LEFT`` or
+  ``RIGHT``; any other is ``policy.direction`` at missing. That one block's signs agree with each other and with its
+  masts is the ``blocks`` library's.
+- **The regime of every piece of track** (ADR 0013 §7.1 and decision 3; the owner, 2026-11-10): the unit is the
+  joint-bounded piece, track connectivity through nets and switch ports across every interlocking, cut at every
+  joint. A piece's regime is the GCOR Rule marker on it (``reference.REGIMES``: CTC, TWC, DTC, yard limits, other
+  than main track; stated, never derived from signals); else CTC when it is interlocking track, inside interlocking
+  limits: a ``CONTROLLED`` mast governs into it or it holds a dispatcher-controlled switch's or derail's port
+  (``grammar.dispatcher_controlled``); else the regime inherited
+  across a joint from the piece beside it, through pieces with none of their own. Errors, not guesses: two different
+  markers on one piece, ``regime.conflict``; a marker other than CTC on interlocking track, ``regime.interlocking``; a
+  piece with no marker reachable from two different regimes, ``regime.ambiguous``. A piece with no regime is
+  ``regime.none`` at missing. A CTC piece whose head-block signals are all ``ABSOLUTE`` is ``regime.absolute`` at
+  warning (§4). Each interlocking's ``track.pieces`` lists the pieces its track touches with the regime and how it
+  was found. A station-to-station block (decision 2) is a piece that holds no dispatcher-controlled switch and is
+  signalled: a ``GCOR_RULE_9_14`` sign, masts facing both ways, or ``ABSOLUTE`` ends; the ``blocks`` library computes
+  it. A regime boundary is a plain joint with a marker each side; the ``END_CTC`` end is retired.
 - **A boundary track circuit** (ADR 0013 §10; ``Appliance track_circuit``, Style ``boundary``) states ``relations.A``
   and ``.B``, the two nets at its joint. It names no circuit: the marker on each net does. Its ``derived.circuits``
   are the circuits on its pins, in A, B order: what it counts toward.
@@ -86,7 +100,8 @@ names every other track pin its wire reaches, so the relation is symmetric):
   TC on it names the component as a marker would (Sargent's 834 joint has ``Corporal:834T`` on its side A). It stays
   ``reference.track`` at error when the joining net holds a dispatcher-controlled switch or derail port of either
   interlocking (``grammar.dispatcher_controlled``: regime ``powered`` or ``dual``): such a switch lies within a
-  control point, never in block track (§4), and interlocking track leaves an interlocking at a NextCP or an END_CTC.
+  control point, never in block track (§4), and interlocking track leaves an interlocking at a NextCP, a regime
+  boundary or an end.
   A ``local`` switch is the crew's, not the dispatcher's, and like a hand-throw, spring or electrically locked
   hand-throw switch it may lie in the block (the owner, 2026-11-09). The net creates no consumer and no indication token: the block's token is the codeline
   library's by R12 (§7.2, §12, §18.1). Blocks and interlocking limits are not computed here (the ``blocks`` library).
@@ -132,7 +147,8 @@ ROW_LISTS = TRACK_LISTS + ("consumers",)          # every row with an id; a cons
 JOINTS = frozenset({"IRJ", "IRJ_SIGNAL", "IRJ_SIGNALS"})
 DOUBLE_SIDES = {"A": "B", "B": "A"}             # a double joint's side to the other (ADR 0013 §6)
 MAST_KINDS = frozenset({"CONTROLLED", "ABSOLUTE", "PERMISSIVE"})   # what a mast states it is (ADR 0013 §5)
-CURRENTS = frozenset({"LEFT", "RIGHT"})                            # a RULE_251 sign's current of traffic (ADR 0013 §8)
+CURRENTS = frozenset({"LEFT", "RIGHT"})                            # a GCOR_RULE_9_14 sign's current of traffic (ADR 0013 §8)
+REGIME_BY = ("marker", "interlocking", "inherited")                # how a piece's regime was found (ADR 0013 §7.1)
 PLATES = frozenset({"RULE_290_G", "RULE_290_R"})                   # a plate on a mast's SIGNAL net (ADR 0013 §5)
 
 
@@ -352,7 +368,7 @@ class _Plan:
             return self.name_of[r], True
         ends = sorted(row["name"] for prefix, (kind, row) in self.rows.items()
                       if kind == "ends" and row.get("name") and not foreign(row["name"], self.name)
-                      and row.get("given", {}).get("Kind") not in ("END_CTC", "NEXT_CP")
+                      and row.get("given", {}).get("Kind") != "NEXT_CP"
                       and any(self.region(f"{prefix}.{side}") == r for side in track_pins(row.get("relations", {}))))
         if ends:
             return ends[0], True
@@ -610,13 +626,8 @@ class _Plan:
                 self.r.add("joint.reversed", f"{self.name}: a signal joint has a switch on its approach side and none on its governed "
                            "side; governed is where the route it protects begins", where)
         for row in self.track.get("ends", []):
-            g, p = row.get("given", {}), self.row_prefix(row)
+            g = row.get("given", {})
             where = self.where("track", "ends", row.get("id", ""))
-            if g.get("Kind") == "END_CTC":
-                pins = track_pins(row.get("relations", {}))
-                if self.circuit(f"{p}.DARK") or ("CTC" in pins and not self.circuit(f"{p}.CTC")):
-                    self.r.add("end_ctc.sides", f"{self.name}: END CTC has {self.circuit(f'{p}.DARK') or 'a circuit'} on DARK or dark "
-                               "track on CTC; CTC is the side under the dispatcher's control", where)
             if g.get("Kind") == "NEXT_CP" and not g.get("Interlocking"):
                 self.r.add("next_cp.interlocking", f"{self.name}: a NextCP states no Interlocking", where)
         for row in self.track.get("policies", []):
@@ -625,8 +636,8 @@ class _Plan:
                 if not track_pins(row.get("relations", {})):
                     self.r.add("policy.track", f"{self.name}: a {g.get('Kind') or 'policy'} sign stands on no track; a sign states its "
                                "rule for the track it stands on (ADR 0013 §8)", where)
-                if g.get("Kind") == "RULE_251" and g.get("Direction") not in CURRENTS:
-                    self.r.add("policy.direction", f"{self.name}: a RULE_251 sign states {'Direction ' + repr(g['Direction']) if g.get('Direction') else 'no Direction'}; "
+                if g.get("Kind") == reference.CURRENT_OF_TRAFFIC and g.get("Direction") not in CURRENTS:
+                    self.r.add("policy.direction", f"{self.name}: a GCOR_RULE_9_14 sign states {'Direction ' + repr(g['Direction']) if g.get('Direction') else 'no Direction'}; "
                                "the current of traffic is LEFT or RIGHT, the lever direction of the signals that govern with it (ADR 0013 §8)", where)
                 continue
             mast = row.get("relations", {}).get("mast")
@@ -830,6 +841,7 @@ class _Derivation:
             plan.checks()
         self.next_cps()
         self.resolve_references()
+        self.regimes()
         self.resolve_consumers()
         self.columns()
         self.devices()
@@ -916,7 +928,7 @@ class _Derivation:
         with no consumer and no token (the block's token is the codeline library's, R12). It is ``reference.track`` at
         error when the joining net holds a dispatcher-controlled switch or derail port of either interlocking: such a
         switch lies within a control point, never in block track (§4), and interlocking track leaves an interlocking
-        at a NextCP or an END_CTC (ADR 0009 §3.12, which §7.1 narrows to interlocking track). A local, hand-throw,
+        at a NextCP, a regime boundary or an end (ADR 0009 §3.12, which §7.1 narrows to interlocking track). A local, hand-throw,
         spring or electrically locked hand-throw switch may lie in the block (the owner, 2026-11-09). A track row named for another interlocking is that error too (the
         owner, 2026-10-28). A circuit named in a field (a switch's TC, a virtual circuit's members) names one that
         exists: an interlocking not in the file is a warning, a circuit missing from one that is an error. Each finding
@@ -931,12 +943,12 @@ class _Derivation:
                         self.r.add("reference.track", f"{a}: {what} {name} joins this interlocking's track to {b}'s on a wire that holds "
                                    f"dispatcher-controlled switch port{'s' if len(controlled) > 1 else ''} {', '.join(controlled)}; a "
                                    "dispatcher-controlled switch or derail (powered or dual) lies within a control point, never in block "
-                                   "track (ADR 0013 §4), and interlocking track leaves an interlocking at a NextCP or an END_CTC "
-                                   "(ADR 0009 §3.12)", where, target + self._appliance_path(b, n))
+                                   "track (ADR 0013 §4), and interlocking track leaves an interlocking at a NextCP, a regime "
+                                   "boundary or an end (ADR 0009 §3.12)", where, target + self._appliance_path(b, n))
                     continue                                              # plain track across sheets: block track (§7.1)
                 if kind == "track":
                     self.r.add("reference.track", f"{a}: {what} {name} joins this interlocking's track to {b}'s; track leaves an "
-                               "interlocking at a NextCP or an END_CTC, and another interlocking's state is only its indications",
+                               "interlocking at a NextCP, a regime boundary or an end, and another interlocking's state is only its indications",
                                where, target + self._appliance_path(b, n))
                     continue
                 if b not in self.plans:
@@ -950,6 +962,140 @@ class _Derivation:
                     self.r.add("reference.unresolved", f"{a}: {what} {name} names {b}, which has no circuit {n}", where, target)
 
     # -------------------------------------------------------------------------------------- office units
+
+    # --------------------------------------------------------------------------------------------- regimes
+
+    def _mast_kind(self, mast: str) -> Optional[str]:
+        b, _, n = mast.partition(":")
+        plan = self.plans.get(b)
+        return plan.appliances.get(n, {}).get("given", {}).get("Kind") if plan else None
+
+    def regimes(self) -> None:
+        """The regime of every joint-bounded piece of track (ADR 0013 §7.1, decision 3; the owner, 2026-11-10). The
+        unit is the piece: track connectivity through nets and switch ports across every interlocking, cut at every
+        joint. A piece's regime is the GCOR Rule marker on it (``reference.REGIMES``); else CTC when it is interlocking
+        track, inside interlocking limits (GCOR glossary: the tracks between outer opposing absolute signals; §13): a
+        ``CONTROLLED`` mast governs into it, or it holds a dispatcher-controlled switch's or derail's port
+        (``grammar.dispatcher_controlled``; GCOR 10.1: sidings within CTC limits are governed by CTC rules); else the
+        regime inherited across joints from
+        the pieces beside it, through pieces with none of their own, so one marker covers a run cut into blocks or
+        circuits. Errors, not guesses: two different markers on one piece are ``regime.conflict``; a marker other than
+        CTC on interlocking track is ``regime.interlocking``; a piece with no marker reachable from two different
+        regimes is ``regime.ambiguous``; such a piece gets no regime and passes none on. A piece with no regime is
+        ``regime.none`` at missing. A CTC piece whose head-block signals (the masts that govern into it) are all
+        ``ABSOLUTE`` is ``regime.absolute`` at warning: an automatic signal gives no authority and Chapter 10 gives
+        signal-indication authority (§4). Each interlocking's ``track.pieces`` lists the pieces its track touches,
+        each named as the interlocking names its track (``piece``), with its circuit, its regime and how it was found
+        (``marker``, ``interlocking``, ``inherited``). The current-of-traffic sign is a direction fact, not a regime,
+        and may share a piece with one (§8)."""
+        union = _Union()
+        for plan in self.plans.values():
+            for node in plan.union.parent:
+                union.add(node)
+                union.join(node, plan.union.find(node))
+        touched: dict[str, dict[str, str]] = defaultdict(dict)                 # piece -> plan -> a node of that plan on it
+        for a in sorted(self.plans):
+            for node in sorted(self.plans[a].union.parent):
+                touched[union.find(node)].setdefault(a, node)
+        stated: dict[str, dict[str, list[str]]] = defaultdict(lambda: defaultdict(list))   # piece -> Kind -> marker paths
+        member: dict[str, dict[str, str]] = defaultdict(dict)                    # piece -> what makes it interlocking track -> its path
+        heads: dict[str, list[tuple[str, Optional[str]]]] = defaultdict(list)   # piece -> (mast, Kind) governing into it
+        adjacent: dict[str, set[str]] = defaultdict(set)
+        for a, plan in self.plans.items():
+            for row in plan.track.get("policies", []):
+                kind, node = row.get("given", {}).get("Kind"), f"{plan.row_prefix(row)}.track"
+                if kind in reference.REGIMES and node in union:
+                    stated[union.find(node)][kind].append(plan.where("track", "policies", row.get("id", "")))
+            for n, app in plan.appliances.items():
+                if dispatcher_controlled(n, plan.appliances):
+                    for p in ports_of(app):
+                        if (node := plan.pin(n, p)) in union:
+                            member[union.find(node)][f"dispatcher-controlled switch {qualify(n, a)}"] = plan.where("appliances", n)
+            for row in plan.track.get("joints", []):
+                kind, p, rel = row.get("given", {}).get("Kind"), plan.row_prefix(row), row.get("relations", {})
+                sides = ("governed", "approach") if kind == "IRJ_SIGNAL" else ("A", "B")
+                roots = [union.find(f"{p}.{s}") for s in sides if f"{p}.{s}" in union]
+                if len(roots) == 2 and roots[0] != roots[1]:
+                    adjacent[roots[0]].add(roots[1])
+                    adjacent[roots[1]].add(roots[0])
+                governs = {"governed": rel.get("mast")} if kind == "IRJ_SIGNAL" else rel.get("masts", {}) if kind == "IRJ_SIGNALS" else {}
+                for side, mast in governs.items():
+                    if mast and f"{p}.{side}" in union:
+                        heads[union.find(f"{p}.{side}")].append((mast, self._mast_kind(mast)))
+        for root, masts in heads.items():                                       # inside a home signal: interlocking limits (ADR 0013 §7.1, §13)
+            for mast, kind in masts:
+                if kind == "CONTROLLED" and mast.partition(":")[0] in self.plans:
+                    member[root][f"controlled signal {mast}"] = self.plans[mast.partition(":")[0]].where("appliances", mast.partition(":")[2])
+
+        def name_of(root: str) -> tuple[str, str]:
+            """The piece's name as the first interlocking on it names it, and that interlocking."""
+            a, node = next(iter(touched[root].items()))
+            return self.plans[a].piece(node)[0] or node, a
+
+        regime: dict[str, tuple[str, str]] = {}                                 # piece -> (Kind, how)
+        broken: set[str] = set()                                                # pieces whose regime is an error: none, and none passed on
+        for root in sorted(stated, key=name_of):
+            kinds, (name, a) = stated[root], name_of(root)
+            paths = tuple(p for k in sorted(kinds) for p in kinds[k])
+            if len(kinds) > 1:
+                self.r.add("regime.conflict", f"{a}: the piece {name} carries two regimes, {' and '.join(sorted(kinds))}; a joint "
+                           "is missing or a marker is wrong (ADR 0013 §7.1)", paths[0], paths[1:])
+                broken.add(root)
+            elif root in member and (kind := next(iter(kinds))) != reference.CTC:
+                self.r.add("regime.interlocking", f"{a}: a {kind} marker stands on {name}, interlocking track "
+                           f"({'; '.join(sorted(member[root]))}); track within interlocking limits is CTC (ADR 0013 §7.1)",
+                           paths[0], paths[1:] + tuple(sorted(set(member[root].values()))))
+                broken.add(root)
+            else:
+                regime[root] = (next(iter(kinds)), "marker")
+        for root in member:
+            if root not in regime and root not in broken:
+                regime[root] = (reference.CTC, "interlocking")
+        reach: dict[str, set[str]] = defaultdict(set)
+        for src, (kind, _) in regime.items():
+            frontier, seen = [src], {src}
+            while frontier:
+                frontier = [n for r in frontier for n in adjacent[r] if n not in seen and n not in regime and n not in broken
+                            and not seen.add(n)]
+                for n in frontier:
+                    reach[n].add(kind)
+        for root in sorted(reach, key=name_of):
+            kinds, (name, a) = reach[root], name_of(root)
+            if len(kinds) == 1:
+                regime[root] = (next(iter(kinds)), "inherited")
+            else:
+                self.r.add("regime.ambiguous", f"{a}: the piece {name} carries no regime marker and is reachable from "
+                           f"{' and '.join(sorted(kinds))}; a marker on it or a boundary beside it is missing (ADR 0013 §7.1)",
+                           self.plans[a].where())
+                broken.add(root)
+        for root in sorted(touched, key=name_of):
+            if root not in regime and root not in broken:
+                name, a = name_of(root)
+                self.r.add("regime.none", f"{a}: the piece {name} is under no regime: no marker on it, no dispatcher-controlled "
+                           "switch, and none to inherit across a joint (ADR 0013 §7.1)", self.plans[a].where())
+        for root in sorted(regime, key=name_of):
+            kind, how = regime[root]
+            if kind == reference.CTC and heads[root] and all(k == "ABSOLUTE" for _, k in heads[root]):
+                name, a = name_of(root)
+                masts = ", ".join(m for m, _ in sorted(heads[root]))
+                self.r.add("regime.absolute", f"{a}: the CTC piece {name} has ABSOLUTE head-block signals ({masts}); an automatic "
+                           "signal gives no authority where Chapter 10 gives signal-indication authority (ADR 0013 §4)",
+                           stated[root][kind][0] if root in stated else self.plans[a].where(),
+                           tuple(self.plans[m.partition(':')[0]].where("appliances", m.partition(":")[2]) for m, _ in sorted(heads[root])
+                                 if m.partition(":")[0] in self.plans))
+        for a, plan in self.plans.items():
+            rows = []
+            for root, plans in touched.items():
+                if a not in plans:
+                    continue
+                node = plans[a]
+                kind, how = regime.get(root, (None, None))
+                rows.append({"derived": _clean({"name": plan.piece(node)[0] or node, "circuit": plan.circuit(node), "regime": kind, "by": how})})
+            rows.sort(key=lambda r: r["derived"]["name"])
+            if rows:
+                plan.track["pieces"] = rows
+            elif "pieces" in plan.track:
+                del plan.track["pieces"]
 
     def _house_by_cp(self, cp: str) -> Optional[tuple[str, str]]:
         hits = [(i, h) for i, ix in self.m.get("interlockings", {}).items() for h in ix.get("houses", {}) if h.casefold() == cp.casefold()]

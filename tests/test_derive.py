@@ -112,7 +112,7 @@ J1     | joints    | Kind=IRJ_SIGNAL rel.mast=X:836NAB
 J2     | joints    | Kind=IRJ_SIGNAL rel.mast=X:836SA
 J3     | joints    | Kind=IRJ_SIGNAL rel.mast=X:836SB
 NX1    | ends      | Kind=NEXT_CP Interlocking=Lick
-R1     | policies  | Kind=RULE_261 Direction=BOTH
+R1     | policies  | Kind=GCOR_RULE_9_14 Direction=RIGHT
 """
 ONE_SWITCH_WIRES = """
 c  | 835.C J1.governed
@@ -148,18 +148,21 @@ class Circuits(unittest.TestCase):
         self.assertEqual(only(diags, "circuit"), [("circuit.names", "X")])
 
     def test_dark_track_has_no_circuit(self):
+        """A regime boundary is a plain joint (ADR 0013 §7.1): the track beyond it is track like any other, with no
+        circuit where nothing names one."""
         things = """
 1  | appliance | Appliance=switch Style=manual
-E1 | ends      | Kind=END_CTC
+J1 | joints    | Kind=IRJ
 2SAT | appliance | Appliance=track_circuit
 I1 | ends      | Kind=INDUSTRY name="Gilroy Industry"
 """
-        out, diags = run(layout(X=interlocking(things, "ctc | E1.CTC 2SAT.TC\ndark | E1.DARK 1.C\nin | I1.EoT 1.N\n", "East")))
+        out, diags = run(layout(X=interlocking(things, "ctc | J1.B 2SAT.TC\ndark | J1.A 1.C\nin | I1.EoT 1.N\n", "East")))
         ix = out["interlockings"]["X"]
-        self.assertEqual(diags, [])
-        self.assertEqual(row(ix, "E1")["derived"], {"circuits": {"CTC": "X:2SAT"}})
+        self.assertEqual(diags, [("regime.none", "X"), ("regime.none", "X")])      # no marker on either piece
+        self.assertEqual(row(ix, "J1")["derived"], {"circuits": {"B": "X:2SAT"}})
         self.assertNotIn("derived", row(ix, "I1"))
         self.assertNotIn("osCircuit", ix["appliances"]["1"]["derived"])
+        self.assertEqual([p["derived"] for p in ix["track"]["pieces"]], [{"name": "X:2SAT", "circuit": "X:2SAT"}, {"name": "X:Gilroy Industry"}])
 
     def test_ports_that_meet_with_no_joint_between_are_a_link(self):
         things = """
@@ -196,11 +199,6 @@ class Checks(unittest.TestCase):
         _, diags = run(layout(X=interlocking(ONE_SWITCH + "J9 | joints | Kind=IRJ\n",
                                              ONE_SWITCH_WIRES.replace("e1 | J2.approach 1SAT.TC", "e1 | J2.approach 1SAT.TC J9.A\ne3 | 1SAT.TC J9.B"), "East")))
         self.assertEqual(only(diags, "joint"), [("joint.loop", "J9")])
-
-    def test_end_ctc_turned_around(self):
-        things = "E1 | ends | Kind=END_CTC\n2SAT | appliance | Appliance=track_circuit\nI1 | ends | Kind=INDUSTRY\n"
-        _, diags = run(layout(X=interlocking(things, "d | E1.DARK 2SAT.TC\nc | E1.CTC I1.EoT\n", "East")))
-        self.assertEqual(diags, [("end_ctc.sides", "E1")])
 
     def test_a_mast_on_no_joint_and_on_two(self):
         _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("rel.mast=X:836SB", ""), ONE_SWITCH_WIRES, "East")))
@@ -538,14 +536,14 @@ class NextCPs(unittest.TestCase):
         b = interlocking("N2 | ends | Kind=NEXT_CP Interlocking=A\n2T | appliance | Appliance=track_circuit\nJ9 | joints | Kind=IRJ\n",
                          "w | N2.track 2T.TC\n", "B", "B")
         out, diags = run(layout(A=a, B=b))
-        self.assertEqual(diags, [("next_cp.drawn", "N1")])
+        self.assertEqual(diags, [("next_cp.drawn", "N1"), ("regime.none", "A")])      # one piece across both sheets, named by A, under no regime
         d = derive.derive(layout(A=a, B=b))[1].by_code("next_cp.drawn")[0]
         self.assertEqual((d.severity, d.entities), ("warning", ("interlockings/A/track/ends/N1", "interlockings/B")))
         self.assertIn("drawn through to B's (B:2T.TC)", d.text)
         self.assertEqual(row(out["interlockings"]["A"], "N1")["derived"]["circuits"], {"track": "B:2T"})
         by_id = interlocking("N1 | ends | Kind=NEXT_CP Interlocking=B\n", "", "A", "A")
         row(by_id, "N1")["relations"] = {"track": ["J9.B"]}                                   # B's unnamed joint, by its id
-        self.assertEqual(run(layout(A=by_id, B=b))[1], [("next_cp.drawn", "N1")])
+        self.assertEqual(run(layout(A=by_id, B=b))[1], [("next_cp.drawn", "N1"), ("regime.none", "A"), ("regime.none", "B")])   # B's joint side is unwired on B's sheet: two pieces
         self.assertEqual(run(pair(1, 1))[1], [])
 
 
@@ -756,7 +754,7 @@ J5   | joints    | Kind=IRJ
 
     def test_a_joining_wire_with_a_dispatcher_controlled_switch_or_derail_is_an_error(self):
         """ADR 0013 §4 and §7.1: a dispatcher-controlled switch or derail (powered or dual) lies within a control point,
-        never in block track, so the wire is interlocking track and leaves an interlocking only at a NextCP or an END_CTC
+        never in block track, so the wire is interlocking track and leaves an interlocking only at a NextCP, a regime boundary or an end
         (ADR 0009 §3.12); a switch the file lacks counts as one. A local switch is the crew's and may lie in the block
         (the owner, 2026-11-09)."""
         self.assertEqual(self.check("", "a | J1.A Y:7.R Y:8.R\n"), [("reference.track", "X"), ("reference.track", "X")])
@@ -1156,7 +1154,7 @@ class SPCoastExample(unittest.TestCase):
         self.assertNotIn("rules", stripped["provenance"])
         out, report = derive.derive(stripped)
         self.assertEqual(layout_model.dumps(out), text)
-        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 0, "missing": 22})   # switch.lever on 13 switches (Watsonville, Gilroy Caltrain 771) and on the locks 777 and 781 with switch.lock.local (no field pair drawn), train_order.device for Gilroy (Railroad 5715653), driver.signal_system on Gilroy's four JMRI signal masts (no SignalSystem drawn yet, #85); the importer's train_order.heads and geometry.head are not the derivation's
+        self.assertEqual(report.counts(), {"error": 3, "warning": 0, "info": 0, "missing": 24})   # regime.interlocking on Corporal's 829T1 and Watsonville's 3T1, regime.ambiguous on Watsonville's 01T (Railroad 0ddd395, awaiting the owner's ruling, #113); switch.lever on 13 switches (Watsonville, Gilroy Caltrain 771) and on the locks 777 and 781 with switch.lock.local (no field pair drawn), regime.none; driver.signal_system on Gilroy's six JMRI signal mast drivers (no SignalSystem drawn yet, #85); the importer's train_order.heads and geometry.head are not the derivation's
 
 
 if __name__ == "__main__":

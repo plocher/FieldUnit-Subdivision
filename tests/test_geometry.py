@@ -45,7 +45,7 @@ def switch_like():
 
 
 # The sides of each track row as the model names them (ADR 0012 §8; three-maps D15); a policy sign's is track.
-SIDES = {"IRJ_SIGNAL": {"approach", "governed"}, "IRJ": {"A", "B"}, "IRJ_SIGNALS": {"A", "B"}, "NEXT_CP": {"track"}, "END_CTC": {"CTC", "DARK"},
+SIDES = {"IRJ_SIGNAL": {"approach", "governed"}, "IRJ": {"A", "B"}, "IRJ_SIGNALS": {"A", "B"}, "NEXT_CP": {"track"},
          "INDUSTRY": {"EoT"}, "BUMPER": {"EoT"}}
 
 
@@ -95,9 +95,9 @@ class TransformRules(unittest.TestCase):
 
     def test_kicad_turns_counter_clockwise_as_seen_on_the_page(self):
         """The probe's fact (2026-10-25): a pin below the origin (library 0,-2.54) turned by 90 lands to the right."""
-        pl = SchematicPlacement("DOT3", "L:Rule261", 189.23, 71.12, 90.0)
+        pl = SchematicPlacement("DOT3", "L:GCOR Rule 9.14 DoT_Left", 189.23, 71.12, 90.0)
         self.assertEqual(tuple(round(v, 2) for v in geometry.kicad_place(pl, (0.0, -2.54))), (191.77, 71.12))
-        pl270 = SchematicPlacement("DOT3", "L:Rule261", 189.23, 71.12, 270.0)
+        pl270 = SchematicPlacement("DOT3", "L:GCOR Rule 9.14 DoT_Left", 189.23, 71.12, 270.0)
         self.assertEqual(tuple(round(v, 2) for v in geometry.kicad_place(pl270, (0.0, -2.54))), (186.69, 71.12))
 
     def test_every_orientation_kicad_can_write_agrees_pin_by_pin(self):

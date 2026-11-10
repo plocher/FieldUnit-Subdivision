@@ -399,7 +399,9 @@ class SPCoastRelationTable(unittest.TestCase):
         gilroy = self.sm.processors["Gilroy"].drivers
         self.assertEqual({k for k in gilroy if "." in k},
                          {"TURNOUT.777", "TURNOUT.781", "SENSOR.777", "SENSOR.781", "SENSOR.01T", "SENSOR.02T", "SENSOR.1SAT", "SENSOR.1NAT",
-                          "SIGNALMAST.778NC", "SIGNALMAST.778SC", "SIGNALMAST.778NAB", "SIGNALMAST.778SAB", "LIGHT.MC1", "LIGHT.MC2"})
+                          "SIGNALMAST.778NC", "SIGNALMAST.778SC", "SIGNALMAST.778NAB", "SIGNALMAST.778SAB", "LIGHT.MC1", "LIGHT.MC2",
+                          "SENSOR.Gilroy.E.STOP", "SENSOR.Gilroy.E.SLOW", "SENSOR.Gilroy.W.STOP", "SENSOR.Gilroy.W.SLOW",   # the train order levers' and heads' keys (the owner, 2026-11-10)
+                          "SIGNALMAST.Gilroy.E", "SIGNALMAST.Gilroy.W"})
         self.assertEqual(len(gilroy["TURNOUT.777"].syms), 2)
         self.assertEqual(self.sm.report.by_code("driver.address"), [])
         masts = [d for ix in self.model["interlockings"].values() for d in ix["devices"] if d["given"]["Appliance"] == "mast"]
