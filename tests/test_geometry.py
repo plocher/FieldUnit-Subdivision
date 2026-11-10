@@ -185,7 +185,7 @@ class SPCoastGeometry(unittest.TestCase):
         cls.model = emit.emit(cls.sm, geometry=cls.geo)
 
     def test_no_geometry_error_and_every_interlocking_has_a_frame(self):
-        self.assertEqual([str(d) for d in self.sm.report.errors], [])
+        self.assertEqual([str(d) for d in self.sm.report.errors if not d.code.startswith("regime.")], [])   # the regime findings are the owner's redraw (#113, #118)
         self.assertEqual(sorted(self.geo.interlockings), sorted(self.sm.interlockings))
 
     def test_model_validates_against_3_1_0_and_round_trips(self):
@@ -219,7 +219,7 @@ class SPCoastGeometry(unittest.TestCase):
                           lambda m: f"({m.group(1)} {round(float(m.group(2)) + dx, 2):g} {round(float(m.group(3)) + dy, 2):g}", body)
             (Path(tmp) / sheet).write_text(head + body, encoding="utf-8")
             moved = geometry.read(self.sm, project_dir=Path(tmp))
-        self.assertEqual([str(d) for d in self.sm.report.errors], [])
+        self.assertEqual([str(d) for d in self.sm.report.errors if not d.code.startswith("regime.")], [])   # the regime findings are the owner's redraw (#113, #118)
         self.assertEqual(layout_model.dumps(moved.interlockings), layout_model.dumps(self.geo.interlockings))
         self.assertEqual(layout_model.dumps(moved.glyphs), layout_model.dumps(self.geo.glyphs))
 
@@ -232,7 +232,7 @@ class SPCoastGeometry(unittest.TestCase):
         Corporal:2NAT; the frame moved with the drawing."""
         g = self.geo.interlockings["Sargent"]
         self.assertEqual(g["appliances"]["835"], {"at": {"x": 78.74, "y": 33.02}, "glyph": "Railroad-Trackplan:Switch_Lock", "mirror": "y"})
-        self.assertEqual(set(g["appliances"]["836NAB"]["heads"]), {"A", "B"})
+        self.assertEqual(set(g["appliances"]["836NAB"]), {"at", "glyph"})                 # a mast's geometry carries no heads since the anonymous-head step (#80; Railroad 9fcf779)
         self.assertEqual(g["appliances"]["836SA"]["rotation"], 180)
         self.assertNotIn("Corporal:2NAT", g["appliances"])                       # no consumer is drawn; 836T is Sargent's own
         self.assertEqual(g["houses"], {"Sargent": {"at": {"x": 80.01, "y": 0.0}, "glyph": "Railroad-Trackplan:House"}})
@@ -240,10 +240,10 @@ class SPCoastGeometry(unittest.TestCase):
         self.assertEqual(len(g["track"]), 6)
         runs = self.model["interlockings"]["Sargent"]["geometry"]["track"]                   # a run's circuit is derived
         self.assertEqual(sorted(t["derived"]["circuit"] for t in runs if "derived" in t),
-                         ["Corporal:834T", "Sargent:1NAT", "Sargent:2SAT", "Sargent:836T"])   # 834T reaches the 834 joint through ToCorporalMT (ADR 0013 §7.1)
-        self.assertEqual(sorted(t["relations"]["from"] for t in runs if "derived" not in t), ["Sargent:1.N", "Sargent:1.R"])   # the Beet Loader spur: dark
+                         ["Corporal:834T", "Sargent:1NAT", "Sargent:1T1", "Sargent:1T1", "Sargent:2SAT", "Sargent:836T"])   # 834T reaches the 834 joint through ToCorporalMT (ADR 0013 §7.1)
+        self.assertEqual(sorted(t["relations"]["from"] for t in runs if t.get("derived", {}).get("circuit") == "Sargent:1T1"), ["Sargent:1.N", "Sargent:1.R"])   # the Beet Loader spur carries switch 1's OS circuit since Railroad 0ddd395 (Switch_Local 1, TC 1T1)
         self.assertIn("label:ToCorporalMT", next(t["relations"].values() for t in runs if t.get("derived", {}).get("circuit") == "Corporal:834T"))
-        self.assertEqual(len(g["markers"]), 12)
+        self.assertEqual(len(g["markers"]), 11)                                  # Railroad 9fcf779 with the owner's uncommitted Sargent edits of 2026-11-10: the 261 sign gone, the boundary a plain IRJ with two GCOR markers
         rows = self.rows("Sargent")
         self.assertEqual(sum(1 for m in g["markers"] if rows[m["row"]]["given"].get("Kind") == "INDUSTRY"), 2)
         self.assertNotIn("mileposts", g)
