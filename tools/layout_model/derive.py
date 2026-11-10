@@ -43,15 +43,16 @@ names every other track pin its wire reaches, so the relation is symmetric):
 - **The regime of every piece of track** (ADR 0013 §7.1 and decision 3; the owner, 2026-11-10): the unit is the
   joint-bounded piece, track connectivity through nets and switch ports across every interlocking, cut at every
   joint. A piece's regime is the GCOR Rule marker on it (``reference.REGIMES``: CTC, TWC, DTC, yard limits, other
-  than main track; stated, never derived from signals); else CTC when it is interlocking track, inside interlocking
-  limits: a ``CONTROLLED`` mast governs into it or it holds a dispatcher-controlled switch's or derail's port
-  (``grammar.dispatcher_controlled``); else the regime inherited
-  across a joint from the piece beside it, through pieces with none of their own. Errors, not guesses: two different
-  markers on one piece, ``regime.conflict``; a marker other than CTC on interlocking track, ``regime.interlocking``; a
-  piece with no marker reachable from two different regimes, ``regime.ambiguous``. A piece with no regime is
-  ``regime.none`` at missing. A CTC piece whose head-block signals are all ``ABSOLUTE`` is ``regime.absolute`` at
-  warning (§4). Each interlocking's ``track.pieces`` lists the pieces its track touches with the regime and how it
-  was found. A station-to-station block (decision 2) is a piece that holds no dispatcher-controlled switch and is
+  than main track; stated, never derived from signals); else the regime inherited across a joint from the piece
+  beside it, through pieces with none of their own. Interlocking track inherits like any other track: a control point
+  can be under a control operator without being under Chapter 10 (GCOR 6.4.2, 9.12.2; the owner, 2026-11-10), so
+  membership in an interlocking is no regime source. Errors, not guesses: two different markers on one piece,
+  ``regime.conflict``; a piece with no marker reachable from two different regimes, ``regime.ambiguous``. A piece
+  with no regime is ``regime.none`` at missing. A CTC piece whose head-block signals are all ``ABSOLUTE`` is
+  ``regime.absolute`` at warning (§4). Interlocking limits (a ``CONTROLLED`` mast governs into the piece, or it holds
+  a dispatcher-controlled switch's or derail's port; §13) are a derived fact independent of regime: which regimes an
+  interlocking's limits lie under is ``regime.limits`` at info, never an error. Each interlocking's ``track.pieces``
+  lists the pieces its track touches with the regime and how it was found. A station-to-station block (decision 2) is a piece that holds no dispatcher-controlled switch and is
   signalled: a ``GCOR_RULE_9_14`` sign, masts facing both ways, or ``ABSOLUTE`` ends; the ``blocks`` library computes
   it. A regime boundary is a plain joint with a marker each side; the ``END_CTC`` end is retired.
 - **A boundary track circuit** (ADR 0013 §10; ``Appliance track_circuit``, Style ``boundary``) states ``relations.A``
@@ -148,7 +149,7 @@ JOINTS = frozenset({"IRJ", "IRJ_SIGNAL", "IRJ_SIGNALS"})
 DOUBLE_SIDES = {"A": "B", "B": "A"}             # a double joint's side to the other (ADR 0013 §6)
 MAST_KINDS = frozenset({"CONTROLLED", "ABSOLUTE", "PERMISSIVE"})   # what a mast states it is (ADR 0013 §5)
 CURRENTS = frozenset({"LEFT", "RIGHT"})                            # a GCOR_RULE_9_14 sign's current of traffic (ADR 0013 §8)
-REGIME_BY = ("marker", "interlocking", "inherited")                # how a piece's regime was found (ADR 0013 §7.1)
+REGIME_BY = ("marker", "inherited")                # how a piece's regime was found (ADR 0013 §7.1)
 PLATES = frozenset({"RULE_290_G", "RULE_290_R"})                   # a plate on a mast's SIGNAL net (ADR 0013 §5)
 
 
@@ -972,21 +973,22 @@ class _Derivation:
     def regimes(self) -> None:
         """The regime of every joint-bounded piece of track (ADR 0013 §7.1, decision 3; the owner, 2026-11-10). The
         unit is the piece: track connectivity through nets and switch ports across every interlocking, cut at every
-        joint. A piece's regime is the GCOR Rule marker on it (``reference.REGIMES``); else CTC when it is interlocking
-        track, inside interlocking limits (GCOR glossary: the tracks between outer opposing absolute signals; §13): a
-        ``CONTROLLED`` mast governs into it, or it holds a dispatcher-controlled switch's or derail's port
-        (``grammar.dispatcher_controlled``; GCOR 10.1: sidings within CTC limits are governed by CTC rules); else the
-        regime inherited across joints from
-        the pieces beside it, through pieces with none of their own, so one marker covers a run cut into blocks or
-        circuits. Errors, not guesses: two different markers on one piece are ``regime.conflict``; a marker other than
-        CTC on interlocking track is ``regime.interlocking``; a piece with no marker reachable from two different
+        joint. A piece's regime is the GCOR Rule marker on it (``reference.REGIMES``); else the regime inherited across
+        joints from the pieces beside it, through pieces with none of their own, so one marker covers a run cut into
+        blocks or circuits, and a siding inside CTC limits is CTC (GCOR 10.1). Interlocking track inherits like any
+        other track: a control point can be under a control operator without being under Chapter 10 (GCOR 6.4.2,
+        9.12.2; the owner, 2026-11-10), so membership in an interlocking is no regime source. Errors, not guesses: two
+        different markers on one piece are ``regime.conflict``; a piece with no marker reachable from two different
         regimes is ``regime.ambiguous``; such a piece gets no regime and passes none on. A piece with no regime is
         ``regime.none`` at missing. A CTC piece whose head-block signals (the masts that govern into it) are all
         ``ABSOLUTE`` is ``regime.absolute`` at warning: an automatic signal gives no authority and Chapter 10 gives
-        signal-indication authority (§4). Each interlocking's ``track.pieces`` lists the pieces its track touches,
-        each named as the interlocking names its track (``piece``), with its circuit, its regime and how it was found
-        (``marker``, ``interlocking``, ``inherited``). The current-of-traffic sign is a direction fact, not a regime,
-        and may share a piece with one (§8)."""
+        signal-indication authority (§4). Interlocking limits are a derived fact independent of regime (GCOR glossary:
+        the tracks between outer opposing absolute signals; §13), read here as a piece a ``CONTROLLED`` mast governs
+        into or that holds a dispatcher-controlled switch's or derail's port (``grammar.dispatcher_controlled``): the
+        regimes those pieces lie under are told at info, ``regime.limits``, one note per interlocking, never an error.
+        Each interlocking's ``track.pieces`` lists the pieces its track touches, each named as the interlocking names
+        its track (``piece``), with its circuit, its regime and how it was found (``marker``, ``inherited``). The
+        current-of-traffic sign is a direction fact, not a regime, and may share a piece with one (§8)."""
         union = _Union()
         for plan in self.plans.values():
             for node in plan.union.parent:
@@ -997,7 +999,7 @@ class _Derivation:
             for node in sorted(self.plans[a].union.parent):
                 touched[union.find(node)].setdefault(a, node)
         stated: dict[str, dict[str, list[str]]] = defaultdict(lambda: defaultdict(list))   # piece -> Kind -> marker paths
-        member: dict[str, dict[str, str]] = defaultdict(dict)                    # piece -> what makes it interlocking track -> its path
+        limits: dict[str, set[str]] = defaultdict(set)                           # piece -> the interlockings whose limits it lies in
         heads: dict[str, list[tuple[str, Optional[str]]]] = defaultdict(list)   # piece -> (mast, Kind) governing into it
         adjacent: dict[str, set[str]] = defaultdict(set)
         for a, plan in self.plans.items():
@@ -1009,7 +1011,7 @@ class _Derivation:
                 if dispatcher_controlled(n, plan.appliances):
                     for p in ports_of(app):
                         if (node := plan.pin(n, p)) in union:
-                            member[union.find(node)][f"dispatcher-controlled switch {qualify(n, a)}"] = plan.where("appliances", n)
+                            limits[union.find(node)].add(a)
             for row in plan.track.get("joints", []):
                 kind, p, rel = row.get("given", {}).get("Kind"), plan.row_prefix(row), row.get("relations", {})
                 sides = ("governed", "approach") if kind == "IRJ_SIGNAL" else ("A", "B")
@@ -1021,10 +1023,10 @@ class _Derivation:
                 for side, mast in governs.items():
                     if mast and f"{p}.{side}" in union:
                         heads[union.find(f"{p}.{side}")].append((mast, self._mast_kind(mast)))
-        for root, masts in heads.items():                                       # inside a home signal: interlocking limits (ADR 0013 §7.1, §13)
+        for root, masts in heads.items():                                       # inside a home signal: interlocking limits (ADR 0013 §13)
             for mast, kind in masts:
                 if kind == "CONTROLLED" and mast.partition(":")[0] in self.plans:
-                    member[root][f"controlled signal {mast}"] = self.plans[mast.partition(":")[0]].where("appliances", mast.partition(":")[2])
+                    limits[root].add(mast.partition(":")[0])
 
         def name_of(root: str) -> tuple[str, str]:
             """The piece's name as the first interlocking on it names it, and that interlocking."""
@@ -1040,16 +1042,8 @@ class _Derivation:
                 self.r.add("regime.conflict", f"{a}: the piece {name} carries two regimes, {' and '.join(sorted(kinds))}; a joint "
                            "is missing or a marker is wrong (ADR 0013 §7.1)", paths[0], paths[1:])
                 broken.add(root)
-            elif root in member and (kind := next(iter(kinds))) != reference.CTC:
-                self.r.add("regime.interlocking", f"{a}: a {kind} marker stands on {name}, interlocking track "
-                           f"({'; '.join(sorted(member[root]))}); track within interlocking limits is CTC (ADR 0013 §7.1)",
-                           paths[0], paths[1:] + tuple(sorted(set(member[root].values()))))
-                broken.add(root)
             else:
                 regime[root] = (next(iter(kinds)), "marker")
-        for root in member:
-            if root not in regime and root not in broken:
-                regime[root] = (reference.CTC, "interlocking")
         reach: dict[str, set[str]] = defaultdict(set)
         for src, (kind, _) in regime.items():
             frontier, seen = [src], {src}
@@ -1082,6 +1076,12 @@ class _Derivation:
                            stated[root][kind][0] if root in stated else self.plans[a].where(),
                            tuple(self.plans[m.partition(':')[0]].where("appliances", m.partition(":")[2]) for m, _ in sorted(heads[root])
                                  if m.partition(":")[0] in self.plans))
+        for a in sorted(self.plans):                                            # which regimes an interlocking's limits lie under: a fact, never an error
+            under = sorted({regime[r][0] for r, names in limits.items() if a in names and r in regime})
+            if under:
+                self.r.add("regime.limits", f"{a}: its interlocking limits lie under {', '.join(under)}"
+                           f"{' (' + ', '.join(reference.REGIMES[k] for k in under) + ')' if all(k in reference.REGIMES for k in under) else ''}",
+                           self.plans[a].where())
         for a, plan in self.plans.items():
             rows = []
             for root, plans in touched.items():
