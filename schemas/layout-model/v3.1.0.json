@@ -1535,7 +1535,7 @@
           }
         },
         "pieces": {
-          "description": "The joint-bounded pieces of track this interlocking's track touches, one row each, computed (ADR 0013 §7.1): track connectivity through nets and switch ports across every interlocking, cut at every joint. Each is named as this interlocking names its track (its circuit, an end on it, or track@<pin>), carries its circuit where one names it, and its regime, a GCOR Rule Kind, with how it was found: marker (a GCOR Rule sign on it), interlocking (it is inside interlocking limits: a CONTROLLED mast governs into it or it holds a dispatcher-controlled switch's port; CTC), inherited (across a joint from the piece beside it). A piece with no regime, or whose regime is an error, states none.",
+          "description": "The joint-bounded pieces of track this interlocking's track touches, one row each, computed (ADR 0013 §7.1): track connectivity through nets and switch ports across every interlocking, cut at every joint. Each is named as this interlocking names its track (its circuit, an end on it, or track@<pin>), carries its circuit where one names it, and its regime, a GCOR Rule Kind, with how it was found: marker (a GCOR Rule sign on it) or inherited (across a joint from the piece beside it; interlocking track inherits like any other track, the owner 2026-11-10). A piece with no regime, or whose regime is an error, states none.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/piece"
@@ -1610,7 +1610,6 @@
                   "type": "string",
                   "enum": [
                     "marker",
-                    "interlocking",
                     "inherited"
                   ]
                 }
