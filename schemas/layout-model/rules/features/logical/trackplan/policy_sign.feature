@@ -6,9 +6,11 @@ Feature: A sign states its rule for the track it stands on
   The regime of a piece of track (CTC, TWC, DTC, yard limits, other than main track) is a GCOR
   Rule marker on it, since no arrangement of signals implies it; its extent is derived as a track
   circuit's is. The unit is the joint-bounded piece. A piece's regime is the marker on it; else
-  CTC, when it is interlocking track, inside interlocking limits (a controlled signal governs into
-  it, or it holds a dispatcher-controlled switch); else what it inherits across a joint from the
-  piece beside it, so one marker covers a run cut into blocks or circuits. A regime boundary is a plain joint with a marker on each side; the track beyond it
+  what it inherits across a joint from the piece beside it, so one marker covers a run cut into
+  blocks or circuits, and a siding inside CTC limits is CTC. Interlocking track inherits like any
+  other track: a control point can be under a control operator without being under the CTC
+  rulebook (GCOR 6.4.2, 9.12.2), so which regime an interlocking lies under is a fact the model
+  tells, never an error. A regime boundary is a plain joint with a marker on each side; the track beyond it
   is in the model under its own regime. Errors, not guesses. That the signs of one block agree with
   each other and with its masts is the blocks library's. (ADR 0013 §7.1, §8, decision 3)
 
@@ -133,7 +135,7 @@ Feature: A sign states its rule for the track it stands on
     And it is not reported
 
   @regime.ambiguous
-  Scenario: track within a control point is CTC, and plain track beside it inherits across the joint
+  Scenario: one marker covers the control point and the track beside it, across the joints
     Given interlocking "X" has these appliances:
       | Name | Appliance     | Style   | TC    | CP Name |
       | 835  | switch        | powered | 835T1 | East    |
@@ -142,15 +144,18 @@ Feature: A sign states its rule for the track it stands on
       | Id | Kind |
       | J1 | IRJ  |
       | J2 | IRJ  |
+    And interlocking "X" has these policies:
+      | Id | Kind         |
+      | R1 | GCOR_RULE_10 |
     And interlocking "X" has these wires:
-      | Wire | Pins         |
-      | c    | 835.C J1.A   |
-      | a    | J1.B 1NAT.TC |
-      | n    | 835.N J2.A   |
-      | b    | J2.B 2NAT.TC |
+      | Wire | Pins                  |
+      | c    | 835.C J1.A            |
+      | a    | J1.B 1NAT.TC R1.track |
+      | n    | 835.N J2.A            |
+      | b    | J2.B 2NAT.TC          |
     When the layout is derived
-    Then the piece "X:835T1" is under regime "GCOR_RULE_10" by its interlocking
-    And the piece "X:1NAT" is under regime "GCOR_RULE_10" by inheritance
+    Then the piece "X:1NAT" is under regime "GCOR_RULE_10" by a marker
+    And the piece "X:835T1" is under regime "GCOR_RULE_10" by inheritance
     And the piece "X:2NAT" is under regime "GCOR_RULE_10" by inheritance
     And it is not reported
 
@@ -167,26 +172,8 @@ Feature: A sign states its rule for the track it stands on
     Then it is reported as an error on "R1"
     And the piece "X:1NAT" is under no regime
 
-  @regime.interlocking
-  Scenario: the track a controlled signal governs into is interlocking track, whatever its switch
-    Given interlocking "X" has these appliances:
-      | Name  | Appliance | Style  | TC    | CP Name | Kind       |
-      | 835   | switch    | lock   | 835T1 | East    |            |
-      | 836NA | mast      | single |       | East    | CONTROLLED |
-    And interlocking "X" has these joints:
-      | Id | Kind       | relations.mast |
-      | J1 | IRJ_SIGNAL | X:836NA        |
-    And interlocking "X" has these wires:
-      | Wire | Pins                |
-      | c    | 835.C J1.governed   |
-      | a    | J1.approach 1NAT.TC |
-    When the layout is derived
-    Then the piece "X:835T1" is under regime "GCOR_RULE_10" by its interlocking
-    And the piece "X:1NAT" is under regime "GCOR_RULE_10" by inheritance
-    And it is not reported
-
-  @regime.interlocking
-  Scenario: a marker other than CTC inside the home signal is an error
+  @regime.limits
+  Scenario: a lock switch inside the home signal inherits the regime from the track beside it, like any track
     Given interlocking "X" has these appliances:
       | Name  | Appliance | Style  | TC    | CP Name | Kind       |
       | 835   | switch    | lock   | 835T1 | East    |            |
@@ -195,29 +182,50 @@ Feature: A sign states its rule for the track it stands on
       | Id | Kind       | relations.mast |
       | J1 | IRJ_SIGNAL | X:836NA        |
     And interlocking "X" has these policies:
-      | Id | Kind           |
-      | R1 | GCOR_RULE_6_28 |
+      | Id | Kind         |
+      | R1 | GCOR_RULE_10 |
     And interlocking "X" has these wires:
-      | Wire | Pins                       |
-      | c    | 835.C J1.governed R1.track |
-      | a    | J1.approach 1NAT.TC        |
+      | Wire | Pins                         |
+      | c    | 835.C J1.governed            |
+      | a    | J1.approach 1NAT.TC R1.track |
     When the layout is derived
-    Then it is reported as an error on "R1"
+    Then the piece "X:835T1" is under regime "GCOR_RULE_10" by inheritance
+    And it is reported as information on "X"
 
-  @regime.interlocking
-  Scenario: a marker on interlocking track that is not CTC is an error
+  @regime.limits
+  Scenario: a powered switch under yard limits is a fact of the drawing, not a defect
     Given interlocking "X" has these appliances:
-      | Name | Appliance | Style   | TC    | CP Name |
-      | 835  | switch    | powered | 835T1 | East    |
+      | Name  | Appliance | Style   | TC  | CP Name | Kind       |
+      | 3     | switch    | powered | 3T1 | East    |            |
+      | 840NA | mast      | single  |     | East    | CONTROLLED |
+    And interlocking "X" has these joints:
+      | Id | Kind       | relations.mast |
+      | J1 | IRJ_SIGNAL | X:840NA        |
     And interlocking "X" has these policies:
       | Id | Kind           |
       | R1 | GCOR_RULE_6_13 |
     And interlocking "X" has these wires:
-      | Wire | Pins           |
-      | c    | 835.C R1.track |
+      | Wire | Pins                     |
+      | c    | 3.N J1.governed R1.track |
+      | a    | J1.approach 1NAT.TC      |
     When the layout is derived
-    Then it is reported as an error on "R1"
-    And the piece "X:835T1" is under no regime
+    Then the piece "X:3T1" is under regime "GCOR_RULE_6_13" by a marker
+    And the piece "X:1NAT" is under regime "GCOR_RULE_6_13" by inheritance
+    And it is reported as information on "X"
+
+  @regime.limits
+  Scenario: an interlocking is told which regime its limits lie under
+    Given interlocking "X" has these appliances:
+      | Name | Appliance | Style   | TC    | CP Name |
+      | 835  | switch    | powered | 835T1 | East    |
+    And interlocking "X" has these policies:
+      | Id | Kind         |
+      | R1 | GCOR_RULE_10 |
+    And interlocking "X" has these wires:
+      | Wire | Pins             |
+      | c    | 835.C R1.track   |
+    When the layout is derived
+    Then it is reported as information on "X"
 
   @regime.ambiguous
   Scenario: a piece with no marker between two regimes is an error

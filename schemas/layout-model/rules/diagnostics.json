@@ -415,11 +415,11 @@
       "feature": "logical/trackplan/policy_sign.feature#two regimes on one piece is an error",
       "replacedBy": null
     },
-    "regime.interlocking": {
-      "level": "error",
+    "regime.limits": {
+      "level": "info",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": "logical/trackplan/policy_sign.feature#a marker on interlocking track that is not CTC is an error",
+      "feature": "logical/trackplan/policy_sign.feature#an interlocking is told which regime its limits lie under",
       "replacedBy": null
     },
     "regime.none": {

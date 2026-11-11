@@ -210,7 +210,7 @@ def sign_on(context, rid, circuit):
     assert got == {"track": circuit}, f"{rid}: derived circuits are {got!r}"
 
 
-BY = {"a marker": "marker", "its interlocking": "interlocking", "inheritance": "inherited"}
+BY = {"a marker": "marker", "inheritance": "inherited"}
 
 
 def _piece(context, name: str) -> dict:

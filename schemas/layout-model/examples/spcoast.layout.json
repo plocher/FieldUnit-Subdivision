@@ -1308,7 +1308,7 @@
               "by": "inherited",
               "circuit": "Christopher:1NAT",
               "name": "Christopher:1NAT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_28"
             }
           },
           {
@@ -1316,7 +1316,7 @@
               "by": "inherited",
               "circuit": "Christopher:1SAT",
               "name": "Christopher:1SAT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_28"
             }
           },
           {
@@ -1324,7 +1324,7 @@
               "by": "inherited",
               "circuit": "Christopher:2NAT",
               "name": "Christopher:2NAT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_28"
             }
           },
           {
@@ -1332,39 +1332,39 @@
               "by": "inherited",
               "circuit": "Christopher:2SAT",
               "name": "Christopher:2SAT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_28"
             }
           },
           {
             "derived": {
-              "by": "interlocking",
+              "by": "inherited",
               "circuit": "Christopher:813T1",
               "name": "Christopher:813T1",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_28"
             }
           },
           {
             "derived": {
-              "by": "interlocking",
+              "by": "inherited",
               "circuit": "Christopher:815AT1",
               "name": "Christopher:815AT1",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_28"
             }
           },
           {
             "derived": {
-              "by": "interlocking",
+              "by": "inherited",
               "circuit": "Christopher:815T1",
               "name": "Christopher:815T1",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_28"
             }
           },
           {
             "derived": {
-              "by": "interlocking",
+              "by": "inherited",
               "circuit": "Christopher:817T1",
               "name": "Christopher:817T1",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_28"
             }
           },
           {
@@ -2834,33 +2834,9 @@
           {
             "derived": {
               "by": "inherited",
-              "circuit": "Corporal:1SAT",
-              "name": "Corporal:1SAT",
-              "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
-              "by": "inherited",
-              "circuit": "Corporal:832T",
-              "name": "Corporal:832T",
-              "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
-              "by": "inherited",
-              "circuit": "Corporal:834T",
-              "name": "Corporal:834T",
-              "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
-              "by": "interlocking",
-              "circuit": "Corporal:831T1",
-              "name": "Corporal:831T1",
-              "regime": "GCOR_RULE_10"
+              "circuit": "Corporal:2SAT",
+              "name": "Corporal:2SAT",
+              "regime": "GCOR_RULE_6_28"
             }
           },
           {
@@ -2881,14 +2857,34 @@
           },
           {
             "derived": {
-              "circuit": "Corporal:2SAT",
-              "name": "Corporal:2SAT"
+              "by": "marker",
+              "circuit": "Corporal:829T1",
+              "name": "Corporal:829T1",
+              "regime": "GCOR_RULE_6_28"
             }
           },
           {
             "derived": {
-              "circuit": "Corporal:829T1",
-              "name": "Corporal:829T1"
+              "circuit": "Corporal:1SAT",
+              "name": "Corporal:1SAT"
+            }
+          },
+          {
+            "derived": {
+              "circuit": "Corporal:831T1",
+              "name": "Corporal:831T1"
+            }
+          },
+          {
+            "derived": {
+              "circuit": "Corporal:832T",
+              "name": "Corporal:832T"
+            }
+          },
+          {
+            "derived": {
+              "circuit": "Corporal:834T",
+              "name": "Corporal:834T"
             }
           }
         ],
@@ -4031,7 +4027,7 @@
               "by": "inherited",
               "circuit": "Gilroy:1NAT",
               "name": "Gilroy:1NAT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_28"
             }
           },
           {
@@ -4039,7 +4035,7 @@
               "by": "inherited",
               "circuit": "Gilroy:1SAT",
               "name": "Gilroy:1SAT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_28"
             }
           },
           {
@@ -4047,23 +4043,23 @@
               "by": "inherited",
               "circuit": "Gilroy:02T",
               "name": "Gilroy:02T",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_28"
             }
           },
           {
             "derived": {
-              "by": "interlocking",
+              "by": "inherited",
               "circuit": "Gilroy:777T1",
               "name": "Gilroy:777T1",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_28"
             }
           },
           {
             "derived": {
-              "by": "interlocking",
+              "by": "inherited",
               "circuit": "Gilroy:781T1",
               "name": "Gilroy:781T1",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_28"
             }
           },
           {
@@ -5206,7 +5202,7 @@
               "by": "inherited",
               "circuit": "Gilroy Caltrain:1NAT",
               "name": "Gilroy Caltrain:1NAT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -5214,31 +5210,31 @@
               "by": "inherited",
               "circuit": "Gilroy Caltrain:1SAT",
               "name": "Gilroy Caltrain:1SAT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
             "derived": {
-              "by": "interlocking",
+              "by": "inherited",
               "circuit": "Gilroy Caltrain:771T1",
               "name": "Gilroy Caltrain:771T1",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
             "derived": {
-              "by": "interlocking",
+              "by": "inherited",
               "circuit": "Gilroy Caltrain:773T1",
               "name": "Gilroy Caltrain:773T1",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
             "derived": {
-              "by": "interlocking",
+              "by": "inherited",
               "circuit": "Gilroy Caltrain:775T1",
               "name": "Gilroy Caltrain:775T1",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -6754,7 +6750,7 @@
           },
           {
             "derived": {
-              "by": "interlocking",
+              "by": "inherited",
               "circuit": "Luchessa:783T1",
               "name": "Luchessa:783T1",
               "regime": "GCOR_RULE_10"
@@ -6762,7 +6758,7 @@
           },
           {
             "derived": {
-              "by": "interlocking",
+              "by": "inherited",
               "circuit": "Luchessa:795T1",
               "name": "Luchessa:795T1",
               "regime": "GCOR_RULE_10"
@@ -6770,7 +6766,7 @@
           },
           {
             "derived": {
-              "by": "interlocking",
+              "by": "inherited",
               "circuit": "Luchessa:799T1",
               "name": "Luchessa:799T1",
               "regime": "GCOR_RULE_10"
@@ -7824,38 +7820,6 @@
         "pieces": [
           {
             "derived": {
-              "by": "inherited",
-              "circuit": "Corporal:834T",
-              "name": "Corporal:834T",
-              "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
-              "by": "inherited",
-              "circuit": "Sargent:1NAT",
-              "name": "Sargent:1NAT",
-              "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
-              "by": "inherited",
-              "circuit": "Sargent:836T",
-              "name": "Sargent:836T",
-              "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
-              "by": "interlocking",
-              "circuit": "Sargent:835T1",
-              "name": "Sargent:835T1",
-              "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
               "by": "marker",
               "circuit": "Sargent:1T1",
               "name": "Sargent:1T1",
@@ -7868,6 +7832,30 @@
               "circuit": "Sargent:2SAT",
               "name": "Sargent:2SAT",
               "regime": "GCOR_RULE_10"
+            }
+          },
+          {
+            "derived": {
+              "circuit": "Corporal:834T",
+              "name": "Corporal:834T"
+            }
+          },
+          {
+            "derived": {
+              "circuit": "Sargent:1NAT",
+              "name": "Sargent:1NAT"
+            }
+          },
+          {
+            "derived": {
+              "circuit": "Sargent:835T1",
+              "name": "Sargent:835T1"
+            }
+          },
+          {
+            "derived": {
+              "circuit": "Sargent:836T",
+              "name": "Sargent:836T"
             }
           }
         ],
@@ -8113,7 +8101,6 @@
           },
           "relations": {
             "C": [
-              "3b6b0a42-dfd3-404a-b9c9-c2a85ef712be.track",
               "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.B"
             ],
             "N": [
@@ -8201,7 +8188,8 @@
             "TC": [
               "1d2e57a4-2962-4c91-97d5-0b1932abf784.track",
               "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
-              "293515f7-9155-4100-a639-23f6d051ab4e.approach"
+              "293515f7-9155-4100-a639-23f6d051ab4e.approach",
+              "67636818-c46b-4590-ae77-42eaa941c41a.track"
             ]
           }
         },
@@ -8785,10 +8773,12 @@
               "fa08f12d-ce74-4c72-a82e-c48292c8ba79.governed"
             ],
             "N": [
-              "293515f7-9155-4100-a639-23f6d051ab4e.governed"
+              "293515f7-9155-4100-a639-23f6d051ab4e.governed",
+              "f09a5424-4540-468b-a372-0a6b05246674.track"
             ],
             "R": [
-              "3478e3b9-eb36-424c-bb66-b3db1669812d.governed"
+              "3478e3b9-eb36-424c-bb66-b3db1669812d.governed",
+              "f0816e4c-bb4d-4002-b1ed-6cd0949417c1.track"
             ]
           }
         },
@@ -10411,6 +10401,15 @@
               "x": 22.86,
               "y": 11.43
             },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 BEGIN_CTC",
+            "mirror": "y",
+            "row": "f09a5424-4540-468b-a372-0a6b05246674"
+          },
+          {
+            "at": {
+              "x": 22.86,
+              "y": 11.43
+            },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "row": "293515f7-9155-4100-a639-23f6d051ab4e"
           },
@@ -10421,6 +10420,15 @@
             },
             "glyph": "Railroad-Trackplan:GCOR Rule 9.14 DoT_Left",
             "row": "1d2e57a4-2962-4c91-97d5-0b1932abf784"
+          },
+          {
+            "at": {
+              "x": 29.21,
+              "y": 24.13
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 BEGIN_CTC",
+            "mirror": "y",
+            "row": "f0816e4c-bb4d-4002-b1ed-6cd0949417c1"
           },
           {
             "at": {
@@ -10452,16 +10460,16 @@
               "x": 43.18,
               "y": 11.43
             },
-            "glyph": "Railroad-Trackplan:IRJ",
-            "row": "78d813b1-144a-4e54-8d3d-0a64f49eb2d6"
+            "glyph": "Railroad-Trackplan:GCOR Rule 6.13 Yard Limits",
+            "row": "67636818-c46b-4590-ae77-42eaa941c41a"
           },
           {
             "at": {
-              "x": 45.72,
+              "x": 43.18,
               "y": 11.43
             },
-            "glyph": "Railroad-Trackplan:GCOR Rule 6.13 Yard Limits",
-            "row": "3b6b0a42-dfd3-404a-b9c9-c2a85ef712be"
+            "glyph": "Railroad-Trackplan:IRJ",
+            "row": "78d813b1-144a-4e54-8d3d-0a64f49eb2d6"
           },
           {
             "at": {
@@ -11734,10 +11742,10 @@
               "A": [
                 "1d2e57a4-2962-4c91-97d5-0b1932abf784.track",
                 "293515f7-9155-4100-a639-23f6d051ab4e.approach",
+                "67636818-c46b-4590-ae77-42eaa941c41a.track",
                 "Watsonville:03T.TC"
               ],
               "B": [
-                "3b6b0a42-dfd3-404a-b9c9-c2a85ef712be.track",
                 "Watsonville:3.C"
               ]
             }
@@ -12364,6 +12372,7 @@
                 "Watsonville:02T.TC"
               ],
               "governed": [
+                "f0816e4c-bb4d-4002-b1ed-6cd0949417c1.track",
                 "Watsonville:837.R"
               ],
               "mast": "Watsonville:838NCD"
@@ -12410,9 +12419,11 @@
               "approach": [
                 "1d2e57a4-2962-4c91-97d5-0b1932abf784.track",
                 "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
+                "67636818-c46b-4590-ae77-42eaa941c41a.track",
                 "Watsonville:03T.TC"
               ],
               "governed": [
+                "f09a5424-4540-468b-a372-0a6b05246674.track",
                 "Watsonville:837.N"
               ],
               "mast": "Watsonville:838NAB"
@@ -12543,7 +12554,7 @@
               "by": "inherited",
               "circuit": "Watsonville:1BT",
               "name": "Watsonville:1BT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12551,7 +12562,7 @@
               "by": "inherited",
               "circuit": "Watsonville:1CT",
               "name": "Watsonville:1CT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12559,7 +12570,7 @@
               "by": "inherited",
               "circuit": "Watsonville:1DT",
               "name": "Watsonville:1DT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12567,7 +12578,15 @@
               "by": "inherited",
               "circuit": "Watsonville:1ET",
               "name": "Watsonville:1ET",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "inherited",
+              "circuit": "Watsonville:01T",
+              "name": "Watsonville:01T",
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12575,7 +12594,7 @@
               "by": "inherited",
               "circuit": "Watsonville:2AT",
               "name": "Watsonville:2AT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12583,7 +12602,7 @@
               "by": "inherited",
               "circuit": "Watsonville:2BT",
               "name": "Watsonville:2BT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12591,7 +12610,7 @@
               "by": "inherited",
               "circuit": "Watsonville:2CT",
               "name": "Watsonville:2CT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12599,7 +12618,7 @@
               "by": "inherited",
               "circuit": "Watsonville:2DT",
               "name": "Watsonville:2DT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12607,7 +12626,7 @@
               "by": "inherited",
               "circuit": "Watsonville:2ET",
               "name": "Watsonville:2ET",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12615,7 +12634,7 @@
               "by": "inherited",
               "circuit": "Watsonville:3BT",
               "name": "Watsonville:3BT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12623,7 +12642,7 @@
               "by": "inherited",
               "circuit": "Watsonville:3CT",
               "name": "Watsonville:3CT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12631,7 +12650,7 @@
               "by": "inherited",
               "circuit": "Watsonville:3DT",
               "name": "Watsonville:3DT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12639,15 +12658,15 @@
               "by": "inherited",
               "circuit": "Watsonville:3ET",
               "name": "Watsonville:3ET",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
             "derived": {
               "by": "inherited",
-              "circuit": "Watsonville:03T",
-              "name": "Watsonville:03T",
-              "regime": "GCOR_RULE_10"
+              "circuit": "Watsonville:3T1",
+              "name": "Watsonville:3T1",
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12655,7 +12674,7 @@
               "by": "inherited",
               "circuit": "Watsonville:4BT",
               "name": "Watsonville:4BT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12663,7 +12682,7 @@
               "by": "inherited",
               "circuit": "Watsonville:4CT",
               "name": "Watsonville:4CT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12671,7 +12690,7 @@
               "by": "inherited",
               "circuit": "Watsonville:4DT",
               "name": "Watsonville:4DT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12679,7 +12698,7 @@
               "by": "inherited",
               "circuit": "Watsonville:4ET",
               "name": "Watsonville:4ET",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12687,7 +12706,7 @@
               "by": "inherited",
               "circuit": "Watsonville:5BT",
               "name": "Watsonville:5BT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12695,7 +12714,7 @@
               "by": "inherited",
               "circuit": "Watsonville:5CT",
               "name": "Watsonville:5CT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12703,7 +12722,7 @@
               "by": "inherited",
               "circuit": "Watsonville:5DT",
               "name": "Watsonville:5DT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12711,7 +12730,15 @@
               "by": "inherited",
               "circuit": "Watsonville:5ET",
               "name": "Watsonville:5ET",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "inherited",
+              "circuit": "Watsonville:5T1",
+              "name": "Watsonville:5T1",
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12719,7 +12746,7 @@
               "by": "inherited",
               "circuit": "Watsonville:6BT",
               "name": "Watsonville:6BT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12727,7 +12754,7 @@
               "by": "inherited",
               "circuit": "Watsonville:6CT",
               "name": "Watsonville:6CT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12735,7 +12762,7 @@
               "by": "inherited",
               "circuit": "Watsonville:6DT",
               "name": "Watsonville:6DT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12743,7 +12770,7 @@
               "by": "inherited",
               "circuit": "Watsonville:6ET",
               "name": "Watsonville:6ET",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12751,7 +12778,7 @@
               "by": "inherited",
               "circuit": "Watsonville:7BT",
               "name": "Watsonville:7BT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12759,7 +12786,7 @@
               "by": "inherited",
               "circuit": "Watsonville:7CT",
               "name": "Watsonville:7CT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12767,7 +12794,7 @@
               "by": "inherited",
               "circuit": "Watsonville:7DT",
               "name": "Watsonville:7DT",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -12775,109 +12802,93 @@
               "by": "inherited",
               "circuit": "Watsonville:7ET",
               "name": "Watsonville:7ET",
-              "regime": "GCOR_RULE_10"
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "inherited",
+              "circuit": "Watsonville:7T1",
+              "name": "Watsonville:7T1",
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "inherited",
+              "circuit": "Watsonville:9T1",
+              "name": "Watsonville:9T1",
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "inherited",
+              "circuit": "Watsonville:11T1",
+              "name": "Watsonville:11T1",
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "inherited",
+              "circuit": "Watsonville:13T1",
+              "name": "Watsonville:13T1",
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "inherited",
+              "circuit": "Watsonville:15T1",
+              "name": "Watsonville:15T1",
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "inherited",
+              "circuit": "Watsonville:17T1",
+              "name": "Watsonville:17T1",
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "inherited",
+              "circuit": "Watsonville:19T1",
+              "name": "Watsonville:19T1",
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "inherited",
+              "circuit": "Watsonville:21T1",
+              "name": "Watsonville:21T1",
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "inherited",
+              "circuit": "Watsonville:23T1",
+              "name": "Watsonville:23T1",
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "inherited",
+              "circuit": "Watsonville:25T1",
+              "name": "Watsonville:25T1",
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
             "derived": {
               "by": "inherited",
               "name": "track@65d2c920-24a5-4b01-a780-2a5a06a0350e.track",
-              "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
-              "by": "interlocking",
-              "circuit": "Watsonville:5T1",
-              "name": "Watsonville:5T1",
-              "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
-              "by": "interlocking",
-              "circuit": "Watsonville:7T1",
-              "name": "Watsonville:7T1",
-              "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
-              "by": "interlocking",
-              "circuit": "Watsonville:9T1",
-              "name": "Watsonville:9T1",
-              "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
-              "by": "interlocking",
-              "circuit": "Watsonville:11T1",
-              "name": "Watsonville:11T1",
-              "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
-              "by": "interlocking",
-              "circuit": "Watsonville:13T1",
-              "name": "Watsonville:13T1",
-              "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
-              "by": "interlocking",
-              "circuit": "Watsonville:15T1",
-              "name": "Watsonville:15T1",
-              "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
-              "by": "interlocking",
-              "circuit": "Watsonville:17T1",
-              "name": "Watsonville:17T1",
-              "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
-              "by": "interlocking",
-              "circuit": "Watsonville:19T1",
-              "name": "Watsonville:19T1",
-              "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
-              "by": "interlocking",
-              "circuit": "Watsonville:21T1",
-              "name": "Watsonville:21T1",
-              "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
-              "by": "interlocking",
-              "circuit": "Watsonville:23T1",
-              "name": "Watsonville:23T1",
-              "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
-              "by": "interlocking",
-              "circuit": "Watsonville:25T1",
-              "name": "Watsonville:25T1",
-              "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
-              "by": "interlocking",
-              "circuit": "Watsonville:837T1",
-              "name": "Watsonville:837T1",
               "regime": "GCOR_RULE_10"
             }
           },
@@ -12891,14 +12902,18 @@
           },
           {
             "derived": {
-              "circuit": "Watsonville:01T",
-              "name": "Watsonville:01T"
+              "by": "marker",
+              "circuit": "Watsonville:03T",
+              "name": "Watsonville:03T",
+              "regime": "GCOR_RULE_6_13"
             }
           },
           {
             "derived": {
-              "circuit": "Watsonville:3T1",
-              "name": "Watsonville:3T1"
+              "by": "marker",
+              "circuit": "Watsonville:837T1",
+              "name": "Watsonville:837T1",
+              "regime": "GCOR_RULE_10"
             }
           }
         ],
@@ -12945,23 +12960,6 @@
           {
             "derived": {
               "circuits": {
-                "track": "Watsonville:3T1"
-              }
-            },
-            "given": {
-              "Kind": "GCOR_RULE_6_13"
-            },
-            "id": "3b6b0a42-dfd3-404a-b9c9-c2a85ef712be",
-            "relations": {
-              "track": [
-                "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.B",
-                "Watsonville:3.C"
-              ]
-            }
-          },
-          {
-            "derived": {
-              "circuits": {
                 "track": "Watsonville:03T"
               }
             },
@@ -12974,7 +12972,61 @@
               "track": [
                 "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
                 "293515f7-9155-4100-a639-23f6d051ab4e.approach",
+                "67636818-c46b-4590-ae77-42eaa941c41a.track",
                 "Watsonville:03T.TC"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:03T"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_6_13"
+            },
+            "id": "67636818-c46b-4590-ae77-42eaa941c41a",
+            "relations": {
+              "track": [
+                "1d2e57a4-2962-4c91-97d5-0b1932abf784.track",
+                "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
+                "293515f7-9155-4100-a639-23f6d051ab4e.approach",
+                "Watsonville:03T.TC"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:837T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "f09a5424-4540-468b-a372-0a6b05246674",
+            "relations": {
+              "track": [
+                "293515f7-9155-4100-a639-23f6d051ab4e.governed",
+                "Watsonville:837.N"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:837T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "f0816e4c-bb4d-4002-b1ed-6cd0949417c1",
+            "relations": {
+              "track": [
+                "3478e3b9-eb36-424c-bb66-b3db1669812d.governed",
+                "Watsonville:837.R"
               ]
             }
           }
@@ -13182,6 +13234,44 @@
             "stroke": {
               "width": 0.1524
             },
+            "type": "polyline"
+          }
+        ]
+      },
+      "Railroad-Trackplan:GCOR Rule 10 BEGIN_CTC": {
+        "ports": {
+          "To": {
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        "shape": [
+          {
+            "points": "-1.27,0.635 -1.27,1.27",
+            "type": "polyline"
+          },
+          {
+            "points": "-1.27,1.905 -1.27,2.54",
+            "type": "polyline"
+          },
+          {
+            "points": "-1.27,3.175 -1.27,3.81",
+            "type": "polyline"
+          },
+          {
+            "points": "-1.27,-0.3175 -1.27,0.3175",
+            "type": "polyline"
+          },
+          {
+            "points": "-1.27,-1.27 -1.27,-0.635",
+            "type": "polyline"
+          },
+          {
+            "points": "-1.27,-2.54 -1.27,-1.905",
+            "type": "polyline"
+          },
+          {
+            "points": "-1.27,-3.81 -1.27,-3.175",
             "type": "polyline"
           }
         ]
@@ -17044,7 +17134,7 @@
   },
   "provenance": {
     "libraries": {
-      "Railroad-Trackplan": "split-projects-final-147-g9fcf779"
+      "Railroad-Trackplan": "split-projects-final-147-g9fcf779-dirty"
     },
     "referenceData": {
       "aspectNames": "2026-11-10",
@@ -17059,7 +17149,7 @@
     },
     "rules": "0.1.0",
     "source": {
-      "describe": "split-projects-final-147-g9fcf779",
+      "describe": "split-projects-final-147-g9fcf779-dirty",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad",
