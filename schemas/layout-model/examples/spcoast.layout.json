@@ -14147,6 +14147,7 @@
       },
       "JMRI": {
         "given": {
+          "JMRI.SignalSystem": "SPTCO-1969",
           "Kind": "JMRI",
           "Topic": "jmri_channel/"
         },
@@ -14383,6 +14384,7 @@
           },
           "SIGNALMAST.778NAB": {
             "derived": {
+              "jmriSignalSystem": "SPTCO-1969",
               "mast": "Gilroy:778NAB",
               "positions": [
                 "A",
@@ -14396,6 +14398,7 @@
           },
           "SIGNALMAST.778NC": {
             "derived": {
+              "jmriSignalSystem": "SPTCO-1969",
               "mast": "Gilroy:778NC",
               "positions": [
                 "A"
@@ -14408,6 +14411,7 @@
           },
           "SIGNALMAST.778SAB": {
             "derived": {
+              "jmriSignalSystem": "SPTCO-1969",
               "mast": "Gilroy:778SAB",
               "positions": [
                 "A",
@@ -14421,6 +14425,7 @@
           },
           "SIGNALMAST.778SC": {
             "derived": {
+              "jmriSignalSystem": "SPTCO-1969",
               "mast": "Gilroy:778SC",
               "positions": [
                 "A"
@@ -14433,6 +14438,7 @@
           },
           "SIGNALMAST.Gilroy.E": {
             "derived": {
+              "jmriSignalSystem": "SPTCO-1969",
               "mast": "Gilroy:Gilroy",
               "positions": [
                 "E"
@@ -14445,6 +14451,7 @@
           },
           "SIGNALMAST.Gilroy.W": {
             "derived": {
+              "jmriSignalSystem": "SPTCO-1969",
               "mast": "Gilroy:Gilroy",
               "positions": [
                 "W"
@@ -16889,7 +16896,7 @@
   },
   "provenance": {
     "libraries": {
-      "Railroad-Trackplan": "split-projects-final-148-geef8217"
+      "Railroad-Trackplan": "split-projects-final-149-g0b39d49"
     },
     "referenceData": {
       "aspectNames": "2026-11-10",
@@ -16904,7 +16911,7 @@
     },
     "rules": "0.1.0",
     "source": {
-      "describe": "split-projects-final-148-geef8217",
+      "describe": "split-projects-final-149-g0b39d49",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad",
