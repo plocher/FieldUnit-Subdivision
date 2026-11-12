@@ -414,11 +414,9 @@ class SPCoastRelationTable(unittest.TestCase):
 
     def test_every_key_is_a_name_never_a_value(self):
         """The owner (2026-10-24): every symbol the compiler names carries Name = ${Value}; Value is never read. The
-        anonymous head devices (Device-Head-*, #80: a head is anonymous, keyed by its mast pin and Head letter) are the
-        one kind that states no Name today; every identity.name finding is one of them (Railroad eef8217)."""
-        heads = [d for ix in self.model["interlockings"].values() for d in ix["devices"] if d["given"]["Appliance"] == "head"]
-        self.assertEqual(len(self.sm.report.by_code("identity.name")), len(heads))
-        self.assertEqual([str(d) for d in self.sm.report.by_code("identity.name") if "Device-Head-" not in str(d)], [])
+        anonymous head devices (Device-Head-*; #80: a head is a position on its mast, keyed by the mast and the pin its
+        IND reaches) state no Name and are not asked for one, so nothing is identity.name (Railroad 0b39d49)."""
+        self.assertEqual(self.sm.report.by_code("identity.name"), [])
 
     def test_jmri_drivers_keyed_by_object_and_device_and_masts_are_rows(self):
         gilroy = self.sm.processors["Gilroy"].drivers
@@ -437,10 +435,16 @@ class SPCoastRelationTable(unittest.TestCase):
         self.assertEqual([r for d in masts if d["derived"]["serves"] == "Gilroy:778NC" for r in d.get("relations", {}).get("bindings", {}).items()],
                          [("A", "Gilroy/SIGNALMAST.778NC/IND")])       # the mast device's pin is its head letter since the anonymous-head step (#80)
 
-    def test_a_head_device_states_its_mast_and_serves_it(self):
+    def test_a_head_device_states_its_mast_and_its_position_and_serves_it(self):
+        """#80: every head states the mast device and the position pin (A, B, C) its IND reaches, no Name and no Head
+        letter, and presents the words of its Style's head model row (TypeD, H2 and UQ3 are placed, Railroad 0b39d49)."""
         heads = [d for ix in self.model["interlockings"].values() for d in ix["devices"] if d["given"]["Appliance"] == "head"]
-        self.assertEqual(len(heads), 60)                              # Railroad eef8217: 58 masts' heads plus the two dwarfs' (56 at 9fcf779, 47 at 5715653); the heads' names and letters are #80's
-        self.assertEqual([d for d in heads if d["relations"].get("mast") != d["derived"].get("serves") or "Name" in d["given"]], [])
+        self.assertEqual(len(heads), 60)                              # Railroad eef8217: 58 masts' heads plus the two dwarfs' (56 at 9fcf779, 47 at 5715653)
+        self.assertEqual([d for d in heads if d["relations"].get("mast") != d["derived"].get("serves") or "Name" in d["given"] or "Head" in d["given"]], [])
+        self.assertEqual({d["relations"].get("position") for d in heads if "face" not in d["relations"]}, {"A", "B", "C"})   # Gilroy's board heads are on faces
+        self.assertEqual({d["given"]["Style"] for d in heads}, {"TypeD", "H2", "UQ3"})
+        self.assertEqual([d for d in heads if "position" in d["relations"] and "presents" not in d["derived"]], [])   # a face's head presents through its lever
+        self.assertEqual(self.sm.report.by_code("head.mast") + self.sm.report.by_code("head.masts") + self.sm.report.by_code("head.model"), [])
 
     def test_layout_facts_from_the_railroad_symbol(self):
         self.assertEqual({"name": self.model["layout"]["name"], "given": self.model["layout"]["given"]},

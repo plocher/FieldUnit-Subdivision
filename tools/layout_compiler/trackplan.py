@@ -288,7 +288,7 @@ def _plan(sm: Seams, ix, syms: list[Symbol], track_nets: frozenset[str] = frozen
 
     # ------------------------------------------------------------------ appliances
     for s in syms:
-        if s.role != "APPLIANCE" or s.get("Appliance") == "head":
+        if s.role != "APPLIANCE":
             continue
         name = key_of(s)
         if not name:
@@ -314,9 +314,7 @@ def _plan(sm: Seams, ix, syms: list[Symbol], track_nets: frozenset[str] = frozen
         check_milepost(s, report, f"{ix.name}: {appliance} {name}")
         relations: dict[str, Any] = {}
         row: dict[str, Any] = {"given": given_of(s), "relations": relations}
-        if appliance == "mast":
-            row["heads"] = _heads(s, others, report, ix.name)
-        elif appliance == "train_order":                                # a train order board (the owner, 2026-11-03, 2026-11-08)
+        if appliance == "train_order":                                # a train order board (the owner, 2026-11-03, 2026-11-08)
             relations["station"] = s.get("Station") or None             # its timetable station, a layout entity
             on = sorted(p for p, n in src.pins_of(s.ref).items() if n.name in track_nets)
             if on:
@@ -441,22 +439,3 @@ def _maps(row: dict[str, Any]) -> dict[str, Any]:
         if v not in (None, "", [], {}) or (v == "" and token_field(k)):
             out[k] = v
     return out
-
-
-def _heads(mast: Symbol, others, report, interlocking: str) -> dict[str, Any]:
-    """A mast's heads by letter, each with its own ``given``: the Style the trackplan draws (ADR 0009 §3.7). A mast's
-    letters are any (ADR 0003 D9, A to Z, checked by the schema)."""
-    heads: dict[str, Any] = {}
-    what = f"{mast.get('Appliance').replace('_', ' ')} {key_of(mast)}"
-    for pin in ("H", "H1", "H2", "H3", "H4"):
-        for o, p in others(mast, pin):
-            if o.get("Appliance") != "head" or p != "M":
-                continue
-            letter = key_of(o)
-            if not letter:
-                report.missing("head.letter", f"{interlocking}: a head on {what} has no Name (its letter)", source=loc(o))
-                continue
-            if letter in heads:
-                report.error("head.duplicate", f"{interlocking}: {what} has two heads {letter}", source=loc(o))
-            heads[letter] = _maps({"given": given_of(o)})                 # a head is an entity nested under its mast (D9)
-    return heads

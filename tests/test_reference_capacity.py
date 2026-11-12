@@ -1,7 +1,7 @@
 """Code line capacity and steps reference data (ADR 0013 §11, §21): a station's need is counted in steps, not tokens."""
 import unittest
 
-from tools.layout_model.reference import REFERENCE_DATA, code_line_capacity, code_line_steps
+from tools.layout_model.reference import HEAD_MODELS, REFERENCE_DATA, code_line_capacity, code_line_steps, head_model, policy, presents
 
 
 class CodeLineCapacity(unittest.TestCase):
@@ -39,3 +39,29 @@ class CodeLineCapacity(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HeadModels(unittest.TestCase):
+    """The head model table (#80): Style -> head word -> outputs; presents is the keys; a Style with no row is None."""
+
+    def test_type_d_presents_the_seed_words_in_order(self):
+        self.assertEqual(presents("TypeD"), ["STOP", "APPROACH", "ADVANCE_APPROACH", "CLEAR", "DARK"])
+        self.assertEqual(head_model("TypeD")["STOP"], {"lamp": "R"})
+
+    def test_the_semaphore_styles_name_their_arm_positions(self):
+        self.assertEqual(presents("LQ2"), ["STOP", "CLEAR", "DARK"])
+        self.assertEqual(presents("UQ3"), ["STOP", "APPROACH", "CLEAR", "DARK"])
+        self.assertEqual(head_model("UQ3")["DARK"], {"arm": None, "lamp": "off"})
+
+    def test_every_row_names_its_source_and_every_style_placed_has_a_row(self):
+        self.assertEqual([s for s, row in HEAD_MODELS.items() if not row.get("source")], [])
+        self.assertTrue({"TypeD", "SA", "H2", "LQ2", "LQ3", "UQ3"} <= set(HEAD_MODELS))
+
+    def test_an_unknown_style_is_none_never_guessed_and_the_user_table_layers_over(self):
+        self.assertIsNone(presents("CPL"))
+        self.assertIsNone(presents(None))
+        self.assertEqual(presents("CPL", {"CPL": {"words": {"STOP": {}, "CLEAR": {}}}}), ["STOP", "CLEAR"])
+        self.assertIn("headModels", REFERENCE_DATA)
+
+    def test_no_policy_table_is_seeded(self):
+        self.assertIsNone(policy("GCOR"))

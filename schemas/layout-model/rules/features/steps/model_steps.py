@@ -361,12 +361,26 @@ def shows(context, face, name, word):
 
 @then('"{mast}" has head positions "{positions}"')
 def positions(context, mast, positions):
-    raise Pending("head position = mast pin, issue #80")
+    """The positions heads are wired to, keyed by the field mast device pin (issue #80)."""
+    got = list(_named(context, mast).get("derived", {}).get("positions", {}))
+    want = [p.strip() for p in positions.split(",")]
+    assert got == want, f"{mast}: positions {got!r}, not {want!r}"
+
+
+@then('"{mast}" must show "{words}"')
+def demand(context, mast, words):
+    """A mast's demand: its explicit Indications list until #62 derives it."""
+    got = _named(context, mast).get("derived", {}).get("demand")
+    want = [w.strip() for w in words.split(",")]
+    assert got == want, f"{mast}: demand {got!r}, not {want!r}"
 
 
 @then('position "{position}" of "{mast}" presents "{words}"')
 def presents(context, position, mast, words):
-    raise Pending("derived.presents from the head model table, issue #80")
+    """What a position presents: the head words of any head wired to it, from the head model table by Style."""
+    got = _named(context, mast).get("derived", {}).get("positions", {}).get(position)
+    want = [w.strip() for w in words.split(",")]
+    assert got == want, f"{mast} position {position}: presents {got!r}, not {want!r}"
 
 
 def _holder(context, name: str) -> str:
@@ -406,9 +420,25 @@ def face_lever(context, name, face, inputs):
                                                                  "bindings": {w: f"Field/0x20/A{i}" for i, w in enumerate(_inputs(inputs))}}})
 
 
+@given('field mast device "{name}" exists')
+def signal_mast_device(context, name):
+    """A field mast device (Appliance mast) named for its trackplan mast, once."""
+    ixn = _holder(context, name)
+    devices = _interlocking(context, ixn).setdefault("devices", [])
+    if not any(d["given"].get("Appliance") == "mast" and d["given"].get("Name") == name for d in devices):
+        devices.append({"given": {"Appliance": "mast", "Name": name}})
+
+
 @given('field mast "{mast}" has these heads:')
 def heads(context, mast):
-    raise Pending("head position = mast pin, issue #80")
+    """Anonymous head devices on the field mast device's position pins (issue #80): ``Position`` the pin the head's IND
+    wire reaches, ``Style`` its model; the facts as the importer writes them, ``relations.mast`` and
+    ``relations.position``."""
+    signal_mast_device(context, mast)
+    ixn = _holder(context, mast)
+    for row in context.table:
+        _interlocking(context, ixn)["devices"].append({"given": {"Appliance": "head", "Style": row["Style"].strip()},
+                                                       "relations": {"mast": f"{ixn}:{mast}", "position": row["Position"].strip()}})
 
 
 # ------------------------------------------------------------------- what works a switch or derail (the owner, 2026-11-09)

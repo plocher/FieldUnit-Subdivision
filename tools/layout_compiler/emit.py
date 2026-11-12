@@ -1,4 +1,4 @@
-"""The seam and trackplan facts as the Layout Data Model File, schema ``layout-model/v3.1.0`` (ADR 0008 rev 4, ADR 0010,
+"""The seam and trackplan facts as the Layout Data Model File, schema ``layout-model/v3.2.0`` (ADR 0008 rev 4, ADR 0010,
 ADR 0011).
 
 The KiCad importer writes two of the three maps (ADR 0011 §2): ``given``, what the person stated as fields, as drawn,
@@ -23,7 +23,7 @@ from .seams import Seams, token_field
 from .source import Symbol
 from .seams import loc as seams_loc
 
-SCHEMA = "layout-model/v3.1.0"                    # reshaped in place to the three maps (ADR 0011 §9; no release yet)
+SCHEMA = "layout-model/v3.2.0"                    # 3.1.0 reshaped in place to the three maps (ADR 0011 §9); 3.2.0 adds the head positions (#80)
 WRITER = {"name": "layout_compiler", "version": "0.4.0"}
 FACING = ("mast", "train_order")                  # the appliances whose glyph turn the file states (the owner, 2026-11-08)
 
@@ -67,7 +67,8 @@ def _bindings(bindings) -> dict[str, Any]:
 
 
 def _device(d) -> dict:
-    return _entity(d.given, {"column": d.column, "interlocking": d.interlocking, "mast": d.mast, "face": d.face, "bindings": _bindings(d.bindings)})
+    return _entity(d.given, {"column": d.column, "interlocking": d.interlocking, "mast": d.mast, "position": d.position, "face": d.face,
+                             "bindings": _bindings(d.bindings)})
 
 
 def emit(sm: Seams, source_path: Optional[Path] = None, geometry: Optional[Geometry] = None) -> dict[str, Any]:

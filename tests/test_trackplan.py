@@ -109,10 +109,6 @@ J3   | IRJ-Signal       | TRACK     | Kind=IRJ_SIGNAL CP_Name=East
 M1   | Mast_Double      | APPLIANCE | Appliance=mast Style=double Kind=CONTROLLED Name=836NAB
 M2   | Mast_Single      | APPLIANCE | Appliance=mast Style=single Kind=CONTROLLED Name=836SA
 M3   | Mast_Dwarf       | APPLIANCE | Appliance=mast Style=dwarf Kind=CONTROLLED Name=836SB
-HA   | Signal Head - CPL | APPLIANCE | Appliance=head Style=CPL Name=A
-HB   | Signal Head - CPL | APPLIANCE | Appliance=head Style=CPL Name=B
-HC   | Signal Head - CL  | APPLIANCE | Appliance=head Style=CL Name=A
-HD   | Signal Head - Semaphore-UQ | APPLIANCE | Appliance=head Style=UQ Name=B
 TC1  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=1NAT CP_Name=East
 TC2  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=1SAT CP_Name=East
 TC3  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=2SAT CP_Name=East
@@ -360,9 +356,7 @@ class Membership(unittest.TestCase):
         self.assertEqual(sm.report.errors, [])
         self.assertEqual(control_points(ix), {n: "East" for n in ("835", "836NAB", "836SA", "836SB", "1NAT", "1SAT", "2SAT")})
         self.assertEqual({j["derived"]["controlPoint"] for j in ix["track"]["joints"]}, {"X:East"})
-        self.assertEqual(ix["appliances"]["836NAB"]["heads"], {"A": {"given": {"Appliance": "head", "Style": "CPL"}},
-                                                               "B": {"given": {"Appliance": "head", "Style": "CPL"}}})
-        self.assertEqual(ix["appliances"]["836SB"]["heads"], {"B": {"given": {"Appliance": "head", "Style": "UQ"}}})
+        self.assertNotIn("heads", ix["appliances"]["836NAB"])                   # a mast's head positions are its field mast device's pins (#80)
         self.assertNotIn("CP Name", ix["appliances"]["835"]["given"])          # stated nowhere: derived, never written as given
 
     def test_two_appliances_with_one_name_are_an_error(self):
@@ -556,7 +550,7 @@ class DoubleJoint(unittest.TestCase):
         self.assertEqual(rows(ix, "joints"), [{"given": {"Kind": "IRJ_SIGNALS"},
                                                "relations": {"A": ["X:832T.TC"], "B": ["X:834T.TC"], "masts": {"A": "X:832NA", "B": "X:832SA"}},
                                                "derived": {"circuits": {"A": "X:832T", "B": "X:834T"}}}])
-        self.assertEqual(diags(sm, "joint", "track.kind", "mast"), [])
+        self.assertEqual(diags(sm, "joint", "track.kind", "mast"), [("mast.device", "832NA"), ("mast.device", "832SA")])   # no field devices drawn (#80)
         self.assertEqual(layout_model.errors(emit.emit(sm)), [])
 
     def test_each_mast_derives_its_governed_side_from_its_pin_and_its_approach_from_the_other(self):
@@ -814,7 +808,7 @@ X1   | Driver-I2C-MAX7311            | IODRIVER | IC=MAX7311 Address=0x20
         self.assertIn("2 faces of train order mast 'Gilroy' (E, W)", d.text)
         sm, _ = compile_(self.STATION + self.SIGNAL + self.FIELD, self.TRACK + "ew | DM1.E DM1.W HE.IND\n")
         self.assertEqual(diags(sm, "head.masts"), [("head.masts", "HE")])
-        self.assertEqual(diags(sm, "head.letter"), [("head.letter", "HE"), ("head.letter", "HW")])   # a head on no face has no letter either
+        self.assertEqual(diags(sm, "head.letter", "identity.name"), [])                            # a head is anonymous (#80)
 
     def test_a_pin_on_the_track_is_an_error(self):
         sm, ix = compile_(self.STATION + self.SIGNAL, "w | TC1.TC NX1.To TO1.H\n")

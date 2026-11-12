@@ -61,7 +61,7 @@ Every wire in the seam drawing is one of four kinds, and a pin's name says which
 | `OfficeUnit` | `Processor` | nothing | Role `OFFICE_UNIT`;<br>Style `US&S`;<br>Columns, Railroad |
 | `Driver-*` (I2C, GPIO, JMRI, CMRInet bits) | `IOBus` | the device pins | Role `IODRIVER`;<br>`IC` names the chip or the encoding kind;<br>a CMRInet bit: IC `CMRI`, Kind `IB` or `OB`, Bit |
 | `Driver-CMRInet-Node` | `Transport` | `IOBus` | Role `IODRIVER`,<br>IC `CMRI`, Kind `NODE`;<br>NodeType, Address (the UA),<br>InputBytes, OutputBytes[^cmri-kind] |
-| `Device-Head-*` | its device pins from a driver; `IND` from its mast | nothing | Role `DEVICE`, Appliance `head`;<br>Style fixed per symbol (§3.7) |
+| `Device-Head-*` | `IND` from a position pin (A, B, C) of its field mast device; `APP` to its encoders | nothing | Role `DEVICE`, Appliance `head`;<br>Style the head model, fixed per symbol; no Name, no Head letter (§3.7)[^heads] |
 | `PanelColumn`, panel devices, `Driver-I2C-MAX7313` | `IOBus` on the panel bus | | |
 
 Every unit sheet potentially exposes four ports to the Office Sheet at the top level: 
@@ -107,18 +107,39 @@ bytes may be used by another interlocking. A node's identity is transport plus U
 JMRI needs no node: its objects are an MQTT topic subscription / publish on the processor itself, and have no hardware between them and the broker, so JMRI drivers sit on the processor's own bus with the JMRI encoding as the fact.
 "A symbol earns its place only by carrying a fact nothing else carries".
 
-### 3.7 Head devices
+### 3.7 Head devices[^heads]
 
-Signals, Masts, Heads, Indications and Apects.
-The OfficeUnit controls only whether a Signal is at `STOP` or is allowed to indicate safe travel to the `LEFT` or to the `RIGHT`.  The FieldUnit is responsible for determining the allowed Indications for every `Route` governed by that signal, based on track switch positions, track occupancy and other vital safety concerns. Indications are translated to the Aspects that can be shown on a Mast's Head Devices.  FieldUnit logic maps the Indications to these Head Devices using lookup tables.
- - `Indication to aspect` mapping is defined by the trackplan's choice of Mast: number of heads, head type (`CL`, `CPL`,`Semaphore-UQ`, `Semaphore-LQ`), choice of Railroad (`Southern Pacific`, `B&O`), and Era/Rulebook. 
- - `Aspect to I/O` belongs to the head device, and a device symbol embodies
-one aspect vocabulary on one hardware: `Device-Head-CL-Pixel`, `Device-Head-CL-RGB`, `Device-Head-CPL`, `Device-Head-CPL-Encoded`,
-`Device-Head-CPL-Pixel`, `Device-Head-Semaphore-UQ`, `Device-Head-Semaphore-LQ`, each with its Style fixed and hidden. Symbol names represent the railroad's head types. A lamp vocabulary serves any head with a lamp: a UQ semaphore is a `-Semaphore-UQ` arm plus an optional lamp: `Device-Lamp` for a monochrome lamp, or `Device-Head-CL-RGB` for a simulated multi-color spectacle lamp. The trackplan head's vocabulary and the
-device's must match, or:
+Signals, masts, heads, indications and head words. The OfficeUnit controls only whether a signal is at `STOP` or is
+allowed to indicate safe travel to the `LEFT` or to the `RIGHT`. The FieldUnit determines the allowed indications for
+every route the signal governs from switch positions, track occupancy and the other vital concerns, and maps each
+indication to what the mast's heads show through lookup tables. The chain and its seams are the signal symbols
+worklist's (`docs/review/signal-symbols-worklist.md`, "The chain and its seams", 2026-11-04):
 
-    ERROR: the trackplan draws 778SAB as a CPL head, but its device is Device-Head-CL-Pixel.
-    Fix: change the trackplan head, or bind a CPL device.
+    trackplan Mast ──indication──▶ field Mast device ──pin A/B/C──▶ anonymous Head ──head word──▶ Encoder ──pins──▶ Driver
+
+- The trackplan mast (`Appliance mast`) has one `SIGNAL` pin and no heads. Its Name's letters count its head
+  positions (ADR 0003 rule 7): the k-th letter is the k-th position top down, so `774NC` is signal 774N's head C on a
+  one-position mast. Its `Indications` is empty by rule; filled, it is only an explicit list of indication words
+  replacing the derived demand (the owner, 2026-11-04). The demand itself is derived with #62.
+- The field mast device (`Appliance mast`, Name the trackplan mast's) has one passive pin per head position, `A`,
+  `B`, `C` top down (`Device-Mast-Single`, `-Double`, `-Triple`, the dwarf forms).
+- A head device (`Appliance head`) is anonymous: no Name, no Head letter. Its `IND` wire to a mast pin is its
+  position (`relations.mast`, `relations.position`; a head on a train order mast's face pin states `relations.face`
+  instead). Its Style is its model and the index into the head model table, reference data
+  (`tools/layout_model/reference.py`, `head_model`): `derived.presents` is the table's head words, the subset of the
+  indication list plus DARK the head can show. The right-hand side of the table (lamps, arm positions) is the encoder's
+  instruction; no colour or position word crosses a seam. A Style with no row is `head.model` at missing.
+- Any number of heads may share a position (the owner, 2026-11-09): a fascia repeater, a head upgrade with both in
+  service. The position presents what any of them presents; two heads on one pin presenting different words are
+  `head.position` at info, never an error. The same one seam down: a head's `APP` may feed any number of encoders,
+  each presenting what its Kind can (#81); the importer refuses none.
+- The match: a mast's demand is within what its positions present. A mast with no field mast device, or whose device
+  has no head wired, is `mast.device` at missing. On a one-position mast a demanded word the position does not present
+  is `mast.presents` at info; a mast with several positions is matched through the policy table (`reference.policy`),
+  which lands with #62. A head wired beyond the last position the Name letters count is `mast.heads` at error.
+
+The rules are `schemas/layout-model/rules/features/physical/field/device_mast_head.feature` and the importer's
+`tools/layout_compiler/features/field/device_mast_head.feature`.
 
 ### 3.8 Stations, columns and the machine
 
@@ -192,7 +213,7 @@ Captions drawn in symbol bodies follow pin renames.
 | Encoding rides | `Transport` to a transport net | the `Transport` field; by layout when one transport of its kind exists | kind pairs with the transport's kind (reference data) |
 | CMRInet Node on its line | `Driver-CMRInet-Node` connects a processor's `Transport` to an `IOBus` | the `Transport` field | UA unique per line |
 | Bit on its CMRInet Node | a `Driver-CMRInet-IB/OB` connects to an `IOBus` that originates at a `Driver-CMRInet-Node` | the one CMRInet Node on the sheet; the bit's `Node` field (the UA) when a sheet holds two, added to the library 2026-10-23 (Railroad `edits/2026-10-23-descriptions.py`), empty by default | bytes declared cover bits used |
-| Head device to its head | mast Value and `Head` letter, by name | same | vocabularies match (§3.6) |
+| Head device to its position | its `IND` wire to a position pin (A, B, C) of the field mast device named for the trackplan mast[^heads] | none | the Name's letters count the positions; demand ⊆ presents (§3.7) |
 | Panel column to its control point | `CP Name` on the column, naming its interlocking or one of its houses[^cpname] | an empty `CP Name`: the column's interlocking | names resolve |
 | Track leaves an interlocking | a `NEXT_CP` (to the next interlocking), a plain `IRJ` beyond which the track carries another regime's `GCOR Rule` marker (ADR 0013 §7.1), or an end (`INDUSTRY`, `BUMPER`)[^track][^regime] | none | a switch port or track row related to another interlocking's is an error (`reference.track`); another interlocking is reached only through its indications |
 
@@ -238,7 +259,7 @@ Ratify §3 as the drawing contract the milestone D compiler reads, and §3.11 as
   derived from the project by a reader, never typed.
 - C5. The FieldUnit glossary lacks processor, transport, encoding, attachment, bus, chip, driver, node, port,
   seam, remote and local I/O: a delta is proposed in `docs/review/glossary-delta-2026-10-23.md`.
-- C6. The compiler's checks are the fourth column of §3.11 plus the head-vocabulary error of §3.6 and the
+- C6. The compiler's checks are the fourth column of §3.11 plus the head position match of §3.7 and the
   node byte check of §3.5.
 - C7. The three-copy experiment (all explicit, all implicit, both) is the acceptance test for milestone D;
   the "both" copy is this project.
@@ -262,5 +283,12 @@ other transports; Studio's own notation.
 [^regime]: Amended 2026-11-10 (owner; ADR 0013 §7.1 and decision 3). Until commit `9516aa0` this read "or an `END_CTC` (to
     dark territory: an industry complex, a branch line)". The track beyond the boundary is in the model under its own
     regime; "dark" is the office's view, not a kind of track; the Kind `END_CTC` and `IRJ-END_CTC` are retired.
+
+[^heads]: Rewritten in place on 2026-11-12 (issue #80; the owner, 2026-11-04 and 2026-11-09, `docs/review/signal-symbols-worklist.md`).
+    Until commit `260596c` §3.7 read heads as named devices (`Device-Head-CL-Pixel`, `-CPL-Encoded`, `-Semaphore-UQ`, each
+    one aspect vocabulary on one hardware) bound to a trackplan head by the mast's Value and a `Head` letter, with the
+    vocabularies matched (`head.vocabulary`); the relation table row read "Head device to its head | mast Value and
+    `Head` letter, by name | same | vocabularies match (§3.6)". The trackplan head symbols and the head Name and letter
+    are retired; a head is a position on its field mast device.
 
 [^mast-kind]: Amended 2026-10-31 (owner, ADR 0013): a mast states `Kind` `CONTROLLED`, `ABSOLUTE` or `PERMISSIVE`; the TRACK Kind `IRJ_SIGNALS` and the track circuit Style `boundary` are added. Before, `APPLIANCE` carried no Kind without exception; the earlier text is at commit aa80e18.

@@ -8,7 +8,7 @@ from typing import Optional
 
 # Versioned so provenance can name it.
 REFERENCE_DATA = {"encodingTransportPairing": "2026-10-23", "driverEncodings": "2026-10-23", "indicationTokens": "2026-10-27.2", "stations": "2026-10-27", "codeLineCapacity": "2026-11-01", "codeLineSteps": "2026-11-01.3",
-                  "trainOrderInputs": "2026-11-08", "regimes": "2026-11-10", "aspectNames": "2026-11-10"}
+                  "trainOrderInputs": "2026-11-08", "regimes": "2026-11-10", "aspectNames": "2026-11-10", "headModels": "2026-11-12"}
 # An encoding's Kind pairs with its transport's Kind (ADR 0009 §3.10).
 TRANSPORT_OF_ENCODING = {"AAR": "MQTT", "USS506": "TIMECODE", "BITS": "TIMECODE", "JMRI": "MQTT", "CMRI": "CMRI"}
 # A driver whose IC is an encoding needs that I/O encoding on its processor (ADR 0009 §3.3, §3.6, §3.12 "IC native or encoded").
@@ -195,3 +195,61 @@ def aspect_name(system: Optional[str], indication: str, kind: Optional[str], use
             return row.get(kind or "")
         return row
     return None
+
+
+# Head models (the owner, 2026-11-04 and 2026-11-09, docs/review/signal-symbols-worklist.md "Reference data" and
+# "Rulings 2026-11-09"; issue #80): a head is anonymous, a position on its mast keyed by the mast's Name and the field
+# mast pin its IND is wired to; its Style is its model and the index here. A row is head word -> what the head does
+# for it, one column per output the model has (``lamp``: which lamp is lit; ``arm``: the blade position; a semaphore's
+# ``lamp`` is the lamp behind its roundel, DARK = lamp out, blade unchanged). ``presents`` is the row's keys: the head
+# words the head can show, a subset of the indication list plus DARK. No colour, position or appearance word crosses a
+# seam: the right-hand side is the encoder's instruction (#81 reads its Kind's column), never a model fact. A demanded
+# word outside the subset is the head's indication filter, never a model finding (the owner, 2026-11-09). A Style with
+# no row presents nothing known (``head_model`` is None), reported, never guessed. ``source`` says where the row comes
+# from: the worklist seed, or the symbol's Description in Railroad-Field.kicad_sym (the merged library, Railroad PR 21).
+HEAD_MODELS: dict[str, dict[str, object]] = {
+    "TypeD": {"source": "worklist seed 2026-11-04; Device-Head-TypeD Description: GRS Type D colour-light signal head",
+              "words": {"STOP": {"lamp": "R"}, "APPROACH": {"lamp": "Y"}, "ADVANCE_APPROACH": {"lamp": "Y flashing"},
+                        "CLEAR": {"lamp": "G"}, "DARK": {"lamp": None}}},
+    "SA": {"source": "worklist seed 2026-11-04 (the TypeD table); Device-Head-SA Description: GRS SA searchlight signal head",
+           "words": {"STOP": {"lamp": "R"}, "APPROACH": {"lamp": "Y"}, "ADVANCE_APPROACH": {"lamp": "Y flashing"},
+                     "CLEAR": {"lamp": "G"}, "DARK": {"lamp": None}}},
+    "H2": {"source": "worklist seed 2026-11-04 (the TypeD table); Device-Head-H2 Description: US&S H-2 searchlight signal head",
+           "words": {"STOP": {"lamp": "R"}, "APPROACH": {"lamp": "Y"}, "ADVANCE_APPROACH": {"lamp": "Y flashing"},
+                     "CLEAR": {"lamp": "G"}, "DARK": {"lamp": None}}},
+    "UQ3": {"source": "worklist seed 2026-11-04 (UQ) with the arm positions named by the Style (the owner, 2026-11-09); "
+                      "Device-Head-Semaphore-UQ3 Description: 3-position Upper-quadrant semaphore signal head",
+            "words": {"STOP": {"arm": "horizontal", "lamp": "on"}, "APPROACH": {"arm": "diagonal", "lamp": "on"},
+                      "CLEAR": {"arm": "vertical", "lamp": "on"}, "DARK": {"arm": None, "lamp": "off"}}},
+    "LQ2": {"source": "worklist seed 2026-11-04 (LQ); Device-Head-Semaphore-LQ2 Description: 2-position Lower-quadrant semaphore signal head",
+            "words": {"STOP": {"arm": "horizontal", "lamp": "on"}, "CLEAR": {"arm": "dropped", "lamp": "on"},
+                      "DARK": {"arm": None, "lamp": "off"}}},
+    "LQ3": {"source": "Device-Head-Semaphore-LQ3 Description: 3-position Lower-quadrant semaphore signal head (three arm positions, "
+                      "so the three running words); the lamp column as LQ2's; the arm angles are not stated (unverified)",
+            "words": {"STOP": {"arm": "horizontal", "lamp": "on"}, "APPROACH": {"arm": "dropped halfway", "lamp": "on"},
+                      "CLEAR": {"arm": "dropped", "lamp": "on"}, "DARK": {"arm": None, "lamp": "off"}}},
+}
+
+
+def head_model(style: Optional[str], user: Optional[dict[str, dict[str, object]]] = None) -> Optional[dict[str, dict[str, object]]]:
+    """The head model table of a head of ``style`` (its ``given.Style``): head word -> its outputs; the user's own row
+    over the shipped one; None when neither has it (what the head presents is unknown, never guessed)."""
+    for table in (user or {}, HEAD_MODELS):
+        row = table.get(style or "")
+        if row is not None:
+            return dict(row["words"])
+    return None
+
+
+def presents(style: Optional[str], user: Optional[dict[str, dict[str, object]]] = None) -> Optional[list[str]]:
+    """The head words a head of ``style`` can show: the keys of its model table, in the table's order; None for a Style
+    with no row."""
+    words = head_model(style, user)
+    return None if words is None else list(words)
+
+
+def policy(rulebook: Optional[str], user: Optional[dict[str, object]] = None) -> Optional[dict[str, object]]:
+    """The policy table of ``rulebook``: a mast indication -> the head word each position shows (the worklist, "Functions,
+    one fact each"). No table is seeded yet: it lands with the demand derivation (#62), so a mast with more than one
+    position cannot be matched against its demand and nothing is reported for it (``derive.positions``)."""
+    return (user or {}).get(rulebook or "")

@@ -37,7 +37,6 @@ from .trackplan import TRACKPLAN_ROLES, is_boundary, is_consumer, is_switch, pin
 COORDINATE_DECIMALS = 2     # placements and runs sit on the drawing's grid (§4.2)
 GLYPH_DECIMALS = 4          # a glyph's primitives have up to four
 LABEL_END = "label:"        # a run's end on a hierarchical label: ``label:<Name>`` (ADR 0013 §7.1)
-HEADED = frozenset({"mast"})   # the appliances a head nests under by letter (§4.5); a train order board has no trackplan head (the owner, 2026-11-05)
 
 Point = tuple[float, float]
 
@@ -383,10 +382,9 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
         return pin_ref(ix.name, s, pin) if is_switch(s) or is_boundary(s) or s.role in ("TRACK", "POLICY") else None
 
     appliances: dict[str, Any] = {}
-    with_heads: dict[str, str] = {}                                       # a mast: what a head nests under
     consumer_markers: list[dict[str, Any]] = []
     for s in trackplan:
-        if s.role != "APPLIANCE" or s.get("Appliance") == "head" or s.ref not in placed:
+        if s.role != "APPLIANCE" or s.ref not in placed:
             continue
         name = key_of(s, report)
         if not name:
@@ -396,17 +394,6 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
             consumer_markers.append({"row": s.uuid, **placement(s.ref)})   # a consumer is a row: its marker names it by id (D10)
             continue
         appliances[name] = placement(s.ref)
-        if s.get("Appliance") in HEADED:
-            with_heads[s.ref] = name
-    for s in trackplan:                                                   # a head nests under its mast by letter (§4.5)
-        if s.get("Appliance") != "head" or s.ref not in placed:
-            continue
-        net = net_of(s.ref, "M")
-        owner = next((p.ref for p in net.others(s.ref) if p.ref in with_heads), None) if net else None
-        if owner is None:
-            report.missing("geometry.head", f"{ix.name}: head {s.ref} is on no mast's M pin; its placement is not written", source=loc(s))
-            continue
-        appliances[with_heads[owner]].setdefault("heads", {})[key_of(s, report)] = placement(s.ref)
 
     house_rows = {h.cp_name: placement(h.sym.ref) for h in houses if h.sym.ref in placed}
 
@@ -467,7 +454,7 @@ def check_transform(geometry: Geometry, sm: Seams, project_dir: Optional[Path] =
         model = project.sheet(src.sheet_files[ix.sym.sheet])
         for s in trackplan + houses:                                      # page coordinates on both sides: the frame cancels
             pl = model.placements[s.ref]
-            if pl.lib_id not in geometry.glyphs:                          # a placement the file does not write (a head on no mast): nothing to land
+            if pl.lib_id not in geometry.glyphs:                          # a placement the file does not write: nothing to land
                 continue
             sym = project.symbol(pl.lib_id)
             glyph = geometry.glyphs[pl.lib_id]
@@ -483,7 +470,4 @@ def check_transform(geometry: Geometry, sm: Seams, project_dir: Optional[Path] =
 
 
 def _every_placement(g: dict[str, Any]):
-    for row in list(g.get("appliances", {}).values()) + list(g.get("houses", {}).values()) + list(g.get("mileposts", {}).values()) + g.get("markers", []):
-        yield row
-        for head in row.get("heads", {}).values():
-            yield head
+    yield from list(g.get("appliances", {}).values()) + list(g.get("houses", {}).values()) + list(g.get("mileposts", {}).values()) + g.get("markers", [])

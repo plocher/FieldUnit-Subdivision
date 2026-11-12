@@ -240,13 +240,6 @@
       "feature": null,
       "replacedBy": null
     },
-    "geometry.head": {
-      "level": "missing",
-      "lifecycle": "active",
-      "since": "0.4.0",
-      "feature": null,
-      "replacedBy": null
-    },
     "geometry.library": {
       "level": "error",
       "lifecycle": "active",
@@ -303,20 +296,6 @@
       "feature": null,
       "replacedBy": null
     },
-    "head.duplicate": {
-      "level": "error",
-      "lifecycle": "active",
-      "since": "0.4.0",
-      "feature": null,
-      "replacedBy": null
-    },
-    "head.letter": {
-      "level": "missing",
-      "lifecycle": "active",
-      "since": "0.4.0",
-      "feature": null,
-      "replacedBy": null
-    },
     "head.mast": {
       "level": "missing",
       "lifecycle": "active",
@@ -329,13 +308,6 @@
       "lifecycle": "active",
       "since": "0.4.0",
       "feature": "field/device_train_order.feature#a head wired to two faces",
-      "replacedBy": null
-    },
-    "head.position": {
-      "level": "error",
-      "lifecycle": "proposed",
-      "since": "0.1.0",
-      "feature": "field/device_mast_head.feature#two heads wired to one mast pin",
       "replacedBy": null
     },
     "house.codeline": {
