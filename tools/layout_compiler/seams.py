@@ -708,14 +708,17 @@ def _served(sm: Seams, s: Symbol, quiet: bool = False) -> tuple[Optional[str], O
 
 def _encoded_address(sm: Seams, s: Symbol, drawn: str) -> str:
     """An encoded driver (a JMRI object) carries no address of its own: it is keyed by its object class, the symbol's
-    Kind, and what its wires state (ADR 0005 S4 and R11; the owner, 2026-10-24 and 2026-11-10): the name of the device
-    it serves, ``TURNOUT.777``; a nameless head or train order lever under the mast pin its IND reaches,
-    ``SIGNALMAST.Gilroy.E``; then the device pin the driver is on when the device has several function pins and the
-    driver's net does not reach every one, ``SENSOR.Gilroy.E.STOP`` on a lever with STOP and SLOW, ``SIGNALMAST.778NAB.A``
-    on one position of a double mast, while a whole-mast consumer whose net covers every position keeps
-    ``SIGNALMAST.778NAB``. The pin rule applies to a nameless device and to a mast device's positions; a named
-    appliance (a switch, a track circuit) keeps ``Kind.Name``. A drawn Address is a stated field, written as drawn
-    and reported at info; it is not the key."""
+    Kind, and what its wires state (ADR 0005 S4 and R11; the owner, 2026-10-24, 2026-11-10 and 2026-11-11): the name of
+    the device it serves, ``TURNOUT.777``; a nameless head or train order lever under the mast pin its IND reaches,
+    ``SIGNALMAST.Gilroy.E``; then the device pins the driver is on when the device has several function pins and the
+    driver's net does not reach every one, ``SENSOR.777.WLQK`` on a lock lever with WLK, WLQ and WLQK,
+    ``SENSOR.Gilroy.E.STOP`` on a lever with STOP and SLOW, ``SIGNALMAST.778NAB.A`` on one position of a double mast.
+    A driver whose net covers every function pin keeps ``Kind.Name``: a whole-mast consumer on every position,
+    ``SIGNALMAST.778NAB``. The pin rule applies to every device, named or not (the owner, 2026-11-11). A Turnout's
+    command and its feedback are one object (``_one_turnout``), so their pins are counted together and both symbols
+    take one key: the pair on a switch with M, N and R keeps ``TURNOUT.777``; on a switch whose contract also has OCC
+    it is ``TURNOUT.777.M.N.R``. A drawn Address is a stated field, written as drawn and reported at info; it is not
+    the key."""
     served, o, touched = _served(sm, s)
     if drawn:
         sm.report.info("driver.address.override", f"driver {s.get('IC')} {s.kind}: Address {drawn!r} is stated beside the key the wires give, {served!r}", source=loc(s))
@@ -726,11 +729,27 @@ def _encoded_address(sm: Seams, s: Symbol, drawn: str) -> str:
         sm.report.missing("driver.serves", f"driver {s.get('IC')} {s.kind}: wired to no device; it has no key", source=loc(s))
         return ""
     key = f"{s.kind}.{served}"
-    if _anonymous(o) or o.get("Appliance") in ("mast", "train_order_mast"):
-        functions = _function_pins(o)
-        if len(functions) > 1 and touched and not functions <= touched:
-            key += "." + ".".join(sorted(touched, key=lambda x: (len(x), x)))
+    functions = _function_pins(o)
+    pins = _object_pins(sm, s, o, touched)
+    if len(functions) > 1 and pins and not functions <= pins:
+        key += "." + ".".join(sorted(pins, key=lambda x: (len(x), x)))
     return key
+
+
+def _object_pins(sm: Seams, s: Symbol, o: Symbol, touched: set[str]) -> set[str]:
+    """The device pins one JMRI object reaches: the driver's own, and for a Turnout those of the other Turnout drivers
+    of its encoding on the same device whose wires share none of its pins, its command or its feedback
+    (``_one_turnout``; the owner, 2026-11-10)."""
+    if s.kind != "TURNOUT":
+        return touched
+    pins = set(touched)
+    for x in sm.source.where("IODRIVER"):
+        if x.ref == s.ref or x.kind != "TURNOUT" or x.get("IC") != s.get("IC"):
+            continue
+        _, other, reach = _served(sm, x, quiet=True)
+        if other is not None and other.ref == o.ref and not (reach & touched):
+            pins |= reach
+    return pins
 
 
 def _columns(sm: Seams) -> None:

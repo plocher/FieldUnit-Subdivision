@@ -1,7 +1,8 @@
 Feature: An encoded driver is keyed by what its wires state
   An encoded driver (a JMRI object) has no address of its own. Its key is its object class and the device it serves.
   A nameless head or train order lever serves under the mast pin its IND wire reaches, not under the mast alone.
-  A driver on one of a device's several function pins carries that pin. A whole-mast consumer whose net covers every position keeps the mast's key.
+  A driver on one of a device's several function pins carries that pin, whether the device is named or not. A driver whose net covers every function pin keeps the device's key: a whole-mast consumer on every position keeps the mast's key.
+  A Turnout's command and feedback are one object, so their pins count together.
   A hand-written Address is not needed for any of this.
   Two symbols at one key are one object only when they are a Turnout's command and its feedback. Anything else at one key is an error.
 
@@ -66,6 +67,35 @@ Feature: An encoded driver is keyed by what its wires state
       | occ | TC1.~{OCC} ST.S   |
     When the drawing is imported
     Then the driver "ST" is keyed "SENSOR.01T"
+
+  Scenario: a named lock lever with one sensor per function pin
+    Given these symbols too:
+      | Ref | Symbol                                          | Role     | Appliance | Style | IC        | Kind   | Name | Pin.WLK | Pin.WLQ | Pin.WLQK |
+      | LL  | Railroad-Field:Local-Lock                       | DEVICE   | lever     | lock  |           |        | 777  | binary  | binary  | binary   |
+      | SK  | Railroad-HardwareIO:Driver-JMRI-Sensor-Feedback | IODRIVER |           |       | MQTT-JMRI | SENSOR |      |         |         |          |
+      | SQ  | Railroad-HardwareIO:Driver-JMRI-Sensor-Feedback | IODRIVER |           |       | MQTT-JMRI | SENSOR |      |         |         |          |
+      | SQK | Railroad-HardwareIO:Driver-JMRI-Sensor-Feedback | IODRIVER |           |       | MQTT-JMRI | SENSOR |      |         |         |          |
+    And these nets:
+      | Net | Pins                                      |
+      | bus | P1.IOBus SK.IOBus SQ.IOBus SQK.IOBus      |
+      | k   | LL.~{WLK} SK.S                            |
+      | q   | LL.~{WLQ} SQ.S                            |
+      | qk  | LL.~{WLQK} SQK.S                          |
+    When the drawing is imported
+    Then processor "Alpha" has the drivers "SENSOR.777.WLK, SENSOR.777.WLQ, SENSOR.777.WLQK"
+    And the driver "SQK" is keyed "SENSOR.777.WLQK"
+
+  Scenario: a driver whose net covers every function pin of a named device keeps its key
+    Given these symbols too:
+      | Ref | Symbol                                          | Role     | Appliance | Style | IC        | Kind   | Name | Pin.WLK | Pin.WLQ | Pin.WLQK |
+      | LL  | Railroad-Field:Local-Lock                       | DEVICE   | lever     | lock  |           |        | 777  | binary  | binary  | binary   |
+      | SA  | Railroad-HardwareIO:Driver-JMRI-Sensor-Feedback | IODRIVER |           |       | MQTT-JMRI | SENSOR |      |         |         |          |
+    And these nets:
+      | Net | Pins                                      |
+      | bus | P1.IOBus SA.IOBus                         |
+      | all | LL.~{WLK} LL.~{WLQ} LL.~{WLQK} SA.S       |
+    When the drawing is imported
+    Then the driver "SA" is keyed "SENSOR.777"
 
   @driver.duplicate
   Scenario: two sensors on one lever pin

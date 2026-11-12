@@ -253,6 +253,25 @@ class RuleTests(unittest.TestCase):
         self.assertEqual([d.source.split(" ")[0] for d in sm.report.by_code("driver.duplicate")], ["/X/S3"])
         self.assertEqual(len(sm.processors["Alpha"].drivers["SENSOR.Gilroy.E.SLOW"].syms), 1)
 
+    def test_a_named_device_with_several_function_pins_keys_a_driver_by_the_pins_it_touches(self):
+        """The owner (2026-11-11): the pin rule applies to every device. Gilroy's lock lever 777 carries one sensor per
+        function pin, SENSOR.777.WLK, .WLQ, .WLQK; a sensor on every pin keeps SENSOR.777; the Turnout pair on the switch's
+        M, N and R is one object and keeps TURNOUT.777 (its pins count together)."""
+        src = jmri_plant()
+        d1 = src.symbols["D1"]
+        src.symbols["D1"] = Symbol(d1.ref, d1.lib_id, d1.value, {**d1.fields, "Pin.M": "binary", "Pin.N": "binary", "Pin.R": "binary"}, d1.sheet)
+        syms = [sym("LL", "Local-Lock", "/X/", "777", Role="DEVICE", Appliance="lever", Style="lock", Name="777", **{"Pin.WLK": "binary", "Pin.WLQ": "binary", "Pin.WLQK": "binary"}),
+                sym("K1", "Driver-JMRI-Sensor-Feedback", "/X/", "", Role="IODRIVER", IC="MQTT-JMRI", Kind="SENSOR", Address=""),
+                sym("K2", "Driver-JMRI-Sensor-Feedback", "/X/", "", Role="IODRIVER", IC="MQTT-JMRI", Kind="SENSOR", Address=""),
+                sym("K3", "Driver-JMRI-Sensor-Feedback", "/X/", "", Role="IODRIVER", IC="MQTT-JMRI", Kind="SENSOR", Address="")]
+        bus = next(n for n in src.nets if n.name == "bus")
+        nets = [n for n in src.nets if n.name != "bus"] + [Net("bus", bus.pins + (PinRef("K1", "IOBus"), PinRef("K2", "IOBus"), PinRef("K3", "IOBus"))),
+                net("k", ("LL", "~{WLK}"), ("K1", "S")), net("q", ("LL", "~{WLQ}"), ("K2", "S")), net("qk", ("LL", "~{WLQK}"), ("K3", "S"))]
+        sm = seams.resolve(from_symbols(list(src.symbols.values()) + syms, nets))
+        self.assertEqual(set(sm.processors["Alpha"].drivers), {"TURNOUT.777", "SIGNALMAST.784EAB", "SENSOR.777.WLK", "SENSOR.777.WLQ", "SENSOR.777.WLQK"})
+        self.assertEqual(len(sm.processors["Alpha"].drivers["TURNOUT.777"].syms), 2)
+        self.assertEqual(sm.report.errors, [])
+
     def test_an_encoded_driver_without_kind_has_no_key(self):
         src = jmri_plant()
         s = src.symbols["J1"]
@@ -401,12 +420,15 @@ class SPCoastRelationTable(unittest.TestCase):
 
     def test_jmri_drivers_keyed_by_object_and_device_and_masts_are_rows(self):
         gilroy = self.sm.processors["Gilroy"].drivers
+        # The pin rule applies to every device (the owner, 2026-11-11): the lock levers 777 and 781 and the switch levers
+        # carry one sensor per function pin; the Turnout pair on Device-Switch-OS covers M, N and R of M, N, R, OCC.
         self.assertEqual({k for k in gilroy if "." in k},
-                         {"TURNOUT.777", "TURNOUT.781", "SENSOR.777", "SENSOR.781", "SENSOR.01T", "SENSOR.02T", "SENSOR.1SAT", "SENSOR.1NAT",
+                         {"TURNOUT.777.M.N.R", "TURNOUT.781.M.N.R", "SENSOR.01T", "SENSOR.02T", "SENSOR.1NAT",
                           "SIGNALMAST.778NC", "SIGNALMAST.778SC", "SIGNALMAST.778NAB", "SIGNALMAST.778SAB", "LIGHT.MC1", "LIGHT.MC2",
                           "SENSOR.Gilroy.E.STOP", "SENSOR.Gilroy.E.SLOW", "SENSOR.Gilroy.W.STOP", "SENSOR.Gilroy.W.SLOW",   # the train order levers' and heads' keys (the owner, 2026-11-10)
-                          "SIGNALMAST.Gilroy.E", "SIGNALMAST.Gilroy.W"})
-        self.assertEqual(len(gilroy["TURNOUT.777"].syms), 2)
+                          "SIGNALMAST.Gilroy.E", "SIGNALMAST.Gilroy.W"}
+                         | {f"SENSOR.{sw}.{pin}" for sw in ("777", "781") for pin in ("OCC", "NWS", "NWK", "RWS", "RWK", "WLK", "WLQ", "WLQK")})
+        self.assertEqual(len(gilroy["TURNOUT.777.M.N.R"].syms), 2)
         self.assertEqual(self.sm.report.by_code("driver.address"), [])
         masts = [d for ix in self.model["interlockings"].values() for d in ix["devices"] if d["given"]["Appliance"] == "mast"]
         self.assertEqual(len(masts), 44)                              # Railroad 9fcf779 (38 at 5715653; the owner's masts of 2026-11-09)
