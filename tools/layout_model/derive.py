@@ -54,7 +54,9 @@ names every other track pin its wire reaches, so the relation is symmetric):
   interlocking's limits lie under is ``regime.limits`` at info, never an error. Each interlocking's ``track.pieces``
   lists the pieces its track touches with the regime and how it was found. A station-to-station block (decision 2) is a piece that holds no dispatcher-controlled switch and is
   signalled: a ``GCOR_RULE_9_14`` sign, masts facing both ways, or ``ABSOLUTE`` ends; the ``blocks`` library computes
-  it. A regime boundary is a plain joint with a marker each side; the ``END_CTC`` end is retired.
+  it. A regime boundary is a plain joint with a marker each side, or a joint declared one (``given.RegimeBoundary``
+  ``yes``, the owner 2026-11-11), which passes no regime: each side states its own or inherits from elsewhere. The
+  ``END_CTC`` end is retired.
 - **A boundary track circuit** (ADR 0013 §10; ``Appliance track_circuit``, Style ``boundary``) states ``relations.A``
   and ``.B``, the two nets at its joint. It names no circuit: the marker on each net does. Its ``derived.circuits``
   are the circuits on its pins, in A, B order: what it counts toward.
@@ -980,7 +982,9 @@ class _Derivation:
         other track: a control point can be under a control operator without being under Chapter 10 (GCOR 6.4.2,
         9.12.2; the owner, 2026-11-10), so membership in an interlocking is no regime source. Errors, not guesses: two
         different markers on one piece are ``regime.conflict``; a piece with no marker reachable from two different
-        regimes is ``regime.ambiguous``; such a piece gets no regime and passes none on. A piece with no regime is
+        regimes is ``regime.ambiguous``; such a piece gets no regime and passes none on. A joint declared a regime
+        boundary (``given.RegimeBoundary`` ``yes``, any joint Kind; the owner, 2026-11-11) adds no adjacency: nothing
+        inherits across it, and each side states its own regime or inherits from elsewhere. A piece with no regime is
         ``regime.none`` at missing. A CTC piece whose head-block signals (the masts that govern into it) are all
         ``ABSOLUTE`` is ``regime.absolute`` at warning: an automatic signal gives no authority and Chapter 10 gives
         signal-indication authority (§4). Interlocking limits are a derived fact independent of regime (GCOR glossary:
@@ -1017,7 +1021,8 @@ class _Derivation:
                 kind, p, rel = row.get("given", {}).get("Kind"), plan.row_prefix(row), row.get("relations", {})
                 sides = ("governed", "approach") if kind == "IRJ_SIGNAL" else ("A", "B")
                 roots = [union.find(f"{p}.{s}") for s in sides if f"{p}.{s}" in union]
-                if len(roots) == 2 and roots[0] != roots[1]:
+                boundary = row.get("given", {}).get("RegimeBoundary", "").strip().casefold() == "yes"   # declared: passes no regime
+                if len(roots) == 2 and roots[0] != roots[1] and not boundary:
                     adjacent[roots[0]].add(roots[1])
                     adjacent[roots[1]].add(roots[0])
                 governs = {"governed": rel.get("mast")} if kind == "IRJ_SIGNAL" else rel.get("masts", {}) if kind == "IRJ_SIGNALS" else {}
