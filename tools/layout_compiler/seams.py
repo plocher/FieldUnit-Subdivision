@@ -647,7 +647,7 @@ def _one_turnout(sm: Seams, first: Driver, second: Driver) -> bool:
     feedback reads N and R). Anything else at one key is ``driver.duplicate``."""
     if first.ic not in ENCODING_OF_IC or second.ic != first.ic or first.kind != "TURNOUT" or second.kind != "TURNOUT":
         return False
-    touched = [set().union(*(_served(sm, x, quiet=True)[2] for x in d.syms)) for d in (first, second)]
+    touched = [set().union(*(set(_served(sm, x, quiet=True)[2]) for x in d.syms)) for d in (first, second)]
     return not (touched[0] & touched[1])
 
 
@@ -680,11 +680,12 @@ def _function_pins(o: Symbol) -> set[str]:
     return declared
 
 
-def _served(sm: Seams, s: Symbol, quiet: bool = False) -> tuple[Optional[str], Optional[Symbol], set[str]]:
+def _served(sm: Seams, s: Symbol, quiet: bool = False) -> tuple[Optional[str], Optional[Symbol], dict[str, str]]:
     """The one device wired to a driver's function pins: the name it serves under (a nameless head or lever under its
-    mast pin, ``_anonymous_served``), the device, and the device pins the driver's wires reach. Two devices is
-    ``driver.serves.two``; none is (None, None, set())."""
-    hits: dict[str, tuple[Symbol, set[str]]] = {}
+    mast pin, ``_anonymous_served``), the device, and the device pins the driver's wires reach, each with the driver
+    pin that reaches it (base names, without the overline). Two devices is ``driver.serves.two``; none is
+    (None, None, {})."""
+    hits: dict[str, tuple[Symbol, dict[str, str]]] = {}
     for pin, net in sm.source.pins_of(s.ref).items():
         if pin == "IOBus":
             continue
@@ -695,27 +696,29 @@ def _served(sm: Seams, s: Symbol, quiet: bool = False) -> tuple[Optional[str], O
                 if n is None and key_field(o) not in o.fields and not quiet:
                     device_name(o, sm.report)                          # reports the missing key field, as before
                 if n:
-                    hits.setdefault(n, (o, set()))[1].add(base(p.pin))
+                    hits.setdefault(n, (o, {}))[1][base(p.pin)] = base(pin)
     if len(hits) > 1:
         if not quiet:
             sm.report.error("driver.serves.two", f"driver {s.get('IC')} {s.kind} serves two devices: {', '.join(sorted(hits))}", source=loc(s))
-        return None, None, set()
+        return None, None, {}
     if not hits:
-        return None, None, set()
+        return None, None, {}
     name, (o, pins) = next(iter(hits.items()))
     return name, o, pins
 
 
 def _encoded_address(sm: Seams, s: Symbol, drawn: str) -> str:
     """An encoded driver (a JMRI object) carries no address of its own: it is keyed by its object class, the symbol's
-    Kind, and what its wires state (ADR 0005 S4 and R11; the owner, 2026-10-24 and 2026-11-10): the name of the device
-    it serves, ``TURNOUT.777``; a nameless head or train order lever under the mast pin its IND reaches,
-    ``SIGNALMAST.Gilroy.E``; then the device pin the driver is on when the device has several function pins and the
-    driver's net does not reach every one, ``SENSOR.Gilroy.E.STOP`` on a lever with STOP and SLOW, ``SIGNALMAST.778NAB.A``
-    on one position of a double mast, while a whole-mast consumer whose net covers every position keeps
-    ``SIGNALMAST.778NAB``. The pin rule applies to a nameless device and to a mast device's positions; a named
-    appliance (a switch, a track circuit) keeps ``Kind.Name``. A drawn Address is a stated field, written as drawn
-    and reported at info; it is not the key."""
+    Kind, and what its wires state (ADR 0005 S4 and R11; the owner, 2026-10-24, 2026-11-10 and 2026-11-11):
+    ``Kind.served[.functions]``. ``served`` is the name of the device it serves, ``TURNOUT.777``, or for a nameless
+    head or train order lever the mast pin its IND reaches, ``SIGNALMAST.Gilroy.E``. The functions come from the pin
+    names alone: a driver pin named like the device pin it lands on serves that function by its own definition and
+    adds nothing (the Turnout's M, N and R on the switch's M, N and R keep ``TURNOUT.777``); a driver pin named
+    otherwise reads the function it is wired to and takes the device pin's name, ``SENSOR.777.OCC`` for a Sensor's S
+    on the switch's OCC, ``SENSOR.777.WLQK`` on the lock lever's WLQK, ``SENSOR.Gilroy.E.STOP`` on the train order
+    lever's STOP; sorted, shortest first. A SignalMast on a mast, a train order mast or a head stands in for positions
+    instead: it carries the positions its net reaches unless that is every one, ``SIGNALMAST.778NAB.A`` and
+    ``SIGNALMAST.778NAB``. A drawn Address is a stated field, written as drawn and reported at info; it is not the key."""
     served, o, touched = _served(sm, s)
     if drawn:
         sm.report.info("driver.address.override", f"driver {s.get('IC')} {s.kind}: Address {drawn!r} is stated beside the key the wires give, {served!r}", source=loc(s))
@@ -726,10 +729,13 @@ def _encoded_address(sm: Seams, s: Symbol, drawn: str) -> str:
         sm.report.missing("driver.serves", f"driver {s.get('IC')} {s.kind}: wired to no device; it has no key", source=loc(s))
         return ""
     key = f"{s.kind}.{served}"
-    if _anonymous(o) or o.get("Appliance") in ("mast", "train_order_mast"):
-        functions = _function_pins(o)
-        if len(functions) > 1 and touched and not functions <= touched:
-            key += "." + ".".join(sorted(touched, key=lambda x: (len(x), x)))
+    if s.kind == "SIGNALMAST" and o.get("Appliance") in ("mast", "train_order_mast", "head"):
+        positions = _function_pins(o)
+        functions = set(touched) if len(positions) > 1 and not positions <= set(touched) else set()
+    else:
+        functions = {device_pin for device_pin, driver_pin in touched.items() if driver_pin != device_pin}
+    if functions:
+        key += "." + ".".join(sorted(functions, key=lambda x: (len(x), x)))
     return key
 
 
