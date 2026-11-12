@@ -1,0 +1,118 @@
+{
+  "about": "The trigger and blast-radius map of ADR 0014 decision 2: which documents state the rules of which code paths. Each trigger lists code globs (relative to this repo, or to the repo named by 'repo') and the documents that must move with them: a path, optionally with '#section' naming the heading a reader opens; a glob names a family of documents (feature files). A document in another repo carries 'repo' and is reported as not measurable here. Read by tools/doc_debt.py; a path is mapped only after its document was opened and found to state the rule.",
+  "repos": {
+    "railroad": "~/Dropbox/KiCad/Railroad",
+    "fieldunit": "~/Dropbox/Arduino/libraries/FieldUnit"
+  },
+  "triggers": [
+    {
+      "name": "importer seams",
+      "code": ["tools/layout_compiler/seams.py", "tools/layout_compiler/source.py"],
+      "documents": [
+        "docs/adr/0009-explicit-seams.md#3.2 Symbols: what each ingests and provides",
+        "docs/adr/0009-explicit-seams.md#3.10 Keys the compiler reads",
+        "docs/adr/0009-explicit-seams.md#3.12 The relation table",
+        "docs/adr/0012-derivation-rules-and-domain-libraries.md#4. No fallbacks",
+        "tools/layout_compiler/features/**/*.feature"
+      ]
+    },
+    {
+      "name": "importer trackplan and geometry",
+      "code": ["tools/layout_compiler/trackplan.py", "tools/layout_compiler/geometry.py"],
+      "documents": [
+        "docs/adr/0010-geometry-and-views.md#4. Architecture",
+        "docs/adr/0009-explicit-seams.md#3.2 Symbols: what each ingests and provides",
+        "docs/adr/0011-given-relations-derived.md#7. Geometry always",
+        "tools/layout_compiler/features/trackplan/*.feature"
+      ]
+    },
+    {
+      "name": "importer file writer",
+      "code": ["tools/layout_compiler/emit.py", "tools/compile_layout.py"],
+      "documents": [
+        "docs/adr/0011-given-relations-derived.md#3. Writer policy",
+        "docs/adr/0008-layout-data-model-file.md"
+      ]
+    },
+    {
+      "name": "reference derivation",
+      "code": ["tools/layout_model/derive.py", "tools/layout_model/report.py", "tools/layout_model/expression.py"],
+      "documents": [
+        "docs/adr/0011-given-relations-derived.md#2. Three maps",
+        "docs/adr/0011-given-relations-derived.md#5. One definition of the computation",
+        "docs/adr/0012-derivation-rules-and-domain-libraries.md#3. Rules are executable features",
+        "docs/adr/0012-derivation-rules-and-domain-libraries.md#4. No fallbacks",
+        "docs/adr/0013-between-control-points.md#12. Derived, and where each result lives",
+        "schemas/layout-model/rules/features/**/*.feature"
+      ]
+    },
+    {
+      "name": "domain libraries",
+      "code": ["tools/railroad/*.py"],
+      "documents": [
+        "docs/adr/0012-derivation-rules-and-domain-libraries.md#5. Domain libraries",
+        "docs/adr/0013-between-control-points.md#13. The functional seam between an interlocking and a station-to-station block (decision 1, 12)"
+      ]
+    },
+    {
+      "name": "reference data",
+      "code": ["tools/layout_model/reference.py"],
+      "documents": [
+        "docs/adr/0012-derivation-rules-and-domain-libraries.md#6. Reference data",
+        "docs/adr/0013-between-control-points.md#14.2 Three layers and the reference-data profile table",
+        {"repo": "railroad", "path": "symbols/manual.html"}
+      ]
+    },
+    {
+      "name": "naming grammar",
+      "code": ["tools/layout_model/grammar.py"],
+      "documents": [
+        "docs/adr/0003-name-grammar.md#The grammar that follows",
+        "docs/adr/0013-between-control-points.md#4. The station-to-station block (decisions 2, 3)",
+        {"repo": "fieldunit", "path": "docs/GLOSSARY.md"}
+      ]
+    },
+    {
+      "name": "import-diagnostic registry",
+      "code": ["tools/layout_compiler/diagnostics.json"],
+      "documents": [
+        "docs/adr/0012-derivation-rules-and-domain-libraries.md#3.3 The rule-check registry",
+        "tools/layout_compiler/features/**/*.feature"
+      ]
+    },
+    {
+      "name": "rule-check registry",
+      "code": ["schemas/layout-model/rules/diagnostics.json"],
+      "documents": [
+        "docs/adr/0012-derivation-rules-and-domain-libraries.md#3.3 The rule-check registry",
+        "schemas/layout-model/rules/features/**/*.feature"
+      ]
+    },
+    {
+      "name": "file format",
+      "code": ["schemas/layout-model/*.json"],
+      "documents": [
+        "docs/adr/0012-derivation-rules-and-domain-libraries.md#7. Versioning",
+        "docs/adr/0010-geometry-and-views.md#4.10 Where it lives, and the version",
+        "schemas/layout-model/examples/spcoast.layout.json"
+      ]
+    },
+    {
+      "name": "how a developer works",
+      "code": ["pyproject.toml", "tools/*.py", "tools/*.sh"],
+      "documents": [
+        "AGENTS.md#Commands",
+        "README.md"
+      ]
+    },
+    {
+      "name": "symbol libraries",
+      "repo": "railroad",
+      "code": ["symbols/*.kicad_sym"],
+      "documents": [
+        {"repo": "railroad", "path": "symbols/manual.html"},
+        "tools/contract/lint_symbol_fields.py"
+      ]
+    }
+  ]
+}
