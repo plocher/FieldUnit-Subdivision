@@ -3475,7 +3475,7 @@
           },
           "relations": {
             "bindings": {
-              "APP": "Gilroy/SIGNALMAST.Gilroy/IND"
+              "APP": "Gilroy/SIGNALMAST.Gilroy.E/IND"
             },
             "face": "E",
             "mast": "Gilroy:Gilroy"
@@ -3491,7 +3491,7 @@
           },
           "relations": {
             "bindings": {
-              "APP": "Gilroy/SIGNALMAST.Gilroy/IND"
+              "APP": "Gilroy/SIGNALMAST.Gilroy.W/IND"
             },
             "face": "W",
             "mast": "Gilroy:Gilroy"
@@ -3507,8 +3507,8 @@
           },
           "relations": {
             "bindings": {
-              "SLOW": "Gilroy/SENSOR.Gilroy/S",
-              "STOP": "Gilroy/SENSOR.Gilroy/S"
+              "SLOW": "Gilroy/SENSOR.Gilroy.E.SLOW/S",
+              "STOP": "Gilroy/SENSOR.Gilroy.E.STOP/S"
             },
             "face": "E",
             "mast": "Gilroy:Gilroy"
@@ -3524,8 +3524,8 @@
           },
           "relations": {
             "bindings": {
-              "SLOW": "Gilroy/SENSOR.Gilroy/S",
-              "STOP": "Gilroy/SENSOR.Gilroy/S"
+              "SLOW": "Gilroy/SENSOR.Gilroy.W.SLOW/S",
+              "STOP": "Gilroy/SENSOR.Gilroy.W.STOP/S"
             },
             "face": "W",
             "mast": "Gilroy:Gilroy"
@@ -8101,7 +8101,6 @@
           },
           "relations": {
             "C": [
-              "3b6b0a42-dfd3-404a-b9c9-c2a85ef712be.track",
               "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.B"
             ],
             "N": [
@@ -8189,7 +8188,8 @@
             "TC": [
               "1d2e57a4-2962-4c91-97d5-0b1932abf784.track",
               "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
-              "293515f7-9155-4100-a639-23f6d051ab4e.approach"
+              "293515f7-9155-4100-a639-23f6d051ab4e.approach",
+              "67636818-c46b-4590-ae77-42eaa941c41a.track"
             ]
           }
         },
@@ -8773,10 +8773,12 @@
               "fa08f12d-ce74-4c72-a82e-c48292c8ba79.governed"
             ],
             "N": [
-              "293515f7-9155-4100-a639-23f6d051ab4e.governed"
+              "293515f7-9155-4100-a639-23f6d051ab4e.governed",
+              "f09a5424-4540-468b-a372-0a6b05246674.track"
             ],
             "R": [
-              "3478e3b9-eb36-424c-bb66-b3db1669812d.governed"
+              "3478e3b9-eb36-424c-bb66-b3db1669812d.governed",
+              "f0816e4c-bb4d-4002-b1ed-6cd0949417c1.track"
             ]
           }
         },
@@ -10399,6 +10401,15 @@
               "x": 22.86,
               "y": 11.43
             },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 BEGIN_CTC",
+            "mirror": "y",
+            "row": "f09a5424-4540-468b-a372-0a6b05246674"
+          },
+          {
+            "at": {
+              "x": 22.86,
+              "y": 11.43
+            },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "row": "293515f7-9155-4100-a639-23f6d051ab4e"
           },
@@ -10409,6 +10420,15 @@
             },
             "glyph": "Railroad-Trackplan:GCOR Rule 9.14 DoT_Left",
             "row": "1d2e57a4-2962-4c91-97d5-0b1932abf784"
+          },
+          {
+            "at": {
+              "x": 29.21,
+              "y": 24.13
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 BEGIN_CTC",
+            "mirror": "y",
+            "row": "f0816e4c-bb4d-4002-b1ed-6cd0949417c1"
           },
           {
             "at": {
@@ -10440,16 +10460,16 @@
               "x": 43.18,
               "y": 11.43
             },
-            "glyph": "Railroad-Trackplan:IRJ",
-            "row": "78d813b1-144a-4e54-8d3d-0a64f49eb2d6"
+            "glyph": "Railroad-Trackplan:GCOR Rule 6.13 Yard Limits",
+            "row": "67636818-c46b-4590-ae77-42eaa941c41a"
           },
           {
             "at": {
-              "x": 45.72,
+              "x": 43.18,
               "y": 11.43
             },
-            "glyph": "Railroad-Trackplan:GCOR Rule 6.13 Yard Limits",
-            "row": "3b6b0a42-dfd3-404a-b9c9-c2a85ef712be"
+            "glyph": "Railroad-Trackplan:IRJ",
+            "row": "78d813b1-144a-4e54-8d3d-0a64f49eb2d6"
           },
           {
             "at": {
@@ -11722,10 +11742,10 @@
               "A": [
                 "1d2e57a4-2962-4c91-97d5-0b1932abf784.track",
                 "293515f7-9155-4100-a639-23f6d051ab4e.approach",
+                "67636818-c46b-4590-ae77-42eaa941c41a.track",
                 "Watsonville:03T.TC"
               ],
               "B": [
-                "3b6b0a42-dfd3-404a-b9c9-c2a85ef712be.track",
                 "Watsonville:3.C"
               ]
             }
@@ -12352,6 +12372,7 @@
                 "Watsonville:02T.TC"
               ],
               "governed": [
+                "f0816e4c-bb4d-4002-b1ed-6cd0949417c1.track",
                 "Watsonville:837.R"
               ],
               "mast": "Watsonville:838NCD"
@@ -12398,9 +12419,11 @@
               "approach": [
                 "1d2e57a4-2962-4c91-97d5-0b1932abf784.track",
                 "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
+                "67636818-c46b-4590-ae77-42eaa941c41a.track",
                 "Watsonville:03T.TC"
               ],
               "governed": [
+                "f09a5424-4540-468b-a372-0a6b05246674.track",
                 "Watsonville:837.N"
               ],
               "mast": "Watsonville:838NAB"
@@ -12641,8 +12664,8 @@
           {
             "derived": {
               "by": "inherited",
-              "circuit": "Watsonville:03T",
-              "name": "Watsonville:03T",
+              "circuit": "Watsonville:3T1",
+              "name": "Watsonville:3T1",
               "regime": "GCOR_RULE_6_13"
             }
           },
@@ -12865,16 +12888,8 @@
           {
             "derived": {
               "by": "inherited",
-              "circuit": "Watsonville:837T1",
-              "name": "Watsonville:837T1",
-              "regime": "GCOR_RULE_6_13"
-            }
-          },
-          {
-            "derived": {
-              "by": "inherited",
               "name": "track@65d2c920-24a5-4b01-a780-2a5a06a0350e.track",
-              "regime": "GCOR_RULE_6_13"
+              "regime": "GCOR_RULE_10"
             }
           },
           {
@@ -12888,9 +12903,17 @@
           {
             "derived": {
               "by": "marker",
-              "circuit": "Watsonville:3T1",
-              "name": "Watsonville:3T1",
+              "circuit": "Watsonville:03T",
+              "name": "Watsonville:03T",
               "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "marker",
+              "circuit": "Watsonville:837T1",
+              "name": "Watsonville:837T1",
+              "regime": "GCOR_RULE_10"
             }
           }
         ],
@@ -12937,23 +12960,6 @@
           {
             "derived": {
               "circuits": {
-                "track": "Watsonville:3T1"
-              }
-            },
-            "given": {
-              "Kind": "GCOR_RULE_6_13"
-            },
-            "id": "3b6b0a42-dfd3-404a-b9c9-c2a85ef712be",
-            "relations": {
-              "track": [
-                "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.B",
-                "Watsonville:3.C"
-              ]
-            }
-          },
-          {
-            "derived": {
-              "circuits": {
                 "track": "Watsonville:03T"
               }
             },
@@ -12966,7 +12972,61 @@
               "track": [
                 "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
                 "293515f7-9155-4100-a639-23f6d051ab4e.approach",
+                "67636818-c46b-4590-ae77-42eaa941c41a.track",
                 "Watsonville:03T.TC"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:03T"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_6_13"
+            },
+            "id": "67636818-c46b-4590-ae77-42eaa941c41a",
+            "relations": {
+              "track": [
+                "1d2e57a4-2962-4c91-97d5-0b1932abf784.track",
+                "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
+                "293515f7-9155-4100-a639-23f6d051ab4e.approach",
+                "Watsonville:03T.TC"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:837T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "f09a5424-4540-468b-a372-0a6b05246674",
+            "relations": {
+              "track": [
+                "293515f7-9155-4100-a639-23f6d051ab4e.governed",
+                "Watsonville:837.N"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:837T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "f0816e4c-bb4d-4002-b1ed-6cd0949417c1",
+            "relations": {
+              "track": [
+                "3478e3b9-eb36-424c-bb66-b3db1669812d.governed",
+                "Watsonville:837.R"
               ]
             }
           }
@@ -13174,6 +13234,44 @@
             "stroke": {
               "width": 0.1524
             },
+            "type": "polyline"
+          }
+        ]
+      },
+      "Railroad-Trackplan:GCOR Rule 10 BEGIN_CTC": {
+        "ports": {
+          "To": {
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        "shape": [
+          {
+            "points": "-1.27,0.635 -1.27,1.27",
+            "type": "polyline"
+          },
+          {
+            "points": "-1.27,1.905 -1.27,2.54",
+            "type": "polyline"
+          },
+          {
+            "points": "-1.27,3.175 -1.27,3.81",
+            "type": "polyline"
+          },
+          {
+            "points": "-1.27,-0.3175 -1.27,0.3175",
+            "type": "polyline"
+          },
+          {
+            "points": "-1.27,-1.27 -1.27,-0.635",
+            "type": "polyline"
+          },
+          {
+            "points": "-1.27,-2.54 -1.27,-1.905",
+            "type": "polyline"
+          },
+          {
+            "points": "-1.27,-3.81 -1.27,-3.175",
             "type": "polyline"
           }
         ]
@@ -14657,37 +14755,99 @@
               "Kind": "SENSOR"
             }
           },
-          "SENSOR.Gilroy": {
+          "SENSOR.Gilroy.E.SLOW": {
+            "given": {
+              "IC": "MQTT-JMRI",
+              "Kind": "SENSOR"
+            }
+          },
+          "SENSOR.Gilroy.E.STOP": {
+            "given": {
+              "IC": "MQTT-JMRI",
+              "Kind": "SENSOR"
+            }
+          },
+          "SENSOR.Gilroy.W.SLOW": {
+            "given": {
+              "IC": "MQTT-JMRI",
+              "Kind": "SENSOR"
+            }
+          },
+          "SENSOR.Gilroy.W.STOP": {
             "given": {
               "IC": "MQTT-JMRI",
               "Kind": "SENSOR"
             }
           },
           "SIGNALMAST.778NAB": {
+            "derived": {
+              "mast": "Gilroy:778NAB",
+              "positions": [
+                "A",
+                "B"
+              ]
+            },
             "given": {
               "IC": "MQTT-JMRI",
               "Kind": "SIGNALMAST"
             }
           },
           "SIGNALMAST.778NC": {
+            "derived": {
+              "mast": "Gilroy:778NC",
+              "positions": [
+                "A"
+              ]
+            },
             "given": {
               "IC": "MQTT-JMRI",
               "Kind": "SIGNALMAST"
             }
           },
           "SIGNALMAST.778SAB": {
+            "derived": {
+              "mast": "Gilroy:778SAB",
+              "positions": [
+                "A",
+                "B"
+              ]
+            },
             "given": {
               "IC": "MQTT-JMRI",
               "Kind": "SIGNALMAST"
             }
           },
           "SIGNALMAST.778SC": {
+            "derived": {
+              "mast": "Gilroy:778SC",
+              "positions": [
+                "A"
+              ]
+            },
             "given": {
               "IC": "MQTT-JMRI",
               "Kind": "SIGNALMAST"
             }
           },
-          "SIGNALMAST.Gilroy": {
+          "SIGNALMAST.Gilroy.E": {
+            "derived": {
+              "mast": "Gilroy:Gilroy",
+              "positions": [
+                "E"
+              ]
+            },
+            "given": {
+              "IC": "MQTT-JMRI",
+              "Kind": "SIGNALMAST"
+            }
+          },
+          "SIGNALMAST.Gilroy.W": {
+            "derived": {
+              "mast": "Gilroy:Gilroy",
+              "positions": [
+                "W"
+              ]
+            },
             "given": {
               "IC": "MQTT-JMRI",
               "Kind": "SIGNALMAST"
@@ -16977,6 +17137,7 @@
       "Railroad-Trackplan": "split-projects-final-147-g9fcf779-dirty"
     },
     "referenceData": {
+      "aspectNames": "2026-11-10",
       "codeLineCapacity": "2026-11-01",
       "codeLineSteps": "2026-11-01.3",
       "driverEncodings": "2026-10-23",
@@ -16988,7 +17149,7 @@
     },
     "rules": "0.1.0",
     "source": {
-      "describe": "split-projects-final-147-g9fcf779",
+      "describe": "split-projects-final-147-g9fcf779-dirty",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad",

@@ -142,11 +142,32 @@
       "feature": null,
       "replacedBy": null
     },
+    "driver.aspect_name": {
+      "level": "error",
+      "lifecycle": "proposed",
+      "since": "0.1.0",
+      "feature": "physical/io/driver_jmri_mast.feature#a mast demands a word its signal system has no name for",
+      "replacedBy": null
+    },
     "driver.encoding": {
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
       "feature": null,
+      "replacedBy": null
+    },
+    "driver.signal_system": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "physical/io/driver_jmri_mast.feature#no signal system stated anywhere",
+      "replacedBy": null
+    },
+    "driver.signal_system.unknown": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "physical/io/driver_jmri_mast.feature#a signal system no table names",
       "replacedBy": null
     },
     "head.plan": {

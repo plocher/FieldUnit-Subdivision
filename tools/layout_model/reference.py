@@ -8,7 +8,7 @@ from typing import Optional
 
 # Versioned so provenance can name it.
 REFERENCE_DATA = {"encodingTransportPairing": "2026-10-23", "driverEncodings": "2026-10-23", "indicationTokens": "2026-10-27.2", "stations": "2026-10-27", "codeLineCapacity": "2026-11-01", "codeLineSteps": "2026-11-01.3",
-                  "trainOrderInputs": "2026-11-08", "regimes": "2026-11-10"}
+                  "trainOrderInputs": "2026-11-08", "regimes": "2026-11-10", "aspectNames": "2026-11-10"}
 # An encoding's Kind pairs with its transport's Kind (ADR 0009 §3.10).
 TRANSPORT_OF_ENCODING = {"AAR": "MQTT", "USS506": "TIMECODE", "BITS": "TIMECODE", "JMRI": "MQTT", "CMRI": "CMRI"}
 # A driver whose IC is an encoding needs that I/O encoding on its processor (ADR 0009 §3.3, §3.6, §3.12 "IC native or encoded").
@@ -145,3 +145,52 @@ REGIMES: dict[str, str] = {
 }
 CTC = "GCOR_RULE_10"                                               # the regime of track within a control point
 CURRENT_OF_TRAFFIC = "GCOR_RULE_9_14"                              # "Movement with the Current of Traffic": Direction LEFT or RIGHT
+# JMRI "aspect names" (never shortened to "aspect"), the string a JMRI signal mast driver publishes for a mast's
+# indication (the owner, 2026-11-05, issue #96; the seam is JMRI's MqttSignalMast: ``"<aspect name>; Lit; Unheld"``).
+# Keyed by signal system, then indication, then the mast's Kind (ADR 0013 §5: CONTROLLED, ABSOLUTE, PERMISSIVE): a row
+# is one name for every Kind, or a map by Kind where the system folds the plate into the name (SP's STOP is "Home
+# Signal Red" on a controlled or absolute mast, "Stop and Proceed" on a permissive one). Our indication vocabulary does
+# not change. An indication with no row is not presentable in that system. The tables are ours and editable; JMRI's
+# ``xml/signals/<system>/aspects.xml`` is a source for names, not an authority, and its appearance files and
+# aspectMappings are not adopted. ``basic`` adds RESTRICTING, which JMRI's basic lacks. In SPTCO-1969, lunar was
+# dropped in later eras (red over yellow): an edit to the DIVERGING_RESTRICTING row. ADVANCE_APPROACH and the
+# speed-signalling words have no row there; the owner expects them absent on western roads.
+ASPECT_NAMES: dict[str, dict[str, object]] = {
+    "basic": {
+        "CLEAR": "Clear",
+        "APPROACH": "Approach",
+        "STOP": "Stop",
+        "DIVERGING_CLEAR": "Diverging Clear",
+        "DIVERGING_APPROACH": "Diverging Approach",
+        "RESTRICTING": "Restricting",
+    },
+    "SPTCO-1969": {
+        "CLEAR": "Block Signal Green",
+        "APPROACH": "Approach Signal Yellow",
+        "RESTRICTING": "Restricting",
+        "STOP": {"CONTROLLED": "Home Signal Red", "ABSOLUTE": "Home Signal Red", "PERMISSIVE": "Stop and Proceed"},
+        "DIVERGING_CLEAR": "Block Signal Green for Diverging Route",
+        "APPROACH_DIVERGING": "Block Signal Yellow over Green",
+        "APPROACH_MEDIUM": "Approach Medium - Flashing Yellow",
+        "DIVERGING_APPROACH": "Home Signal Yellow for Diverging Route",
+        "DIVERGING_RESTRICTING": "Home Signal Red over Lunar",
+    },
+}
+
+
+def signal_systems(user: Optional[dict[str, dict[str, object]]] = None) -> set[str]:
+    """The signal systems a table names, shipped and the user's own."""
+    return set(ASPECT_NAMES) | set(user or {})
+
+
+def aspect_name(system: Optional[str], indication: str, kind: Optional[str], user: Optional[dict[str, dict[str, object]]] = None) -> Optional[str]:
+    """The aspect name a JMRI signal mast driver publishes for ``indication`` on a mast of ``kind`` in ``system``: the
+    user's own row over the shipped one; None when neither has it (not presentable in that system, never guessed)."""
+    for table in (user or {}, ASPECT_NAMES):
+        row = table.get(system or "", {}).get(indication)
+        if row is None:
+            continue
+        if isinstance(row, dict):
+            return row.get(kind or "")
+        return row
+    return None

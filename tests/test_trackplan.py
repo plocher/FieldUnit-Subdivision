@@ -1006,13 +1006,14 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(len(self.sm.report.by_code("mast.powered")), 0)
         # Railroad 9fcf779: 15 switch.lever (Watsonville's 3 to 25, Gilroy Caltrain 771, Gilroy's locks 777 and 781) and
         # 2 switch.lock.local are settled; identity.name and head.letter are the anonymous head devices, #80's; the
-        # regime findings are the owner's redraw in progress (#113, #118). No warning: Lick and Hollister are marked
-        # off_layout and no mast lacks its Kind.
+        # regime findings are the owner's redraw in progress (#113, #118); driver.signal_system is Gilroy's six JMRI signal
+        # mast drivers with no SignalSystem drawn yet (#85). No warning: Lick and Hollister are marked off_layout and no
+        # mast lacks its Kind.
         missing = Counter(d.code for d in self.sm.report.diags if d.severity == "missing")
         self.assertEqual({k: v for k, v in missing.items() if k.startswith("switch.")}, {"switch.lever": 15, "switch.lock.local": 2})
         heads = [d for ix in self.model["interlockings"].values() for d in ix["devices"] if d["given"]["Appliance"] == "head"]
         self.assertEqual(missing["identity.name"], len(heads))
-        self.assertEqual(set(missing) - {"switch.lever", "switch.lock.local", "identity.name", "head.letter"} - {k for k in missing if k.startswith("regime.")}, set())
+        self.assertEqual(set(missing) - {"switch.lever", "switch.lock.local", "identity.name", "head.letter", "driver.signal_system"} - {k for k in missing if k.startswith("regime.")}, set())
         self.assertEqual(self.sm.report.counts()["warning"], 0)
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):

@@ -1154,7 +1154,7 @@ class SPCoastExample(unittest.TestCase):
         self.assertNotIn("rules", stripped["provenance"])
         out, report = derive.derive(stripped)
         self.assertEqual(layout_model.dumps(out), text)
-        self.assertEqual(report.counts(), {"error": 7, "warning": 0, "info": 6, "missing": 17})   # Railroad 9fcf779: regime.ambiguous on seven Corporal and Sargent pieces reachable from the END CTC faces and Corporal's 829T1 6.28 marker (membership is no regime source, the owner 2026-11-10; the owner is redrawing), regime.limits for six interlockings; switch.lever on 13 switches (Watsonville, Gilroy Caltrain 771) and on the locks 777 and 781 with switch.lock.local (no field pair drawn), train_order.device for Gilroy (Railroad 5715653); the importer's train_order.heads and geometry.head are not the derivation's
+        self.assertEqual(report.counts(), {"error": 7, "warning": 0, "info": 6, "missing": 23})   # driver.signal_system on Gilroy's six JMRI signal mast drivers (no SignalSystem drawn yet, #85). Railroad 9fcf779 with the owner's uncommitted edits to Corporal, Sargent and Watsonville (exported 2026-11-11): regime.ambiguous on seven Corporal and Sargent pieces reachable from the END CTC faces and Corporal's 829T1 6.28 marker (membership is no regime source, the owner 2026-11-10; the owner is redrawing), regime.limits for six interlockings; switch.lever on 13 switches (Watsonville, Gilroy Caltrain 771) and on the locks 777 and 781 with switch.lock.local (no field pair drawn), train_order.device for Gilroy (Railroad 5715653); the importer's train_order.heads and geometry.head are not the derivation's
 
 
 if __name__ == "__main__":
