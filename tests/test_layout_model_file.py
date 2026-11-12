@@ -34,7 +34,7 @@ class LayoutModelFileTests(unittest.TestCase):
 
     def test_a_name_may_not_contain_a_colon(self):
         bad = copy.deepcopy(self.model)
-        bad["interlockings"]["Gilroy:Caltrain"] = bad["interlockings"].pop("Gilroy Caltrain")
+        bad["interlockings"]["G:Caltrain"] = bad["interlockings"].pop("GCaltrain")
         self.assertTrue(layout_model.errors(bad))
 
     def test_a_reference_is_always_qualified(self):

@@ -353,25 +353,25 @@ class SPCoastRelationTable(unittest.TestCase):
 
     def test_units_run_on_their_processors(self):
         procs = {n: ix.processor for n, ix in self.sm.interlockings.items()}
-        self.assertEqual(procs["Gilroy Caltrain"], "SPCoastApp")
+        self.assertEqual(procs["GCaltrain"], "SPCoastApp")                # Gilroy Caltrain until Railroad eef8217
         self.assertEqual(procs["Gilroy"], "Gilroy")                   # the sheet is Gilroy since the owner's 2026-11-09 rename (a space in a processor name broke binding routes)
         for n in ("Christopher", "Corporal", "Luchessa", "Sargent", "Watsonville"):
             self.assertEqual(procs[n], n)
 
     def test_transports_anchored_once_per_connecting_processor(self):
         t = self.sm.transports
-        self.assertEqual(t["MQTT"].anchors, {"JohnCTC", "Gilroy"})
+        self.assertEqual(t["MQTT"].anchors, {"SouthCTC", "Gilroy"})         # the office processor is SouthCTC since Railroad eef8217 (JohnCTC before)
         self.assertEqual(t["CMRInet"].anchors, {"SPCoastApp"})
-        self.assertEqual(t["TimeCode"].anchors, {"JohnCTC"})
+        self.assertEqual(t["TimeCode"].anchors, {"SouthCTC"})
 
     def test_encodings_ride_their_instances(self):
         e = self.sm.encodings
-        self.assertEqual((e["AAR Tokens"].transport, e["AAR Tokens"].processor), ("MQTT", "JohnCTC"))
+        self.assertEqual((e["AAR Tokens"].transport, e["AAR Tokens"].processor), ("MQTT", "SouthCTC"))
         self.assertEqual((e["JMRI"].transport, e["JMRI"].processor), ("MQTT", "Gilroy"))
-        self.assertEqual((e["US&S 506"].transport, e["US&S 506"].processor), ("TimeCode", "JohnCTC"))
+        self.assertEqual((e["US&S 506"].transport, e["US&S 506"].processor), ("TimeCode", "SouthCTC"))
         self.assertEqual((e["CMRInet"].transport, e["CMRInet"].processor), ("CMRInet", "SPCoastApp"))
         self.assertEqual(e["AAR Tokens"].given["Topic"], "ctc/SPCoast/SouthCTC/codeline/")   # the office unit is SouthCTC (owner, 2026-11-09)
-        self.assertEqual(self.model["layout"]["codelines"]["AAR Tokens"]["relations"], {"transport": "MQTT", "processor": "JohnCTC"})
+        self.assertEqual(self.model["layout"]["codelines"]["AAR Tokens"]["relations"], {"transport": "MQTT", "processor": "SouthCTC"})
 
     def test_cmrinet_node_and_its_bits(self):
         node = self.sm.transports["CMRInet"].nodes["30"]
@@ -385,7 +385,7 @@ class SPCoastRelationTable(unittest.TestCase):
     def test_columns_resolve_by_their_line_and_stations_follow(self):
         """The owner, 2026-10-28: a column's CP Name names a house or the interlocking; on Luchessa's US&S 506 line each
         house is a station, so its columns resolve to houses; elsewhere the interlocking is the station."""
-        self.assertEqual(self.sm.office_units["SouthCTC"].processor, "JohnCTC")
+        self.assertEqual(self.sm.office_units["SouthCTC"].processor, "SouthCTC")      # the office unit and its processor share the name since Railroad eef8217
         self.assertEqual([str(d) for d in self.sm.report.diags if d.code.startswith(("column.", "station.", "desk.station"))], [])
         columns = self.model["officeUnits"]["SouthCTC"]["columns"]
         self.assertTrue(all(c.get("derived", {}).get("interlocking") or c.get("relations", {}).get("interlocking") for c in columns.values()))
@@ -410,12 +410,12 @@ class SPCoastRelationTable(unittest.TestCase):
 
     def test_a_column_reference_is_qualified_by_its_office_unit(self):
         cols = {d["relations"]["column"] for d in self.model["officeUnits"]["SouthCTC"]["devices"] if "column" in d.get("relations", {})}
-        self.assertEqual(cols, {f"SouthCTC:{n}" for n in range(1, 15)})
+        self.assertEqual(cols, {f"SouthCTC:{n}" for n in range(0, 15)})           # column 0 is GCaltrain's switch 771 (Railroad eef8217)
 
     def test_every_key_is_a_name_never_a_value(self):
         """The owner (2026-10-24): every symbol the compiler names carries Name = ${Value}; Value is never read. The
         anonymous head devices (Device-Head-*, #80: a head is anonymous, keyed by its mast pin and Head letter) are the
-        one kind that states no Name today; every identity.name finding is one of them (Railroad 9fcf779)."""
+        one kind that states no Name today; every identity.name finding is one of them (Railroad eef8217)."""
         heads = [d for ix in self.model["interlockings"].values() for d in ix["devices"] if d["given"]["Appliance"] == "head"]
         self.assertEqual(len(self.sm.report.by_code("identity.name")), len(heads))
         self.assertEqual([str(d) for d in self.sm.report.by_code("identity.name") if "Device-Head-" not in str(d)], [])
@@ -433,13 +433,13 @@ class SPCoastRelationTable(unittest.TestCase):
         self.assertEqual(len(gilroy["TURNOUT.777"].syms), 2)
         self.assertEqual(self.sm.report.by_code("driver.address"), [])
         masts = [d for ix in self.model["interlockings"].values() for d in ix["devices"] if d["given"]["Appliance"] == "mast"]
-        self.assertEqual(len(masts), 44)                              # Railroad 9fcf779 (38 at 5715653; the owner's masts of 2026-11-09)
+        self.assertEqual(len(masts), 46)                              # Railroad eef8217: Christopher's siding dwarfs 814NA and 818SA (44 at 9fcf779, 38 at 5715653)
         self.assertEqual([r for d in masts if d["derived"]["serves"] == "Gilroy:778NC" for r in d.get("relations", {}).get("bindings", {}).items()],
                          [("A", "Gilroy/SIGNALMAST.778NC/IND")])       # the mast device's pin is its head letter since the anonymous-head step (#80)
 
     def test_a_head_device_states_its_mast_and_serves_it(self):
         heads = [d for ix in self.model["interlockings"].values() for d in ix["devices"] if d["given"]["Appliance"] == "head"]
-        self.assertEqual(len(heads), 56)                              # Railroad 9fcf779 (47 at 5715653); the heads' names and letters are #80's
+        self.assertEqual(len(heads), 60)                              # Railroad eef8217: 58 masts' heads plus the two dwarfs' (56 at 9fcf779, 47 at 5715653); the heads' names and letters are #80's
         self.assertEqual([d for d in heads if d["relations"].get("mast") != d["derived"].get("serves") or "Name" in d["given"]], [])
 
     def test_layout_facts_from_the_railroad_symbol(self):

@@ -228,7 +228,7 @@ class SPCoastGeometry(unittest.TestCase):
 
     def test_sargent_as_adr_0010_section_5_reads_it(self):
         """Sargent's sheet since the block POC (Railroad 56ff2e1, 2a1696e, 31954c5): the 834 signal location with its
-        two masts and plate, 836T, and the block track leaving through ToCorporalMT in place of the consumer of
+        two masts and plate, 836T, and the block track leaving through the hierarchical net NMT in place of the consumer of
         Corporal:2NAT; the frame moved with the drawing."""
         g = self.geo.interlockings["Sargent"]
         self.assertEqual(g["appliances"]["835"], {"at": {"x": 78.74, "y": 33.02}, "glyph": "Railroad-Trackplan:Switch_Lock", "mirror": "y"})
@@ -240,10 +240,10 @@ class SPCoastGeometry(unittest.TestCase):
         self.assertEqual(len(g["track"]), 6)
         runs = self.model["interlockings"]["Sargent"]["geometry"]["track"]                   # a run's circuit is derived
         self.assertEqual(sorted(t["derived"]["circuit"] for t in runs if "derived" in t),
-                         ["Corporal:834T", "Sargent:1NAT", "Sargent:1T1", "Sargent:1T1", "Sargent:2SAT", "Sargent:836T"])   # 834T reaches the 834 joint through ToCorporalMT (ADR 0013 §7.1)
+                         ["Corporal:834T", "Sargent:1NAT", "Sargent:1T1", "Sargent:1T1", "Sargent:2SAT", "Sargent:836T"])   # 834T reaches the 834 joint through NMT (ADR 0013 §7.1)
         self.assertEqual(sorted(t["relations"]["from"] for t in runs if t.get("derived", {}).get("circuit") == "Sargent:1T1"), ["Sargent:1.N", "Sargent:1.R"])   # the Beet Loader spur carries switch 1's OS circuit since Railroad 0ddd395 (Switch_Local 1, TC 1T1)
-        self.assertIn("label:ToCorporalMT", next(t["relations"].values() for t in runs if t.get("derived", {}).get("circuit") == "Corporal:834T"))
-        self.assertEqual(len(g["markers"]), 11)                                  # Railroad 9fcf779 with the owner's uncommitted Sargent edits of 2026-11-10: the 261 sign gone, the boundary a plain IRJ with two GCOR markers
+        self.assertIn("label:NMT", next(t["relations"].values() for t in runs if t.get("derived", {}).get("circuit") == "Corporal:834T"))   # the hierarchical net NMT since Railroad eef8217 (ToCorporalMT before)
+        self.assertEqual(len(g["markers"]), 10)                                  # Railroad eef8217: the NextCP toward Watsonville gone (the block is a shared net); 11 at 9fcf779
         rows = self.rows("Sargent")
         self.assertEqual(sum(1 for m in g["markers"] if rows[m["row"]]["given"].get("Kind") == "INDUSTRY"), 2)
         self.assertNotIn("mileposts", g)
@@ -259,8 +259,10 @@ class SPCoastGeometry(unittest.TestCase):
     def test_luchessa_mileposts_and_the_runs_that_meet_a_switch_port(self):
         g = self.geo.interlockings["Luchessa"]
         self.assertEqual(sorted(g["mileposts"]), ["78.3", "79.3"])
-        ports = sorted(v for t in g["track"] for v in t.get("relations", {}).values() if ":" in v)
+        ports = sorted(v for t in g["track"] for v in t.get("relations", {}).values() if ":" in v and not v.startswith(geometry.LABEL_END))
         self.assertEqual(ports, ["Luchessa:783.R", "Luchessa:799.N", "Luchessa:799.R"])
+        labels = sorted(v for t in g["track"] for v in t.get("relations", {}).values() if v.startswith(geometry.LABEL_END))
+        self.assertEqual(labels, ["label:NMT", "label:SMT1", "label:SMT2"])          # Luchessa's three block circuits leave by hierarchical nets (Railroad eef8217)
 
     def test_every_marker_names_one_track_row_by_id_and_copies_none_of_its_facts(self):
         """Three-maps D10: a marker's one join key is its row's id; each row has exactly one marker."""
@@ -284,19 +286,21 @@ class SPCoastGeometry(unittest.TestCase):
                     kind = rows[row]["given"]["Kind"]
                     self.assertIn(side, SIDES.get(kind, {"track"}), (name, end, kind))
         lu = [t for t in self.model["interlockings"]["Luchessa"]["geometry"]["track"] if t.get("derived", {}).get("circuit") == "Luchessa:1NAT"]
-        sides = sorted(e.rsplit(".", 1)[1] for t in lu for e in t["relations"].values())
-        self.assertEqual(sides, ["approach", "track"])                           # from the signal joint's approach side to the NextCP
+        sides = sorted(e if e.startswith(geometry.LABEL_END) else e.rsplit(".", 1)[1] for t in lu for e in t["relations"].values())
+        self.assertEqual(sides, ["approach", "label:SMT2"])                      # from the signal joint's approach side to the hierarchical net SMT2 (Railroad eef8217; a NextCP's track side before)
 
     def test_a_run_that_ends_on_a_hierarchical_label_states_the_labels_name(self):
-        """ADR 0013 §7.1 (Railroad 56ff2e1, 2a1696e): 834T leaves Corporal's sheet through ToSargentMT and reaches Sargent's
-        through ToCorporalMT; the Beet Loader labels carry dark track between the two sheets. Each such run ends on the
-        label's name, no coordinate and nothing from the other sheet; the circuit it carries is the derivation's."""
+        """ADR 0013 §7.1 (Railroad eef8217): every interlocking's block circuits leave its sheet by hierarchical nets, NMT
+        and SMT (Luchessa's two south mains SMT1 and SMT2; Christopher's siding sheet has none of its own); the Beet
+        Loader labels carry dark track between Corporal's and Sargent's sheets. Each such run ends on the label's name,
+        no coordinate and nothing from the other sheet; the circuit it carries is the derivation's."""
         ends = {name: sorted(e for t in ix["geometry"]["track"] for e in t.get("relations", {}).values() if e.startswith("label:"))
                 for name, ix in self.model["interlockings"].items()}
-        self.assertEqual(ends["Corporal"], ["label:Beet Loader 1", "label:Beet Loader 2", "label:ToSargentMT"])
-        self.assertEqual(ends["Sargent"], ["label:Beet Loader 1", "label:Beet Loader 2", "label:ToCorporalMT"])
-        self.assertEqual({n: e for n, e in ends.items() if n not in ("Corporal", "Sargent")}, {n: [] for n in ends if n not in ("Corporal", "Sargent")})
-        out = next(t for t in self.model["interlockings"]["Corporal"]["geometry"]["track"] if t.get("relations", {}).get("to") == "label:ToSargentMT")
+        self.assertEqual(ends, {"Christopher": [], "Corporal": ["label:Beet Loader 1", "label:Beet Loader 2", "label:SMT"],
+                                "GCaltrain": ["label:NMT", "label:SMT"], "Gilroy": ["label:NMT", "label:SMT"],
+                                "Luchessa": ["label:NMT", "label:SMT1", "label:SMT2"],
+                                "Sargent": ["label:Beet Loader 1", "label:Beet Loader 2", "label:NMT", "label:SMT"], "Watsonville": ["label:NMT"]})
+        out = next(t for t in self.model["interlockings"]["Corporal"]["geometry"]["track"] if t.get("relations", {}).get("to") == "label:SMT")
         self.assertEqual([k for k in out["relations"] if out["relations"][k].startswith("label:")], ["to"])   # the name only
         self.assertEqual(out["derived"], {"circuit": "Corporal:834T"})            # from the far end, the joint's B side
         self.assertEqual(self.sm.report.by_code("geometry.run_end"), [])
