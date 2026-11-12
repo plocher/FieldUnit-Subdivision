@@ -1154,7 +1154,7 @@ class SPCoastExample(unittest.TestCase):
         self.assertNotIn("rules", stripped["provenance"])
         out, report = derive.derive(stripped)
         self.assertEqual(layout_model.dumps(out), text)
-        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 7, "missing": 18})   # Railroad eef8217: regime.limits for the seven interlockings (every piece has a regime: the interlockings share their block circuits by hierarchical nets, GCaltrain's boundary joint stops its yard); switch.lever on Watsonville's twelve powered switches 3 to 25 (GCaltrain's 771 has its lever on column 0, Gilroy's locks 777 and 781 their Local-Lock levers); driver.signal_system on Gilroy's six JMRI signal mast drivers (no SignalSystem drawn yet, #85); the importer's identity.name and head.letter are not the derivation's
+        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 7, "missing": 18})   # Railroad eef8217: regime.limits for the seven interlockings (every piece has a regime: the interlockings share their block circuits by hierarchical nets, GCaltrain's boundary joint stops its yard); switch.lever on Watsonville's twelve powered switches 3 to 25 (GCaltrain's 771 has its lever on column 0, Gilroy's locks 777 and 781 their Local-Lock levers); driver.jmri.signal_system on Gilroy's six JMRI signal mast drivers (no JMRI.SignalSystem drawn yet, #85); the importer's identity.name and head.letter are not the derivation's
 
 
 if __name__ == "__main__":

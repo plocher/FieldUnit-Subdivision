@@ -147,7 +147,8 @@ CTC = "GCOR_RULE_10"                                               # the regime 
 CURRENT_OF_TRAFFIC = "GCOR_RULE_9_14"                              # "Movement with the Current of Traffic": Direction LEFT or RIGHT
 # JMRI "aspect names" (never shortened to "aspect"), the string a JMRI signal mast driver publishes for a mast's
 # indication (the owner, 2026-11-05, issue #96; the seam is JMRI's MqttSignalMast: ``"<aspect name>; Lit; Unheld"``).
-# Keyed by signal system, then indication, then the mast's Kind (ADR 0013 §5: CONTROLLED, ABSOLUTE, PERMISSIVE): a row
+# Keyed by JMRI signal system (the symbol field JMRI.SignalSystem: the signal system folder under JMRI's xml/signals,
+# SPTCO-1969, basic; the owner, 2026-11-11), then indication, then the mast's Kind (ADR 0013 §5: CONTROLLED, ABSOLUTE, PERMISSIVE): a row
 # is one name for every Kind, or a map by Kind where the system folds the plate into the name (SP's STOP is "Home
 # Signal Red" on a controlled or absolute mast, "Stop and Proceed" on a permissive one). Our indication vocabulary does
 # not change. An indication with no row is not presentable in that system. The tables are ours and editable; JMRI's
