@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import shlex
 import unittest
+from collections import Counter
 
 from tools import layout_model
 from tools.layout_compiler import emit, seams
@@ -873,10 +874,15 @@ class SPCoastTrackplan(unittest.TestCase):
 
     def test_every_track_row_has_its_own_id(self):
         ids = [r["id"] for ix in self.model["interlockings"].values() for k in ("joints", "ends", "policies") for r in ix.get("track", {}).get(k, [])]
-        # IRJ, IRJ_SIGNAL, IRJ_SIGNALS; NEXT_CP, BUMPER, INDUSTRY; policies (10 x 9.14, 3 x 10, 2 x 14, 5 x 6.13, 4 x 6.28)
-        # with the one plate: the Corporal to Sargent block drawn across sheets (Railroad 56ff2e1, 2a1696e, 31954c5)
-        # replaced that NextCP pair; the three CTC boundaries are plain IRJs with a marker each side (Railroad 0ddd395).
-        self.assertEqual(len(ids), 57 + 36 + 2 + 16 + 3 + 5 + 25)
+        # IRJ, IRJ_SIGNAL, IRJ_SIGNALS; NEXT_CP, BUMPER, INDUSTRY; policies by Kind with the one plate: the Corporal to
+        # Sargent block drawn across sheets (Railroad 56ff2e1, 2a1696e, 31954c5) replaced that NextCP pair; the three
+        # CTC boundaries are plain IRJs with a marker each side (Railroad 0ddd395). Read from Railroad 9fcf779 with the
+        # owner's uncommitted edits of 2026-11-10 (two BEGIN CTC faces beyond Watsonville's yard IRJs); the policy
+        # counts move with that redraw, the joints and ends do not.
+        kinds = Counter(r["given"]["Kind"] for ix in self.model["interlockings"].values() for k in ("joints", "ends", "policies") for r in ix.get("track", {}).get(k, []))
+        self.assertEqual({k: v for k, v in kinds.items() if not k.startswith("GCOR_")}, {"IRJ": 57, "IRJ_SIGNAL": 36, "IRJ_SIGNALS": 2, "NEXT_CP": 16, "BUMPER": 3, "INDUSTRY": 5, "RULE_290_G": 1})
+        self.assertEqual({k: v for k, v in kinds.items() if k.startswith("GCOR_")}, {"GCOR_RULE_9_14": 10, "GCOR_RULE_10": 5, "GCOR_RULE_14": 2, "GCOR_RULE_6_13": 5, "GCOR_RULE_6_28": 4})
+        self.assertEqual(len(ids), sum(kinds.values()))
         self.assertEqual(len(set(ids)), len(ids))
 
     def test_every_appliance_has_its_control_point_and_no_chain_is_broken(self):
@@ -913,9 +919,8 @@ class SPCoastTrackplan(unittest.TestCase):
         for name in ("Corporal", "Sargent"):
             pieces = {p["derived"]["name"]: p["derived"] for p in self.ix(name)["track"]["pieces"]}
             self.assertEqual(pieces[f"{name}:1T1"], {"name": f"{name}:1T1", "circuit": f"{name}:1T1", "regime": "GCOR_RULE_14", "by": "marker"}, name)
-        yard = [p["derived"] for p in self.ix("Gilroy Caltrain")["track"]["pieces"] if p["derived"].get("regime") == "GCOR_RULE_6_13"]
-        self.assertEqual(len(yard), 3)
-        self.assertEqual({p["by"] for p in yard}, {"marker"})
+        yard = [p["derived"] for p in self.ix("Gilroy Caltrain")["track"]["pieces"] if p["derived"].get("regime") == "GCOR_RULE_6_13" and p["derived"]["by"] == "marker"]
+        self.assertEqual(len(yard), 3)                                # the three bumper tracks; what inherits from them is the rules' business
 
     def test_sargents_hot_box_alarm_states_its_milepost(self):
         self.assertEqual(self.ix("Sargent")["appliances"]["HBA"]["given"]["Milepost"], "83.5")      # moved in Railroad 0ddd395
@@ -999,7 +1004,16 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(self.sm.report.by_code("reference.track") + self.sm.report.by_code("reference.marker"), [])
         self.assertEqual(len(self.sm.report.by_code("next_cp.drawn")), 0)
         self.assertEqual(len(self.sm.report.by_code("mast.powered")), 0)
-        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 1, "info": 0, "missing": 20})  # 15 switch.lever (Watsonville, Gilroy Caltrain 771, Gilroy Interchange's locks 777 and 781) and 2 switch.lock.local; train_order.device for Gilroy, whose field device is not drawn yet, and train_order.heads with 2 geometry.head for its retired trackplan heads; no mast.kind, and Lick and Hollister marked off_layout (Railroad 5715653)
+        # Railroad 9fcf779: 15 switch.lever (Watsonville's 3 to 25, Gilroy Caltrain 771, Gilroy's locks 777 and 781) and
+        # 2 switch.lock.local are settled; identity.name and head.letter are the anonymous head devices, #80's; the
+        # regime findings are the owner's redraw in progress (#113, #118). No warning: Lick and Hollister are marked
+        # off_layout and no mast lacks its Kind.
+        missing = Counter(d.code for d in self.sm.report.diags if d.severity == "missing")
+        self.assertEqual({k: v for k, v in missing.items() if k.startswith("switch.")}, {"switch.lever": 15, "switch.lock.local": 2})
+        heads = [d for ix in self.model["interlockings"].values() for d in ix["devices"] if d["given"]["Appliance"] == "head"]
+        self.assertEqual(missing["identity.name"], len(heads))
+        self.assertEqual(set(missing) - {"switch.lever", "switch.lock.local", "identity.name", "head.letter"} - {k for k in missing if k.startswith("regime.")}, set())
+        self.assertEqual(self.sm.report.counts()["warning"], 0)
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):
         """ADR 0013 §5. The library's mast symbols carry a fixed Kind (Railroad 1695d48), but that commit touched no placed
