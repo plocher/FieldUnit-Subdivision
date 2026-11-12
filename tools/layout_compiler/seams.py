@@ -675,7 +675,8 @@ def _anonymous_served(sm: Seams, o: Symbol) -> Optional[str]:
 
 def _function_pins(o: Symbol) -> set[str]:
     """A device's function pins: the ones its library's ``Pin.*`` contract declares, less the IND that places a nameless
-    head or lever under its mast (membership, not a function); a symbol with no contract has its wired pins."""
+    head or lever under its mast (membership, not a function). A symbol with no contract has none: a wired pin the
+    contract does not declare is not a function (ADR 0012 §4, no fallbacks)."""
     declared = {k[4:] for k in o.fields if k.startswith("Pin.")}
     if _anonymous(o):
         declared.discard("IND")

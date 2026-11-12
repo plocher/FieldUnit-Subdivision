@@ -281,7 +281,7 @@ compiler reports the disagreement. The table is the test for the three copies.
 
 ## 4. Decision
 
-Ratify §3 as the drawing contract the milestone D compiler reads, and §3.11 as its consistency checks.
+Ratify §3 as the drawing contract the milestone D compiler reads, and §3.12 as its consistency checks.[^s4]
 
 ## 5. Record
 
@@ -373,6 +373,9 @@ other transports; Studio's own notation.
 [^placement]: Added 2026-11-12 (ADR 0014 decision 1). The order landed in `2d79796` (the owner, 2026-11-11), which
     replaced placement by sheet alone, under which a symbol under no interlocking sheet was dropped in silence. The
     §3.9 text this follows is at commits `2cf4105` and `33d26ee`.
+
+[^s4]: Amended 2026-11-12 (ADR 0014 decision 1): the relation table is §3.12 since rev 2 moved it; the ratified
+    sentence said §3.11, the same slip C6 had. A section number is not a decision. The earlier text is at commit `cc370f4`.
 
 [^c6]: Amended 2026-11-12 (ADR 0014 decision 1): C6 names the checks of §3.4.2, §3.4.3 and §3.9, and its references
     to the relation table and the head-vocabulary error now read §3.12 and §3.7, the sections that hold them since
