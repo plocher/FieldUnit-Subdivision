@@ -156,11 +156,11 @@
       "feature": null,
       "replacedBy": null
     },
-    "driver.signal_system": {
+    "driver.jmri.signal_system": {
       "level": "missing",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": "physical/io/driver_jmri_mast.feature#no signal system stated anywhere",
+      "feature": "physical/io/driver_jmri_mast.feature#no JMRI signal system stated anywhere",
       "replacedBy": null
     },
     "driver.signal_system.unknown": {

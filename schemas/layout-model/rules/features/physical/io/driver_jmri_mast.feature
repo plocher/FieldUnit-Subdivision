@@ -4,13 +4,13 @@ Feature: A JMRI signal mast driver publishes a mast's indication
   Mixed wiring is allowed: a position wired to a head and the others to the driver.
   A head's own driver takes the indication for that head's position.
   We publish; JMRI does not run the mast. The topic is the channel prefix on the JMRI encoding and the driver's Address as its tail.
-  The signal system is a fact about each installation: the encoding names the usual one, a driver states its own when its appliance is of another era.
+  The JMRI signal system (JMRI.SignalSystem, the signal system folder under JMRI's xml/signals) is a fact about each installation: the encoding names the usual one, a driver states its own when its appliance is of another era.
   The aspect name the driver sends is the translation table's row for the signal system, the indication and the mast's Kind.
 
   Background:
     Given the layout has these I/O encodings:
-      | Name | Kind | Topic         | SignalSystem | relations.transport | relations.processor |
-      | JMRI | JMRI | jmri_channel/ | basic        | MQTT                | Field               |
+      | Name | Kind | Topic         | JMRI.SignalSystem | relations.transport | relations.processor |
+      | JMRI | JMRI | jmri_channel/ | basic             | MQTT                | Field               |
     And interlocking "X" has these appliances:
       | Name   | Appliance | Kind       | Style  |
       | 778NAB | mast      | CONTROLLED | double |
@@ -61,13 +61,13 @@ Feature: A JMRI signal mast driver publishes a mast's indication
 
   Scenario: a driver of another era states its own signal system
     Given processor "Field" has these drivers:
-      | Key               | IC        | Kind       | SignalSystem |
-      | SIGNALMAST.778NAB | MQTT-JMRI | SIGNALMAST | SPTCO-1969   |
+      | Key               | IC        | Kind       | JMRI.SignalSystem |
+      | SIGNALMAST.778NAB | MQTT-JMRI | SIGNALMAST | SPTCO-1969        |
     When the layout is derived
     Then the driver "SIGNALMAST.778NAB" on "Field" uses the signal system "SPTCO-1969"
 
-  @driver.signal_system
-  Scenario: no signal system stated anywhere
+  @driver.jmri.signal_system
+  Scenario: no JMRI signal system stated anywhere
     Given the layout has these I/O encodings:
       | Name | Kind | Topic         | relations.transport | relations.processor |
       | JMRI | JMRI | jmri_channel/ | MQTT                | Field               |
@@ -80,8 +80,8 @@ Feature: A JMRI signal mast driver publishes a mast's indication
   @driver.signal_system.unknown
   Scenario: a signal system no table names
     Given processor "Field" has these drivers:
-      | Key               | IC        | Kind       | SignalSystem |
-      | SIGNALMAST.778NAB | MQTT-JMRI | SIGNALMAST | SP-1890      |
+      | Key               | IC        | Kind       | JMRI.SignalSystem |
+      | SIGNALMAST.778NAB | MQTT-JMRI | SIGNALMAST | SP-1890           |
     When the layout is derived
     Then it is reported as an error on "SIGNALMAST.778NAB"
 
@@ -91,8 +91,8 @@ Feature: A JMRI signal mast driver publishes a mast's indication
       | Name   | Appliance | Kind       | Style  | Indications                    |
       | 778NAB | mast      | CONTROLLED | double | STOP, ADVANCE_APPROACH, CLEAR  |
     And processor "Field" has these drivers:
-      | Key               | IC        | Kind       | SignalSystem |
-      | SIGNALMAST.778NAB | MQTT-JMRI | SIGNALMAST | SPTCO-1969   |
+      | Key               | IC        | Kind       | JMRI.SignalSystem |
+      | SIGNALMAST.778NAB | MQTT-JMRI | SIGNALMAST | SPTCO-1969        |
     And field mast device "778NAB" of interlocking "X" binds "A, B" to "Field/SIGNALMAST.778NAB/IND"
     When the layout is derived
     Then it is reported as an error on "SIGNALMAST.778NAB"

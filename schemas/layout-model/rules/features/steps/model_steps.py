@@ -502,7 +502,7 @@ def io_encodings(context):
 @given('processor "{name}" has these drivers:')
 def drivers(context, name):
     """``Key`` the driver's key on the processor's bus (an encoded driver's Kind.served); every other column given
-    (IC, Kind, Address, SignalSystem)."""
+    (IC, Kind, Address, JMRI.SignalSystem)."""
     proc = _model(context).setdefault("layout", {}).setdefault("processors", {}).setdefault(name, {"given": {"Board": "cpNode"}})
     for row in context.table:
         key, entity = _entity(row, key="Key")
@@ -551,8 +551,8 @@ def topic(context, key, proc, topic):
 
 @then('the driver "{key}" on "{proc}" uses the signal system "{system}"')
 def signal_system(context, key, proc, system):
-    got = _driver(context, key, proc).get("derived", {}).get("signalSystem")
-    assert got == system, f"{key}: derived.signalSystem is {got!r}, not {system!r}"
+    got = _driver(context, key, proc).get("derived", {}).get("jmriSignalSystem")
+    assert got == system, f"{key}: derived.jmriSignalSystem is {got!r}, not {system!r}"
 
 
 # ------------------------------------------------------------------- the aspect name tables (reference data, ADR 0012 §6)

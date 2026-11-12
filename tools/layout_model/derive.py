@@ -1507,9 +1507,11 @@ class _Derivation:
         bindings reach it say which: a mast device's bound position pins, or the face of a head whose own pin reaches it
         (the owner, 2026-11-10); written as ``derived.mast`` and ``derived.positions``. It publishes on the topic the
         JMRI encoding's ``Topic`` prefixes and its ``Address`` ends (``derived.topic``; without an Address the tail is
-        the published name, whose form is issue #99's, so nothing is written). Its signal system is its own
-        ``SignalSystem``, else its encoding's (``derived.signalSystem``): neither stated is ``driver.signal_system`` at
-        missing; a system no table names (``reference.signal_systems``) is ``driver.signal_system.unknown`` at error."""
+        the published name, whose form is issue #99's, so nothing is written). Its JMRI signal system, the
+        folder under JMRI's xml/signals whose aspect names it publishes (the owner, 2026-11-11), is its own
+        ``JMRI.SignalSystem``, else its encoding's (``derived.jmriSignalSystem``): neither stated is
+        ``driver.jmri.signal_system`` at missing; a system no table names (``reference.signal_systems``) is
+        ``driver.signal_system.unknown`` at error."""
         layout = self.m.get("layout", {})
         reached: dict[str, dict[str, Any]] = {}                                  # processor/address -> {mast, positions}
         for name, ix in self.m.get("interlockings", {}).items():
@@ -1546,15 +1548,15 @@ class _Derivation:
                     derived["positions"] = sorted(hit["positions"], key=sort_key)
                 if g.get("Address") and enc.get("given", {}).get("Topic"):
                     derived["topic"] = enc["given"]["Topic"] + g["Address"]
-                system = g.get("SignalSystem") or enc.get("given", {}).get("SignalSystem")
+                system = g.get("JMRI.SignalSystem") or enc.get("given", {}).get("JMRI.SignalSystem")
                 if not system:
-                    self.r.add("driver.signal_system", f"driver {g['IC']} {address} on {p}: no SignalSystem on it or on its JMRI encoding; "
+                    self.r.add("driver.jmri.signal_system", f"driver {g['IC']} {address} on {p}: no JMRI.SignalSystem on it or on its JMRI encoding; "
                                "the aspect names it publishes are not stated", where)
                 elif system not in systems:
                     self.r.add("driver.signal_system.unknown", f"driver {g['IC']} {address} on {p}: signal system {system!r} names no "
                                f"aspect name table ({', '.join(sorted(systems))})", where)
                 else:
-                    derived["signalSystem"] = system
+                    derived["jmriSignalSystem"] = system
                 _set_derived(d, derived)
 
 
