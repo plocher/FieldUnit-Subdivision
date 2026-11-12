@@ -851,6 +851,13 @@ class Locations(unittest.TestCase):
 
 
 @unittest.skipUnless(SPCOAST_AVAILABLE, f"SPCoast project not present or kicad-cli missing: {NETLIST or PROJECT}")
+def trackplan_ref(sm, interlocking: str) -> str:
+    """The reference of the one NextCP whose Interlocking field names ``interlocking``."""
+    refs = [s.ref for s in sm.source.symbols.values() if s.kind == "NEXT_CP" and s.get("Interlocking") == interlocking]
+    assert len(refs) == 1, refs
+    return refs[0]
+
+
 class SPCoastTrackplan(unittest.TestCase):
     """The integration gate: the trackplan of the live project, as the relation table's trackplan rows read it."""
 
@@ -868,20 +875,22 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(automatic, [("Corporal", "832NA"), ("Corporal", "832SA"), ("Sargent", "834NA"), ("Sargent", "834SA")])
         self.assertEqual([(i, n) for i, n, a in masts if ("controlPoint" in a.get("derived", {})) == ((i, n) in automatic)], [])   # ADR 0013 §5
         joints = [j for ix in self.model["interlockings"].values() for j in ix.get("track", {}).get("joints", []) if j["given"]["Kind"] == "IRJ_SIGNAL"]
-        self.assertEqual(len(joints), 36)                                   # Watsonville's 838SAB joint (Railroad 253b666)
+        self.assertEqual(len(joints), 38)                                   # Railroad eef8217: Christopher's siding dwarfs 814NA and 818SA (36 at 9fcf779)
         self.assertEqual([j for j in joints if "mast" not in j.get("relations", {}) or "controlPoint" not in j["derived"]], [])
         self.assertEqual([j for j in joints if set(j["derived"].get("circuits", {})) - {"approach", "governed"}], [])
 
     def test_every_track_row_has_its_own_id(self):
         ids = [r["id"] for ix in self.model["interlockings"].values() for k in ("joints", "ends", "policies") for r in ix.get("track", {}).get(k, [])]
-        # IRJ, IRJ_SIGNAL, IRJ_SIGNALS; NEXT_CP, BUMPER, INDUSTRY; policies by Kind with the one plate: the Corporal to
-        # Sargent block drawn across sheets (Railroad 56ff2e1, 2a1696e, 31954c5) replaced that NextCP pair; the three
-        # CTC boundaries are plain IRJs with a marker each side (Railroad 0ddd395). Read from Railroad 9fcf779 with the
-        # owner's uncommitted edits of 2026-11-10 (two BEGIN CTC faces beyond Watsonville's yard IRJs); the policy
-        # counts move with that redraw, the joints and ends do not.
+        # IRJ, IRJ_SIGNAL, IRJ_SIGNALS; NEXT_CP, BUMPER, INDUSTRY; policies by Kind with the one plate. Railroad eef8217:
+        # the interlockings share their block circuits by hierarchical nets, so of the 16 NextCPs only the two off-layout
+        # ends remain, Luchessa's to Hollister and GCaltrain's to Lick (drawn on the South-cTc sheet, placed by its
+        # track net NMT, the owner 2026-11-11); Christopher's siding is a controlled siding (two dwarf signal joints in place
+        # of two plain IRJs, its 6.28 marker gone); Gilroy's and Corporal's 6.28 markers are gone; GCaltrain keeps one
+        # yard-limits marker behind its RegimeBoundary joint (a plain IRJ by Kind). The CTC boundaries are plain IRJs
+        # with a marker each side (Railroad 0ddd395).
         kinds = Counter(r["given"]["Kind"] for ix in self.model["interlockings"].values() for k in ("joints", "ends", "policies") for r in ix.get("track", {}).get(k, []))
-        self.assertEqual({k: v for k, v in kinds.items() if not k.startswith("GCOR_")}, {"IRJ": 57, "IRJ_SIGNAL": 36, "IRJ_SIGNALS": 2, "NEXT_CP": 16, "BUMPER": 3, "INDUSTRY": 5, "RULE_290_G": 1})
-        self.assertEqual({k: v for k, v in kinds.items() if k.startswith("GCOR_")}, {"GCOR_RULE_9_14": 10, "GCOR_RULE_10": 5, "GCOR_RULE_14": 2, "GCOR_RULE_6_13": 5, "GCOR_RULE_6_28": 4})
+        self.assertEqual({k: v for k, v in kinds.items() if not k.startswith("GCOR_")}, {"IRJ": 55, "IRJ_SIGNAL": 38, "IRJ_SIGNALS": 2, "NEXT_CP": 2, "BUMPER": 3, "INDUSTRY": 5, "RULE_290_G": 1})
+        self.assertEqual({k: v for k, v in kinds.items() if k.startswith("GCOR_")}, {"GCOR_RULE_9_14": 10, "GCOR_RULE_10": 5, "GCOR_RULE_14": 2, "GCOR_RULE_6_13": 3, "GCOR_RULE_6_28": 1})
         self.assertEqual(len(ids), sum(kinds.values()))
         self.assertEqual(len(set(ids)), len(ids))
 
@@ -891,13 +900,31 @@ class SPCoastTrackplan(unittest.TestCase):
                           if "controlPoint" not in a.get("derived", {}) and a["given"].get("Kind") not in ("ABSOLUTE", "PERMISSIVE")
                           and a["given"]["Appliance"] != "train_order"], [])                # never in a control point (the owner, 2026-11-03)
 
-    def test_every_next_cp_names_where_it_leads_and_is_answered(self):
-        ends = [(i, e["given"].get("Interlocking")) for i, ix in self.model["interlockings"].items() for e in ix["track"].get("ends", [])
-                if e["given"]["Kind"] == "NEXT_CP"]
-        self.assertEqual(len(ends), 16)          # the Corporal to Sargent pair is gone: the block is drawn (Railroad 56ff2e1, 2a1696e)
-        self.assertEqual([e for e in ends if not e[1]], [])
-        self.assertEqual(sorted(b for a, b in ends if a == "Christopher"), ["Corporal", "Corporal", "Luchessa", "Luchessa"])
-        self.assertEqual(self.sm.report.by_code("next_cp.pair"), [])
+    def test_the_blocks_are_shared_nets_and_the_next_cps_left_lead_off_the_layout(self):
+        """Railroad eef8217: the interlockings share their block circuits through hierarchical nets, one circuit per shared
+        net named by the station whose processor reads it, so a neighbour's joint stands on it; the two NextCPs left
+        lead off the layout, Luchessa's to Hollister on its own sheet and GCaltrain's to Lick, drawn on the South-cTc
+        sheet above every interlocking and placed by its track net NMT (``trackplan.placements``, the owner 2026-11-11)."""
+        ends = {i: (e["given"], e["derived"]["circuits"]) for i, ix in self.model["interlockings"].items() for e in ix["track"].get("ends", []) if e["given"]["Kind"] == "NEXT_CP"}
+        self.assertEqual(ends, {"GCaltrain": ({"Kind": "NEXT_CP", "Interlocking": "Lick", "Style": "off_layout"}, {"track": "GCaltrain:1SAT"}),
+                                "Luchessa": ({"Kind": "NEXT_CP", "Interlocking": "Hollister", "Style": "off_layout"}, {"track": "Luchessa:3NAT"})})
+        self.assertEqual(self.sm.source.symbols[trackplan_ref(self.sm, "Lick")].sheet, "/South-cTc/")
+        self.assertEqual(self.sm.report.by_code("next_cp.pair") + self.sm.report.by_code("next_cp.off_layout") + self.sm.report.by_code("trackplan.unit"), [])
+        shared = {n: sorted({c for j in ix["track"]["joints"] for c in j["derived"].get("circuits", {}).values() if not c.startswith(n + ":")})
+                  for n, ix in self.model["interlockings"].items()}
+        self.assertEqual(shared, {"Christopher": ["Luchessa:1NAT", "Luchessa:2NAT"], "Corporal": ["Christopher:1NAT", "Christopher:2NAT"],
+                                  "GCaltrain": [], "Gilroy": ["GCaltrain:1NAT"], "Luchessa": ["Gilroy:1NAT"],
+                                  "Sargent": ["Corporal:834T"], "Watsonville": ["Sargent:1NAT"]})
+
+    def test_a_desk_lamp_consumes_the_neighbours_circuit_as_a_remote_indication(self):
+        """Railroad eef8217: the station that does not read a shared circuit shows it from the other's indication; four
+        lamps were retargeted with the shared nets, beside the six of the Corporal to Sargent block and Luchessa's traffic."""
+        lamps = sorted((d["given"]["Indication"], d["relations"]["interlocking"]) for d in self.model["officeUnits"]["SouthCTC"]["devices"]
+                       if d["given"]["Appliance"] == "lamp" and ":" in d["given"].get("Indication", ""))
+        self.assertEqual(lamps, [("Christopher:1NATK", "Corporal"), ("GCaltrain:1NATK", "Gilroy"), ("Luchessa:1NATK", "Christopher"), ("Luchessa:2NATK", "Christopher"),
+                                 ("Luchessa:NFLK", "Gilroy"), ("Luchessa:SFLK", "Gilroy"), ("Watsonville:02TK", "Corporal"), ("Watsonville:837T1K", "Sargent"),
+                                 ("Watsonville:NFLK", "Corporal"), ("Watsonville:SFLK", "Corporal")])
+        self.assertEqual(self.sm.report.by_code("reference.indication"), [])
 
     def test_luchessas_industry_lead_is_beyond_a_regime_boundary(self):
         """Railroad 0ddd395: a plain IRJ with END CTC on the circuit side (02T) and Rule 6.28 beyond, where the one-ended
@@ -913,14 +940,19 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(pieces["Luchessa:Gilroy Industry"], {"name": "Luchessa:Gilroy Industry", "regime": "GCOR_RULE_6_28", "by": "marker"})
         self.assertEqual(pieces["Luchessa:02T"], {"name": "Luchessa:02T", "circuit": "Luchessa:02T", "regime": "GCOR_RULE_10", "by": "marker"})
 
-    def test_the_beet_loader_and_gilroy_caltrains_yard_carry_their_regimes(self):
+    def test_the_beet_loader_and_gcaltrains_yard_carry_their_regimes(self):
         """Railroad 0ddd395: TWC beyond Corporal's and Sargent's boundaries, where the Beet Loader tracks rejoin the two
-        sheets; yard limits on Gilroy Caltrain's bumper tracks (ADR 0013 §7.1)."""
+        sheets. Railroad eef8217: GCaltrain's one yard-limits marker is on 773T1, behind the RegimeBoundary joint on
+        771T1's far side; the lead 775T1 and the three bumper tracks inherit it, 771T1 and the mains CTC (ADR 0013 §7.1)."""
         for name in ("Corporal", "Sargent"):
             pieces = {p["derived"]["name"]: p["derived"] for p in self.ix(name)["track"]["pieces"]}
             self.assertEqual(pieces[f"{name}:1T1"], {"name": f"{name}:1T1", "circuit": f"{name}:1T1", "regime": "GCOR_RULE_14", "by": "marker"}, name)
-        yard = [p["derived"] for p in self.ix("Gilroy Caltrain")["track"]["pieces"] if p["derived"].get("regime") == "GCOR_RULE_6_13" and p["derived"]["by"] == "marker"]
-        self.assertEqual(len(yard), 3)                                # the three bumper tracks; what inherits from them is the rules' business
+        gc = self.ix("GCaltrain")
+        self.assertEqual({p["derived"]["name"][10:]: (p["derived"]["regime"][10:], p["derived"]["by"]) for p in gc["track"]["pieces"]},
+                         {"773T1": ("6_13", "marker"), "775T1": ("6_13", "inherited"), "01T": ("6_13", "inherited"), "02T": ("6_13", "inherited"), "03T": ("6_13", "inherited"),
+                          "771T1": ("10", "inherited"), "1NAT": ("10", "inherited"), "1SAT": ("10", "inherited")})
+        boundary = [j for j in gc["track"]["joints"] if j["given"].get("RegimeBoundary") == "yes"]
+        self.assertEqual([(j["given"]["Kind"], j["derived"]["circuits"]) for j in boundary], [("IRJ", {"A": "GCaltrain:771T1", "B": "GCaltrain:773T1"})])
 
     def test_sargents_hot_box_alarm_states_its_milepost(self):
         self.assertEqual(self.ix("Sargent")["appliances"]["HBA"]["given"]["Milepost"], "83.5")      # moved in Railroad 0ddd395
@@ -1004,28 +1036,31 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(self.sm.report.by_code("reference.track") + self.sm.report.by_code("reference.marker"), [])
         self.assertEqual(len(self.sm.report.by_code("next_cp.drawn")), 0)
         self.assertEqual(len(self.sm.report.by_code("mast.powered")), 0)
-        # Railroad 9fcf779: 15 switch.lever (Watsonville's 3 to 25, Gilroy Caltrain 771, Gilroy's locks 777 and 781) and
-        # 2 switch.lock.local are settled; identity.name and head.letter are the anonymous head devices, #80's; the
-        # regime findings are the owner's redraw in progress (#113, #118); driver.signal_system is Gilroy's six JMRI signal
-        # mast drivers with no SignalSystem drawn yet (#85). No warning: Lick and Hollister are marked off_layout and no
-        # mast lacks its Kind.
+        # Railroad eef8217: switch.lever on Watsonville's twelve powered switches 3 to 25 only (GCaltrain's 771 has its
+        # lever on column 0, Gilroy's locks 777 and 781 their Local-Lock levers, so no switch.lock.local); identity.name
+        # and head.letter are the anonymous head devices, #80's; driver.signal_system is Gilroy's six JMRI signal mast
+        # drivers with no SignalSystem drawn yet (#85). Every piece has a regime. No warning: Hollister is marked
+        # off_layout and no mast lacks its Kind.
         missing = Counter(d.code for d in self.sm.report.diags if d.severity == "missing")
-        self.assertEqual({k: v for k, v in missing.items() if k.startswith("switch.")}, {"switch.lever": 15, "switch.lock.local": 2})
+        self.assertEqual({k: v for k, v in missing.items() if k.startswith("switch.")}, {"switch.lever": 12})
+        self.assertEqual(sorted(d.where for d in self.sm.report.by_code("switch.lever")), sorted(f"interlockings/Watsonville/appliances/{n}" for n in range(3, 27, 2)))
         heads = [d for ix in self.model["interlockings"].values() for d in ix["devices"] if d["given"]["Appliance"] == "head"]
         self.assertEqual(missing["identity.name"], len(heads))
-        self.assertEqual(set(missing) - {"switch.lever", "switch.lock.local", "identity.name", "head.letter", "driver.signal_system"} - {k for k in missing if k.startswith("regime.")}, set())
-        self.assertEqual(self.sm.report.counts()["warning"], 0)
+        self.assertEqual(set(missing), {"switch.lever", "identity.name", "head.letter", "driver.signal_system"})
+        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 7, "missing": 136})
+        self.assertEqual(sorted(d.entities[0] for d in self.sm.report.by_code("regime.limits")), [f"interlockings/{n}" for n in sorted(self.model["interlockings"])])
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):
         """ADR 0013 §5. The library's mast symbols carry a fixed Kind (Railroad 1695d48), but that commit touched no placed
         field: a placement states its Kind only once it is updated from the library, which the owner's edits and the
-        edits/add_mast_kind.py sweep of 2026-11-03 did for every placement. As of the Railroad working tree of
-        2026-11-03 (31954c5 plus uncommitted edits to the seven sheets and the library), all 40 masts state theirs:
-        the four PERMISSIVE automatics of the Corporal to Sargent block and 36 CONTROLLED. Nothing is reported, and
-        nothing is inferred: a mast with no Kind would be ``mast.kind`` at missing."""
+        edits/add_mast_kind.py sweep of 2026-11-03 did for every placement. As of Railroad eef8217 all 42 masts state
+        theirs: the four PERMISSIVE automatics of the Corporal to Sargent block and 38 CONTROLLED, Christopher's siding
+        dwarfs 814NA and 818SA among them. Nothing is reported, and nothing is inferred: a mast with no Kind would be
+        ``mast.kind`` at missing."""
         masts = {(i, n): a["given"].get("Kind") for i, ix in self.model["interlockings"].items() for n, a in ix.get("appliances", {}).items()
                  if a["given"]["Appliance"] == "mast"}
-        self.assertEqual(len(masts), 40)
+        self.assertEqual(len(masts), 42)
+        self.assertEqual({(i, a["given"].get("Style")) for (i, n), a in ((k, self.ix(k[0])["appliances"][k[1]]) for k in masts) if n in ("814NA", "818SA")}, {("Christopher", "dwarf")})
         self.assertEqual(sorted(v for v in masts.values() if v == "PERMISSIVE"), ["PERMISSIVE"] * 4)
         self.assertEqual({v for v in masts.values()}, {"CONTROLLED", "PERMISSIVE"})
         self.assertEqual(self.sm.report.by_code("mast.kind"), [])

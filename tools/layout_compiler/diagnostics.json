@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "description": "The import-diagnostic registry of the KiCad importer (ADR 0012 \u00a73.3): every code tools/layout_compiler raises about translating the drawing into a model, its level and lifecycle. Each is located in the drawing (Diag.source: sheet, reference, library symbol, Name) and means nothing to a code generator or to Studio. Rule checks about the model are in schemas/layout-model/rules/diagnostics.json. since is the importer version (layout_compiler 0.4.0).",
+  "description": "The import-diagnostic registry of the KiCad importer (ADR 0012 §3.3): every code tools/layout_compiler raises about translating the drawing into a model, its level and lifecycle. Each is located in the drawing (Diag.source: sheet, reference, library symbol, Name) and means nothing to a code generator or to Studio. Rule checks about the model are in schemas/layout-model/rules/diagnostics.json. since is the importer version (layout_compiler 0.4.0).",
   "codes": {
     "appliance.duplicate": {
       "level": "error",
@@ -567,6 +567,13 @@
       "lifecycle": "active",
       "since": "0.4.0",
       "feature": "trackplan/appliance_track_circuit_boundary.feature#both pins of a boundary on one net",
+      "replacedBy": null
+    },
+    "trackplan.unit": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": "trackplan/trackplan_placement.feature#a NextCP on the sheet above wired to no interlocking's track belongs to none",
       "replacedBy": null
     },
     "train_order.track": {

@@ -1132,7 +1132,7 @@ class Reach(unittest.TestCase):
         self.assertEqual(self.transports(out), {"Field": ["MQTT"], "Office": ["MQTT"]})
 
     def test_an_anchor_an_encoding_rides_is_not_a_duplicate(self):
-        """Gilroy Caltrain's shape: the field processor anchors MQTT for its JMRI I/O encoding and its code line rides
+        """GCaltrain's shape: the field processor anchors MQTT for its JMRI I/O encoding and its code line rides
         MQTT elsewhere; the office's anchor is ridden by the code line."""
         out, diags = run(self.model(anchors={"MQTT": ["Field", "Office"]}, encodings={"JMRI": ("MQTT", "Field")}))
         self.assertEqual(only(diags, "transport"), [])
@@ -1154,7 +1154,7 @@ class SPCoastExample(unittest.TestCase):
         self.assertNotIn("rules", stripped["provenance"])
         out, report = derive.derive(stripped)
         self.assertEqual(layout_model.dumps(out), text)
-        self.assertEqual(report.counts(), {"error": 7, "warning": 0, "info": 6, "missing": 23})   # driver.signal_system on Gilroy's six JMRI signal mast drivers (no SignalSystem drawn yet, #85). Railroad 9fcf779 with the owner's uncommitted edits to Corporal, Sargent and Watsonville (exported 2026-11-11): regime.ambiguous on seven Corporal and Sargent pieces reachable from the END CTC faces and Corporal's 829T1 6.28 marker (membership is no regime source, the owner 2026-11-10; the owner is redrawing), regime.limits for six interlockings; switch.lever on 13 switches (Watsonville, Gilroy Caltrain 771) and on the locks 777 and 781 with switch.lock.local (no field pair drawn), train_order.device for Gilroy (Railroad 5715653); the importer's train_order.heads and geometry.head are not the derivation's
+        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 7, "missing": 18})   # Railroad eef8217: regime.limits for the seven interlockings (every piece has a regime: the interlockings share their block circuits by hierarchical nets, GCaltrain's boundary joint stops its yard); switch.lever on Watsonville's twelve powered switches 3 to 25 (GCaltrain's 771 has its lever on column 0, Gilroy's locks 777 and 781 their Local-Lock levers); driver.signal_system on Gilroy's six JMRI signal mast drivers (no SignalSystem drawn yet, #85); the importer's identity.name and head.letter are not the derivation's
 
 
 if __name__ == "__main__":

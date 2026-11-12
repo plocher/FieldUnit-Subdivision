@@ -37,6 +37,14 @@ def drawing(context, name):
         context.symbols.append(Symbol(row["Ref"].strip(), row["Symbol"].strip(), "", fields, sheet))
 
 
+@given("these symbols on the sheet above:")
+def parent_symbols(context):
+    """Symbols on the root sheet, above every interlocking's (a NextCP wired to a hierarchical net)."""
+    for row in context.table:
+        fields = {h: row[h].strip() for h in row.headings if h not in ("Ref", "Symbol") and row[h].strip()}
+        context.symbols.append(Symbol(row["Ref"].strip(), row["Symbol"].strip(), "", fields, "/"))
+
+
 @given("these symbols too:")
 def more_symbols(context):
     for row in context.table:
@@ -101,6 +109,26 @@ def _row(context, ref: str) -> dict:
     found = [r for ix in context.model["interlockings"].values() for rows in ix.get("track", {}).values() for r in rows if r.get("id") == rid]
     assert len(found) == 1, f"{ref}: {len(found)} track rows for it"
     return found[0]
+
+
+@then('the row "{ref}" is in interlocking "{name}"')
+def row_in(context, ref, name):
+    rid = context.seams.source.symbols[ref].uuid
+    hits = [n for n, ix in context.model["interlockings"].items() for rows in ix.get("track", {}).values() for r in rows if r.get("id") == rid]
+    assert hits == [name], f"{ref}: in {hits}, not [{name!r}]"
+
+
+@then('no row is written for "{ref}"')
+def no_row(context, ref):
+    rid = context.seams.source.symbols[ref].uuid
+    hits = [n for n, ix in context.model["interlockings"].items() for rows in ix.get("track", {}).values() for r in rows if r.get("id") == rid]
+    assert not hits, f"{ref}: a row in {hits}"
+
+
+@then('"{name}" is in interlocking "{ix}"')
+def appliance_in(context, name, ix):
+    hits = [n for n, i in context.model["interlockings"].items() if name in i.get("appliances", {})]
+    assert hits == [ix], f"{name}: in {hits}, not [{ix!r}]"
 
 
 def _pin_name(context, pin: str) -> str:
