@@ -1208,7 +1208,7 @@ class SPCoastExample(unittest.TestCase):
         self.assertNotIn("rules", stripped["provenance"])
         out, report = derive.derive(stripped)
         self.assertEqual(layout_model.dumps(out), text)
-        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 7, "missing": 12})   # Railroad 0b39d49: regime.limits for the seven interlockings (every piece has a regime: the interlockings share their block circuits by hierarchical nets, GCaltrain's boundary joint stops its yard); switch.lever on Watsonville's twelve powered switches 3 to 25 (GCaltrain's 771 has its lever on column 0, Gilroy's locks 777 and 781 their Local-Lock levers); no driver.jmri.signal_system since Gilroy's JMRI encoding states JMRI.SignalSystem = SPTCO-1969 (six at eef8217, #85); the importer's identity.name and head.letter are not the derivation's
+        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 7, "missing": 12})   # Railroad 0b39d49 (refrozen for #80 on 2026-11-12, provenance 97be8aa: only symbols/manual.html and the README moved since): regime.limits for the seven interlockings (every piece has a regime: the interlockings share their block circuits by hierarchical nets, GCaltrain's boundary joint stops its yard); switch.lever on Watsonville's twelve powered switches 3 to 25 (GCaltrain's 771 has its lever on column 0, Gilroy's locks 777 and 781 their Local-Lock levers); no driver.jmri.signal_system since Gilroy's JMRI encoding states JMRI.SignalSystem = SPTCO-1969 (six at eef8217, #85); every mast has its field device and heads (no mast.device), no mast states Indications (no mast.presents)
 
 
 if __name__ == "__main__":
