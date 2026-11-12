@@ -352,7 +352,7 @@
       }
     },
     "driver": {
-      "description": "A driver on a bus, keyed by its Address, or for an encoded driver (a JMRI object) by Kind.served: its object class and the device it serves (ADR 0005 S4, R11; three-maps D11). A nameless head or train order lever serves under the mast pin its IND wire reaches (SIGNALMAST.Gilroy.E); a driver on one of a device's several function pins carries that pin (SENSOR.Gilroy.E.STOP); a whole-mast consumer carries the positions it stands in for unless its net covers every one (SIGNALMAST.778NAB.A, SIGNALMAST.778NAB); the owner, 2026-11-10. A drawn Address is a stated field, never the key. given holds IC, Kind, Address, SignalSystem and its fields (frequency_hz, Bit, Node, ...).",
+      "description": "A driver on a bus, keyed by its Address, or for an encoded driver (a JMRI object) by Kind.served[.functions]: its object class, the device it serves and the functions its pin names state (ADR 0005 S4, R11; three-maps D11; the owner, 2026-11-10 and 2026-11-11). A nameless head or train order lever serves under the mast pin its IND wire reaches (SIGNALMAST.Gilroy.E). A driver pin named like the device pin it lands on serves that function and adds nothing (TURNOUT.777 on the switch's M, N, R); a driver pin named otherwise reads the function it is wired to and takes the device pin's name (SENSOR.777.OCC, SENSOR.Gilroy.E.STOP), sorted. A SignalMast on a mast carries the positions it stands in for unless its net covers every one (SIGNALMAST.778NAB.A, SIGNALMAST.778NAB). A drawn Address is a stated field, never the key. given holds IC, Kind, Address, SignalSystem and its fields (frequency_hz, Bit, Node, ...).",
       "type": "object",
       "additionalProperties": false,
       "properties": {
