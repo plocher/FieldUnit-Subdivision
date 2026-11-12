@@ -232,8 +232,10 @@ extent is derived, as a track circuit's is:
   §13 seam) are a derived fact independent of regime; a consumer may be told which regime an interlocking lies
   under, at info, and it is never an error.
 
-A regime boundary is a plain `IRJ` with a marker on each side where the regime changes; `IRJ-END_CTC` and the Kind
-`END_CTC` are retired. The prototype's signs are rendered from the two adjacent regimes: a face reads END of the regime
+A regime boundary is a plain `IRJ` with a marker on each side where the regime changes, or a joint declared one
+(`RegimeBoundary` = `yes` on the joint symbol, any joint Kind; the field is the fact, never the symbol name), which
+passes no regime: each side states its own or inherits from elsewhere (owner, 2026-11-11).[^boundary] `IRJ-END_CTC`
+and the Kind `END_CTC` are retired. The prototype's signs are rendered from the two adjacent regimes: a face reads END of the regime
 behind the crew and BEGIN of the one ahead, and the far face reads the mirror pair, so the drawing states no pair that
 could disagree; the BEGIN and END glyph symbols of one regime share one Kind. A DTC `Block Limit` joint, a TRACK marker
 that cuts a regime piece into blocks with no circuits, is added when a layout needs it. Routes carry no regime.
@@ -740,6 +742,12 @@ Each consumer input, the Part 1 section that states it, and its form:
     GCOR has no Rule 261; the markers' extent is derived; the sign faces are rendered. Railroad `0ddd395` carries the
     library and the SPCoast conversion (10 x 9.14, 5 x 6.13, 3 x 6.28, nine 261 signs removed, three boundaries as a
     plain IRJ with END CTC and the far regime).
+
+[^boundary]: Until commit `9f26047` a boundary was only a plain `IRJ` with a marker on each side. With every
+    interlocking joined by hierarchical nets, inheritance floods a marker until it meets a marked piece: Gilroy
+    Caltrain's yard-limits marker on the 773 piece reached every main from Gilroy to Sargent through the 771 switch
+    piece (29 `regime.ambiguous`). The owner's ruling (2026-11-10/11): the boundary is a fact on the joint
+    (`IRJ Authority Boundry`, placed between 771 and the 773 piece), not a face on the main.
 
 [^membership]: Until commit `521cb90` the second source read "else from membership in an interlocking (CTC)", with the
     error "a regime other than CTC on interlocking track" and "interlocking limits lie inside the CTC regime". The
