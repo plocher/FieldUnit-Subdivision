@@ -265,11 +265,16 @@ class SPCoastGeometry(unittest.TestCase):
         self.assertEqual(labels, ["label:NMT", "label:SMT1", "label:SMT2"])          # Luchessa's three block circuits leave by hierarchical nets (Railroad eef8217)
 
     def test_every_marker_names_one_track_row_by_id_and_copies_none_of_its_facts(self):
-        """Three-maps D10: a marker's one join key is its row's id; each row has exactly one marker."""
+        """Three-maps D10: a marker's one join key is its row's id; each row drawn on the interlocking's sheet has exactly
+        one marker, and a row placed from another sheet (ADR 0010 C5: the frame is the one sheet) has none: GCaltrain's
+        Lick NextCP on the South-cTc sheet (Railroad eef8217; placed by its track net, the owner 2026-11-11)."""
         for name, ix in self.model["interlockings"].items():
             rows = self.rows(name)
             markers = ix["geometry"]["markers"]
-            self.assertEqual(sorted(m["row"] for m in markers), sorted(rows), name)
+            own = {s.uuid for s in self.sm.source.symbols.values() if s.sheet == self.sm.interlockings[name].sym.sheet}
+            self.assertEqual(sorted(m["row"] for m in markers), sorted(r for r in rows if r in own), name)
+            self.assertEqual([rows[r]["given"] for r in rows if r not in own],
+                             [{"Kind": "NEXT_CP", "Interlocking": "Lick", "Style": "off_layout"}] if name == "GCaltrain" else [], name)
             self.assertEqual([m for m in markers if set(m) - {"row", "at", "glyph", "rotation", "mirror"}], [], name)
 
     def test_a_runs_ends_are_relations_to_a_switch_port_or_a_track_row_side(self):

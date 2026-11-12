@@ -851,6 +851,13 @@ class Locations(unittest.TestCase):
 
 
 @unittest.skipUnless(SPCOAST_AVAILABLE, f"SPCoast project not present or kicad-cli missing: {NETLIST or PROJECT}")
+def trackplan_ref(sm, interlocking: str) -> str:
+    """The reference of the one NextCP whose Interlocking field names ``interlocking``."""
+    refs = [s.ref for s in sm.source.symbols.values() if s.kind == "NEXT_CP" and s.get("Interlocking") == interlocking]
+    assert len(refs) == 1, refs
+    return refs[0]
+
+
 class SPCoastTrackplan(unittest.TestCase):
     """The integration gate: the trackplan of the live project, as the relation table's trackplan rows read it."""
 
@@ -875,13 +882,14 @@ class SPCoastTrackplan(unittest.TestCase):
     def test_every_track_row_has_its_own_id(self):
         ids = [r["id"] for ix in self.model["interlockings"].values() for k in ("joints", "ends", "policies") for r in ix.get("track", {}).get(k, [])]
         # IRJ, IRJ_SIGNAL, IRJ_SIGNALS; NEXT_CP, BUMPER, INDUSTRY; policies by Kind with the one plate. Railroad eef8217:
-        # the interlockings share their block circuits by hierarchical nets, so of the 16 NextCPs only Luchessa's to
-        # Hollister (off_layout) remains; Christopher's siding is a controlled siding (two dwarf signal joints in place
+        # the interlockings share their block circuits by hierarchical nets, so of the 16 NextCPs only the two off-layout
+        # ends remain, Luchessa's to Hollister and GCaltrain's to Lick (drawn on the South-cTc sheet, placed by its
+        # track net NMT, the owner 2026-11-11); Christopher's siding is a controlled siding (two dwarf signal joints in place
         # of two plain IRJs, its 6.28 marker gone); Gilroy's and Corporal's 6.28 markers are gone; GCaltrain keeps one
         # yard-limits marker behind its RegimeBoundary joint (a plain IRJ by Kind). The CTC boundaries are plain IRJs
         # with a marker each side (Railroad 0ddd395).
         kinds = Counter(r["given"]["Kind"] for ix in self.model["interlockings"].values() for k in ("joints", "ends", "policies") for r in ix.get("track", {}).get(k, []))
-        self.assertEqual({k: v for k, v in kinds.items() if not k.startswith("GCOR_")}, {"IRJ": 55, "IRJ_SIGNAL": 38, "IRJ_SIGNALS": 2, "NEXT_CP": 1, "BUMPER": 3, "INDUSTRY": 5, "RULE_290_G": 1})
+        self.assertEqual({k: v for k, v in kinds.items() if not k.startswith("GCOR_")}, {"IRJ": 55, "IRJ_SIGNAL": 38, "IRJ_SIGNALS": 2, "NEXT_CP": 2, "BUMPER": 3, "INDUSTRY": 5, "RULE_290_G": 1})
         self.assertEqual({k: v for k, v in kinds.items() if k.startswith("GCOR_")}, {"GCOR_RULE_9_14": 10, "GCOR_RULE_10": 5, "GCOR_RULE_14": 2, "GCOR_RULE_6_13": 3, "GCOR_RULE_6_28": 1})
         self.assertEqual(len(ids), sum(kinds.values()))
         self.assertEqual(len(set(ids)), len(ids))
@@ -892,13 +900,16 @@ class SPCoastTrackplan(unittest.TestCase):
                           if "controlPoint" not in a.get("derived", {}) and a["given"].get("Kind") not in ("ABSOLUTE", "PERMISSIVE")
                           and a["given"]["Appliance"] != "train_order"], [])                # never in a control point (the owner, 2026-11-03)
 
-    def test_the_blocks_are_shared_nets_and_the_one_next_cp_left_is_off_layout(self):
+    def test_the_blocks_are_shared_nets_and_the_next_cps_left_lead_off_the_layout(self):
         """Railroad eef8217: the interlockings share their block circuits through hierarchical nets, one circuit per shared
-        net named by the station whose processor reads it, so a neighbour's joint stands on it; the only NextCP left
-        leads off the layout to Hollister."""
-        ends = [(i, e["given"]) for i, ix in self.model["interlockings"].items() for e in ix["track"].get("ends", []) if e["given"]["Kind"] == "NEXT_CP"]
-        self.assertEqual(ends, [("Luchessa", {"Kind": "NEXT_CP", "Interlocking": "Hollister", "Style": "off_layout"})])
-        self.assertEqual(self.sm.report.by_code("next_cp.pair") + self.sm.report.by_code("next_cp.off_layout"), [])
+        net named by the station whose processor reads it, so a neighbour's joint stands on it; the two NextCPs left
+        lead off the layout, Luchessa's to Hollister on its own sheet and GCaltrain's to Lick, drawn on the South-cTc
+        sheet above every interlocking and placed by its track net NMT (``trackplan.placements``, the owner 2026-11-11)."""
+        ends = {i: (e["given"], e["derived"]["circuits"]) for i, ix in self.model["interlockings"].items() for e in ix["track"].get("ends", []) if e["given"]["Kind"] == "NEXT_CP"}
+        self.assertEqual(ends, {"GCaltrain": ({"Kind": "NEXT_CP", "Interlocking": "Lick", "Style": "off_layout"}, {"track": "GCaltrain:1SAT"}),
+                                "Luchessa": ({"Kind": "NEXT_CP", "Interlocking": "Hollister", "Style": "off_layout"}, {"track": "Luchessa:3NAT"})})
+        self.assertEqual(self.sm.source.symbols[trackplan_ref(self.sm, "Lick")].sheet, "/South-cTc/")
+        self.assertEqual(self.sm.report.by_code("next_cp.pair") + self.sm.report.by_code("next_cp.off_layout") + self.sm.report.by_code("trackplan.unit"), [])
         shared = {n: sorted({c for j in ix["track"]["joints"] for c in j["derived"].get("circuits", {}).values() if not c.startswith(n + ":")})
                   for n, ix in self.model["interlockings"].items()}
         self.assertEqual(shared, {"Christopher": ["Luchessa:1NAT", "Luchessa:2NAT"], "Corporal": ["Christopher:1NAT", "Christopher:2NAT"],

@@ -179,6 +179,8 @@ class Seams:
     stations: dict[str, Station] = field(default_factory=dict)        # timetable stations, layout-level, by Name
     office_units: dict[str, OfficeUnit] = field(default_factory=dict)
     trackplan: Optional["object"] = None                             # trackplan.Trackplan: appliances and track as drawn
+    trackplan_units: Optional[dict[str, Optional[str]]] = None        # trackplan.placements: each trackplan symbol's interlocking
+    trackplan_units: Optional[dict[str, Optional[str]]] = None        # trackplan.placements: each trackplan symbol's interlocking
     derived: bool = False                                             # the reference derivation's diagnostics are in report
 
 

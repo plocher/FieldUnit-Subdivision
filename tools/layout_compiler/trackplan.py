@@ -191,9 +191,9 @@ class Trackplan:
 def read(sm: Seams) -> Trackplan:
     out = Trackplan()
     on_track = track_nets(sm)
+    units = placements(sm)
     for ix in sm.interlockings.values():
-        syms = [s for s in sm.source.under(ix.sym.sheet, "APPLIANCE") + sm.source.under(ix.sym.sheet, "TRACK")
-                + sm.source.under(ix.sym.sheet, "POLICY") if unit_of(sm, s) == ix.name]
+        syms = [s for s in sm.source.where("APPLIANCE") + sm.source.where("TRACK") + sm.source.where("POLICY") if units.get(s.ref) == ix.name]
         if syms:
             out.plans[ix.name] = _plan(sm, ix, syms, on_track)
     return out
@@ -208,9 +208,53 @@ def track_nets(sm: Seams) -> frozenset[str]:
 
 
 def unit_of(sm: Seams, s: Symbol) -> Optional[str]:
-    """The interlocking whose sheet is the nearest at or above the symbol's (ADR 0004 D12)."""
-    hits = [ix for ix in sm.interlockings.values() if s.sheet.startswith(ix.sym.sheet)]
-    return max(hits, key=lambda ix: len(ix.sym.sheet)).name if hits else None
+    """The interlocking a trackplan symbol belongs to (``placements``); None when it belongs to none."""
+    return placements(sm).get(s.ref)
+
+
+def placements(sm: Seams) -> dict[str, Optional[str]]:
+    """Every trackplan symbol's interlocking, computed once per drawing (the owner, 2026-11-11). A symbol with Role
+    ``TRACK``, ``APPLIANCE`` or ``POLICY`` is placed (1) by its ``CP Name`` when it names an interlocking or one of its
+    houses, compared case-insensitively as the desk side compares them, even on another interlocking's sheet (sheet
+    scope is a default, the owner 2026-10-28); (2) else by its sheet, the nearest interlocking at or above (ADR 0004
+    D12); (3) else, drawn under no interlocking sheet, by its track net: when the nets on its track pins reach the
+    track pins of exactly one interlocking's symbols it is that interlocking's (a NextCP on the parent sheet wired to a
+    hierarchical net), taken to a fixpoint so a chain of such symbols is placed from its one placed end; (4) else it
+    is ``trackplan.unit`` at missing and belongs to none, never dropped in silence."""
+    if sm.trackplan_units is not None:
+        return sm.trackplan_units
+    src = sm.source
+    by_cp = {ix.name.casefold(): ix.name for ix in sm.interlockings.values()}
+    by_cp.update({cp.casefold(): ix.name for ix in sm.interlockings.values() for cp in ix.houses})
+    units: dict[str, Optional[str]] = {}
+    pending: list[Symbol] = []
+    for s in src.symbols.values():
+        if not on_trackplan(s):
+            continue
+        cp = (s.get("CP Name") or "").strip().casefold()
+        hits = [ix for ix in sm.interlockings.values() if s.sheet.startswith(ix.sym.sheet)]
+        if cp in by_cp:
+            units[s.ref] = by_cp[cp]
+        elif hits:
+            units[s.ref] = max(hits, key=lambda ix: len(ix.sym.sheet)).name
+        else:
+            pending.append(s)
+    placed_some = True
+    while pending and placed_some:
+        placed_some = False
+        for s in list(pending):
+            reached = {units[o.ref] for pin, n in src.pins_of(s.ref).items() if is_track_pin(s, pin)
+                       for p in n.others(s.ref) for o in (src.symbols[p.ref],) if on_trackplan(o) and is_track_pin(o, p.pin) and units.get(o.ref)}
+            if len(reached) == 1:
+                units[s.ref] = reached.pop()
+                pending.remove(s)
+                placed_some = True
+    for s in pending:
+        units[s.ref] = None
+        sm.report.missing("trackplan.unit", f"a {s.kind or s.get('Appliance') or s.lib_id} belongs to no interlocking: name one with CP Name or draw it "
+                          "under the interlocking's sheet", source=loc(s))
+    sm.trackplan_units = units
+    return units
 
 
 def _plan(sm: Seams, ix, syms: list[Symbol], track_nets: frozenset[str] = frozenset()) -> Plan:
@@ -219,7 +263,7 @@ def _plan(sm: Seams, ix, syms: list[Symbol], track_nets: frozenset[str] = frozen
     units: dict[str, Optional[str]] = {}
 
     def unit(s: Symbol) -> Optional[str]:
-        """The interlocking a symbol is drawn under, cached."""
+        """The interlocking a symbol belongs to (``placements``), cached."""
         if s.ref not in units:
             units[s.ref] = unit_of(sm, s)
         return units[s.ref]

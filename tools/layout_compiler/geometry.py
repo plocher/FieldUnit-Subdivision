@@ -276,7 +276,9 @@ def read(sm: Seams, project_dir: Optional[Path] = None, libraries: Optional[dict
     project = _Project(Path(project_dir), libraries)
 
     for ix in sm.interlockings.values():
-        trackplan = [s for s in src.symbols.values() if s.role in TRACKPLAN_ROLES and unit_of(sm, s) == ix.name]
+        # The frame is the interlocking's own sheet (ADR 0010 C5): a row placed from another sheet, by CP Name or by its
+        # track net (trackplan.placements), is in the model with no marker here.
+        trackplan = [s for s in src.symbols.values() if s.role in TRACKPLAN_ROLES and unit_of(sm, s) == ix.name and s.sheet == ix.sym.sheet]
         sheets = sorted({s.sheet for s in trackplan})
         if not sheets:
             continue                                                     # nothing drawn: absent is absent

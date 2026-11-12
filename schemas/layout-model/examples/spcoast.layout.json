@@ -2770,7 +2770,8 @@
           },
           "relations": {
             "TC": [
-              "0181f7d5-f132-4376-a96f-1f31ec01f1a2.approach"
+              "0181f7d5-f132-4376-a96f-1f31ec01f1a2.approach",
+              "9836b400-3283-4b07-9b9d-8e7b28824040.track"
             ]
           }
         },
@@ -3600,6 +3601,25 @@
                 "GCaltrain:03T.TC"
               ]
             }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "GCaltrain:1SAT"
+              }
+            },
+            "given": {
+              "Interlocking": "Lick",
+              "Kind": "NEXT_CP",
+              "Style": "off_layout"
+            },
+            "id": "9836b400-3283-4b07-9b9d-8e7b28824040",
+            "relations": {
+              "track": [
+                "0181f7d5-f132-4376-a96f-1f31ec01f1a2.approach",
+                "GCaltrain:1SAT.TC"
+              ]
+            }
           }
         ],
         "joints": [
@@ -3684,6 +3704,7 @@
             "id": "0181f7d5-f132-4376-a96f-1f31ec01f1a2",
             "relations": {
               "approach": [
+                "9836b400-3283-4b07-9b9d-8e7b28824040.track",
                 "GCaltrain:1SAT.TC"
               ],
               "governed": [
