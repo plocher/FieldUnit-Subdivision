@@ -146,10 +146,8 @@ The aspect-name tables are reference data keyed by signal system, indication and
 (`reference.ASPECT_NAMES`, `aspect_name`, `signal_systems`; the user's `aspectNames` table layers over the shipped
 ones). Features: `physical/io/driver_jmri_mast.feature`, `physical/io/driver_jmri_aspect_names.feature`.
 
-Library status on 2026-11-12: neither `Railroad-Office.kicad_sym` (`Encoding-JMRI`) nor `Railroad-HardwareIO.kicad_sym`
-(`Driver-JMRI-SignalMast`) declares a `JMRI.SignalSystem` field. The SPCoast drawing states it as a per-instance field
-on Gilroy's `Encoding-JMRI` (Railroad `0b39d49`). Declaring the field in the two library symbols is the owner's edit,
-pending.
+Both library symbols declare `JMRI.SignalSystem`, empty by default (Railroad `9a1899e`); the SPCoast drawing states
+`SPTCO-1969` on Gilroy's `Encoding-JMRI`.
 
 ### 3.5 CMRInet
 
