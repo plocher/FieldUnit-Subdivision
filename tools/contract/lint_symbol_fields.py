@@ -106,6 +106,7 @@ TRAIN_ORDER_STYLES = ("single", "double")           # a trackplan train order bo
 TRAIN_ORDER_NO_TOKENS = ("Control", "Indication", "IndicationToken")   # the control is local: no code line token on the lever
 NOT_SETTINGS = {"Role", "Name", "Kind", "Appliance", "Style", "IC", "Address", "UA", "Bit", "Node", "Head", "Invert", "IndicationToken", "Members", "Color", "CP Name", "Station", "Indications", "Control", "Indication", "TC",
                 "Transport", "NodeType", "InputBytes", "OutputBytes",
+                "JMRI.SignalSystem",   # a JMRI identity (the xml/signals folder) on Encoding-JMRI and Driver-JMRI-SignalMast (owner, 2026-11-11): a contract field, not a setting
                 "IndicationCeiling", "Display", "Processor", "Milepost", "Reference", "Value", "Footprint",
                 "Datasheet", "Description", "ki_keywords", "ki_fp_filters", "ki_description"}
 PIN_TOKENS = ("Control.", "Indication.")   # PANEL per-pin tokens (owner, 2026-10-28); an empty one is a deliberate none
