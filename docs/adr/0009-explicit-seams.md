@@ -54,7 +54,7 @@ Every wire in the seam drawing is one of four kinds, and a pin's name says which
 |---|---|---|---|
 | `Transport-`<BR>[`MQTT, TimeCode, CMRInet, LocoNet`] | `Processor`: the processor that runs the code to interact with the bus | `Transport` | Role `TRANSPORT`<br>Kind;<br>`Broker`, or `Port and Baud` |
 | `Encoding-AAR`, `-US&S-506`, `-Bits` | `Transport` | `Codeline` | Role `CODELINE_ENCODING`<br>Kind;<br>AAR carries the topic root and Railroad |
-| `Encoding-JMRI`, `-CMRInet` | `Transport` | nothing: a fact about the transport instance it rides | Role `IO_ENCODING`<br>Kind;<br>JMRI carries its topic root |
+| `Encoding-JMRI`, `-CMRInet` | `Transport` | nothing: a fact about the transport instance it rides | Role `IO_ENCODING`<br>Kind;<br>JMRI carries its topic root and `JMRI.SignalSystem` (§3.4)[^signal-system] |
 | `Processor` | `Processor`: units, machines, transports | `IOBus` | Role `STRUCTURE`<br>Kind `PROCESSOR`;<br>Board |
 | `Interlocking` | `Processor`; `Codeline` | nothing | `Name` (§3.9) |
 | `House` | `Codeline`, with its unit;<br>`MC`, the maintainer call | nothing | `CP Name` (§3.9) |
@@ -92,6 +92,62 @@ A transport instance is connected to a processor through its `Processor` pin, an
 An I/O encoding's processor defines an instance, and if multiple instances are on a processor, each instance must have different controlling attributes (address, MQTT topic root, ...).
 
 Example:  On the SPCoast example that uses an AAR encoded MQTT codeline, the MQTT Transport is used in two places:  On the OfficeUnit with an AAR Token encoder and on the Gilroy Interchange sheet with a `MQTT-JMRI` encoder to support the remote IoT appliances used by that interlocking.  All the interlockings are connected through codelines that lead back to the OfficeUnit, so all support MQTT and the Codeline encoding; the Gilroy Interchange ALSO supports JMRI-MQTT encoding to talk to JMRI IoT appliances through the same MQTT broker, but on different topics.
+
+#### 3.4.1 A device may aggregate several appliances
+
+A device symbol stands for the hardware at one place. When that hardware packages several appliances, one device
+serves them all, and its pins say which function each serves. `Device-Switch-OS` (Railroad-Field) is one device,
+named for its switch, that serves the switch motor (pin `M`, the binary demand), the points (the contacts `~{N}` and
+`~{R}`) and the OS track circuit's detector (`~{OCC}`). The device is matched to the trackplan switch by Name; the
+circuit its `OCC` pin reports is the switch's OS circuit, and deriving that circuit from the pin is still open (PR
+121).[^aggregate]
+
+#### 3.4.2 The encoded driver's key
+
+A driver on an I/O encoding (a JMRI object, IC `MQTT-JMRI`) is an encoded driver: it carries no address of its own.
+Its key is `Kind.served[.functions]`, from its Kind, the object class, and what its wires state (FieldUnit ADR 0005
+S4 and R11), as `seams._encoded_address` computes it.[^encoded-key]
+
+- `served` is the Name of the one device the driver's function pins reach (`_served`). A nameless device, a head or a
+  train order lever, serves under its mast's Name and the mast pin its `IND` wire reaches (`_anonymous_served`):
+  `Gilroy.E`.
+- The functions come from the pin names alone. A driver pin named like the device pin it lands on serves that
+  function by its own definition and adds no suffix: a Turnout's `M`, `N` and `R` on the switch's `M`, `N` and `R`
+  keep `TURNOUT.777`. A driver pin named otherwise reads the device pin's function as a suffix: a Sensor's `S` on
+  `Device-Switch-OS`'s `OCC` is `SENSOR.777.OCC`, on a track circuit detector's `OCC` is `SENSOR.01T.OCC`, on the
+  lock lever's `WLQK` is `SENSOR.777.WLQK`, on the train order lever's `STOP` is `SENSOR.Gilroy.E.STOP`; a Light's
+  `ON` on a lamp's `LAMP` is `LIGHT.MC1.LAMP`. Several suffixes sort shortest first.
+- A SignalMast driver on a mast, a train order mast or a head stands in for positions instead: it carries the
+  positions its net reaches unless that is every one of the mast's (`_function_pins`, the library's `Pin.*` contract):
+  `SIGNALMAST.778NAB.A` on one pin of a double mast, `SIGNALMAST.778NAB` on both, `SIGNALMAST.Gilroy.E` on a face's
+  head.
+- One JMRI Turnout is drawn as two symbols, `Driver-JMRI-Turnout` (the command, `M`) and `Driver-JMRI-Turnout-Feedback`
+  (the feedback, `N` and `R`). Two symbols at one key are one object only when both are Kind `TURNOUT` on one
+  encoding and their wires reach no common device pin (`_one_turnout`); this is the only merge, and their stated
+  fields must agree (`entity.conflict`). Anything else at one key is `driver.duplicate`.
+- A drawn `Address` never keys. It is written as a stated field and reported at info (`driver.address.override`);
+  the derivation uses it only as the tail of a signal mast driver's published topic. A driver wired to no device is
+  `driver.serves` at missing, to two devices `driver.serves.two` at error, with no Kind `driver.kind` at missing.
+
+The feature is `tools/layout_compiler/features/field/driver_encoded.feature`; the schema states the rule on
+`$defs/driver` (v3.1.0).
+
+#### 3.4.3 `JMRI.SignalSystem`
+
+A JMRI signal mast driver publishes a mast's indication as a JMRI aspect name. Which names is a fact about each
+installation: the field `JMRI.SignalSystem` names the JMRI signal system, a JMRI identity, the folder under JMRI's
+`xml/signals` (`SPTCO-1969`, `basic`). It is declared on the `Encoding-JMRI` instance, for every signal mast driver
+on that encoding, and a `Driver-JMRI-SignalMast` may state its own, which overrides the encoding's.[^signal-system]
+
+The derivation (`derive.jmri_masts`) writes it as `derived.jmriSignalSystem` on the driver (schema v3.1.0, the
+version that added `derived` to a driver). Neither stated is `driver.jmri.signal_system` at missing; a system no
+aspect-name table names is `driver.signal_system.unknown` at error (`schemas/layout-model/rules/diagnostics.json`).
+The aspect-name tables are reference data keyed by signal system, indication and the mast's Kind
+(`reference.ASPECT_NAMES`, `aspect_name`, `signal_systems`; the user's `aspectNames` table layers over the shipped
+ones). Features: `physical/io/driver_jmri_mast.feature`, `physical/io/driver_jmri_aspect_names.feature`.
+
+Both library symbols declare `JMRI.SignalSystem`, empty by default (Railroad `9a1899e`); the SPCoast drawing states
+`SPTCO-1969` on Gilroy's `Encoding-JMRI`.
 
 ### 3.5 CMRInet
 
@@ -139,6 +195,21 @@ A sheet's interlocking is only the default scope for the symbols on it that stat
 statements (`CP Name`, wires, references) override it, so several interlockings drawn on one sheet are unambiguous when
 each is stated, and that is not an error.
 
+A trackplan symbol (Role `TRACK`, `APPLIANCE` or `POLICY`) belongs to one interlocking, placed in this order
+(`trackplan.placements`, computed once per drawing):[^placement]
+
+1. by its `CP Name` when it names an interlocking or one of its houses, compared case-insensitively as the desk side
+   compares them, even on another interlocking's sheet;
+2. else by its sheet, the nearest interlocking at or above it (ADR 0004 D12);
+3. else, drawn under no interlocking's sheet, by its track net: when the nets on its track pins reach the track pins
+   of exactly one interlocking's placed symbols it is that interlocking's (a NextCP on the parent sheet wired to a
+   hierarchical net), repeated to a fixpoint so a chain of such symbols is placed from its one placed end;
+4. else it belongs to none: the importer reports `trackplan.unit` at missing (`tools/layout_compiler/diagnostics.json`)
+   and writes no row for it. It is never dropped in silence.
+
+The feature is `tools/layout_compiler/features/trackplan/trackplan_placement.feature`. Geometry reads the
+interlocking's own sheet for its frame (ADR 0010 C5), so a row placed from another sheet has no marker there.
+
 ### 3.10 Keys the compiler reads
 
 Symbol attribute names that are used by the compiler:
@@ -155,6 +226,7 @@ Symbol attribute names that are used by the compiler:
   - `Kind`: the sub-class where a Role alone does not say what the symbol is: `STRUCTURE` is `INTERLOCKING`, `CONTROL_POINT` or `PROCESSOR`; `TRACK` is `IRJ`, `IRJ_SIGNAL`, `IRJ_SIGNALS` (a joint with a mast on each side, ADR 0013), `END_CTC`, `MILEPOST`, `NEXT_CP`, `BUMPER` (the track ends) or `INDUSTRY` (track exists past this point, but is not drawn; added 2026-10-24); `POLICY` is the rule number; a `TRANSPORT` is `MQTT`, `CMRI`, `TIMECODE` or `LOCONET`; an encoding is `AAR`, `USS506`, `BITS`, `JMRI` or `CMRI`. An encoding's Kind must pair with its transport's Kind (reference data). Roles that classify by `Appliance` and `Style` instead (`APPLIANCE`, `DEVICE`, `PANEL`) carry no Kind, with one exception: a mast states `CONTROLLED`, `ABSOLUTE` or `PERMISSIVE`, what the signal is, and a mast with none is missing.[^mast-kind]
   - `Style`: the variant within an appliance, and the one key two symbols must agree on: a head's style (`CL`, `CPL`, `UQ`, `LQ`) on the trackplan head and fixed in the head device; a mast's (`single`, `double`, `dwarf`); a switch's (`powered`, `manual`, `manual_sensed`, `lock`, `dual`, `derail`); a track circuit's (`virtual`, `boundary`); a lamp's or lever's on the panel; the OfficeUnit's (`US&S`).
   - `Topic` on MQTT Encodings
+  - `JMRI.SignalSystem` on `Encoding-JMRI` and, as an override, on `Driver-JMRI-SignalMast` (§3.4.3)[^signal-system]
   - `Reference` and `Value` are never used.  How a key is derived in KiCad is KiCad's business (e.g., the Address attribute may have `${Value}` as its content, that is OK.). Library defaults for names, hosts and transports are empty: we've chosen to NOT use placeholders because inadvertant "update all symbols from Library" with the wrong checkboxes is a disaster. The compiler's "missing" report is the tutorial prompt. Fixed facts (Role, Kind, Style, a topic template) keep their defaults.
 
 ### 3.11 Vocabulary
@@ -195,6 +267,9 @@ Captions drawn in symbol bodies follow pin renames.
 | Head device to its head | mast Value and `Head` letter, by name | same | vocabularies match (§3.6) |
 | Panel column to its control point | `CP Name` on the column, naming its interlocking or one of its houses[^cpname] | an empty `CP Name`: the column's interlocking | names resolve |
 | Track leaves an interlocking | a `NEXT_CP` (to the next interlocking), a plain `IRJ` beyond which the track carries another regime's `GCOR Rule` marker (ADR 0013 §7.1), or an end (`INDUSTRY`, `BUMPER`)[^track][^regime] | none | a switch port or track row related to another interlocking's is an error (`reference.track`); another interlocking is reached only through its indications |
+| Trackplan symbol in its interlocking | `CP Name` naming the interlocking or one of its houses (§3.9) | its sheet's interlocking; else the one interlocking its track net reaches | none of these is `trackplan.unit` at missing, no row written[^placement] |
+| Encoded driver's key | its wires: `Kind.served[.functions]` (§3.4.2) | none; `Address` never keys | two symbols at one key are one Turnout's command and feedback, else `driver.duplicate`[^encoded-key] |
+| Signal mast driver's signal system | `JMRI.SignalSystem` on the driver (§3.4.3) | the `JMRI.SignalSystem` of its `Encoding-JMRI` | neither is `driver.jmri.signal_system`; a system no table names is `driver.signal_system.unknown`[^signal-system] |
 
 A panel appliance's indication lamps (a switch's, a signal's, a maintainer call's) belong to its lever and so to the
 lever's column. A model board lamp never uses a column: its scope is the interlocking of the panel sheet it is drawn on.
@@ -204,7 +279,7 @@ compiler reports the disagreement. The table is the test for the three copies.
 
 ## 4. Decision
 
-Ratify §3 as the drawing contract the milestone D compiler reads, and §3.11 as its consistency checks.
+Ratify §3 as the drawing contract the milestone D compiler reads, and §3.12 as its consistency checks.[^s4]
 
 ## 5. Record
 
@@ -224,6 +299,14 @@ Ratify §3 as the drawing contract the milestone D compiler reads, and §3.11 as
   by symbol name, so "track ends" and "track continues, not drawn" need two Kinds. Raised in ADR 0010.
 - Two slips recorded for the method: a script reset discarded the owner's uncommitted edits once, recovered
   from KiCad's backup archive (`e477212`); a commit was gated on the wrong check once and reset.
+- 2026-11-10 to 11-12. The owner's rulings on encoded drivers, placement and the signal system landed in code and
+  features in that week (PRs 116, 121, 123, 124, 125) and are written into §3.4.1 to §3.4.3, §3.9 and §3.12 on
+  2026-11-12 as the first application of ADR 0014 decision 1: a nameless head or train order lever serves under the
+  mast pin its `IND` reaches (`6fcd375`); the key's functions come from the pin names, on every device (`3010cd6`,
+  `5b1f750`); a Turnout's command and feedback are the one merge (`6fcd375`); a trackplan symbol is placed by
+  `CP Name`, sheet or track net, else reported (`2d79796`); the aspect-name table is named by `JMRI.SignalSystem`
+  (`82b8262`, renamed from `SignalSystem` in `d6b052c`); the SPCoast drawing states it on Gilroy's `Encoding-JMRI`
+  (Railroad `0b39d49`).
 
 ## 6. Consequences
 
@@ -238,10 +321,15 @@ Ratify §3 as the drawing contract the milestone D compiler reads, and §3.11 as
   derived from the project by a reader, never typed.
 - C5. The FieldUnit glossary lacks processor, transport, encoding, attachment, bus, chip, driver, node, port,
   seam, remote and local I/O: a delta is proposed in `docs/review/glossary-delta-2026-10-23.md`.
-- C6. The compiler's checks are the fourth column of §3.11 plus the head-vocabulary error of §3.6 and the
-  node byte check of §3.5.
+- C6. The compiler's checks are the fourth column of §3.12 plus the head-vocabulary error of §3.7, the
+  node byte check of §3.5, the encoded-driver checks of §3.4.2 (`driver.duplicate`, `driver.serves`,
+  `driver.serves.two`, `driver.kind`, `driver.address.override`), the placement check of §3.9 (`trackplan.unit`) and
+  the signal-system checks of §3.4.3 (`driver.jmri.signal_system`, `driver.signal_system.unknown`).[^c6]
 - C7. The three-copy experiment (all explicit, all implicit, both) is the acceptance test for milestone D;
   the "both" copy is this project.
+- C8. The symbols manual (Railroad `symbols/manual.html`) states what §3.4.1 to §3.4.3 commit a field or pin to:
+  the fragments for `Device-Switch-OS`, the JMRI drivers, `Encoding-JMRI` and `Local-Lock` are changed with this
+  text (ADR 0014 decision 1). The library symbols do not yet declare `JMRI.SignalSystem` (§3.4.3).[^c6]
 
 ## 7. Out of scope
 
@@ -264,3 +352,29 @@ other transports; Studio's own notation.
     regime; "dark" is the office's view, not a kind of track; the Kind `END_CTC` and `IRJ-END_CTC` are retired.
 
 [^mast-kind]: Amended 2026-10-31 (owner, ADR 0013): a mast states `Kind` `CONTROLLED`, `ABSOLUTE` or `PERMISSIVE`; the TRACK Kind `IRJ_SIGNALS` and the track circuit Style `boundary` are added. Before, `APPLIANCE` carried no Kind without exception; the earlier text is at commit aa80e18.
+
+[^aggregate]: Added 2026-11-12 (ADR 0014 decision 1, the backlog of 2026-11-05 to 11-12). The rule landed in the
+    feature `field/driver_encoded.feature` ("a driver pin named like the device pin serves that function and adds
+    nothing") in commit `5b1f750`; the symbol `Device-Switch-OS` is Railroad-Field's. The §3.4 text it follows is at
+    commits `2cf4105` and `cc370f4`.
+
+[^encoded-key]: Added 2026-11-12 (ADR 0014 decision 1). The key `Kind.served[.functions]` and the Turnout merge landed in
+    `6fcd375` (the owner, 2026-11-10); the matching-pin rule on every device in `3010cd6` and `5b1f750` (the owner,
+    2026-11-11), which retired `6fcd375`'s carve-out for named devices. Before this text, §3.6 said only that JMRI
+    drivers sit on the processor's own bus; the §3.4 text this follows is at commits `2cf4105` and `cc370f4`.
+
+[^signal-system]: Added 2026-11-12 (ADR 0014 decision 1). The field landed as `SignalSystem` in `82b8262` (the owner,
+    2026-11-10) and was renamed `JMRI.SignalSystem`, a JMRI identity, in `d6b052c` (the owner, 2026-11-11), with the
+    derived key `jmriSignalSystem` and the code `driver.jmri.signal_system`. The §3.2 table row and the §3.10 list this
+    amends are at commit `cc370f4`.
+
+[^placement]: Added 2026-11-12 (ADR 0014 decision 1). The order landed in `2d79796` (the owner, 2026-11-11), which
+    replaced placement by sheet alone, under which a symbol under no interlocking sheet was dropped in silence. The
+    §3.9 text this follows is at commits `2cf4105` and `33d26ee`.
+
+[^s4]: Amended 2026-11-12 (ADR 0014 decision 1): the relation table is §3.12 since rev 2 moved it; the ratified
+    sentence said §3.11, the same slip C6 had. A section number is not a decision. The earlier text is at commit `cc370f4`.
+
+[^c6]: Amended 2026-11-12 (ADR 0014 decision 1): C6 names the checks of §3.4.2, §3.4.3 and §3.9, and its references
+    to the relation table and the head-vocabulary error now read §3.12 and §3.7, the sections that hold them since
+    rev 2; C8 is new. The earlier C6 is at commit `cc370f4`.
