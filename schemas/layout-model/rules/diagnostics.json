@@ -403,9 +403,9 @@
     },
     "reference.switches": {
       "level": "warning",
-      "lifecycle": "active",
+      "lifecycle": "retired",
       "since": "0.1.0",
-      "feature": "logical/trackplan/track_block.feature#the legs of two interlockings' local switches on one wire with no joint between",
+      "feature": null,
       "replacedBy": null
     },
     "reference.track": {

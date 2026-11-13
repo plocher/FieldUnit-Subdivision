@@ -1000,10 +1000,9 @@ class SPCoastTrackplan(unittest.TestCase):
         refs = {n: ix["track"].get("consumers", []) for n, ix in self.model["interlockings"].items()}
         self.assertEqual({n: cs for n, cs in refs.items() if cs}, {})
         self.assertNotIn("2NATK", codeline.stations(self.model).stations[("Corporal", None)].indications)
-        # The one reference finding: Corporal's and Sargent's switch 1 share their N and R legs through the Beet Loader
-        # labels (reference.switches, a warning from each side; the owner redraws, 2026-11-12).
-        self.assertEqual([(d.code, d.severity, d.where) for d in self.sm.report.diags if d.code.startswith("reference")],
-                         [("reference.switches", "warning", "interlockings/Corporal"), ("reference.switches", "warning", "interlockings/Sargent")])
+        # No reference finding: Corporal's and Sargent's switch 1 share their N and R legs through the Beet Loader labels,
+        # two crew-worked switches on one spur, which no interlocking claims (the owner, 2026-11-13).
+        self.assertEqual([(d.code, d.severity, d.where) for d in self.sm.report.diags if d.code.startswith("reference")], [])
         foreign = [b for ix in self.model["interlockings"].values() for k in ("joints", "ends", "policies")
                    for r in ix["track"].get(k, []) for v in r.get("relations", {}).values() if isinstance(v, list) for b in v
                    if ":" in b and not b.startswith(tuple(f"{n}:" for n in self.model["interlockings"]))]
@@ -1056,8 +1055,7 @@ class SPCoastTrackplan(unittest.TestCase):
         # (no mast.presents); the drawing is 0b39d49's (Railroad 97be8aa moved only symbols/manual.html and the README).
         # Railroad 87f6aa4, the drawing of 520c509 (2026-11-13): mast.lever on the fifteen CONTROLLED masts whose signal
         # number has no desk lever (Gilroy's 778, Sargent's 836, Watsonville's 840; Corporal's 828 has its lever on
-        # column 11 since the renumber); no lever.masts; the two reference.switches warnings are Corporal's and
-        # Sargent's switch 1 on one wire.
+        # column 11 since the renumber); no lever.masts; no warning (reference.switches retired 2026-11-13).
         missing = Counter(d.code for d in self.sm.report.diags if d.severity == "missing")
         self.assertEqual({k: v for k, v in missing.items() if k.startswith("switch.")}, {"switch.lever": 12})
         self.assertEqual(sorted(d.where for d in self.sm.report.by_code("switch.lever")), sorted(f"interlockings/Watsonville/appliances/{n}" for n in range(3, 27, 2)))

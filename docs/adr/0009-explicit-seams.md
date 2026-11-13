@@ -302,7 +302,7 @@ Captions drawn in symbol bodies follow pin renames.
 | Bit on its CMRInet Node | a `Driver-CMRInet-IB/OB` connects to an `IOBus` that originates at a `Driver-CMRInet-Node` | the one CMRInet Node on the sheet; the bit's `Node` field (the UA) when a sheet holds two, added to the library 2026-10-23 (Railroad `edits/2026-10-23-descriptions.py`), empty by default | bytes declared cover bits used |
 | Head device to its position | its `IND` wire to a position pin (A, B, C) of the field mast device named for the trackplan mast[^heads] | none | the mast's stated `heads` count the positions (`mast.heads`); demand ⊆ presents (§3.7)[^atoms] |
 | Signal lever to its masts | the lever's number is the masts' stated `signal` in the lever's interlocking (§3.7)[^atoms] | none | `lever.serves`; a CONTROLLED mast with no lever is `mast.lever` |
-| Track shared by two interlockings' switches | none: a wire joining switch ports of two interlockings with no joint between | none | `reference.switches` at warning (ADR 0013 §7.1 accepts plain block track; a dispatcher-controlled port there is `reference.track`)[^atoms] |
+| Track shared by two interlockings' switches | none: a wire joining switch ports of two interlockings with no joint between | none | none when neither port is dispatcher-controlled: two crew-worked switches on one spur, which no interlocking claims (ADR 0013 §7.1 accepts plain block track); a dispatcher-controlled port there is `reference.track`[^atoms][^localswitches] |
 | Derail to its switch | stated: the importer reads the drawn Name's gang id once (ADR 0003 D8) and writes `relations.switch`, the switch or lock of the derail's interlocking it follows; the switch derives `derails`[^derail] | none: a derail that states no switch is independent | `derail.switch` at error: a stated switch that is no switch or lock of the interlocking |
 | Panel column to its control point | `CP Name` on the column, naming its interlocking or one of its houses[^cpname] | an empty `CP Name`: the column's interlocking | names resolve |
 | Track leaves an interlocking | a `NEXT_CP` (to the next interlocking), a plain `IRJ` beyond which the track carries another regime's `GCOR Rule` marker (ADR 0013 §7.1), or an end (`INDUSTRY`, `BUMPER`)[^track][^regime] | none | a switch port or track row related to another interlocking's is an error (`reference.track`); another interlocking is reached only through its indications |
@@ -402,6 +402,11 @@ other transports; Studio's own notation.
     in the derivation (`mast.grammar`, `mast.facing`, `lever_of`), `derived.positions` was keyed by the pin letter
     alone, a desk lever found its masts by cutting the letters off, and a track wire shared by two interlockings'
     switches was not reported. The grammar is now read once, in the importer (`grammar.mast_atoms`).
+
+[^localswitches]: Rewritten in place on 2026-11-13 (the owner: Corporal's and Sargent's switch 1 are two distinct
+    crew-worked switches, and the Beet Loader spur between them raises no conflict). Until commit `17764dd` the row
+    reported such a wire as `reference.switches` at warning, one piece of track claimed by two interlockings; the code
+    is retired.
 
 [^derail]: Added 2026-11-13 (issue #133; the owner's ruling of 2026-11-13 that the importer states every atom and
     nothing downstream parses a Name). Until commit `662e9b8` the derivation paired a derail with its switch by its
