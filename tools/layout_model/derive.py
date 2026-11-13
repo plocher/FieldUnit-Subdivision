@@ -147,6 +147,12 @@ names every other track pin its wire reaches, so the relation is symmetric):
   switch that is no switch or lock of the interlocking is ``derail.switch`` at error, and the derail is read as drawn,
   on its own. What works a switch or derail is read from the lever devices named for it (``control_sources``):
   ``switch.lever``, ``switch.lever.desk``, ``switch.lock.local``, ``switch.lever.hand`` and ``derail.regime``.
+- **A ladder and its selector** (issue #145, a POC; the owner, 2026-11-13): a ``LADDER`` marker, a policy sign with a
+  Name on the ladder's start leg, names the ladder; the facing walk from it, which finds the ladder's switches and
+  the ordered choices, is the domain library ``tools/railroad/ladders.py``'s, and its results are written here
+  (ADR 0015). A selector device serves the ladder its Name names and derives ``choices`` and ``range``; each ladder
+  switch derives ``ladder`` and ``selector``, a control source as a switch lever is, so a powered ladder switch a
+  selector serves is no ``switch.lever`` (``ladders``).
 - An OfficeUnit's columns (``house``, ``interlocking``), every device's ``serves``, a desk lamp's ``indications`` and
   ``expression`` (its ``Indication``, ``tools/layout_model/expression.py``), a lever's ``controls`` and ``indications``
   from its per-pin ``Control.X`` and ``Indication.X``.
@@ -163,11 +169,11 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Optional
 
-from tools.railroad import codeline
+from tools.railroad import codeline, ladders
 
 from . import expression, reference
 from . import reference_data as refdata
-from .grammar import GANG, HAND, POWERED, depends_on, direction_of, dispatcher_controlled, is_derail, is_powered, regime, regime_word, styles
+from .grammar import GANG, HAND, POWERED, SELECTOR, depends_on, direction_of, dispatcher_controlled, is_derail, is_powered, regime, regime_word, styles
 from . import sort_key
 from .report import Report
 
@@ -842,6 +848,7 @@ class _Derivation:
         self.r = _Reporter()
         self.report = self.r.report
         self.plans: dict[str, _Plan] = {}
+        self.selected: dict[str, str] = {}                  # a ladder switch -> the ladder a selector serves it through
 
     # ------------------------------------------------------------------------------------------- consumers
 
@@ -897,6 +904,7 @@ class _Derivation:
         self.codeline()
         self.derails()
         self.rd.resolve_layout()
+        self.ladders()
         self.control_sources()
         self.positions()
         self.train_orders()
@@ -1361,6 +1369,57 @@ class _Derivation:
                 a = plan.appliances[sn]
                 _set_derived(a, {**a.get("derived", {}), "derails": sorted(names, key=sort_key)})
 
+    def ladders(self) -> None:
+        """A selector gives a knob the ordered choices of the ladder it serves (issue #145; the owner, 2026-11-13). The
+        facing walk from each ``LADDER`` marker is the domain library's (``tools/railroad/ladders.py``); its results are
+        written here, at save (ADR 0015). A selector (a device, Appliance ``selector``, on the desk or in the field)
+        serves the ladder its Name names, qualified like a lever (``Watsonville:Arrival``), and derives ``choices``, each
+        with its ``detent`` (1 nearest the start), its ``leg`` and its ``alignment``, and ``range``, 1 to the number of
+        choices; its ``wrap`` stays stated. The marker's row derives ``switches``, in walk order, and ``start``, the
+        start switch's port its leg meets. Each ladder switch derives ``ladder``, and ``selector`` where one serves the
+        ladder: its control source, which ``control_sources`` reads as it reads a switch lever. A selector whose Name
+        names no ladder is ``selector.ladder`` at error; a ladder no selector serves is ``ladder.selector`` at info. A
+        switch on two ladders is the library's ``ladder.shared`` and derives neither."""
+        found = ladders.find(self.m)
+        self.report.diags.extend(found.report.diags)
+        served: set[str] = set()
+        for where, dev in self._devices():
+            if dev.get("given", {}).get("Appliance") != SELECTOR or not dev.get("derived", {}).get("serves"):
+                continue
+            lad = found.ladders.get(dev["derived"]["serves"])
+            if lad is None:
+                self.r.add("selector.ladder", f"selector {dev['derived']['serves']}: its Name names no ladder of its interlocking; a "
+                           "selector serves the ladder its Name names", where)
+                continue
+            served.add(lad.name)
+            _set_derived(dev, {**dev["derived"], "choices": [c.as_dict(i) for i, c in enumerate(lad.choices, 1)],
+                               "range": {"min": 1, "max": len(lad.choices)} if lad.choices else None})
+        for lad in found.ladders.values():
+            b = lad.name.partition(":")[0]
+            row = next((r for r in self.m["interlockings"][b].get("track", {}).get("policies", []) if r.get("name") == lad.name), None)
+            if row is not None:
+                _set_derived(row, {**row.get("derived", {}), "switches": list(lad.switches), "start": lad.start})
+            if lad.name not in served:
+                self.r.add("ladder.selector", f"ladder {lad.name}: no selector serves it; what works its switches is not drawn yet",
+                           lad.where)
+            for s in lad.switches:
+                sb, _, sn = s.partition(":")
+                a = self.m["interlockings"].get(sb, {}).get("appliances", {}).get(sn)
+                if a is None or len(found.of(s)) != 1:
+                    continue
+                _set_derived(a, {**a.get("derived", {}), "ladder": lad.name, "selector": lad.name if lad.name in served else None})
+                if lad.name in served:
+                    self.selected[s] = lad.name
+
+    def _devices(self):
+        """Every device in the file with its model path: each interlocking's, then each OfficeUnit's."""
+        for name, ix in self.m.get("interlockings", {}).items():
+            for i, dev in enumerate(ix.get("devices", [])):
+                yield f"interlockings/{name}/devices/{i}", dev
+        for name, ou in self.m.get("officeUnits", {}).items():
+            for i, dev in enumerate(ou.get("devices", [])):
+                yield f"officeUnits/{name}/devices/{i}", dev
+
     def control_sources(self) -> None:
         """What works each switch or derail, read from the lever devices named for it (the owner, 2026-11-09): a desk
         lever (an OfficeUnit device) or a field lever (an interlocking device: Local-Switch, Local-Lock, Local-Derail),
@@ -1369,7 +1428,8 @@ class _Derivation:
         crew's release and throw; ``local`` a Local-Switch alone; ``lock`` the dispatcher's lock lever and the same
         field pair, a Local-Lock asking the release and a Local-Switch throwing the model's points, the switch device
         reporting NWK/RWK (the owner, 2026-11-09: Christopher 813 and 817 are the reference); a hand-throw one nothing. A gang follower and a dependent derail are worked through their lead and are not
-        read. Reported: a powered, dual or local one that no switch lever of either kind serves, ``switch.lever`` at
+        read. A ladder switch a selector serves (``ladders``) has that selector for its control source, as a switch
+        lever would be. Reported: a powered, dual or local one that no switch lever of either kind and no selector serves, ``switch.lever`` at
         missing (no control source yet), and so is a ``lock`` one with no Local-Switch; a ``local`` one a desk lever
         serves, ``switch.lever.desk`` at error; a ``dual`` or ``lock`` one with no Local-Lock, ``switch.lock.local`` at
         missing; a hand-throw one (``manual``,
@@ -1401,7 +1461,7 @@ class _Derivation:
                     continue
                 r, levers = regime(n, plan.appliances), desk[q] + local[q]
                 words = sorted(set().union(*levers)) if levers else []
-                if r in POWERED and not any("lock" not in st for st in levers):
+                if r in POWERED and not any("lock" not in st for st in levers) and q not in self.selected:
                     self.r.add("switch.lever", f"{b}: {what} is {r} but no switch lever is named for it, on the desk or in the field; "
                                "what works it is not drawn yet", where)
                 if r == "lock" and not any("lock" not in st for st in local[q]):

@@ -1000,3 +1000,46 @@ def passes_no_circuit(context, mast, alignment):
 def route_ceiling(context, mast, alignment, word):
     got = _route(context, mast, alignment).ceiling
     assert got == word, f"ceiling {got!r}, not {word!r}"
+
+
+# ------------------------------------------------------------------- ladders and selectors (issue #145; the owner, 2026-11-13)
+
+def _selector(context, name: str) -> dict:
+    found = [d for ix in context.derived["interlockings"].values() for d in ix.get("devices", [])
+             if d.get("given", {}).get("Appliance") == "selector" and d["given"].get("Name") == name]
+    assert len(found) == 1, f"{name}: {len(found)} selectors of that name"
+    return found[0]
+
+
+def _label(choice: dict) -> str:
+    """A choice in the owner's notation, ``17R: 15N 17R``: the leg, then the alignment, each switch unqualified."""
+    switch, _, port = choice["leg"].rpartition(".")
+    return f"{switch.partition(':')[2]}{port}: " + " ".join(
+        f"{a['appliance'].partition(':')[2]}{a['position'][0]}" for a in choice["alignment"])
+
+
+@then('selector "{name}" offers "{choices}"')
+def selector_offers(context, name, choices):
+    got = _selector(context, name).get("derived", {}).get("choices", [])
+    assert [c["detent"] for c in got] == list(range(1, len(got) + 1)), f"{name}: detents {[c['detent'] for c in got]}"
+    labels = "; ".join(_label(c) for c in got)
+    assert labels == choices, f"{name} offers {labels!r}, not {choices!r}"
+
+
+@then('selector "{name}" offers no choices')
+def selector_offers_none(context, name):
+    got = _selector(context, name).get("derived", {}).get("choices")
+    assert got is None, f"{name} offers {got!r}"
+
+
+@then('selector "{name}" ranges from {low:d} to {high:d}')
+def selector_range(context, name, low, high):
+    got = _selector(context, name).get("derived", {}).get("range")
+    assert got == {"min": low, "max": high}, f"{name}: range {got!r}"
+
+
+@then('ladder "{rid}" starts at "{start}" with switches "{switches}"')
+def ladder_switches(context, rid, start, switches):
+    d = _row_named(context, rid).get("derived", {})
+    assert d.get("start") == start, f"{rid}: start {d.get('start')!r}"
+    assert d.get("switches") == [s.strip() for s in switches.split(",")], f"{rid}: switches {d.get('switches')!r}"

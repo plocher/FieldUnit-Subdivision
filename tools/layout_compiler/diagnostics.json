@@ -478,6 +478,13 @@
       "feature": null,
       "replacedBy": null
     },
+    "policy.kind": {
+      "level": "warning",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": "trackplan/policy_sign.feature#a sign of a Kind no rule reads",
+      "replacedBy": null
+    },
     "processor.board": {
       "level": "missing",
       "lifecycle": "active",

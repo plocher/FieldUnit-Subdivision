@@ -1059,12 +1059,13 @@ class SPCoastTrackplan(unittest.TestCase):
         # number has no desk lever (Gilroy's 778, Sargent's 836, Watsonville's 840; Corporal's 828 has its lever on
         # column 11 since the renumber); no lever.masts; no warning (reference.switches retired 2026-11-13). Railroad
         # 0ab8dd8: Sargent's 836 has its lever on column 13, so twelve are left (Gilroy's 778, Watsonville's 840).
+        # Issue #145: Watsonville's twelve switches are those of its Arrival and Departure ladders, which their
+        # selectors work, so no switch.lever is left.
         missing = Counter(d.code for d in self.sm.report.diags if d.severity == "missing")
-        self.assertEqual({k: v for k, v in missing.items() if k.startswith("switch.")}, {"switch.lever": 12})
-        self.assertEqual(sorted(d.where for d in self.sm.report.by_code("switch.lever")), sorted(f"interlockings/Watsonville/appliances/{n}" for n in range(3, 27, 2)))
+        self.assertEqual({k: v for k, v in missing.items() if k.startswith("switch.")}, {})
         # Railroad 0ab8dd8: the CODE buttons beside Watsonville's Arrival and Departure selectors are on no Column net
         # (device.column); which column a selector's code button belongs to is open with #145.
-        self.assertEqual(set(missing), {"switch.lever", "mast.lever", "device.column"})
+        self.assertEqual(set(missing), {"mast.lever", "device.column"})
         self.assertEqual([str(d.source) for d in self.sm.report.by_code("device.column")], ["/South-cTc/Watsonville/Panel/Railroad-Office:PanelCode(CODE)"] * 2)
         self.assertEqual(sorted(d.where.rsplit("/", 1)[-1] for d in self.sm.report.by_code("mast.lever")),
                          sorted(["778NAB", "778NC", "778SAB", "778SC"] + [f"840N{c}" for c in "ABCDEFG"] + ["840SA"]))

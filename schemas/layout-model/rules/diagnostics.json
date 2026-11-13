@@ -205,6 +205,48 @@
       "feature": null,
       "replacedBy": null
     },
+    "ladder.direction": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/ladder.feature#a marker with a switch at its points both ways",
+      "replacedBy": null
+    },
+    "ladder.leg": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/ladder.feature#a leg that reaches neither a trailing point nor an end of track",
+      "replacedBy": null
+    },
+    "ladder.name": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/ladder.feature#a ladder marker with no Name",
+      "replacedBy": null
+    },
+    "ladder.selector": {
+      "level": "info",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/ladder.feature#a ladder no selector serves",
+      "replacedBy": null
+    },
+    "ladder.shared": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/ladder.feature#two ladders that share a switch",
+      "replacedBy": null
+    },
+    "ladder.start": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/ladder.feature#a marker from which no way meets a switch at its points",
+      "replacedBy": null
+    },
     "lamp.token": {
       "level": "missing",
       "lifecycle": "active",
@@ -469,6 +511,13 @@
       "lifecycle": "active",
       "since": "0.1.0",
       "feature": "logical/trackplan/routes.feature#a facing switch toward a limit with no entering signal",
+      "replacedBy": null
+    },
+    "selector.ladder": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/ladder.feature#a selector whose Name names no ladder",
       "replacedBy": null
     },
     "station.columns": {

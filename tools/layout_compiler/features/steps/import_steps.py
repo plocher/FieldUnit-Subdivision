@@ -200,6 +200,12 @@ def row_given(context, ref, field, value):
     assert got == value, f"{ref}: {field} is {got!r}, not {value!r}"
 
 
+@then('the row "{ref}" is named "{name}"')
+def row_name(context, ref, name):
+    got = _row(context, ref).get("name")
+    assert got == name, f"{ref}: named {got!r}, not {name!r}"
+
+
 @then('the row "{ref}" states the relation {key} "{value}"')
 def row_relation(context, ref, key, value):
     got = _row(context, ref).get("relations", {}).get(key)
