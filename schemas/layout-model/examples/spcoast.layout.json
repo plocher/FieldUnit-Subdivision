@@ -4681,7 +4681,18 @@
                   "APPROACH",
                   "CLEAR",
                   "STOP"
-                ]
+                ],
+                "inputs": {
+                  "1": {
+                    "indication": "STOP",
+                    "input": "STOP"
+                  },
+                  "2": {
+                    "indication": "APPROACH",
+                    "input": "SLOW"
+                  }
+                },
+                "rest": "CLEAR"
               },
               "W": {
                 "direction": "LEFT",
@@ -4689,7 +4700,18 @@
                   "APPROACH",
                   "CLEAR",
                   "STOP"
-                ]
+                ],
+                "inputs": {
+                  "1": {
+                    "indication": "STOP",
+                    "input": "STOP"
+                  },
+                  "2": {
+                    "indication": "APPROACH",
+                    "input": "SLOW"
+                  }
+                },
+                "rest": "CLEAR"
               }
             }
           },
@@ -13775,6 +13797,33 @@
   "layout": {
     "codelines": {
       "AAR Tokens": {
+        "derived": {
+          "station": "interlocking",
+          "tokens": {
+            "lamp": [
+              "{name}K"
+            ],
+            "lock": [
+              "{name}WLK",
+              "{name}WLQK"
+            ],
+            "maintainer_call": [
+              "{name}K"
+            ],
+            "signal": [
+              "{lever}NGK",
+              "{lever}SGK",
+              "{lever}TEK"
+            ],
+            "switch": [
+              "{name}NWK",
+              "{name}RWK"
+            ],
+            "track_circuit": [
+              "{name}K"
+            ]
+          }
+        },
         "given": {
           "Kind": "AAR",
           "Topic": "ctc/SPCoast/SouthCTC/codeline/"
@@ -13785,6 +13834,33 @@
         }
       },
       "US&S 506": {
+        "derived": {
+          "station": "house",
+          "tokens": {
+            "lamp": [
+              "{name}K"
+            ],
+            "lock": [
+              "{name}WLK",
+              "{name}WLQK"
+            ],
+            "maintainer_call": [
+              "{name}K"
+            ],
+            "signal": [
+              "{lever}NGK",
+              "{lever}SGK",
+              "{lever}TEK"
+            ],
+            "switch": [
+              "{name}NWK",
+              "{name}RWK"
+            ],
+            "track_circuit": [
+              "{name}K"
+            ]
+          }
+        },
         "given": {
           "Kind": "USS506"
         },
@@ -13792,6 +13868,11 @@
           "processor": "SouthCTC",
           "transport": "TimeCode"
         }
+      }
+    },
+    "derived": {
+      "reference": {
+        "trainOrderInputs": "default"
       }
     },
     "given": {
@@ -15658,6 +15739,17 @@
           },
           "SIGNALMAST.778NAB": {
             "derived": {
+              "aspectNames": {
+                "APPROACH": "Approach Signal Yellow",
+                "APPROACH_DIVERGING": "Block Signal Yellow over Green",
+                "APPROACH_MEDIUM": "Approach Medium - Flashing Yellow",
+                "CLEAR": "Block Signal Green",
+                "DIVERGING_APPROACH": "Home Signal Yellow for Diverging Route",
+                "DIVERGING_CLEAR": "Block Signal Green for Diverging Route",
+                "DIVERGING_RESTRICTING": "Home Signal Red over Lunar",
+                "RESTRICTING": "Restricting",
+                "STOP": "Home Signal Red"
+              },
               "jmriSignalSystem": "SPTCO-1969",
               "mast": "Gilroy:778NAB",
               "positions": [
@@ -15672,6 +15764,17 @@
           },
           "SIGNALMAST.778NC": {
             "derived": {
+              "aspectNames": {
+                "APPROACH": "Approach Signal Yellow",
+                "APPROACH_DIVERGING": "Block Signal Yellow over Green",
+                "APPROACH_MEDIUM": "Approach Medium - Flashing Yellow",
+                "CLEAR": "Block Signal Green",
+                "DIVERGING_APPROACH": "Home Signal Yellow for Diverging Route",
+                "DIVERGING_CLEAR": "Block Signal Green for Diverging Route",
+                "DIVERGING_RESTRICTING": "Home Signal Red over Lunar",
+                "RESTRICTING": "Restricting",
+                "STOP": "Home Signal Red"
+              },
               "jmriSignalSystem": "SPTCO-1969",
               "mast": "Gilroy:778NC",
               "positions": [
@@ -15685,6 +15788,17 @@
           },
           "SIGNALMAST.778SAB": {
             "derived": {
+              "aspectNames": {
+                "APPROACH": "Approach Signal Yellow",
+                "APPROACH_DIVERGING": "Block Signal Yellow over Green",
+                "APPROACH_MEDIUM": "Approach Medium - Flashing Yellow",
+                "CLEAR": "Block Signal Green",
+                "DIVERGING_APPROACH": "Home Signal Yellow for Diverging Route",
+                "DIVERGING_CLEAR": "Block Signal Green for Diverging Route",
+                "DIVERGING_RESTRICTING": "Home Signal Red over Lunar",
+                "RESTRICTING": "Restricting",
+                "STOP": "Home Signal Red"
+              },
               "jmriSignalSystem": "SPTCO-1969",
               "mast": "Gilroy:778SAB",
               "positions": [
@@ -15699,6 +15813,17 @@
           },
           "SIGNALMAST.778SC": {
             "derived": {
+              "aspectNames": {
+                "APPROACH": "Approach Signal Yellow",
+                "APPROACH_DIVERGING": "Block Signal Yellow over Green",
+                "APPROACH_MEDIUM": "Approach Medium - Flashing Yellow",
+                "CLEAR": "Block Signal Green",
+                "DIVERGING_APPROACH": "Home Signal Yellow for Diverging Route",
+                "DIVERGING_CLEAR": "Block Signal Green for Diverging Route",
+                "DIVERGING_RESTRICTING": "Home Signal Red over Lunar",
+                "RESTRICTING": "Restricting",
+                "STOP": "Home Signal Red"
+              },
               "jmriSignalSystem": "SPTCO-1969",
               "mast": "Gilroy:778SC",
               "positions": [
@@ -15712,6 +15837,16 @@
           },
           "SIGNALMAST.Gilroy.E": {
             "derived": {
+              "aspectNames": {
+                "APPROACH": "Approach Signal Yellow",
+                "APPROACH_DIVERGING": "Block Signal Yellow over Green",
+                "APPROACH_MEDIUM": "Approach Medium - Flashing Yellow",
+                "CLEAR": "Block Signal Green",
+                "DIVERGING_APPROACH": "Home Signal Yellow for Diverging Route",
+                "DIVERGING_CLEAR": "Block Signal Green for Diverging Route",
+                "DIVERGING_RESTRICTING": "Home Signal Red over Lunar",
+                "RESTRICTING": "Restricting"
+              },
               "jmriSignalSystem": "SPTCO-1969",
               "mast": "Gilroy:Gilroy",
               "positions": [
@@ -15725,6 +15860,16 @@
           },
           "SIGNALMAST.Gilroy.W": {
             "derived": {
+              "aspectNames": {
+                "APPROACH": "Approach Signal Yellow",
+                "APPROACH_DIVERGING": "Block Signal Yellow over Green",
+                "APPROACH_MEDIUM": "Approach Medium - Flashing Yellow",
+                "CLEAR": "Block Signal Green",
+                "DIVERGING_APPROACH": "Home Signal Yellow for Diverging Route",
+                "DIVERGING_CLEAR": "Block Signal Green for Diverging Route",
+                "DIVERGING_RESTRICTING": "Home Signal Red over Lunar",
+                "RESTRICTING": "Restricting"
+              },
               "jmriSignalSystem": "SPTCO-1969",
               "mast": "Gilroy:Gilroy",
               "positions": [
@@ -18212,16 +18357,61 @@
       "Railroad-Trackplan": "split-projects-final-164-g87f6aa4"
     },
     "referenceData": {
-      "aspectNames": "2026-11-10",
-      "codeLineCapacity": "2026-11-01",
-      "codeLineSteps": "2026-11-01.3",
-      "driverEncodings": "2026-10-23",
-      "encodingTransportPairing": "2026-10-23",
-      "headModels": "2026-11-12",
-      "indicationTokens": "2026-10-27.2",
-      "regimes": "2026-11-10",
-      "stations": "2026-10-27",
-      "trainOrderInputs": "2026-11-08"
+      "aspectNames": {
+        "file": "layout-model/reference/aspectNames.json",
+        "schemaVersion": 0,
+        "version": "2026-11-10"
+      },
+      "codeLineCapacity": {
+        "file": "layout-model/reference/codeLineCapacity.json",
+        "schemaVersion": 0,
+        "version": "2026-11-01"
+      },
+      "codeLineSteps": {
+        "file": "layout-model/reference/codeLineSteps.json",
+        "schemaVersion": 0,
+        "version": "2026-11-01.3"
+      },
+      "driverEncodings": {
+        "file": "layout-model/reference/driverEncodings.json",
+        "schemaVersion": 0,
+        "version": "2026-10-23"
+      },
+      "encodingTransportPairing": {
+        "file": "layout-model/reference/encodingTransportPairing.json",
+        "schemaVersion": 0,
+        "version": "2026-10-23"
+      },
+      "headModels": {
+        "file": "layout-model/reference/headModels.json",
+        "schemaVersion": 0,
+        "version": "2026-11-12"
+      },
+      "indicationTokens": {
+        "file": "layout-model/reference/indicationTokens.json",
+        "schemaVersion": 0,
+        "version": "2026-10-27.2"
+      },
+      "policies": {
+        "file": "layout-model/reference/policies.json",
+        "schemaVersion": 0,
+        "version": "2026-11-13"
+      },
+      "regimes": {
+        "file": "layout-model/reference/regimes.json",
+        "schemaVersion": 0,
+        "version": "2026-11-10"
+      },
+      "stations": {
+        "file": "layout-model/reference/stations.json",
+        "schemaVersion": 0,
+        "version": "2026-10-27"
+      },
+      "trainOrderInputs": {
+        "file": "layout-model/reference/trainOrderInputs.json",
+        "schemaVersion": 0,
+        "version": "2026-11-08"
+      }
     },
     "rules": "0.1.0",
     "source": {
@@ -18234,5 +18424,5 @@
       "version": "0.4.0"
     }
   },
-  "schema": "layout-model/v3.3.0"
+  "schema": "layout-model/v3.4.0"
 }
