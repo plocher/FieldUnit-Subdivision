@@ -9,6 +9,7 @@ One list of what is decided and what waits for the owner. Each proposed ADR open
 |---|---|---|
 | [0002](0002-symbol-contract.md) | What each KiCad symbol records | Frozen 2026-10-03: too complicated to approve as-is. Rewritten to rules after the cleanup pass (#30), then approved. |
 | [0003](0003-name-grammar.md) | One grammar for the names of appliances, signals and track circuits | Frozen 2026-10-03, same reason; the owner's in-progress edits are committed as they stood. Rewritten to rules after #30. |
+| [0015](0015-file-is-not-the-model.md) | The file is not the model: three parts (reference, layout, derived), writers compile, save writes all three with the reference rows used and the domain libraries' results, consumers read only the file, a stamp with the layout hash | Proposed 2026-11-13: ratify the six decisions. |
 
 ## Accepted
 
