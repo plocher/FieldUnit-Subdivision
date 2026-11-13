@@ -285,7 +285,7 @@ Policy markers (today `Rule251-DoT-Left`, `Rule251-DoT-Right`, `Rule261-DoT-BiDi
 
 | Symbol · field | Change | Fact | Phase |
 |---|---|---|---|
-| `MaintainerCall` `Value` | required: `MC<n>`, unique in the interlocking (Luchessa MC1 has `~`) | the call's name; functions `MC<n>S`, `MC<n>K` | compiler, linker, generator |
+| `MaintainerCall` `Value` | required: `<n>MC`, unique in the interlocking (Luchessa MC1 has `~`)[^xmc] | the call's name; functions `<n>MCS`, `<n>MCK` | compiler, linker, generator |
 | `MaintainerCall` `CP` | do not add to the library. Read the control point from the pin connection to `MAIN HOUSE` pin `H` (P6) and do not also require a `CP` field. Remove the 4 existing instance fields (GilroyInterchange 2, Christopher 2) | the bungalow the maintainer is called to | compiler |
 | `MaintainerCall` class | no field on this symbol. The class is on `PanelMCall` (D6). A maintainer call is a non-vital control (glossary) | (on the panel symbol) | linker, generator |
 | `AUXILIARY` control point | pin connection to `MAIN HOUSE` pin `H` (P6); rename pin name `MC` → `H` | the bungalow of the appliance | compiler |
@@ -338,7 +338,7 @@ Lamps:
 
 | Field | Change | Fact | Phase |
 |---|---|---|---|
-| `IndicationToken` | keep the name (D8); default empty (the `S` default goes). A comma-separated list of tokens; a bare track circuit name stands for its `K` token, so today's mix of circuit names (`795T1`) and tokens (`MC1K`) is valid. A list is the office-side form of a block (D16). Proxy form `<interlocking>:<name>` for a foreign function | the office indications OR'd onto this lamp | linker (resolve), generator |
+| `IndicationToken` | keep the name (D8); default empty (the `S` default goes). A comma-separated list of tokens; a bare track circuit name stands for its `K` token, so a mix of circuit names (`795T1`) and tokens (`1MCK`) is valid. A list is the office-side form of a block (D16). Proxy form `<interlocking>:<name>` for a foreign function | the office indications OR'd onto this lamp | linker (resolve), generator |
 
 Maintainer call and auxiliary levers:
 
@@ -995,3 +995,8 @@ The options as proposed:
 
 Recommendation: A. Under all options the desk side keeps the sheet name as the join, and the linker
 compares names with case folded and spaces replaced by `-` only. Decided: A (D1).
+
+[^xmc]: Amended in place on 2026-11-13 (owner's ruling: the call is `<n>MC`, its functions `<n>MCS` and
+    `<n>MCK`; ADR 0003 D12). Until commit e5f0c62 the `MaintainerCall` row and the `IndicationToken`
+    example spelled them `MC<n>`, `MC<n>S`, `MC<n>K` (`MC1K`). The Findings, the counts and the appendices
+    keep the names as they were drawn then.

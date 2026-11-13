@@ -37,7 +37,7 @@ it to one of them (drawn values, from the model golden):
 | Control point (`MAIN HOUSE` Value) | Appliances assigned by the `CP` field | Desk column |
 |---|---|---|
 | CP Luchessa | 783, 783T1, 1SA, mast 784EAB | 5 (levers 783, 784) |
-| CP Gilroy | 795, 795D, 795T1, 2NAA, 2SA, masts 784EC, 784WA | 6 (lever 795, MC1) |
+| CP Gilroy | 795, 795D, 795T1, 2NAA, 2SA, masts 784EC, 784WA | 6 (lever 795, 1MC)[^xmc] |
 | CP Carnadero | 799, 799T1, 1NA, 2NA, 3NA, masts 784WBC, 784WD | 7 (lever 799, CODE) |
 
 - The CTC machine has one CODE button for the three columns.
@@ -284,13 +284,13 @@ to CP Gilroy. Steps C1–C7 and I1–I7 are cycle steps 9–15.
 | Field station | Controls | Steps | Office indications | Steps |
 |---|---|---|---|---|
 | CP Luchessa | C1 `783NWS`, C2 `783RWS`, C3 `784NGS`, C4 `784HS`, C5 `784SGS` | 5 of 7 | I1 `783NWK`, I2 `783T1K`, I3 `783RWK`, I4 `1SAK`, I5 and I7 signal 784 (L, R: `NGK`, `SGK`, `TEK`), I6 unassigned | 6 of 7 |
-| CP Gilroy | C1 `795NWS`, C2 `795RWS`, C3 `MC1S` | 3 of 7 | I1 `795NWK`, I2 `795T1K`, I3 `795RWK`, I4 `2NAAK`, I5 `2SAK`, I6 `MC1K` | 6 of 7 |
+| CP Gilroy | C1 `795NWS`, C2 `795RWS`, C3 `1MCS` | 3 of 7 | I1 `795NWK`, I2 `795T1K`, I3 `795RWK`, I4 `2NAAK`, I5 `2SAK`, I6 `1MCK` | 6 of 7 |
 | CP Carnadero | C1 `799NWS`, C2 `799RWS` | 2 of 7 | I1 `799NWK`, I2 `799T1K`, I3 `799RWK`, I4 `1NAK`, I5 `2NAK`, I6 `3NAK` | 6 of 7 |
 | One control point, 506 | all | 10 of 7: fails | all | 18 of 7: fails |
 | AAR over MQTT: `Luchessa` | all, as tokens | no limit | all, as tokens | no limit |
 
 - 795D has no function on the code line.
-- The `CP` field of MC1 is not in the model (known gap). Column 6 places it in CP Gilroy.
+- The `CP` field of 1MC is not in the model (known gap). Column 6 places it in CP Gilroy.
 
 ### Decided by the answers, and still to choose
 
@@ -360,4 +360,8 @@ that needs no second drawing of field stations.
 - The 506 step lists (hearsay), the station selection pattern, and one code button for each field
   station on the prototype (recall).
 - Whether the desk sketch and the virtual field processor agree on the Luchessa token order today.
-- The `CP` field of MC1 on the plant side.
+- The `CP` field of 1MC on the plant side.
+
+[^xmc]: Amended in place on 2026-11-13 (owner's ruling: a maintainer call is `<n>MC`, its functions
+    `<n>MCS` and `<n>MCK`; ADR 0003 D12). Until commit 6131cd7 this ADR spelled them `MC1`, `MC1S`,
+    `MC1K`.
