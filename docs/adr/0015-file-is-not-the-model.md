@@ -1,6 +1,6 @@
 # 0015. The file is not the model: writers compile, the file carries three parts, consumers read only the file
 
-- Status: **proposed** 2026-11-13. The ask: ratify the six decisions below.
+- Status: **proposed** 2026-11-13. The ask: ratify the eight decisions below.
 - Amends: ADR 0011 §1 and §3 (the Layout Data Model File is the saved output of a writer, not the model itself; the
   stamp names the layout part's hash); ADR 0012 §5.1 (a domain library's results are written into the file's derived
   part at save), §6 (the file carries the reference rows it uses, not a path to the tables); the owner's ruling 10 of
@@ -31,6 +31,14 @@
 6. **The stamp makes staleness detectable without the library.** `provenance` names the library version, each
    reference table's version, and a hash of the layout part. A consumer that finds a hash that does not match the
    layout part rejects the file as edited outside a writer. *Default: yes.*
+7. **Derived data is a function of reference data applied to layout data.** derived = `derive(reference, layout)`
+   for a given library version. The library exposes it with the reference data as an explicit argument: the shipped
+   tables are the default, and a writer, a test or a tool may pass another set. *Default: yes.*
+8. **Layout data never copies reference data.** The layout states only its selection (`Railroad`, `Era`,
+   `Rulebook`, an entity's own `Style` or `Kind`) and the designer's explicit overrides beside the item. A copied
+   value would override the reference data and stop a change to it from reaching the layout. This is why a library
+   symbol's override fields (`IndicationCeiling`, `Indications`, a train order board's `Rest`) are blank: only the
+   designer fills them. *Default: yes.*
 
 ## 1. Problem
 
@@ -79,6 +87,21 @@ Studio's sync problem disappears because compile is part of save. The designer m
 compile recomputes every piece's regime and every route that passes it; the save writes them together. No copy is
 ever edited apart from its source.
 
+### 3.1 One function, two inputs
+
+derived = `derive(reference, layout)`. The layout's selection chooses rows from whatever reference set is passed; the
+designer's overrides win over the chosen rows; nothing else in the layout states a reference value (decision 8). Three
+uses follow:
+
+- **Writers** pass the shipped reference set (with the user's own layered over it, ADR 0012 §6).
+- **Tests** cycle one layout over several reference sets: the same Corporal under two rulebooks or two eras, to show
+  that a ceiling, a head word or a token form follows the table and not the drawing.
+- **Tools** answer "what if": a designer previews the layout under another railroad's rules without editing it.
+
+The reference part of the file (decision 4) is a record of the rows this compile used, so a consumer needs nothing
+else. It is not layout data and overrides nothing: the next compile reads the reference set again and writes a new
+record.
+
 ## 4. What a consumer does
 
 A consumer reads the file. It reads meaning under ADR 0011 §4 (`derived`, then `relations`, then `given`), the resolved
@@ -112,6 +135,9 @@ Each result is written beside the entity it belongs to, so every entity still ho
   `derived.routes`. The schema change waits for nothing: versioning is idle until end to end (the owner,
   2026-11-13), and the contract freeze (#30, #98, #99) fixes the result.
 - FieldUnit's layoutgen reads routes from the file, not from `tools/railroad`.
+- `tools/layout_model/reference.py` loads the tables from one fixed folder today; `derive` and the domain libraries
+  take the reference set as an argument instead (decision 7), with that folder as the default.
+- A lint finds instance fields that repeat a reference value (decision 8), reported, not fatal.
 - ADR 0011 §1 and §3, ADR 0012 §5.1 and §6, and the station-token feature are amended in place with a footnote when
   this ADR is accepted.
 - No change for the MVP beyond the routes the first consumer needs anyway (FieldUnit's blocker B1).
