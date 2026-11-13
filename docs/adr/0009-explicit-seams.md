@@ -163,7 +163,7 @@ bytes may be used by another interlocking. A node's identity is transport plus U
 JMRI needs no node: its objects are an MQTT topic subscription / publish on the processor itself, and have no hardware between them and the broker, so JMRI drivers sit on the processor's own bus with the JMRI encoding as the fact.
 "A symbol earns its place only by carrying a fact nothing else carries".
 
-### 3.7 Head devices[^heads]
+### 3.7 Head devices[^heads][^atoms]
 
 Signals, masts, heads, indications and head words. The OfficeUnit controls only whether a signal is at `STOP` or is
 allowed to indicate safe travel to the `LEFT` or to the `RIGHT`. The FieldUnit determines the allowed indications for
@@ -173,15 +173,24 @@ worklist's (`docs/review/signal-symbols-worklist.md`, "The chain and its seams",
 
     trackplan Mast ──indication──▶ field Mast device ──pin A/B/C──▶ anonymous Head ──head word──▶ Encoder ──pins──▶ Driver
 
-- The trackplan mast (`Appliance mast`) has one `SIGNAL` pin and no heads. Its Name's letters count its head
-  positions (ADR 0003 rule 7): the k-th letter is the k-th position top down, so `774NC` is signal 774N's head C on a
-  one-position mast. Its `Indications` is empty by rule; filled, it is only an explicit list of indication words
-  replacing the derived demand (the owner, 2026-11-04). The demand itself is derived with #62.
+- The trackplan mast (`Appliance mast`) has one `SIGNAL` pin and no heads. Its Name is KiCad shorthand for three
+  atoms (ADR 0003 rules 5 to 7), which the importer states and nothing downstream reads (the owner, 2026-11-12: the
+  atoms are stated, the Name is a label composed of them; deriving from the Name would denormalize, since every Studio
+  edit would touch many stored things): `given.signal`, the signal number (`784`); `relations.facing`, the side
+  letter's direction (D1: N and W `LEFT`, S and E `RIGHT`; the glyph's turn must agree, `geometry.facing`);
+  `given.heads`, the head letters top down as a comma list (`B,C` of `784WBC`). The k-th letter is the k-th position,
+  so `774NC` is signal 774's head C on a one-position mast and `784WBC`'s pin A is head B. A Name that is not the
+  grammar states none of them, `mast.name` at missing. Its `Indications` is empty by rule; filled, it is only an
+  explicit list of indication words replacing the derived demand (the owner, 2026-11-04). The demand itself is derived
+  with #62.
 - The field mast device (`Appliance mast`, Name the trackplan mast's) has one passive pin per head position, `A`,
   `B`, `C` top down (`Device-Mast-Single`, `-Double`, `-Triple`, the dwarf forms).
 - A head device (`Appliance head`) is anonymous: no Name, no Head letter. Its `IND` wire to a mast pin is its
   position (`relations.mast`, `relations.position`; a head on a train order mast's face pin states `relations.face`
-  instead). Its Style is its model and the index into the head model table, reference data
+  instead); its railroad letter, the mast's letter for that pin, is derived (`derived.letter`), never stated on the
+  head. The mast's `derived.positions` is keyed by the pin and carries each pin's `letter` and what it `presents`: the
+  pin is the physical fact every seam uses, the letter the name, and keyed by the pin A never means pin A on one mast
+  and head A on another. Its Style is its model and the index into the head model table, reference data
   (`tools/layout_model/reference.py`, `head_model`): `derived.presents` is the table's head words, the subset of the
   indication list plus DARK the head can show. The right-hand side of the table (lamps, arm positions) is the encoder's
   instruction; no colour or position word crosses a seam. A Style with no row is `head.model` at missing.
@@ -192,7 +201,13 @@ worklist's (`docs/review/signal-symbols-worklist.md`, "The chain and its seams",
 - The match: a mast's demand is within what its positions present. A mast with no field mast device, or whose device
   has no head wired, is `mast.device` at missing. On a one-position mast a demanded word the position does not present
   is `mast.presents` at info; a mast with several positions is matched through the policy table (`reference.policy`),
-  which lands with #62. A head wired beyond the last position the Name letters count is `mast.heads` at error.
+  which lands with #62. A head wired beyond the last position the stated heads count is `mast.heads` at error; one
+  letter on two masts of one signal facing one way is `mast.letters` at error (ADR 0003 rule 6).
+- A desk signal lever works the masts of its signal number (ADR 0003 rule 5): it serves the number in its interlocking
+  and derives `masts`, every mast there whose `given.signal` is that number; a number no mast states is `lever.serves`
+  at error. A `CONTROLLED` mast whose signal number no desk signal lever serves is `mast.lever` at missing, as a powered
+  switch with no lever is `switch.lever` (the owner, 2026-11-12: Sargent's 836NAB, 836SA and 836SB); an `ABSOLUTE` or
+  `PERMISSIVE` mast is automatic and has none.
 
 The rules are `schemas/layout-model/rules/features/physical/field/device_mast_head.feature` and the importer's
 `tools/layout_compiler/features/field/device_mast_head.feature`.
@@ -285,7 +300,9 @@ Captions drawn in symbol bodies follow pin renames.
 | Encoding rides | `Transport` to a transport net | the `Transport` field; by layout when one transport of its kind exists | kind pairs with the transport's kind (reference data) |
 | CMRInet Node on its line | `Driver-CMRInet-Node` connects a processor's `Transport` to an `IOBus` | the `Transport` field | UA unique per line |
 | Bit on its CMRInet Node | a `Driver-CMRInet-IB/OB` connects to an `IOBus` that originates at a `Driver-CMRInet-Node` | the one CMRInet Node on the sheet; the bit's `Node` field (the UA) when a sheet holds two, added to the library 2026-10-23 (Railroad `edits/2026-10-23-descriptions.py`), empty by default | bytes declared cover bits used |
-| Head device to its position | its `IND` wire to a position pin (A, B, C) of the field mast device named for the trackplan mast[^heads] | none | the Name's letters count the positions; demand ⊆ presents (§3.7) |
+| Head device to its position | its `IND` wire to a position pin (A, B, C) of the field mast device named for the trackplan mast[^heads] | none | the mast's stated `heads` count the positions (`mast.heads`); demand ⊆ presents (§3.7)[^atoms] |
+| Signal lever to its masts | the lever's number is the masts' stated `signal` in the lever's interlocking (§3.7)[^atoms] | none | `lever.serves`; a CONTROLLED mast with no lever is `mast.lever` |
+| Track shared by two interlockings' switches | none: a wire joining switch ports of two interlockings with no joint between | none | `reference.switches` at warning (ADR 0013 §7.1 accepts plain block track; a dispatcher-controlled port there is `reference.track`)[^atoms] |
 | Panel column to its control point | `CP Name` on the column, naming its interlocking or one of its houses[^cpname] | an empty `CP Name`: the column's interlocking | names resolve |
 | Track leaves an interlocking | a `NEXT_CP` (to the next interlocking), a plain `IRJ` beyond which the track carries another regime's `GCOR Rule` marker (ADR 0013 §7.1), or an end (`INDUSTRY`, `BUMPER`)[^track][^regime] | none | a switch port or track row related to another interlocking's is an error (`reference.track`); another interlocking is reached only through its indications |
 | Trackplan symbol in its interlocking | `CP Name` naming the interlocking or one of its houses (§3.9) | its sheet's interlocking; else the one interlocking its track net reaches | none of these is `trackplan.unit` at missing, no row written[^placement] |
@@ -378,6 +395,12 @@ other transports; Studio's own notation.
     vocabularies matched (`head.vocabulary`); the relation table row read "Head device to its head | mast Value and
     `Head` letter, by name | same | vocabularies match (§3.6)". The trackplan head symbols and the head Name and letter
     are retired; a head is a position on its field mast device.
+
+[^atoms]: Rewritten in place on 2026-11-12 (the owner, on the first consumer's findings of 2026-11-12; schema 3.3.0,
+    `schemas/layout-model/v3.3.0-migration.md`). Until commit `da2a765` §3.7 read the positions off the Name's letters
+    in the derivation (`mast.grammar`, `mast.facing`, `lever_of`), `derived.positions` was keyed by the pin letter
+    alone, a desk lever found its masts by cutting the letters off, and a track wire shared by two interlockings'
+    switches was not reported. The grammar is now read once, in the importer (`grammar.mast_atoms`).
 
 [^mast-kind]: Amended 2026-10-31 (owner, ADR 0013): a mast states `Kind` `CONTROLLED`, `ABSOLUTE` or `PERMISSIVE`; the TRACK Kind `IRJ_SIGNALS` and the track circuit Style `boundary` are added. Before, `APPLIANCE` carried no Kind without exception; the earlier text is at commit aa80e18.
 

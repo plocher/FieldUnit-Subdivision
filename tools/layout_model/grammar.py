@@ -1,6 +1,8 @@
 """Names and Styles as the rules read them: the one definition the reference derivation and the domain libraries share.
 
-ADR 0003: a mast is its signal (lever and side) plus its heads' letters, ascending (rules 6 and 7); a gang id is a switch
+ADR 0003: a mast is its signal (lever and side) plus its heads' letters, ascending (rules 6 and 7): that reading is the
+KiCad importer's alone (``mast_atoms``; the owner, 2026-11-12: the Name is a label composed of stated atoms, and
+neither the reference derivation nor any consumer reads it). A gang id is a switch
 name less its trailing letter, and the switch named by the id alone leads the gang (D8). ADR 0013 §4: "powered" is the
 seam word, a switch or derail whose position the field unit knows and may move, never "has a motor"; a CP Name makes
 nothing powered. The owner, 2026-11-09: a derail is a switch with the word ``derail`` in its Style, and the switch
@@ -106,9 +108,15 @@ def leads_gang(name: str, switches: set[str] | frozenset[str]) -> bool:
     return lead == name or lead not in switches
 
 
-def lever_of(mast: str) -> str | None:
-    """A mast's signal lever number (``784`` of ``784EAB``); None when the name is not ADR 0003's grammar."""
-    return LEVER.match(mast).group(0) if MAST_NAME.match(mast) else None
+def mast_atoms(name: str) -> tuple[str, str, tuple[str, ...]] | None:
+    """The atoms a drawn mast Name is shorthand for (ADR 0003 rules 5 to 7): the signal number (``784`` of ``784WBC``),
+    the direction the side letter names (``LEFT`` for W, D1) and the head letters top down (``("B", "C")``). None when
+    the name is not the grammar. For the KiCad importer, which states them; nothing else reads a mast's Name."""
+    m = MAST_NAME.match(name)
+    if m is None:
+        return None
+    signal = m.group(1)
+    return LEVER.match(signal).group(0), DIRECTION[signal[-1]], tuple(m.group(2))
 
 
 def lever_class(name: str, appliances: dict[str, dict[str, Any]]) -> str | None:

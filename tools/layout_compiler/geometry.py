@@ -161,7 +161,7 @@ def facing(placement: dict[str, Any]) -> Optional[str]:
     the LEFT trains, as the drawings place every N and W mast; turned a half turn it faces RIGHT; a mirror across y
     swaps them. A quarter turn faces neither (None). The same transform as ``page_of`` on the glyph's own facing
     vector, so what the file says is what the sheet shows. Read for signal masts and train order boards: a signal
-    mast's Name letter must agree (``mast.facing``); a single train order board has nothing else to say which way it
+    mast's Name letter must agree (the importer's ``geometry.facing``); a single train order board has nothing else to say which way it
     faces (``train_order.face``)."""
     x = -1.0
     if placement.get("mirror") == "y":

@@ -209,7 +209,7 @@
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/office/device_lever_signal.feature#a signal lever whose number no mast states",
       "replacedBy": null
     },
     "mast.control_point": {
@@ -228,23 +228,23 @@
     },
     "mast.facing": {
       "level": "warning",
-      "lifecycle": "active",
+      "lifecycle": "retired",
       "since": "0.1.0",
-      "feature": "physical/field/device_train_order.feature#a signal mast drawn facing against its letter",
+      "feature": null,
       "replacedBy": null
     },
     "mast.grammar": {
       "level": "info",
-      "lifecycle": "active",
+      "lifecycle": "retired",
       "since": "0.1.0",
-      "feature": "logical/trackplan/appliance_mast.feature#a mast whose name is not a signal number and its head letters",
+      "feature": null,
       "replacedBy": null
     },
     "mast.heads": {
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": "physical/field/device_mast_head.feature#a head wired to a position the mast's name does not letter",
+      "feature": "physical/field/device_mast_head.feature#a head wired to a position the mast's heads do not letter",
       "replacedBy": null
     },
     "mast.joint": {
@@ -272,7 +272,14 @@
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "physical/field/device_mast_head.feature#one head letter on two masts of one signal",
+      "replacedBy": null
+    },
+    "mast.lever": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/office/device_lever_signal.feature#Sargent's 836NAB, 836SA and 836SB are controlled but no desk lever 836 exists",
       "replacedBy": null
     },
     "mast.powered": {
@@ -378,6 +385,13 @@
       "lifecycle": "active",
       "since": "0.1.0",
       "feature": null,
+      "replacedBy": null
+    },
+    "reference.switches": {
+      "level": "warning",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/track_block.feature#the legs of two interlockings' local switches on one wire with no joint between",
       "replacedBy": null
     },
     "reference.track": {

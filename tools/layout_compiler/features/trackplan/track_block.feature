@@ -28,3 +28,19 @@ Feature: Block track across sheets, as drawn
     And "834T" names "J1.A" on side TC
     And the row "J2" names "J1.A" on side B
     And the row "J1" names "X:836T.TC" on side B
+
+  Scenario: the legs of two sheets' switches on one net name each other's ports
+    Given this drawing of interlocking "Corporal":
+      | Ref | Symbol                           | Role      | Kind          | Appliance | Style | Name | CP Name  | TC  |
+      | H1  | Railroad-Trackplan:House         | STRUCTURE | CONTROL_POINT |           |       |      | Corporal |     |
+      | SW1 | Railroad-Trackplan:Switch        | APPLIANCE |               | switch    | local | 1    | Corporal | 1T1 |
+    And this drawing of interlocking "Sargent":
+      | Ref | Symbol                           | Role      | Kind          | Appliance | Style | Name | CP Name | TC  |
+      | H2  | Railroad-Trackplan:House         | STRUCTURE | CONTROL_POINT |           |       |      | Sargent |     |
+      | SW2 | Railroad-Trackplan:Switch        | APPLIANCE |               | switch    | local | 1    | Sargent | 1T1 |
+    And these nets:
+      | Net           | Pins          |
+      | Beet Loader 2 | SW1.N SW2.N   |
+    When the drawing is imported
+    Then in interlocking "Corporal", "1" names "Sargent:1.N" on side N
+    And in interlocking "Sargent", "1" names "Corporal:1.N" on side N

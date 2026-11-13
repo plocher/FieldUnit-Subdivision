@@ -66,14 +66,26 @@ names every other track pin its wire reaches, so the relation is symmetric):
   ``PERMISSIVE`` mast belongs to no control point (ADR 0013 §5: automatic masts state no CP Name; §4: block track is
   outside every interlocking): it derives no ``controlPoint``, under one house as under several, and no chain runs
   through it. A mast with no Kind keeps today's handling (``mast.kind`` reports it).
+- **A mast states its atoms** (ADR 0003 rules 5 to 7; the owner, 2026-11-12): ``given.signal``, the signal number;
+  ``relations.facing``, the way it faces; ``given.heads``, the head letters top down, a comma list. The Name is a label
+  composed of them, which the KiCad importer decomposes and nothing here reads. The k-th letter is the k-th position,
+  the field mast device's pin A, B, C top down. ``mast.heads`` at error: a head wired beyond the last letter;
+  ``mast.letters`` at error: one letter on two masts of one signal facing one way (rule 6). A mast that states no
+  atoms is incomplete: it derives no letters and no lever link, and the writer says so (the importer's ``mast.name``).
 - **A head is a position on its mast** (issue #80; the owner, 2026-11-04 and 2026-11-09): a head device has no name;
   its ``relations.mast`` and ``relations.position`` name the field mast device and the pin, A, B, C top down, its IND
-  wire reaches. Its Style is its model, the index into the head model table (``reference.head_model``): the head
-  derives ``presents``, the table's head words; a Style with no row is ``head.model`` at missing. The mast derives
-  ``positions``, each with the words it presents, and ``demand`` from an explicit ``Indications`` list until #62
+  wire reaches; it derives ``letter``, the mast's letter for that pin. Its Style is its model, the index into the head
+  model table (``reference.head_model``): the head derives ``presents``, the table's head words; a Style with no row is
+  ``head.model`` at missing. The mast derives ``positions``, keyed by pin, each with its ``letter`` and the words it
+  ``presents`` (what any head on it presents), and ``demand`` from an explicit ``Indications`` list until #62
   derives it. A mast with no field mast device or no head wired is ``mast.device`` at missing; two heads on one pin
   presenting different words are ``head.position`` at info; a single-position mast whose head cannot present a
   demanded word is ``mast.presents`` at info; a mast with several positions waits on the policy table (``positions``).
+- **A signal lever works the masts of its signal** (ADR 0003 rule 5; the owner, 2026-11-12): a desk lever of Style
+  ``signal`` serves its number in its interlocking, and derives ``masts``, every mast there whose ``given.signal`` is
+  that number; a number no mast states is ``lever.serves`` at error. A ``CONTROLLED`` mast whose signal number no
+  desk signal lever serves is ``mast.lever`` at missing (what works it is not drawn yet, like ``switch.lever``); an
+  ``ABSOLUTE`` or ``PERMISSIVE`` mast is automatic and has none.
 - **A train order board** (``Appliance train_order``; the owner, 2026-11-03 and 2026-11-08) is an operator-controlled,
   non-vital indicator used in Time Table and Train Order territory: never a signal in the interlocking sense, never
   in a route, never in a control point. It derives no ``controlPoint`` and no chain runs through it (the exclusion an
@@ -90,9 +102,9 @@ names every other track pin its wire reaches, so the relation is symmetric):
   shows at run time, the most restrictive asserted input winning, is FieldUnit's behaviour (its issue #44), not a
   model fact. A board no field mast device serves, or whose device has no face wired, is ``train_order.device`` at
   missing; a face with no lever is ``train_order.lever`` at missing (facts not yet drawn); a face that names no
-  direction, a single board's two faces, or a face two levers serve is ``train_order.face`` at error. A signal mast
-  drawn facing against its Name letter is ``mast.facing`` at warning: the turn of a single board's glyph is read the
-  same way, so the convention is checked on every mast.
+  direction, a single board's two faces, or a face two levers serve is ``train_order.face`` at error. Whether a
+  signal mast's glyph is turned the way its Name's side letter says is the KiCad importer's check (``geometry.facing``):
+  the file states one facing, the Name's.
 - **Consumers of another station's indications** (the owner, 2026-10-27): a ``track.consumers`` row is a one-sided
   reference, ``relations.indication`` the token it consumes (``Corporal:2NATK``); a track circuit's token names the
   circuit the row stands on.
@@ -114,7 +126,10 @@ names every other track pin its wire reaches, so the relation is symmetric):
   control point, never in block track (§4), and interlocking track leaves an interlocking at a NextCP, a regime
   boundary or an end.
   A ``local`` switch is the crew's, not the dispatcher's, and like a hand-throw, spring or electrically locked
-  hand-throw switch it may lie in the block (the owner, 2026-11-09). The net creates no consumer and no indication token: the block's token is the codeline
+  hand-throw switch it may lie in the block (the owner, 2026-11-09). A wire that joins switch ports of two
+  interlockings with no joint between them is ``reference.switches`` at warning (Corporal's and Sargent's switch 1
+  through the Beet Loader labels; the owner, 2026-11-12): each switch's own facts still derive, but one piece of track
+  is claimed by two interlockings. The net creates no consumer and no indication token: the block's token is the codeline
   library's by R12 (§7.2, §12, §18.1). Blocks and interlocking limits are not computed here (the ``blocks`` library).
 - **NextCP pairing** and the **cross-interlocking reference** check. A NextCP whose track is also drawn through to
   another interlocking's track is redundant (ADR 0013 §7.1: inside CTC a NextCP is no longer needed; it stays for an
@@ -143,7 +158,7 @@ from typing import Any, Optional
 from tools.railroad import codeline
 
 from . import expression, reference
-from .grammar import GANG, HAND, MAST_NAME, POWERED, depends_on, direction_of, dispatcher_controlled, is_derail, is_powered, lever_of, regime, regime_word, styles
+from .grammar import GANG, HAND, POWERED, depends_on, direction_of, dispatcher_controlled, is_derail, is_powered, regime, regime_word, styles
 from . import sort_key
 from .report import Report
 
@@ -677,7 +692,7 @@ class _Plan:
                 for p in ports_of(a):
                     if (r := self.region(self.pin(n, p))) and n not in powered_at[r]:
                         powered_at[r].append(n)
-        letters_of_signal: dict[str, dict[str, str]] = defaultdict(dict)
+        letters_of_signal: dict[tuple[str, Optional[str]], dict[str, str]] = defaultdict(dict)
         own = {c for c in self.name_of.values() if c} | {qualify(k, self.name) for k, v in self.appliances.items()
                                                          if v.get("given", {}).get("Appliance") == "track_circuit"}   # what a Members may name: any circuit, a boundary too (ADR 0013 §10 names it like any circuit)
         for name, a in self.appliances.items():
@@ -723,29 +738,26 @@ class _Plan:
                                f"{'switch' if len(over) == 1 else 'switches'} {', '.join(sorted(over, key=sort_key))} on "
                                f"{self.circuit(governed[qualify(name, self.name)]) or 'dark track'}; a mast over a powered switch "
                                "or derail is CONTROLLED (ADR 0013 §5)", where, tuple(self.where("appliances", s) for s in sorted(over, key=sort_key)))
-            m = MAST_NAME.match(name)
-            if m is None:
-                self.r.add("mast.grammar", f"{self.name}: mast {name} is not a signal and its head letters (ADR 0003); not checked", where)
+            letters = head_letters(a)                                                   # the stated atoms, never the Name (the owner, 2026-11-12)
+            if not letters:
                 continue
-            facing = a.get("relations", {}).get("facing")
-            if facing and direction_of(m.group(1)[-1]) not in (None, facing):      # the glyph's turn against the letter (the owner, 2026-11-08)
-                self.r.add("mast.facing", f"{self.name}: mast {name} is drawn facing {facing} but its letter {m.group(1)[-1]} says "
-                           f"{direction_of(m.group(1)[-1])} (ADR 0003 D1); turn the glyph or rename the mast", where)
             wired = sorted({d["relations"]["position"] for d in self.ix.get("devices", [])          # the positions heads are wired to (#80)
                             if d.get("given", {}).get("Appliance") == "head" and d.get("relations", {}).get("position")
                             and d["relations"].get("mast") == qualify(name, self.name)})
-            pins = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[:len(m.group(2))]              # the k-th letter is the k-th pin, top down (#80)
+            pins = PINS[:len(letters)]                                                  # the k-th letter is the k-th pin, top down (#80)
             extra = [p for p in wired if p not in pins]
             if extra:
-                self.r.add("mast.heads", f"{self.name}: mast {name} names {len(m.group(2))} head{'s' * (len(m.group(2)) > 1)} "
-                           f"({m.group(2)}), but a head is wired to position{'s' * (len(extra) > 1)} {', '.join(extra)} of its field "
+                self.r.add("mast.heads", f"{self.name}: mast {name} states {len(letters)} head{'s' * (len(letters) > 1)} "
+                           f"({','.join(letters)}), but a head is wired to position{'s' * (len(extra) > 1)} {', '.join(extra)} of its field "
                            f"mast device, beyond pin {pins[-1]} (ADR 0003 rule 7; a head's position is the mast pin its IND reaches, "
                            "A, B, C top down, #80)", where)
-            for letter in m.group(2):
-                other = letters_of_signal[m.group(1)].setdefault(letter, name)
-                if other != name:
-                    self.r.add("mast.letters", f"{self.name}: signal {m.group(1)} has head {letter} on masts {other} and {name} "
-                               "(ADR 0003 rule 6)", where, (self.where("appliances", other),))
+            if g.get("signal"):
+                signal = (g["signal"], a.get("relations", {}).get("facing"))               # one signal: the number and the way it faces (rule 5)
+                for letter in letters:
+                    other = letters_of_signal[signal].setdefault(letter, name)
+                    if other != name:
+                        self.r.add("mast.letters", f"{self.name}: signal {g['signal']} facing {signal[1] or 'an unstated way'} has head "
+                                   f"{letter} on masts {other} and {name} (ADR 0003 rule 6)", where, (self.where("appliances", other),))
 
     # ------------------------------------------------------------------------------------- references
 
@@ -863,6 +875,7 @@ class _Derivation:
         self.columns()
         self.devices()
         self.desk()
+        self.levers()
         self.codeline()
         self.control_sources()
         self.positions()
@@ -955,6 +968,14 @@ class _Derivation:
                 b, _, n = name.partition(":")
                 target = (f"interlockings/{b}",) if b in self.plans else ()
                 if kind in ("switch", "pin"):
+                    theirs = sorted(f"{name}.{s}" for s in ports if f"{name}.{s}" in switch_ports)
+                    mine = sorted(plan.pin(sn, p) for sn, app in plan.appliances.items() for p in ports_of(app)
+                                  if set(app.get("relations", {}).get(p, [])) & set(theirs))
+                    if kind == "switch" and mine and theirs:                      # one piece of track, two interlockings' switches (the owner, 2026-11-12)
+                        self.r.add("reference.switches", f"{a}: switch port{'s' if len(mine) > 1 else ''} {', '.join(mine)} and {b}'s "
+                                   f"{', '.join(theirs)} are on one wire with no joint between; one piece of track is the leg of a switch in "
+                                   "each of two interlockings, so each claims it. Track leaves an interlocking at a NextCP, a regime boundary "
+                                   "or an end (ADR 0009 §3.12)", where, target + self._appliance_path(b, n))
                     controlled = sorted(p for p in switch_ports if self.dispatcher_port(p))
                     if controlled:
                         self.r.add("reference.track", f"{a}: {what} {name} joins this interlocking's track to {b}'s on a wire that holds "
@@ -1248,15 +1269,40 @@ class _Derivation:
                 controls, tokens = self.lever_tokens(g, dev.get("relations", {}).get("bindings", {}), b, what, where)
                 _set_derived(dev, {**d, "controls": controls, "indications": tokens})
                 ix = self.m.get("interlockings", {}).get(b)
-                if ix is not None and not self._lever_target(ix, n):
-                    self.r.add("lever.serves", f"{what} serves {d['serves']}, but {b} has no switch, lock, maintainer call or signal "
-                               f"lever {n}", where, (f"interlockings/{b}",))
+                if ix is None:
+                    continue
+                masts = self._masts_of_signal(ix, b, n)
+                if masts:                                                             # a signal lever works the masts of its signal (rule 5)
+                    _set_derived(dev, {**dev["derived"], "masts": masts})
+                elif n not in ix.get("appliances", {}):
+                    self.r.add("lever.serves", f"{what} serves {d['serves']}, but {b} has no switch, lock, maintainer call or mast of "
+                               f"signal {n}", where, (f"interlockings/{b}",))
 
     @staticmethod
-    def _lever_target(ix: dict[str, Any], n: str) -> bool:
-        """A desk lever's served name is an appliance of the interlocking, or the lever number of its masts."""
+    def _masts_of_signal(ix: dict[str, Any], b: str, n: str) -> list[str]:
+        """The masts of interlocking ``ix`` (named ``b``) that state signal number ``n``, qualified and sorted: what a desk
+        signal lever numbered ``n`` works (the owner, 2026-11-12: from the stated atom, never from a Name)."""
         apps = ix.get("appliances", {})
-        return n in apps or any(a.get("given", {}).get("Appliance") == "mast" and lever_of(m) == n for m, a in apps.items())
+        return sorted((qualify(m, b) for m, a in apps.items()
+                       if a.get("given", {}).get("Appliance") == "mast" and a["given"].get("signal") == n), key=sort_key)
+
+    def levers(self) -> None:
+        """A CONTROLLED mast is the dispatcher's (ADR 0013 §5): a desk signal lever of its signal number is on a column
+        of the office, serving it. One with none is ``mast.lever`` at missing (what works it is not drawn yet, as
+        ``switch.lever`` says of a powered switch): Sargent's 836NAB, 836SA and 836SB (the owner, 2026-11-12). An
+        ABSOLUTE or PERMISSIVE mast is automatic and has no lever; a mast that states no signal number is incomplete
+        and not asked."""
+        served = {dev.get("derived", {}).get("serves") for ou in self.m.get("officeUnits", {}).values() for dev in ou.get("devices", [])
+                  if dev.get("given", {}).get("Appliance") == "lever" and "signal" in styles(dev.get("given", {}))}
+        for name, ix in self.m.get("interlockings", {}).items():
+            for mast, a in ix.get("appliances", {}).items():
+                g = a.get("given", {})
+                if g.get("Appliance") != "mast" or g.get("Kind") != "CONTROLLED" or not g.get("signal"):
+                    continue
+                if qualify(g["signal"], name) not in served:
+                    self.r.add("mast.lever", f"{name}: mast {mast} is CONTROLLED, signal {g['signal']}, but no desk signal lever {g['signal']} "
+                               f"serves {name} on any column; what works it is not drawn yet", f"interlockings/{name}/appliances/{mast}",
+                               (f"interlockings/{name}",))
 
     def control_sources(self) -> None:
         """What works each switch or derail, read from the lever devices named for it (the owner, 2026-11-09): a desk
@@ -1353,7 +1399,11 @@ class _Derivation:
         different words are ``head.position`` at info, naming the pin, the heads and the difference: a normal
         configuration, never an error. The mast derives ``positions``, each with the words it presents, and ``demand``,
         the words it must show: an explicit ``Indications`` list, the settled exception, until the demand derivation lands
-        with #62 (a mast that states none derives no demand and nothing is reported for it). A mast no field mast
+        with #62 (a mast that states none derives no demand and nothing is reported for it). ``positions`` is keyed by
+        the pin (the owner, 2026-11-12): the mast's stated head letters give pins A, B, C their ``letter``, and the heads
+        wired give each pin what it ``presents``; a head derives its pin's ``letter`` too. The pin is the physical fact
+        every seam already uses (the device's wiring, a driver's key), the letter the railroad's name; keying by the
+        letter would let A mean pin A on one mast and head A on another, which is the reading this retires. A mast no field mast
         device serves, or whose device has no head wired, is ``mast.device`` at missing. The match, demand ⊆ presents: on
         a mast with one position the head shows the mast's indication itself, so a demanded word the position does not
         present is ``mast.presents`` at info (what the head does with it is its table's indication filter, never an
@@ -1400,17 +1450,24 @@ class _Derivation:
                 if a.get("given", {}).get("Appliance") != "mast":
                     continue
                 where = f"interlockings/{name}/appliances/{mast}"
-                positions = presented.get(mast, {})
+                letters = dict(zip(PINS, head_letters(a)))                              # the k-th stated letter is pin k (the owner, 2026-11-12)
+                presents = presented.get(mast, {})
+                positions = {pin: _clean({"letter": letters.get(pin), "presents": presents.get(pin)})
+                             for pin in sorted(set(letters) | set(presents), key=sort_key)}
+                for (m, pin), heads in on.items():                                      # a head derives its mast's letter for its pin
+                    if m == mast:
+                        for _, d in heads:
+                            _set_derived(d, {**d.get("derived", {}), "letter": letters.get(pin)})
                 demand = [w.strip() for w in a.get("given", {}).get("Indications", "").split(",") if w.strip()]
                 _set_derived(a, {**a.get("derived", {}), "positions": positions, "demand": demand})
                 if mast not in served:
                     self.r.add("mast.device", f"{name}: mast {mast} has no field mast device; a mast device named for it, with a head on "
                                "each position pin, is expected", where)
-                elif not positions:
+                elif not presents:
                     self.r.add("mast.device", f"{name}: mast {mast}: its field mast device has no head wired to a position pin", where,
                                tuple(served[mast]))
-                if demand and len(positions) == 1:
-                    (pos, words), = positions.items()
+                if demand and len(positions) == 1 and presents:
+                    (pos, words), = presents.items()
                     cannot = [w for w in demand if w not in words]
                     if cannot:
                         self.r.add("mast.presents", f"{name}: mast {mast} must show {', '.join(demand)}, but position {pos} presents "
@@ -1604,6 +1661,15 @@ class _Derivation:
                 else:
                     derived["jmriSignalSystem"] = system
                 _set_derived(d, derived)
+
+
+PINS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"                   # the field mast device's position pins, top down (#80)
+
+
+def head_letters(appliance: dict[str, Any]) -> list[str]:
+    """A mast's stated head letters top down (``given.heads``, a comma list; the owner, 2026-11-12); none when it states
+    none. The k-th letter is the field mast device's k-th pin."""
+    return [x.strip() for x in appliance.get("given", {}).get("heads", "").split(",") if x.strip()]
 
 
 def _off_layout(row: dict[str, Any]) -> bool:

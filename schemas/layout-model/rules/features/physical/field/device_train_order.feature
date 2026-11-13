@@ -82,14 +82,6 @@ Feature: The faces of a train order board
     When the layout is derived
     Then it is reported as an error on "Gilroy"
 
-  @mast.facing
-  Scenario: a signal mast drawn facing against its letter
-    Given interlocking "Gilroy" has these appliances:
-      | Name   | Appliance | Kind       | Style  | relations.facing |
-      | 778NAB | mast      | CONTROLLED | double | RIGHT            |
-    When the layout is derived
-    Then it is reported as a warning on "778NAB"
-
   Scenario: a face shows what its lever's wired inputs can ask for
     Given train order mast "Gilroy" has a lever on face "N" wiring "STOP, SLOW"
     When the layout is derived

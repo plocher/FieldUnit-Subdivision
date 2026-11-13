@@ -240,6 +240,13 @@
       "feature": null,
       "replacedBy": null
     },
+    "geometry.facing": {
+      "level": "warning",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": null,
+      "replacedBy": null
+    },
     "geometry.library": {
       "level": "error",
       "lifecycle": "active",
@@ -406,6 +413,13 @@
       "lifecycle": "active",
       "since": "0.4.0",
       "feature": null,
+      "replacedBy": null
+    },
+    "mast.name": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": "trackplan/appliance_mast.feature#a mast whose Name is not a signal number, a side letter and head letters",
       "replacedBy": null
     },
     "milepost.number": {

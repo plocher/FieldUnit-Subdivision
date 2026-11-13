@@ -18,6 +18,7 @@ from pathlib import Path
 
 from tools import layout_model
 from tools.layout_compiler import emit, seams
+from tools.layout_compiler.geometry import Geometry
 from tools.railroad import codeline
 from tools.layout_compiler.source import Net, PinRef, Symbol, from_project, from_snapshot, from_symbols, kicad_cli_available
 
@@ -94,6 +95,38 @@ def cmri_plant(*bits, node_kind="NODE"):
     nets = [net("n1", ("IX1", "Processor"), ("P1", "Processor"), ("T1", "Processor")), net("t", ("N1", "Transport"), ("T1", "Transport")),
             net("bus", ("N1", "IOBus"), *((ref, "IOBus") for ref, _, _ in bits))]
     return from_symbols(list(src.symbols.values()) + syms, nets)
+
+
+class MastAtoms(unittest.TestCase):
+    """A mast's Name is shorthand for its atoms, which the importer states (the owner, 2026-11-12): given.signal,
+    given.heads and relations.facing; a Name that is not the grammar states none (mast.name); the glyph's turn must
+    agree with the stated facing (geometry.facing), and gives it only where the Name does not."""
+
+    def plant(self, name="784WBC"):
+        src = plant()
+        src.symbols["M1"] = sym("M1", "Signal Mast Double CONTROLLED", "/X/", name, Role="APPLIANCE", Appliance="mast", Kind="CONTROLLED", Style="double", Name=name)
+        return from_symbols(list(src.symbols.values()), list(src.nets))
+
+    def test_the_atoms_are_stated_and_the_name_is_not_read_downstream(self):
+        sm = seams.resolve(self.plant())
+        row = sm.trackplan.plans["X"].appliances["784WBC"]
+        self.assertEqual((row["given"]["signal"], row["given"]["heads"], row["relations"]["facing"]), ("784", "B,C", "LEFT"))
+        self.assertEqual(sm.report.by_code("mast.name"), [])
+        sm = seams.resolve(self.plant("EastA"))
+        row = sm.trackplan.plans["X"].appliances["EastA"]
+        self.assertEqual([k for k in ("signal", "heads") if k in row["given"]] + [k for k in ("facing",) if k in row.get("relations", {})], [])
+        self.assertEqual([d.severity for d in sm.report.by_code("mast.name")], ["missing"])
+
+    def test_the_glyph_must_face_the_way_the_name_says(self):
+        for rotation, codes, facing in ((0, [], "LEFT"), (180, ["geometry.facing"], "LEFT"), (90, [], "LEFT")):   # unturned faces LEFT; a quarter turn says nothing
+            sm = seams.resolve(self.plant())
+            geo = Geometry(interlockings={"X": {"appliances": {"784WBC": {"at": {"x": 0, "y": 0}, "rotation": rotation}}}})
+            model = emit.emit(sm, geometry=geo)
+            self.assertEqual([d.code for d in sm.report.diags if d.code == "geometry.facing"], codes, rotation)
+            self.assertEqual(model["interlockings"]["X"]["appliances"]["784WBC"]["relations"]["facing"], facing, rotation)
+        sm = seams.resolve(self.plant("EastA"))                       # no Name to say: the glyph's turn is the statement
+        geo = Geometry(interlockings={"X": {"appliances": {"EastA": {"at": {"x": 0, "y": 0}, "rotation": 180}}}})
+        self.assertEqual(emit.emit(sm, geometry=geo)["interlockings"]["X"]["appliances"]["EastA"]["relations"]["facing"], "RIGHT")
 
 
 class RuleTests(unittest.TestCase):
