@@ -238,7 +238,8 @@ passes no regime: each side states its own or inherits from elsewhere (owner, 20
 and the Kind `END_CTC` are retired. The prototype's signs are rendered from the two adjacent regimes: a face reads END of the regime
 behind the crew and BEGIN of the one ahead, and the far face reads the mirror pair, so the drawing states no pair that
 could disagree; the BEGIN and END glyph symbols of one regime share one Kind. A DTC `Block Limit` joint, a TRACK marker
-that cuts a regime piece into blocks with no circuits, is added when a layout needs it. Routes carry no regime.
+that cuts a regime piece into blocks with no circuits, is added when a layout needs it. A route states the regime of
+each circuit it passes; a regime may contribute to its ceiling (reference data).[^routeregime]
 
 ### 7.2 The block's one indication
 
@@ -753,5 +754,8 @@ Each consumer input, the Part 1 section that states it, and its form:
     error "a regime other than CTC on interlocking track" and "interlocking limits lie inside the CTC regime". The
     owner (2026-11-10): a control point can be under dispatcher control without operating under the CTC rulebook;
     the error made Watsonville's yard switch 3 under yard limits a defect of the drawing instead of a fact of it.
+
+[^routeregime]: Until commit `0cb1aac` this read "Routes carry no regime." Amended in place on 2026-11-13 (the owner,
+    PR #140): a regime marker is never a route limit; the route passes it and states the regime.
 
 [^rev]: See §24 (Record) for the revision history from commit `96d3765` through rev 4.

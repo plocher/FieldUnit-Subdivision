@@ -207,12 +207,12 @@ route's indication computed from the interlocking's state) and the aspect the he
 ### 5.3 The route rule
 
 A route runs from a signal, in the direction it governs, until it reaches the next signal governing the same
-direction, or a limit (a NextCP, a bumper, an industry end, or a regime boundary beyond interlocking track).
-"Direction" is the movement along the track, never LEFT or RIGHT: the walk follows the track and each mast's facing,
-so a reversing loop (Watsonville) needs no exception. Within an interlocking, the rulebook basis for movement (its
-regime) is signal indication, which this project calls `ctc`; a regime boundary inside an interlocking (Gilroy
-Caltrain's yard limits between 771 and 773) is passed, and a regime boundary is a limit only where the track beyond it
-is not interlocking track (ADR 0013 §7.1, §13).[^routelimit] Opposing signals are passed: a route can leave a protected
+direction, or the end of track: a bumper, an industry end, or a NextCP edge with no signal beyond. "Direction" is the
+movement along the track, never LEFT or RIGHT: the walk follows the track and each mast's facing, so a reversing loop
+(Watsonville) needs no exception. A regime marker is never a limit. End CTC is the marker between GCOR 10.0 (Rules
+Applicable Only in CTC) and another regime; the route passes it, as it passes any regime marker. A route states the
+regime of each circuit it passes, and a regime may contribute to the route's ceiling (§5.4; reference data: GCOR
+6.13, Yard Limits, contributes RESTRICTING).[^routelimit] Opposing signals are passed: a route can leave a protected
 siding whose points end is protected against traffic the other way. At a switch entered at C the route takes N or R;
 entered at N or R it leaves by C. A derail has legs C and R only. A route's identity is its entrance, its end and its
 alignment: two routes may share an entrance and an end (Christopher, 816NC to 816SAB).
@@ -327,8 +327,10 @@ applied §5.3:
 - The only model gap found is §8.
 
 The routes library (`tools/railroad/routes.py`, issue #139) on the live drawing at Railroad `87f6aa4`, 2026-11-13:
-Christopher 10, Corporal 6, Gilroy Caltrain 8, Gilroy Interchange 6, Luchessa 10, Sargent 4, Watsonville 18. The table
-above stays as the spike's record; the drawing has changed since `96c6b4e`.
+Christopher 10, Corporal 9, Gilroy Caltrain 8, Gilroy Interchange 6, Luchessa 10, Sargent 7, Watsonville 24, with
+regime markers passed (§5.3). Corporal and Sargent gain routes over the Beet Loader spur's switch 1, which both sheets
+draw; Watsonville's 838SAB runs through each staging track. The table above stays as the spike's record; the drawing
+has changed since `96c6b4e`.
 
 ## 10. Where things live (defaults)
 
@@ -379,4 +381,5 @@ All move to FieldUnit with the schema (view O15).
 
 [^routelimit]: Amended in place on 2026-11-13 (the owner, ratifying question 2 of PR #140): until commit 189dee6 the
     limits read "a NextCP, END_CTC or bumper", and the direction of a route was not said to be the movement along the
-    track.
+    track. Amended again on 2026-11-13 (the owner): at commit 7d578e7 a regime boundary was a limit where the track
+    beyond it was not interlocking track, and a regime boundary inside an interlocking was passed.
