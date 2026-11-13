@@ -2,7 +2,7 @@
   "table": "regimes",
   "schemaVersion": 0,
   "version": "2026-11-13",
-  "provenance": "ADR 0013 §7.1 and decision 3; the owner, 2026-11-10 (ticket #113; Railroad 0ddd395): each a GCOR Rule POLICY marker's Kind with the chapter or rule title of the GCOR 8th edition as the owner opened it. A regime is stated by its marker, never derived from signals (GCOR 10.1). The current-of-traffic sign is a direction fact, not a regime. ceilings: the owner, 2026-11-13 (PR #140): a regime may contribute to the ceiling of a route that passes its track; GCOR 6.13 (Yard Limits) contributes RESTRICTING everywhere in yard limits. GCOR 10.0 (Rules Applicable Only in CTC) contributes nothing; a regime with no entry contributes nothing.",
+  "provenance": "ADR 0013 §7.1 and decision 3; the owner, 2026-11-10 (ticket #113; Railroad 0ddd395): each a GCOR Rule POLICY marker's Kind with the chapter or rule title of the GCOR as the owner opened it (the shape, not an edition: the owner, 2026-11-13). A regime is stated by its marker, never derived from signals (GCOR 10.1). The current-of-traffic sign is a direction fact, not a regime. ceilings: the owner, 2026-11-13 (PR #140): a regime may contribute to the ceiling of a route that passes its track; GCOR 6.13 (Yard Limits) contributes RESTRICTING everywhere in yard limits. GCOR 10.0 (Rules Applicable Only in CTC) contributes nothing; a regime with no entry contributes nothing.",
   "rows": {
     "GCOR_RULE_10": "CTC",
     "GCOR_RULE_14": "TWC",
