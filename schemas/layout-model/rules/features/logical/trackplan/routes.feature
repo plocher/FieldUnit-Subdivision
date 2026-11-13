@@ -5,7 +5,7 @@ Feature: The routes of a mast
   boundary). At a switch entered at C the route takes N or R; entered at N or R it leaves by C. A derail has legs C
   and R only, and a route through it needs it REVERSE. A route is a single path: one position per switch.
   The direction is the movement along the track, never LEFT or RIGHT: the walk follows the track and each mast's
-  relations.facing, and LEFT or RIGHT is only the demand word of a signal (`<signal>(<direction>)`).
+  relations.facing, and LEFT or RIGHT is only the demand word of a signal (written `<signal>(<direction>)` here; the library states the atoms).
   Every term is a static fact (ADR 0012 §5.2): how the terms combine, route locking and signal locking are FieldUnit's.
   Routes are computed on demand from the derived file (tools/railroad/routes.py); nothing is stored.
 

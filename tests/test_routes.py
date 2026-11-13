@@ -73,11 +73,11 @@ class Sufficiency(unittest.TestCase):
     def test_a_route_of_830nab_states_every_term(self):
         r = next(r for r in self.found.of("Corporal:830NAB") if r.alignment == [("Corporal:829", "NORMAL"), ("Corporal:827", "NORMAL")])
         self.assertEqual(r.as_dict(), {
-            "mast": "Corporal:830NAB", "demand": "830(LEFT)",
+            "mast": "Corporal:830NAB", "demand": {"interlocking": "Corporal", "signal": "830", "direction": "LEFT"},
             "alignment": [{"appliance": "Corporal:829", "position": "NORMAL"}, {"appliance": "Corporal:827", "position": "NORMAL"}],
             "circuits": ["Corporal:829T1", "Corporal:827T1", "Christopher:2NAT"], "entrance": "Corporal:829T1",
-            "approach": "Corporal:832T", "end": {"mast": "Christopher:816NAB", "demand": "Christopher:816(LEFT)"},
-            "opposing": [{"mast": "Corporal:828SA", "demand": "828(RIGHT)"}], "ceiling": "CLEAR"})
+            "approach": "Corporal:832T", "end": {"mast": "Christopher:816NAB", "demand": {"interlocking": "Christopher", "signal": "816", "direction": "LEFT"}},
+            "opposing": [{"mast": "Corporal:828SA", "demand": {"interlocking": "Corporal", "signal": "828", "direction": "RIGHT"}}], "ceiling": "CLEAR"})
 
     def test_the_library_writes_nothing_into_the_file(self):
         before = copy.deepcopy(self.model)

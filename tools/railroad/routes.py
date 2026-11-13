@@ -4,8 +4,9 @@ File; nothing is written into it.
 
 A route belongs to the mast that displays it (the owner, 2026-11-13). Its terms:
 
-- ``mast`` and ``demand``: the mast and its entering signal demand ``<signal>(<direction>)`` (``830(LEFT)``), the
-  mast's ``given.signal`` and ``relations.facing``. The demand is present only when a desk signal lever works the
+- ``mast`` and ``demand``: the mast and its entering signal demand, stated as its atoms
+  ``{"interlocking": ..., "signal": ..., "direction": ...}`` (``830(LEFT)`` in prose): the mast's interlocking,
+  ``given.signal`` and ``relations.facing``; no consumer composes or parses a demand string. The demand is present only when a desk signal lever works the
   mast (the lever's ``derived.masts``); a mast no lever works has routes with no ``demand``.
 - ``alignment``: every switch and derail passed, in walk order, with its one position. A derail is passed C to R or R
   to C, so it is ``REVERSE`` (its through position).
@@ -33,7 +34,7 @@ A route belongs to the mast that displays it (the owner, 2026-11-13). Its terms:
 The walk (ADR 0012 §5.3) follows the track's stated adjacency and each joint's masts: the direction is the movement
 along the track, never LEFT or RIGHT. Crossing a joint from side X to side Y, a mast that governs into Y governs the
 same movement and ends the route; one that governs into X opposes it. A route through another interlocking's track
-names that interlocking's things by qualified name, its demands too (``Christopher:816(LEFT)``).
+names that interlocking's things by qualified name; every demand states its interlocking (``Christopher:816(LEFT)``).
 
 The vital boundary (ADR 0012 §5.2): no locking and no evaluation. Names are never parsed: the library reads the
 stated atoms (``given.signal``, ``relations.facing``, the lever's ``derived.masts``, a joint's ``relations.mast`` or
@@ -60,7 +61,7 @@ JOINTS = frozenset({"IRJ", "IRJ_SIGNAL", "IRJ_SIGNALS"})
 @dataclass
 class Route:
     mast: str                                            # qualified
-    demand: Optional[str] = None
+    demand: Optional[dict[str, str]] = None         # {interlocking, signal, direction}
     alignment: list[tuple[str, str]] = field(default_factory=list)   # (switch, NORMAL | REVERSE), walk order
     circuits: list[str] = field(default_factory=list)
     approach: Optional[str] = None
@@ -84,7 +85,7 @@ class Route:
         """The route as plain JSON; a term not stated is an absent key."""
         out: dict[str, Any] = {"mast": self.mast}
         if self.demand:
-            out["demand"] = self.demand
+            out["demand"] = dict(self.demand)
         out["alignment"] = [{"appliance": s, "position": p} for s, p in self.alignment]
         out["circuits"] = list(self.circuits)
         if self.entrance:
@@ -256,8 +257,8 @@ class _Track:
     def appliance(self, q: str) -> dict[str, Any]:
         return self.appliances.get(q, ("", {}))[1]
 
-    def demand(self, mast: str, scope: str) -> Optional[str]:
-        """``<signal>(<direction>)`` of a mast a desk signal lever works; qualified when it is not of ``scope``."""
+    def demand(self, mast: str, scope: str) -> Optional[dict[str, str]]:
+        """The signal demand of a mast a desk signal lever works, as its atoms: interlocking, signal, direction."""
         if mast not in self.levered:
             return None
         a = self.appliance(mast)
@@ -265,7 +266,7 @@ class _Track:
         if not signal or not facing:
             return None
         b = mast.partition(":")[0]
-        return f"{signal}({facing})" if b == scope else f"{b}:{signal}({facing})"
+        return {"interlocking": b, "signal": signal, "direction": facing}
 
     def named(self, mast: str, scope: str) -> dict[str, str]:
         out = {"mast": mast}

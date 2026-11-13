@@ -11,6 +11,8 @@ checked without a When. A step whose rule is not in the reference derivation yet
 """
 from __future__ import annotations
 
+import re
+
 from behave import given, then, when
 
 from tools import layout_model
@@ -891,6 +893,14 @@ def _route(context, mast: str, alignment: str):
     return found[0]
 
 
+def _demand(context, mast: str, text: str) -> dict[str, str]:
+    """A demand as a scenario writes it, ``830(RIGHT)`` or ``Y:816(LEFT)``, as the atoms the library states; a bare
+    demand is in the interlocking of ``mast``. The scenario's words are parsed here, never the model's."""
+    m = re.fullmatch(r"(?:([^:]+):)?(.+)\((LEFT|RIGHT)\)", text.strip())
+    assert m, f"demand {text!r}"
+    return {"interlocking": m.group(1) or _q(context, mast).partition(":")[0], "signal": m.group(2), "direction": m.group(3)}
+
+
 def _names(text: str) -> list[str]:
     return [t.strip() for t in text.split(",") if t.strip()]
 
@@ -910,8 +920,8 @@ def has_no_routes(context, mast):
 
 @then('the route of "{mast}" aligned "{alignment}" is demanded by "{demand}"')
 def demanded(context, mast, alignment, demand):
-    got = _route(context, mast, alignment).demand
-    assert got == demand, f"demand {got!r}, not {demand!r}"
+    got, want = _route(context, mast, alignment).demand, _demand(context, mast, demand)
+    assert got == want, f"demand {got!r}, not {want!r}"
 
 
 @then('the route of "{mast}" aligned "{alignment}" has no entering demand')
@@ -944,7 +954,7 @@ def approaches(context, mast, alignment, circuit):
 @then('the route of "{mast}" aligned "{alignment}" ends at mast "{end}" demanding "{demand}"')
 def ends_demanding(context, mast, alignment, end, demand):
     got = _route(context, mast, alignment).end or {}
-    assert got.get("mast") == _q(context, end) and got.get("demand") == demand, f"end {got}"
+    assert got.get("mast") == _q(context, end) and got.get("demand") == _demand(context, mast, demand), f"end {got}"
 
 
 @then('the route of "{mast}" aligned "{alignment}" ends at mast "{end}" with no demand')
@@ -974,8 +984,10 @@ def opposed_masts(context, mast, alignment, masts):
 
 @then('the route of "{mast}" aligned "{alignment}" is opposed by demands "{demands}"')
 def opposed_demands(context, mast, alignment, demands):
-    got = sorted(o["demand"] for o in _route(context, mast, alignment).opposing if "demand" in o)
-    assert got == sorted(_names(demands)), f"opposing demands {got}, not {_names(demands)}"
+    key = lambda d: (d["interlocking"], d["signal"], d["direction"])
+    got = sorted((o["demand"] for o in _route(context, mast, alignment).opposing if "demand" in o), key=key)
+    want = sorted((_demand(context, mast, d) for d in _names(demands)), key=key)
+    assert got == want, f"opposing demands {got}, not {want}"
 
 
 @then('the route of "{mast}" aligned "{alignment}" has ceiling "{word}"')
