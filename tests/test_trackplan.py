@@ -379,12 +379,12 @@ class Membership(unittest.TestCase):
         given = """
 H1   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
 H2   | House           | STRUCTURE | Kind=CONTROL_POINT CP_Name=West
-MC1  | MaintainerCall  | APPLIANCE | Appliance=lamp Style=maintainer_call Name=MC1
+MC1  | MaintainerCall  | APPLIANCE | Appliance=lamp Style=maintainer_call Name=1MC
 """
         sm, ix = compile_(given, "mc | H2.MC MC1.MC\n")
-        self.assertEqual(control_points(ix), {"MC1": "West"})
-        self.assertEqual(ix["appliances"]["MC1"]["relations"], {"house": "X:West"})          # each holder writes its end (D8)
-        self.assertEqual(ix["houses"]["West"]["relations"], {"maintainerCall": "X:MC1"})
+        self.assertEqual(control_points(ix), {"1MC": "West"})
+        self.assertEqual(ix["appliances"]["1MC"]["relations"], {"house": "X:West"})          # each holder writes its end (D8)
+        self.assertEqual(ix["houses"]["West"]["relations"], {"maintainerCall": "X:1MC"})
 
     def test_a_virtual_circuit_lists_its_members_and_follows_them(self):
         given = TWO_HOUSES + "V1 | Track Circuit_Virtual | APPLIANCE | Appliance=track_circuit Style=virtual Name=0100T Members=1SAT,01T\n"
