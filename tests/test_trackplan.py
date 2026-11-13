@@ -894,10 +894,11 @@ class SPCoastTrackplan(unittest.TestCase):
         # track net NMT, the owner 2026-11-11); Christopher's siding is a controlled siding (two dwarf signal joints in place
         # of two plain IRJs, its 6.28 marker gone); Gilroy's and Corporal's 6.28 markers are gone; GCaltrain keeps one
         # yard-limits marker behind its RegimeBoundary joint (a plain IRJ by Kind). The CTC boundaries are plain IRJs
-        # with a marker each side (Railroad 0ddd395).
+        # with a marker each side (Railroad 0ddd395). Railroad 0ab8dd8: Watsonville's two LADDER markers (#145) and its
+        # staging tracks under GCOR 6.13 yard limits; GCaltrain's yard limits on 01T to 03T only, its switches under CTC.
         kinds = Counter(r["given"]["Kind"] for ix in self.model["interlockings"].values() for k in ("joints", "ends", "policies") for r in ix.get("track", {}).get(k, []))
-        self.assertEqual({k: v for k, v in kinds.items() if not k.startswith("GCOR_")}, {"IRJ": 55, "IRJ_SIGNAL": 38, "IRJ_SIGNALS": 2, "NEXT_CP": 2, "BUMPER": 3, "INDUSTRY": 5, "RULE_290_G": 1})
-        self.assertEqual({k: v for k, v in kinds.items() if k.startswith("GCOR_")}, {"GCOR_RULE_9_14": 10, "GCOR_RULE_10": 5, "GCOR_RULE_14": 2, "GCOR_RULE_6_13": 3, "GCOR_RULE_6_28": 1})
+        self.assertEqual({k: v for k, v in kinds.items() if not k.startswith("GCOR_")}, {"IRJ": 55, "IRJ_SIGNAL": 38, "IRJ_SIGNALS": 2, "NEXT_CP": 2, "BUMPER": 3, "INDUSTRY": 5, "RULE_290_G": 1, "LADDER": 2})
+        self.assertEqual({k: v for k, v in kinds.items() if k.startswith("GCOR_")}, {"GCOR_RULE_9_14": 10, "GCOR_RULE_10": 21, "GCOR_RULE_14": 2, "GCOR_RULE_6_13": 10, "GCOR_RULE_6_28": 1})
         self.assertEqual(len(ids), sum(kinds.values()))
         self.assertEqual(len(set(ids)), len(ids))
 
@@ -949,14 +950,15 @@ class SPCoastTrackplan(unittest.TestCase):
 
     def test_the_beet_loader_and_gcaltrains_yard_carry_their_regimes(self):
         """Railroad 0ddd395: TWC beyond Corporal's and Sargent's boundaries, where the Beet Loader tracks rejoin the two
-        sheets. Railroad eef8217: GCaltrain's one yard-limits marker is on 773T1, behind the RegimeBoundary joint on
-        771T1's far side; the lead 775T1 and the three bumper tracks inherit it, 771T1 and the mains CTC (ADR 0013 §7.1)."""
+        sheets. Railroad 0ab8dd8: GCaltrain's yard limits are marked on the three bumper tracks 01T to 03T alone; its
+        switches' circuits 773T1 and 775T1 carry CTC markers, and 771T1 and the mains inherit CTC (ADR 0013 §7.1). The
+        RegimeBoundary joint stays drawn between 771T1 and 773T1."""
         for name in ("Corporal", "Sargent"):
             pieces = {p["derived"]["name"]: p["derived"] for p in self.ix(name)["track"]["pieces"]}
             self.assertEqual(pieces[f"{name}:1T1"], {"name": f"{name}:1T1", "circuit": f"{name}:1T1", "regime": "GCOR_RULE_14", "by": "marker"}, name)
         gc = self.ix("GCaltrain")
         self.assertEqual({p["derived"]["name"][10:]: (p["derived"]["regime"][10:], p["derived"]["by"]) for p in gc["track"]["pieces"]},
-                         {"773T1": ("6_13", "marker"), "775T1": ("6_13", "inherited"), "01T": ("6_13", "inherited"), "02T": ("6_13", "inherited"), "03T": ("6_13", "inherited"),
+                         {"773T1": ("10", "marker"), "775T1": ("10", "marker"), "01T": ("6_13", "marker"), "02T": ("6_13", "marker"), "03T": ("6_13", "marker"),
                           "771T1": ("10", "inherited"), "1NAT": ("10", "inherited"), "1SAT": ("10", "inherited")})
         boundary = [j for j in gc["track"]["joints"] if j["given"].get("RegimeBoundary") == "yes"]
         self.assertEqual([(j["given"]["Kind"], j["derived"]["circuits"]) for j in boundary], [("IRJ", {"A": "GCaltrain:771T1", "B": "GCaltrain:773T1"})])
@@ -1055,19 +1057,23 @@ class SPCoastTrackplan(unittest.TestCase):
         # (no mast.presents); the drawing is 0b39d49's (Railroad 97be8aa moved only symbols/manual.html and the README).
         # Railroad 87f6aa4, the drawing of 520c509 (2026-11-13): mast.lever on the fifteen CONTROLLED masts whose signal
         # number has no desk lever (Gilroy's 778, Sargent's 836, Watsonville's 840; Corporal's 828 has its lever on
-        # column 11 since the renumber); no lever.masts; no warning (reference.switches retired 2026-11-13).
+        # column 11 since the renumber); no lever.masts; no warning (reference.switches retired 2026-11-13). Railroad
+        # 0ab8dd8: Sargent's 836 has its lever on column 13, so twelve are left (Gilroy's 778, Watsonville's 840).
         missing = Counter(d.code for d in self.sm.report.diags if d.severity == "missing")
         self.assertEqual({k: v for k, v in missing.items() if k.startswith("switch.")}, {"switch.lever": 12})
         self.assertEqual(sorted(d.where for d in self.sm.report.by_code("switch.lever")), sorted(f"interlockings/Watsonville/appliances/{n}" for n in range(3, 27, 2)))
-        self.assertEqual(set(missing), {"switch.lever", "mast.lever"})
+        # Railroad 0ab8dd8: the CODE buttons beside Watsonville's Arrival and Departure selectors are on no Column net
+        # (device.column); which column a selector's code button belongs to is open with #145.
+        self.assertEqual(set(missing), {"switch.lever", "mast.lever", "device.column"})
+        self.assertEqual([str(d.source) for d in self.sm.report.by_code("device.column")], ["/South-cTc/Watsonville/Panel/Railroad-Office:PanelCode(CODE)"] * 2)
         self.assertEqual(sorted(d.where.rsplit("/", 1)[-1] for d in self.sm.report.by_code("mast.lever")),
-                         sorted(["778NAB", "778NC", "778SAB", "778SC", "836NAB", "836SA", "836SB"] + [f"840N{c}" for c in "ABCDEFG"] + ["840SA"]))
+                         sorted(["778NAB", "778NC", "778SAB", "778SC"] + [f"840N{c}" for c in "ABCDEFG"] + ["840SA"]))
         self.assertEqual(self.sm.report.by_code("lever.masts"), [])
         self.assertEqual(self.sm.report.by_code("mast.device") + self.sm.report.by_code("head.position") + self.sm.report.by_code("mast.presents"), [])
         self.assertEqual(self.model["layout"]["ioEncodings"]["JMRI"]["given"]["JMRI.SignalSystem"], "SPTCO-1969")
         jmri_masts = {k: v["derived"]["jmriSignalSystem"] for k, v in self.model["layout"]["processors"]["Gilroy"]["drivers"].items() if v["given"].get("Kind") == "SIGNALMAST"}
         self.assertEqual(jmri_masts, {f"SIGNALMAST.{m}": "SPTCO-1969" for m in ["778NAB", "778NC", "778SAB", "778SC", "Gilroy.E", "Gilroy.W"]})
-        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 2, "info": 7, "missing": 27})   # 130 before #80; 12 missing before mast.lever; 29 before the Corporal renumber
+        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 7, "missing": 26})   # 130 before #80; 12 missing before mast.lever; 29 before the Corporal renumber
         self.assertEqual(sorted(d.entities[0] for d in self.sm.report.by_code("regime.limits")), [f"interlockings/{n}" for n in sorted(self.model["interlockings"])])
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):
