@@ -12,7 +12,10 @@ Feature: A sign states its rule for the track it stands on
   rulebook (GCOR 6.4.2, 9.12.2), so which regime an interlocking lies under is a fact the model
   tells, never an error. A regime boundary is a plain joint with a marker on each side; the track beyond it
   is in the model under its own regime; so is a joint declared a boundary (RegimeBoundary yes),
-  which passes no regime, each side stating its own or inheriting from elsewhere. Errors, not
+  which passes no regime, each side stating its own or inheriting from elsewhere; so is a joint
+  with a marker pinned on one face: a marker on the net of one joint face, and of no other, stands
+  at that face, and its regime flows out that side only. A marker on a net between two joints
+  stands at neither and passes its regime across both. Errors, not
   guesses. That the signs of one block agree with
   each other and with its masts is the blocks library's. (ADR 0013 §7.1, §8, decision 3)
 
@@ -150,14 +153,15 @@ Feature: A sign states its rule for the track it stands on
       | Id | Kind         |
       | R1 | GCOR_RULE_10 |
     And interlocking "X" has these wires:
-      | Wire | Pins                  |
-      | c    | 835.C J1.A            |
-      | a    | J1.B 1NAT.TC R1.track |
-      | n    | 835.N J2.A            |
-      | b    | J2.B 2NAT.TC          |
+      | Wire | Pins           |
+      | c    | 835.C J1.A     |
+      | a    | J1.B 1NAT.TC   |
+      | n    | 835.N J2.A     |
+      | b    | J2.B 2NAT.TC   |
+      | r    | 835.R R1.track |
     When the layout is derived
-    Then the piece "X:1NAT" is under regime "GCOR_RULE_10" by a marker
-    And the piece "X:835T1" is under regime "GCOR_RULE_10" by inheritance
+    Then the piece "X:835T1" is under regime "GCOR_RULE_10" by a marker
+    And the piece "X:1NAT" is under regime "GCOR_RULE_10" by inheritance
     And the piece "X:2NAT" is under regime "GCOR_RULE_10" by inheritance
     And it is not reported
 
@@ -183,13 +187,14 @@ Feature: A sign states its rule for the track it stands on
     And interlocking "X" has these joints:
       | Id | Kind       | relations.mast |
       | J1 | IRJ_SIGNAL | X:836NA        |
+      | J2 | IRJ        |                |
     And interlocking "X" has these policies:
       | Id | Kind         |
       | R1 | GCOR_RULE_10 |
     And interlocking "X" has these wires:
-      | Wire | Pins                         |
-      | c    | 835.C J1.governed            |
-      | a    | J1.approach 1NAT.TC R1.track |
+      | Wire | Pins                              |
+      | c    | 835.C J1.governed                 |
+      | a    | J1.approach 1NAT.TC R1.track J2.A |
     When the layout is derived
     Then the piece "X:835T1" is under regime "GCOR_RULE_10" by inheritance
     And it is reported as information on "X"
@@ -207,9 +212,10 @@ Feature: A sign states its rule for the track it stands on
       | Id | Kind           |
       | R1 | GCOR_RULE_6_13 |
     And interlocking "X" has these wires:
-      | Wire | Pins                     |
-      | c    | 3.N J1.governed R1.track |
-      | a    | J1.approach 1NAT.TC      |
+      | Wire | Pins                |
+      | c    | 3.N J1.governed     |
+      | r    | 3.R R1.track        |
+      | a    | J1.approach 1NAT.TC |
     When the layout is derived
     Then the piece "X:3T1" is under regime "GCOR_RULE_6_13" by a marker
     And the piece "X:1NAT" is under regime "GCOR_RULE_6_13" by inheritance
@@ -237,20 +243,58 @@ Feature: A sign states its rule for the track it stands on
       | 3NAT | track_circuit |
     And interlocking "X" has these joints:
       | Id | Kind |
+      | J0 | IRJ  |
       | J1 | IRJ  |
       | J2 | IRJ  |
+      | J3 | IRJ  |
     And interlocking "X" has these policies:
       | Id | Kind         |
       | R1 | GCOR_RULE_14 |
       | R2 | GCOR_RULE_16 |
     And interlocking "X" has these wires:
-      | Wire | Pins                  |
-      | a    | 1NAT.TC R1.track J1.A |
-      | m    | J1.B 2NAT.TC J2.A     |
-      | b    | J2.B 3NAT.TC R2.track |
+      | Wire | Pins                       |
+      | a    | J0.B 1NAT.TC R1.track J1.A |
+      | m    | J1.B 2NAT.TC J2.A          |
+      | b    | J2.B 3NAT.TC R2.track J3.A |
     When the layout is derived
     Then it is reported as an error on "X"
     And the piece "X:2NAT" is under no regime
+
+  @regime.ambiguous
+  Scenario: a marker pinned on one face of a joint flows out that side only
+    Given interlocking "X" has these appliances:
+      | Name  | Appliance     | Style   | TC   | CP Name | Kind       |
+      | 3     | switch        | powered | 3T1  | East    |            |
+      | 25    | switch        | powered | 25T1 | East    |            |
+      | 840NA | mast          | single  |      | East    | CONTROLLED |
+      | 1BT   | track_circuit |         |      |         |            |
+      | 1CT   | track_circuit |         |      |         |            |
+      | 1ET   | track_circuit |         |      |         |            |
+    And interlocking "X" has these joints:
+      | Id | Kind       | relations.mast |
+      | J1 | IRJ_SIGNAL | X:840NA        |
+      | J2 | IRJ        |                |
+      | J3 | IRJ        |                |
+      | J4 | IRJ        |                |
+    And interlocking "X" has these policies:
+      | Id | Kind           |
+      | R1 | GCOR_RULE_6_13 |
+      | R2 | GCOR_RULE_10   |
+      | R3 | GCOR_RULE_10   |
+    And interlocking "X" has these wires:
+      | Wire | Pins                      |
+      | g    | 3.N J1.governed R2.track  |
+      | e    | J1.approach 1ET.TC J2.A   |
+      | c    | J2.B 1CT.TC J3.A          |
+      | b    | J3.B 1BT.TC R1.track J4.A |
+      | l    | J4.B 25.R R3.track        |
+    When the layout is derived
+    Then the piece "X:1BT" is under regime "GCOR_RULE_6_13" by a marker
+    And the piece "X:1CT" is under regime "GCOR_RULE_6_13" by inheritance
+    And the piece "X:1ET" is under regime "GCOR_RULE_6_13" by inheritance
+    And the piece "X:3T1" is under regime "GCOR_RULE_10" by a marker
+    And the piece "X:25T1" is under regime "GCOR_RULE_10" by a marker
+    And it is not reported
 
   @regime.ambiguous
   Scenario: a yard's regime stops at a declared boundary joint
@@ -261,6 +305,7 @@ Feature: A sign states its rule for the track it stands on
       | 775T | track_circuit |         |       |         |
     And interlocking "X" has these joints:
       | Id | Kind | RegimeBoundary |
+      | J0 | IRJ  |                |
       | J1 | IRJ  |                |
       | J2 | IRJ  | yes            |
       | J3 | IRJ  |                |
@@ -273,14 +318,14 @@ Feature: A sign states its rule for the track it stands on
       | R1 | GCOR_RULE_10   |
       | R2 | GCOR_RULE_6_13 |
     And interlocking "X" has these wires:
-      | Wire | Pins                  |
-      | m    | 1NAT.TC R1.track J1.A |
-      | c    | J1.B 771.C            |
-      | y    | 771.R J2.A            |
-      | l    | J2.B 773.C R2.track   |
-      | s1   | 773.N B1.EoT          |
-      | s2   | 773.R J3.A            |
-      | s3   | J3.B 775T.TC B2.EoT   |
+      | Wire | Pins                       |
+      | m    | J0.B 1NAT.TC R1.track J1.A |
+      | c    | J1.B 771.C                 |
+      | y    | 771.R J2.A                 |
+      | l    | J2.B 773.C                 |
+      | s1   | 773.N B1.EoT R2.track      |
+      | s2   | 773.R J3.A                 |
+      | s3   | J3.B 775T.TC B2.EoT        |
     When the layout is derived
     Then the piece "X:773T1" is under regime "GCOR_RULE_6_13" by a marker
     And the piece "X:775T" is under regime "GCOR_RULE_6_13" by inheritance
@@ -296,6 +341,7 @@ Feature: A sign states its rule for the track it stands on
       | 773  | switch        | manual  | 773T1 | East    |
     And interlocking "X" has these joints:
       | Id | Kind |
+      | J0 | IRJ  |
       | J1 | IRJ  |
       | J2 | IRJ  |
     And interlocking "X" has these ends:
@@ -306,12 +352,12 @@ Feature: A sign states its rule for the track it stands on
       | R1 | GCOR_RULE_10   |
       | R2 | GCOR_RULE_6_13 |
     And interlocking "X" has these wires:
-      | Wire | Pins                  |
-      | m    | 1NAT.TC R1.track J1.A |
-      | c    | J1.B 771.C            |
-      | y    | 771.R J2.A            |
-      | l    | J2.B 773.C R2.track   |
-      | s1   | 773.N B1.EoT          |
+      | Wire | Pins                       |
+      | m    | J0.B 1NAT.TC R1.track J1.A |
+      | c    | J1.B 771.C                 |
+      | y    | 771.R J2.A                 |
+      | l    | J2.B 773.C                 |
+      | s1   | 773.N B1.EoT R2.track      |
     When the layout is derived
     Then it is reported as an error on "X"
     And the piece "X:771T1" is under no regime

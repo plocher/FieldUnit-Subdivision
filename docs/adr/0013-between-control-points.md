@@ -234,8 +234,14 @@ extent is derived, as a track circuit's is:
 
 A regime boundary is a plain `IRJ` with a marker on each side where the regime changes, or a joint declared one
 (`RegimeBoundary` = `yes` on the joint symbol, any joint Kind; the field is the fact, never the symbol name), which
-passes no regime: each side states its own or inherits from elsewhere (owner, 2026-11-11).[^boundary] `IRJ-END_CTC`
-and the Kind `END_CTC` are retired. The prototype's signs are rendered from the two adjacent regimes: a face reads END of the regime
+passes no regime: each side states its own or inherits from elsewhere (owner, 2026-11-11).[^boundary] A joint with a
+marker pinned on one face and none on the other passes no regime either: the regime flows out the side it is pinned
+on (owner, 2026-11-13).[^pinned] A marker is pinned on a joint face when its track pin's net holds that face and no
+other joint's face; the net is the fact, never the marker's position on the sheet. A marker on a net that holds two
+joints' faces (a piece of one net between two joints) stands at neither and passes its regime across both. At
+Watsonville, the `GCOR_RULE_6_13` (GCOR 6.13, Yard Limits) marker on staging piece 1BT covers 1CT, 1DT and 1ET
+across plain joints, and the `GCOR_RULE_10` (CTC, Chapter 10) marker pinned on the ladder face of the signal joint
+(`IRJ_SIGNAL`) at 1ET stays on the ladder. `IRJ-END_CTC` and the Kind `END_CTC` are retired. The prototype's signs are rendered from the two adjacent regimes: a face reads END of the regime
 behind the crew and BEGIN of the one ahead, and the far face reads the mirror pair, so the drawing states no pair that
 could disagree; the BEGIN and END glyph symbols of one regime share one Kind. A DTC `Block Limit` joint, a TRACK marker
 that cuts a regime piece into blocks with no circuits, is added when a layout needs it. A regime may contribute to
@@ -749,6 +755,10 @@ Each consumer input, the Part 1 section that states it, and its form:
     Caltrain's yard-limits marker on the 773 piece reached every main from Gilroy to Sargent through the 771 switch
     piece (29 `regime.ambiguous`). The owner's ruling (2026-11-10/11): the boundary is a fact on the joint
     (`IRJ Authority Boundry`, placed between 771 and the 773 piece), not a face on the main.
+
+[^pinned]: Until commit `4f3660f` a marker on a joint's net passed its regime across that joint like any other, and
+    a boundary was only a marker on each side or a declared `RegimeBoundary`. Watsonville's staging tracks 1 to 7,
+    with yard limits at one end and CTC pinned on the ladder face at the other, were 21 `regime.ambiguous`.
 
 [^membership]: Until commit `521cb90` the second source read "else from membership in an interlocking (CTC)", with the
     error "a regime other than CTC on interlocking track" and "interlocking limits lie inside the CTC regime". The
