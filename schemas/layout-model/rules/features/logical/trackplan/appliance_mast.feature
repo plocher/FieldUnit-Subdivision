@@ -5,7 +5,9 @@ Feature: What a mast is
   An automatic mast belongs to no control point and states no CP Name. A grade or restricting
   plate is a policy on the mast's signal wire and requires a PERMISSIVE mast. An automatic mast
   whose route passes a powered switch or derail is reported; the check sets nothing. An automatic
-  mast is numbered for its signal location, like any mast. (ADR 0013 §5, §9)
+  mast is numbered for its signal location, like any mast. Its signal number, the way it faces and its
+  head letters are stated atoms (device_mast_head.feature); the Name is a label nothing reads.
+  (ADR 0013 §5, §9; the owner 2026-11-12)
 
   Background: two automatic masts back to back at signal location 832, under house East
     Given interlocking "X" has house "East"
@@ -116,19 +118,3 @@ Feature: What a mast is
       | PL1 | RULE_290_G | X:832SA        |
     When the layout is derived
     Then it is reported as an error on "PL1"
-
-  @mast.grammar
-  Scenario: an automatic mast is numbered for its signal location
-    When the layout is derived
-    Then it is not reported
-
-  @mast.grammar
-  Scenario: a mast whose name is not a signal number and its head letters
-    Given interlocking "X" has these appliances:
-      | Name  | Appliance | Style  | Kind       |
-      | EastA | mast      | single | PERMISSIVE |
-    And interlocking "X" has these joints:
-      | Id | Kind        | relations.masts     |
-      | J1 | IRJ_SIGNALS | A=X:832NA B=X:EastA |
-    When the layout is derived
-    Then it is reported as information on "EastA"

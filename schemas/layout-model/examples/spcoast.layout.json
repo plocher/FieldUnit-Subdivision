@@ -106,18 +106,23 @@
           "derived": {
             "controlPoint": "Christopher:Christopher North",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A",
             "Kind": "CONTROLLED",
+            "signal": "814",
             "Style": "dwarf"
           },
           "relations": {
@@ -128,32 +133,43 @@
           "derived": {
             "controlPoint": "Christopher:Christopher North",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ],
-              "B": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ],
-              "C": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              },
+              "B": {
+                "letter": "B",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              },
+              "C": {
+                "letter": "C",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A,B,C",
             "Kind": "CONTROLLED",
+            "signal": "814",
             "Style": "triple"
           },
           "relations": {
@@ -212,25 +228,33 @@
           "derived": {
             "controlPoint": "Christopher:Christopher South",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ],
-              "B": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              },
+              "B": {
+                "letter": "B",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A,B",
             "Kind": "CONTROLLED",
+            "signal": "816",
             "Style": "double"
           },
           "relations": {
@@ -241,18 +265,23 @@
           "derived": {
             "controlPoint": "Christopher:Christopher North",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A",
             "Kind": "CONTROLLED",
+            "signal": "816",
             "Style": "single"
           },
           "relations": {
@@ -287,25 +316,33 @@
           "derived": {
             "controlPoint": "Christopher:Christopher South",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ],
-              "B": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              },
+              "B": {
+                "letter": "B",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A,B",
             "Kind": "CONTROLLED",
+            "signal": "818",
             "Style": "double"
           },
           "relations": {
@@ -316,18 +353,23 @@
           "derived": {
             "controlPoint": "Christopher:Christopher South",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A",
             "Kind": "CONTROLLED",
+            "signal": "818",
             "Style": "dwarf"
           },
           "relations": {
@@ -338,6 +380,7 @@
       "devices": [
         {
           "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -358,6 +401,7 @@
         },
         {
           "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -378,46 +422,7 @@
         },
         {
           "derived": {
-            "presents": [
-              "ADVANCE_APPROACH",
-              "APPROACH",
-              "CLEAR",
-              "DARK",
-              "STOP"
-            ],
-            "serves": "Christopher:814SABC"
-          },
-          "given": {
-            "Appliance": "head",
-            "Style": "TypeD"
-          },
-          "relations": {
-            "mast": "Christopher:814SABC",
-            "position": "B"
-          }
-        },
-        {
-          "derived": {
-            "presents": [
-              "ADVANCE_APPROACH",
-              "APPROACH",
-              "CLEAR",
-              "DARK",
-              "STOP"
-            ],
-            "serves": "Christopher:814SABC"
-          },
-          "given": {
-            "Appliance": "head",
-            "Style": "TypeD"
-          },
-          "relations": {
-            "mast": "Christopher:814SABC",
-            "position": "C"
-          }
-        },
-        {
-          "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -438,26 +443,7 @@
         },
         {
           "derived": {
-            "presents": [
-              "ADVANCE_APPROACH",
-              "APPROACH",
-              "CLEAR",
-              "DARK",
-              "STOP"
-            ],
-            "serves": "Christopher:816NAB"
-          },
-          "given": {
-            "Appliance": "head",
-            "Style": "TypeD"
-          },
-          "relations": {
-            "mast": "Christopher:816NAB",
-            "position": "B"
-          }
-        },
-        {
-          "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -478,6 +464,7 @@
         },
         {
           "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -498,6 +485,70 @@
         },
         {
           "derived": {
+            "letter": "A",
+            "presents": [
+              "ADVANCE_APPROACH",
+              "APPROACH",
+              "CLEAR",
+              "DARK",
+              "STOP"
+            ],
+            "serves": "Christopher:818SA"
+          },
+          "given": {
+            "Appliance": "head",
+            "Style": "TypeD"
+          },
+          "relations": {
+            "mast": "Christopher:818SA",
+            "position": "A"
+          }
+        },
+        {
+          "derived": {
+            "letter": "B",
+            "presents": [
+              "ADVANCE_APPROACH",
+              "APPROACH",
+              "CLEAR",
+              "DARK",
+              "STOP"
+            ],
+            "serves": "Christopher:814SABC"
+          },
+          "given": {
+            "Appliance": "head",
+            "Style": "TypeD"
+          },
+          "relations": {
+            "mast": "Christopher:814SABC",
+            "position": "B"
+          }
+        },
+        {
+          "derived": {
+            "letter": "B",
+            "presents": [
+              "ADVANCE_APPROACH",
+              "APPROACH",
+              "CLEAR",
+              "DARK",
+              "STOP"
+            ],
+            "serves": "Christopher:816NAB"
+          },
+          "given": {
+            "Appliance": "head",
+            "Style": "TypeD"
+          },
+          "relations": {
+            "mast": "Christopher:816NAB",
+            "position": "B"
+          }
+        },
+        {
+          "derived": {
+            "letter": "B",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -518,6 +569,7 @@
         },
         {
           "derived": {
+            "letter": "C",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -525,15 +577,15 @@
               "DARK",
               "STOP"
             ],
-            "serves": "Christopher:818SA"
+            "serves": "Christopher:814SABC"
           },
           "given": {
             "Appliance": "head",
             "Style": "TypeD"
           },
           "relations": {
-            "mast": "Christopher:818SA",
-            "position": "A"
+            "mast": "Christopher:814SABC",
+            "position": "C"
           }
         },
         {
@@ -1608,18 +1660,23 @@
           "derived": {
             "controlPoint": "Corporal:Corporal",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A",
             "Kind": "CONTROLLED",
+            "signal": "828",
             "Style": "dwarf"
           },
           "relations": {
@@ -1630,18 +1687,23 @@
           "derived": {
             "controlPoint": "Corporal:Corporal",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A",
             "Kind": "CONTROLLED",
+            "signal": "828",
             "Style": "single"
           },
           "relations": {
@@ -1699,25 +1761,33 @@
           "derived": {
             "controlPoint": "Corporal:Corporal",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ],
-              "B": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              },
+              "B": {
+                "letter": "B",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A,B",
             "Kind": "CONTROLLED",
+            "signal": "830",
             "Style": "double"
           },
           "relations": {
@@ -1728,25 +1798,33 @@
           "derived": {
             "controlPoint": "Corporal:Corporal",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ],
-              "B": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              },
+              "B": {
+                "letter": "B",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A,B",
             "Kind": "CONTROLLED",
+            "signal": "830",
             "Style": "double"
           },
           "relations": {
@@ -1784,18 +1862,23 @@
               "governed": "Corporal:832T"
             },
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A",
             "Kind": "PERMISSIVE",
+            "signal": "832",
             "Style": "single"
           },
           "relations": {
@@ -1809,18 +1892,23 @@
               "governed": "Corporal:834T"
             },
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A",
             "Kind": "PERMISSIVE",
+            "signal": "832",
             "Style": "single"
           },
           "relations": {
@@ -1889,6 +1977,7 @@
       "devices": [
         {
           "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -1909,6 +1998,7 @@
         },
         {
           "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -1929,6 +2019,7 @@
         },
         {
           "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -1949,26 +2040,7 @@
         },
         {
           "derived": {
-            "presents": [
-              "ADVANCE_APPROACH",
-              "APPROACH",
-              "CLEAR",
-              "DARK",
-              "STOP"
-            ],
-            "serves": "Corporal:830NAB"
-          },
-          "given": {
-            "Appliance": "head",
-            "Style": "TypeD"
-          },
-          "relations": {
-            "mast": "Corporal:830NAB",
-            "position": "B"
-          }
-        },
-        {
-          "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -1989,26 +2061,7 @@
         },
         {
           "derived": {
-            "presents": [
-              "ADVANCE_APPROACH",
-              "APPROACH",
-              "CLEAR",
-              "DARK",
-              "STOP"
-            ],
-            "serves": "Corporal:830SAB"
-          },
-          "given": {
-            "Appliance": "head",
-            "Style": "TypeD"
-          },
-          "relations": {
-            "mast": "Corporal:830SAB",
-            "position": "B"
-          }
-        },
-        {
-          "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -2029,6 +2082,7 @@
         },
         {
           "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -2045,6 +2099,48 @@
           "relations": {
             "mast": "Corporal:832SA",
             "position": "A"
+          }
+        },
+        {
+          "derived": {
+            "letter": "B",
+            "presents": [
+              "ADVANCE_APPROACH",
+              "APPROACH",
+              "CLEAR",
+              "DARK",
+              "STOP"
+            ],
+            "serves": "Corporal:830NAB"
+          },
+          "given": {
+            "Appliance": "head",
+            "Style": "TypeD"
+          },
+          "relations": {
+            "mast": "Corporal:830NAB",
+            "position": "B"
+          }
+        },
+        {
+          "derived": {
+            "letter": "B",
+            "presents": [
+              "ADVANCE_APPROACH",
+              "APPROACH",
+              "CLEAR",
+              "DARK",
+              "STOP"
+            ],
+            "serves": "Corporal:830SAB"
+          },
+          "given": {
+            "Appliance": "head",
+            "Style": "TypeD"
+          },
+          "relations": {
+            "mast": "Corporal:830SAB",
+            "position": "B"
           }
         },
         {
@@ -3170,25 +3266,33 @@
           "derived": {
             "controlPoint": "GCaltrain:Gilroy Caltrain",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ],
-              "B": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              },
+              "B": {
+                "letter": "B",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A,B",
             "Kind": "CONTROLLED",
+            "signal": "774",
             "Style": "double"
           },
           "relations": {
@@ -3199,18 +3303,23 @@
           "derived": {
             "controlPoint": "GCaltrain:Gilroy Caltrain",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "C",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "C",
             "Kind": "CONTROLLED",
+            "signal": "774",
             "Style": "dwarf"
           },
           "relations": {
@@ -3221,18 +3330,23 @@
           "derived": {
             "controlPoint": "GCaltrain:Gilroy Caltrain",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "D",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "D",
             "Kind": "CONTROLLED",
+            "signal": "774",
             "Style": "dwarf"
           },
           "relations": {
@@ -3243,18 +3357,23 @@
           "derived": {
             "controlPoint": "GCaltrain:Gilroy Caltrain",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "E",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "E",
             "Kind": "CONTROLLED",
+            "signal": "774",
             "Style": "dwarf"
           },
           "relations": {
@@ -3265,25 +3384,33 @@
           "derived": {
             "controlPoint": "GCaltrain:Gilroy Caltrain",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ],
-              "B": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              },
+              "B": {
+                "letter": "B",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A,B",
             "Kind": "CONTROLLED",
+            "signal": "774",
             "Style": "double"
           },
           "relations": {
@@ -3318,6 +3445,7 @@
       "devices": [
         {
           "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -3338,6 +3466,28 @@
         },
         {
           "derived": {
+            "letter": "A",
+            "presents": [
+              "ADVANCE_APPROACH",
+              "APPROACH",
+              "CLEAR",
+              "DARK",
+              "STOP"
+            ],
+            "serves": "GCaltrain:774SAB"
+          },
+          "given": {
+            "Appliance": "head",
+            "Style": "TypeD"
+          },
+          "relations": {
+            "mast": "GCaltrain:774SAB",
+            "position": "A"
+          }
+        },
+        {
+          "derived": {
+            "letter": "B",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -3358,6 +3508,28 @@
         },
         {
           "derived": {
+            "letter": "B",
+            "presents": [
+              "ADVANCE_APPROACH",
+              "APPROACH",
+              "CLEAR",
+              "DARK",
+              "STOP"
+            ],
+            "serves": "GCaltrain:774SAB"
+          },
+          "given": {
+            "Appliance": "head",
+            "Style": "TypeD"
+          },
+          "relations": {
+            "mast": "GCaltrain:774SAB",
+            "position": "B"
+          }
+        },
+        {
+          "derived": {
+            "letter": "C",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -3378,6 +3550,7 @@
         },
         {
           "derived": {
+            "letter": "D",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -3398,6 +3571,7 @@
         },
         {
           "derived": {
+            "letter": "E",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -3414,46 +3588,6 @@
           "relations": {
             "mast": "GCaltrain:774NE",
             "position": "A"
-          }
-        },
-        {
-          "derived": {
-            "presents": [
-              "ADVANCE_APPROACH",
-              "APPROACH",
-              "CLEAR",
-              "DARK",
-              "STOP"
-            ],
-            "serves": "GCaltrain:774SAB"
-          },
-          "given": {
-            "Appliance": "head",
-            "Style": "TypeD"
-          },
-          "relations": {
-            "mast": "GCaltrain:774SAB",
-            "position": "A"
-          }
-        },
-        {
-          "derived": {
-            "presents": [
-              "ADVANCE_APPROACH",
-              "APPROACH",
-              "CLEAR",
-              "DARK",
-              "STOP"
-            ],
-            "serves": "GCaltrain:774SAB"
-          },
-          "given": {
-            "Appliance": "head",
-            "Style": "TypeD"
-          },
-          "relations": {
-            "mast": "GCaltrain:774SAB",
-            "position": "B"
           }
         },
         {
@@ -4385,25 +4519,33 @@
           "derived": {
             "controlPoint": "Gilroy:Gilroy South",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ],
-              "B": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              },
+              "B": {
+                "letter": "B",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A,B",
             "Kind": "CONTROLLED",
+            "signal": "778",
             "Style": "double"
           },
           "relations": {
@@ -4414,18 +4556,23 @@
           "derived": {
             "controlPoint": "Gilroy:Gilroy North",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "C",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "C",
             "Kind": "CONTROLLED",
+            "signal": "778",
             "Style": "dwarf"
           },
           "relations": {
@@ -4436,25 +4583,33 @@
           "derived": {
             "controlPoint": "Gilroy:Gilroy North",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ],
-              "B": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              },
+              "B": {
+                "letter": "B",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A,B",
             "Kind": "CONTROLLED",
+            "signal": "778",
             "Style": "double"
           },
           "relations": {
@@ -4465,18 +4620,23 @@
           "derived": {
             "controlPoint": "Gilroy:Gilroy South",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "C",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "C",
             "Kind": "CONTROLLED",
+            "signal": "778",
             "Style": "dwarf"
           },
           "relations": {
@@ -4543,6 +4703,7 @@
       "devices": [
         {
           "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -4563,6 +4724,28 @@
         },
         {
           "derived": {
+            "letter": "A",
+            "presents": [
+              "ADVANCE_APPROACH",
+              "APPROACH",
+              "CLEAR",
+              "DARK",
+              "STOP"
+            ],
+            "serves": "Gilroy:778SAB"
+          },
+          "given": {
+            "Appliance": "head",
+            "Style": "H2"
+          },
+          "relations": {
+            "mast": "Gilroy:778SAB",
+            "position": "A"
+          }
+        },
+        {
+          "derived": {
+            "letter": "B",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -4583,6 +4766,28 @@
         },
         {
           "derived": {
+            "letter": "B",
+            "presents": [
+              "ADVANCE_APPROACH",
+              "APPROACH",
+              "CLEAR",
+              "DARK",
+              "STOP"
+            ],
+            "serves": "Gilroy:778SAB"
+          },
+          "given": {
+            "Appliance": "head",
+            "Style": "H2"
+          },
+          "relations": {
+            "mast": "Gilroy:778SAB",
+            "position": "B"
+          }
+        },
+        {
+          "derived": {
+            "letter": "C",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -4603,46 +4808,7 @@
         },
         {
           "derived": {
-            "presents": [
-              "ADVANCE_APPROACH",
-              "APPROACH",
-              "CLEAR",
-              "DARK",
-              "STOP"
-            ],
-            "serves": "Gilroy:778SAB"
-          },
-          "given": {
-            "Appliance": "head",
-            "Style": "H2"
-          },
-          "relations": {
-            "mast": "Gilroy:778SAB",
-            "position": "A"
-          }
-        },
-        {
-          "derived": {
-            "presents": [
-              "ADVANCE_APPROACH",
-              "APPROACH",
-              "CLEAR",
-              "DARK",
-              "STOP"
-            ],
-            "serves": "Gilroy:778SAB"
-          },
-          "given": {
-            "Appliance": "head",
-            "Style": "H2"
-          },
-          "relations": {
-            "mast": "Gilroy:778SAB",
-            "position": "B"
-          }
-        },
-        {
-          "derived": {
+            "letter": "C",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -5568,25 +5734,33 @@
           "derived": {
             "controlPoint": "Luchessa:Luchessa",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ],
-              "B": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              },
+              "B": {
+                "letter": "B",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A,B",
             "Kind": "CONTROLLED",
+            "signal": "784",
             "Style": "double"
           },
           "relations": {
@@ -5597,18 +5771,23 @@
           "derived": {
             "controlPoint": "Luchessa:Gilroy",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "C",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "C",
             "Kind": "CONTROLLED",
+            "signal": "784",
             "Style": "dwarf"
           },
           "relations": {
@@ -5619,18 +5798,23 @@
           "derived": {
             "controlPoint": "Luchessa:Gilroy",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A",
             "Kind": "CONTROLLED",
+            "signal": "784",
             "Style": "single"
           },
           "relations": {
@@ -5641,25 +5825,33 @@
           "derived": {
             "controlPoint": "Luchessa:Carnadero",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ],
-              "B": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "B",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              },
+              "B": {
+                "letter": "C",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "B,C",
             "Kind": "CONTROLLED",
+            "signal": "784",
             "Style": "double"
           },
           "relations": {
@@ -5670,18 +5862,23 @@
           "derived": {
             "controlPoint": "Luchessa:Carnadero",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "D",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "D",
             "Kind": "CONTROLLED",
+            "signal": "784",
             "Style": "single"
           },
           "relations": {
@@ -5785,6 +5982,7 @@
       "devices": [
         {
           "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -5805,46 +6003,7 @@
         },
         {
           "derived": {
-            "presents": [
-              "ADVANCE_APPROACH",
-              "APPROACH",
-              "CLEAR",
-              "DARK",
-              "STOP"
-            ],
-            "serves": "Luchessa:784EAB"
-          },
-          "given": {
-            "Appliance": "head",
-            "Style": "TypeD"
-          },
-          "relations": {
-            "mast": "Luchessa:784EAB",
-            "position": "B"
-          }
-        },
-        {
-          "derived": {
-            "presents": [
-              "ADVANCE_APPROACH",
-              "APPROACH",
-              "CLEAR",
-              "DARK",
-              "STOP"
-            ],
-            "serves": "Luchessa:784EC"
-          },
-          "given": {
-            "Appliance": "head",
-            "Style": "TypeD"
-          },
-          "relations": {
-            "mast": "Luchessa:784EC",
-            "position": "A"
-          }
-        },
-        {
-          "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -5865,6 +6024,28 @@
         },
         {
           "derived": {
+            "letter": "B",
+            "presents": [
+              "ADVANCE_APPROACH",
+              "APPROACH",
+              "CLEAR",
+              "DARK",
+              "STOP"
+            ],
+            "serves": "Luchessa:784EAB"
+          },
+          "given": {
+            "Appliance": "head",
+            "Style": "TypeD"
+          },
+          "relations": {
+            "mast": "Luchessa:784EAB",
+            "position": "B"
+          }
+        },
+        {
+          "derived": {
+            "letter": "B",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -5885,6 +6066,28 @@
         },
         {
           "derived": {
+            "letter": "C",
+            "presents": [
+              "ADVANCE_APPROACH",
+              "APPROACH",
+              "CLEAR",
+              "DARK",
+              "STOP"
+            ],
+            "serves": "Luchessa:784EC"
+          },
+          "given": {
+            "Appliance": "head",
+            "Style": "TypeD"
+          },
+          "relations": {
+            "mast": "Luchessa:784EC",
+            "position": "A"
+          }
+        },
+        {
+          "derived": {
+            "letter": "C",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -5905,6 +6108,7 @@
         },
         {
           "derived": {
+            "letter": "D",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -5930,7 +6134,6 @@
           "given": {
             "Address": "1",
             "Appliance": "lamp",
-            "Color": "0xFA859",
             "Name": "1MCK"
           },
           "relations": {
@@ -7065,18 +7268,23 @@
               "governed": "Corporal:834T"
             },
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A",
             "Kind": "PERMISSIVE",
+            "signal": "834",
             "Style": "single"
           },
           "relations": {
@@ -7090,18 +7298,23 @@
               "governed": "Sargent:836T"
             },
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A",
             "Kind": "PERMISSIVE",
+            "signal": "834",
             "Style": "single"
           },
           "relations": {
@@ -7136,25 +7349,33 @@
           "derived": {
             "controlPoint": "Sargent:Sargent",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ],
-              "B": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              },
+              "B": {
+                "letter": "B",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A,B",
             "Kind": "CONTROLLED",
+            "signal": "836",
             "Style": "double"
           },
           "relations": {
@@ -7165,18 +7386,23 @@
           "derived": {
             "controlPoint": "Sargent:Sargent",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A",
             "Kind": "CONTROLLED",
+            "signal": "836",
             "Style": "single"
           },
           "relations": {
@@ -7187,17 +7413,22 @@
           "derived": {
             "controlPoint": "Sargent:Sargent",
             "positions": {
-              "A": [
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "B",
+                "presents": [
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "B",
             "Kind": "CONTROLLED",
+            "signal": "836",
             "Style": "dwarf"
           },
           "relations": {
@@ -7234,6 +7465,7 @@
       "devices": [
         {
           "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -7254,6 +7486,7 @@
         },
         {
           "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -7274,26 +7507,7 @@
         },
         {
           "derived": {
-            "presents": [
-              "ADVANCE_APPROACH",
-              "APPROACH",
-              "CLEAR",
-              "DARK",
-              "STOP"
-            ],
-            "serves": "Sargent:836NAB"
-          },
-          "given": {
-            "Appliance": "head",
-            "Style": "H2"
-          },
-          "relations": {
-            "mast": "Sargent:836NAB",
-            "position": "B"
-          }
-        },
-        {
-          "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -7314,6 +7528,7 @@
         },
         {
           "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -7334,6 +7549,28 @@
         },
         {
           "derived": {
+            "letter": "B",
+            "presents": [
+              "ADVANCE_APPROACH",
+              "APPROACH",
+              "CLEAR",
+              "DARK",
+              "STOP"
+            ],
+            "serves": "Sargent:836NAB"
+          },
+          "given": {
+            "Appliance": "head",
+            "Style": "H2"
+          },
+          "relations": {
+            "mast": "Sargent:836NAB",
+            "position": "B"
+          }
+        },
+        {
+          "derived": {
+            "letter": "B",
             "presents": [
               "APPROACH",
               "CLEAR",
@@ -7393,7 +7630,6 @@
           "given": {
             "Address": "1",
             "Appliance": "lamp",
-            "Color": "0xFFA859",
             "Name": "1MC"
           },
           "relations": {
@@ -8986,25 +9222,33 @@
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ],
-              "B": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              },
+              "B": {
+                "letter": "B",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A,B",
             "Kind": "CONTROLLED",
+            "signal": "838",
             "Style": "double"
           },
           "relations": {
@@ -9015,25 +9259,33 @@
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ],
-              "B": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "C",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              },
+              "B": {
+                "letter": "D",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "C,D",
             "Kind": "CONTROLLED",
+            "signal": "838",
             "Style": "double"
           },
           "relations": {
@@ -9044,25 +9296,33 @@
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ],
-              "B": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              },
+              "B": {
+                "letter": "B",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A,B",
             "Kind": "CONTROLLED",
+            "signal": "838",
             "Style": "double"
           },
           "relations": {
@@ -9073,18 +9333,23 @@
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A",
             "Kind": "CONTROLLED",
+            "signal": "840",
             "Style": "dwarf"
           },
           "relations": {
@@ -9095,18 +9360,23 @@
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "B",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "B",
             "Kind": "CONTROLLED",
+            "signal": "840",
             "Style": "dwarf"
           },
           "relations": {
@@ -9117,18 +9387,23 @@
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "C",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "C",
             "Kind": "CONTROLLED",
+            "signal": "840",
             "Style": "dwarf"
           },
           "relations": {
@@ -9139,18 +9414,23 @@
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "D",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "D",
             "Kind": "CONTROLLED",
+            "signal": "840",
             "Style": "dwarf"
           },
           "relations": {
@@ -9161,18 +9441,23 @@
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "E",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "E",
             "Kind": "CONTROLLED",
+            "signal": "840",
             "Style": "dwarf"
           },
           "relations": {
@@ -9183,18 +9468,23 @@
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "F",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "F",
             "Kind": "CONTROLLED",
+            "signal": "840",
             "Style": "dwarf"
           },
           "relations": {
@@ -9205,18 +9495,23 @@
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "G",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "G",
             "Kind": "CONTROLLED",
+            "signal": "840",
             "Style": "dwarf"
           },
           "relations": {
@@ -9227,18 +9522,23 @@
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
             "positions": {
-              "A": [
-                "ADVANCE_APPROACH",
-                "APPROACH",
-                "CLEAR",
-                "DARK",
-                "STOP"
-              ]
+              "A": {
+                "letter": "A",
+                "presents": [
+                  "ADVANCE_APPROACH",
+                  "APPROACH",
+                  "CLEAR",
+                  "DARK",
+                  "STOP"
+                ]
+              }
             }
           },
           "given": {
             "Appliance": "mast",
+            "heads": "A",
             "Kind": "CONTROLLED",
+            "signal": "840",
             "Style": "dwarf"
           },
           "relations": {
@@ -9271,6 +9571,7 @@
       "devices": [
         {
           "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -9291,66 +9592,7 @@
         },
         {
           "derived": {
-            "presents": [
-              "ADVANCE_APPROACH",
-              "APPROACH",
-              "CLEAR",
-              "DARK",
-              "STOP"
-            ],
-            "serves": "Watsonville:838NAB"
-          },
-          "given": {
-            "Appliance": "head",
-            "Style": "TypeD"
-          },
-          "relations": {
-            "mast": "Watsonville:838NAB",
-            "position": "B"
-          }
-        },
-        {
-          "derived": {
-            "presents": [
-              "ADVANCE_APPROACH",
-              "APPROACH",
-              "CLEAR",
-              "DARK",
-              "STOP"
-            ],
-            "serves": "Watsonville:838NCD"
-          },
-          "given": {
-            "Appliance": "head",
-            "Style": "TypeD"
-          },
-          "relations": {
-            "mast": "Watsonville:838NCD",
-            "position": "A"
-          }
-        },
-        {
-          "derived": {
-            "presents": [
-              "ADVANCE_APPROACH",
-              "APPROACH",
-              "CLEAR",
-              "DARK",
-              "STOP"
-            ],
-            "serves": "Watsonville:838NCD"
-          },
-          "given": {
-            "Appliance": "head",
-            "Style": "TypeD"
-          },
-          "relations": {
-            "mast": "Watsonville:838NCD",
-            "position": "B"
-          }
-        },
-        {
-          "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -9371,26 +9613,7 @@
         },
         {
           "derived": {
-            "presents": [
-              "ADVANCE_APPROACH",
-              "APPROACH",
-              "CLEAR",
-              "DARK",
-              "STOP"
-            ],
-            "serves": "Watsonville:838SAB"
-          },
-          "given": {
-            "Appliance": "head",
-            "Style": "TypeD"
-          },
-          "relations": {
-            "mast": "Watsonville:838SAB",
-            "position": "B"
-          }
-        },
-        {
-          "derived": {
+            "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -9411,6 +9634,70 @@
         },
         {
           "derived": {
+            "letter": "A",
+            "presents": [
+              "ADVANCE_APPROACH",
+              "APPROACH",
+              "CLEAR",
+              "DARK",
+              "STOP"
+            ],
+            "serves": "Watsonville:840SA"
+          },
+          "given": {
+            "Appliance": "head",
+            "Style": "TypeD"
+          },
+          "relations": {
+            "mast": "Watsonville:840SA",
+            "position": "A"
+          }
+        },
+        {
+          "derived": {
+            "letter": "B",
+            "presents": [
+              "ADVANCE_APPROACH",
+              "APPROACH",
+              "CLEAR",
+              "DARK",
+              "STOP"
+            ],
+            "serves": "Watsonville:838NAB"
+          },
+          "given": {
+            "Appliance": "head",
+            "Style": "TypeD"
+          },
+          "relations": {
+            "mast": "Watsonville:838NAB",
+            "position": "B"
+          }
+        },
+        {
+          "derived": {
+            "letter": "B",
+            "presents": [
+              "ADVANCE_APPROACH",
+              "APPROACH",
+              "CLEAR",
+              "DARK",
+              "STOP"
+            ],
+            "serves": "Watsonville:838SAB"
+          },
+          "given": {
+            "Appliance": "head",
+            "Style": "TypeD"
+          },
+          "relations": {
+            "mast": "Watsonville:838SAB",
+            "position": "B"
+          }
+        },
+        {
+          "derived": {
+            "letter": "B",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -9431,6 +9718,28 @@
         },
         {
           "derived": {
+            "letter": "C",
+            "presents": [
+              "ADVANCE_APPROACH",
+              "APPROACH",
+              "CLEAR",
+              "DARK",
+              "STOP"
+            ],
+            "serves": "Watsonville:838NCD"
+          },
+          "given": {
+            "Appliance": "head",
+            "Style": "TypeD"
+          },
+          "relations": {
+            "mast": "Watsonville:838NCD",
+            "position": "A"
+          }
+        },
+        {
+          "derived": {
+            "letter": "C",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -9451,6 +9760,28 @@
         },
         {
           "derived": {
+            "letter": "D",
+            "presents": [
+              "ADVANCE_APPROACH",
+              "APPROACH",
+              "CLEAR",
+              "DARK",
+              "STOP"
+            ],
+            "serves": "Watsonville:838NCD"
+          },
+          "given": {
+            "Appliance": "head",
+            "Style": "TypeD"
+          },
+          "relations": {
+            "mast": "Watsonville:838NCD",
+            "position": "B"
+          }
+        },
+        {
+          "derived": {
+            "letter": "D",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -9471,6 +9802,7 @@
         },
         {
           "derived": {
+            "letter": "E",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -9491,6 +9823,7 @@
         },
         {
           "derived": {
+            "letter": "F",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -9511,6 +9844,7 @@
         },
         {
           "derived": {
+            "letter": "G",
             "presents": [
               "ADVANCE_APPROACH",
               "APPROACH",
@@ -9526,26 +9860,6 @@
           },
           "relations": {
             "mast": "Watsonville:840NG",
-            "position": "A"
-          }
-        },
-        {
-          "derived": {
-            "presents": [
-              "ADVANCE_APPROACH",
-              "APPROACH",
-              "CLEAR",
-              "DARK",
-              "STOP"
-            ],
-            "serves": "Watsonville:840SA"
-          },
-          "given": {
-            "Appliance": "head",
-            "Style": "TypeD"
-          },
-          "relations": {
-            "mast": "Watsonville:840SA",
             "position": "A"
           }
         },
@@ -16185,6 +16499,10 @@
               "Christopher:814SGK",
               "Christopher:814TEK"
             ],
+            "masts": [
+              "Christopher:814NA",
+              "Christopher:814SABC"
+            ],
             "serves": "Christopher:814"
           },
           "given": {
@@ -16253,6 +16571,10 @@
               "Christopher:816SGK",
               "Christopher:816TEK"
             ],
+            "masts": [
+              "Christopher:816NAB",
+              "Christopher:816SA"
+            ],
             "serves": "Christopher:816"
           },
           "given": {
@@ -16319,6 +16641,10 @@
               "Christopher:818NGK",
               "Christopher:818SGK",
               "Christopher:818TEK"
+            ],
+            "masts": [
+              "Christopher:818NAB",
+              "Christopher:818SA"
             ],
             "serves": "Christopher:818"
           },
@@ -16412,6 +16738,10 @@
               "Corporal:830SGK",
               "Corporal:830TEK"
             ],
+            "masts": [
+              "Corporal:830NAB",
+              "Corporal:830SAB"
+            ],
             "serves": "Corporal:830"
           },
           "given": {
@@ -16479,6 +16809,10 @@
               "Corporal:832NGK",
               "Corporal:832SGK",
               "Corporal:832TEK"
+            ],
+            "masts": [
+              "Corporal:832NA",
+              "Corporal:832SA"
             ],
             "serves": "Corporal:832"
           },
@@ -16578,6 +16912,13 @@
               "GCaltrain:774NGK",
               "GCaltrain:774SGK",
               "GCaltrain:774TEK"
+            ],
+            "masts": [
+              "GCaltrain:774NAB",
+              "GCaltrain:774NC",
+              "GCaltrain:774ND",
+              "GCaltrain:774NE",
+              "GCaltrain:774SAB"
             ],
             "serves": "GCaltrain:774"
           },
@@ -16813,6 +17154,13 @@
               "Luchessa:784SGK",
               "Luchessa:784TEK"
             ],
+            "masts": [
+              "Luchessa:784EAB",
+              "Luchessa:784EC",
+              "Luchessa:784WA",
+              "Luchessa:784WBC",
+              "Luchessa:784WD"
+            ],
             "serves": "Luchessa:784"
           },
           "given": {
@@ -16996,6 +17344,11 @@
               "Watsonville:838NGK",
               "Watsonville:838SGK",
               "Watsonville:838TEK"
+            ],
+            "masts": [
+              "Watsonville:838NAB",
+              "Watsonville:838NCD",
+              "Watsonville:838SAB"
             ],
             "serves": "Watsonville:838"
           },
@@ -17848,7 +18201,7 @@
   },
   "provenance": {
     "libraries": {
-      "Railroad-Trackplan": "split-projects-final-157-g97be8aa"
+      "Railroad-Trackplan": "split-projects-final-158-g9a1899e"
     },
     "referenceData": {
       "aspectNames": "2026-11-10",
@@ -17864,7 +18217,7 @@
     },
     "rules": "0.1.0",
     "source": {
-      "describe": "split-projects-final-157-g97be8aa",
+      "describe": "split-projects-final-158-g9a1899e",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad",
@@ -17873,5 +18226,5 @@
       "version": "0.4.0"
     }
   },
-  "schema": "layout-model/v3.2.0"
+  "schema": "layout-model/v3.3.0"
 }

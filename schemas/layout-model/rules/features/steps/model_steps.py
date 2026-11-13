@@ -375,12 +375,63 @@ def demand(context, mast, words):
     assert got == want, f"{mast}: demand {got!r}, not {want!r}"
 
 
+def _position(context, mast: str, position: str) -> dict:
+    positions = _named(context, mast).get("derived", {}).get("positions", {})
+    assert position in positions, f"{mast}: no position {position}; positions: {sorted(positions)}"
+    return positions[position]
+
+
 @then('position "{position}" of "{mast}" presents "{words}"')
 def presents(context, position, mast, words):
     """What a position presents: the head words of any head wired to it, from the head model table by Style."""
-    got = _named(context, mast).get("derived", {}).get("positions", {}).get(position)
+    got = _position(context, mast, position).get("presents")
     want = [w.strip() for w in words.split(",")]
     assert got == want, f"{mast} position {position}: presents {got!r}, not {want!r}"
+
+
+@then('position "{position}" of "{mast}" presents nothing yet')
+def presents_nothing(context, position, mast):
+    got = _position(context, mast, position).get("presents")
+    assert got is None, f"{mast} position {position}: presents {got!r}"
+
+
+@then('position "{position}" of "{mast}" is head "{letter}"')
+def position_letter(context, position, mast, letter):
+    """The railroad's head letter of a position: the k-th stated letter is pin k (the owner, 2026-11-12)."""
+    got = _position(context, mast, position).get("letter")
+    assert got == letter, f"{mast} position {position}: letter {got!r}, not {letter!r}"
+
+
+@then('the head on position "{position}" of "{mast}" is head "{letter}"')
+def head_letter(context, position, mast, letter):
+    """A head device derives its mast's letter for the pin its IND reaches."""
+    heads = [d for ix in context.derived["interlockings"].values() for d in ix.get("devices", [])
+             if d.get("given", {}).get("Appliance") == "head" and d.get("relations", {}).get("position") == position
+             and d.get("relations", {}).get("mast", "").partition(":")[2] == mast]
+    assert heads, f"{mast}: no head on position {position}"
+    got = {d.get("derived", {}).get("letter") for d in heads}
+    assert got == {letter}, f"{mast} position {position}: the heads derive letter {got!r}, not {letter!r}"
+
+
+def _desk_lever(context, name: str) -> dict:
+    found = [d for ou in context.derived.get("officeUnits", {}).values() for d in ou.get("devices", [])
+             if d.get("given", {}).get("Appliance") == "lever" and d.get("given", {}).get("Name") == name]
+    assert len(found) == 1, f"lever {name}: {len(found)} desk levers of that name"
+    return found[0]
+
+
+@then('lever "{name}" serves "{served}"')
+def lever_serves(context, name, served):
+    got = _desk_lever(context, name).get("derived", {}).get("serves")
+    assert got == served, f"lever {name}: serves {got!r}, not {served!r}"
+
+
+@then('lever "{name}" works masts "{masts}"')
+def lever_masts(context, name, masts):
+    """A signal lever's masts: those of its interlocking that state its signal number (the owner, 2026-11-12)."""
+    got = _desk_lever(context, name).get("derived", {}).get("masts")
+    want = [m.strip() for m in masts.split(",")]
+    assert got == want, f"lever {name}: masts {got!r}, not {want!r}"
 
 
 def _holder(context, name: str) -> str:

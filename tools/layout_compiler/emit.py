@@ -1,4 +1,4 @@
-"""The seam and trackplan facts as the Layout Data Model File, schema ``layout-model/v3.2.0`` (ADR 0008 rev 4, ADR 0010,
+"""The seam and trackplan facts as the Layout Data Model File, schema ``layout-model/v3.3.0`` (ADR 0008 rev 4, ADR 0010,
 ADR 0011).
 
 The KiCad importer writes two of the three maps (ADR 0011 §2): ``given``, what the person stated as fields, as drawn,
@@ -23,7 +23,7 @@ from .seams import Seams, token_field
 from .source import Symbol
 from .seams import loc as seams_loc
 
-SCHEMA = "layout-model/v3.2.0"                    # 3.1.0 reshaped in place to the three maps (ADR 0011 §9); 3.2.0 adds the head positions (#80)
+SCHEMA = "layout-model/v3.3.0"                    # 3.2.0 added the head positions (#80); 3.3.0 states a mast's atoms and keys its positions by pin
 WRITER = {"name": "layout_compiler", "version": "0.4.0"}
 FACING = ("mast", "train_order")                  # the appliances whose glyph turn the file states (the owner, 2026-11-08)
 
@@ -161,8 +161,16 @@ def facts(sm: Seams, geometry: Optional[Geometry] = None) -> dict[str, Any]:
         for ixn, plan in plans.items():
             placements = geometry.interlockings.get(ixn, {}).get("appliances", {})
             for name, row in plan.appliances.items():
-                if row.get("given", {}).get("Appliance") in FACING and name in placements:
-                    row.setdefault("relations", {})["facing"] = geo_facing(placements[name])
+                if row.get("given", {}).get("Appliance") not in FACING or name not in placements:
+                    continue
+                drawn, stated = geo_facing(placements[name]), row.get("relations", {}).get("facing")
+                if stated is None:                                      # a train order board, or a mast whose Name states no side
+                    if drawn:
+                        row.setdefault("relations", {})["facing"] = drawn
+                elif drawn and drawn != stated and not sm.derived:      # the Name's side letter is the statement; the glyph must agree (D1)
+                    sm.report.warning("geometry.facing", f"{ixn}: mast {name} is drawn facing {drawn} but its Name's side letter says "
+                                      f"{stated} (ADR 0003 D1); turn the glyph or rename the mast",
+                                      source=seams_loc(plan.sources[f"appliances/{name}"]))
     interlockings = {
         ix.name: _entity(ix.given, {"codeline": ix.codeline, "processor": ix.processor},
                          houses={h.cp_name: _entity(h.given, {"maintainerCall": h.maintainer_call, "codeline": h.codeline})

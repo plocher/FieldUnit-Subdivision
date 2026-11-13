@@ -39,6 +39,13 @@ step exists. The same holds for a signal pin and a head's pin: a mast or a head 
 symbol under no interlocking's sheet is left out, as it was. Whether such a net is block track or an error (a powered
 switch on it) is the reference derivation's check.
 
+A mast's Name is KiCad shorthand for three atoms (ADR 0003 rules 5 to 7; the owner, 2026-11-12: the atoms are stated,
+the Name is a label, and nothing downstream reads it): ``grammar.mast_atoms`` decomposes it into ``given.signal`` (the
+signal number, ``784``), ``relations.facing`` (the side letter's direction, D1: N and W ``LEFT``, S and E ``RIGHT``) and
+``given.heads`` (the head letters top down, ``B,C``; the k-th letter is the k-th pin of the field mast device). A Name
+that is not the grammar states none of them, ``mast.name`` at missing. ``emit.facts`` checks the glyph's turn against the
+stated facing (``geometry.facing``) and states it from the glyph only where the Name does not.
+
 A train order board is ``Appliance train_order`` (the owner, 2026-11-03, 2026-11-08): an operator-controlled, non-vital
 indicator, never a signal in the interlocking sense, never in a route and never in a control point, so it has its own
 appliance word and no code path that reads masts sees it. Its Style, ``single`` or ``double``, is the symbol drawn, as a
@@ -76,6 +83,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
+from tools.layout_model.grammar import mast_atoms
 from tools.layout_model.reference import indication_tokens
 
 from .seams import Seams, check_milepost, given_of, key_of, loc, qualify, styles_of, token_field
@@ -320,6 +328,13 @@ def _plan(sm: Seams, ix, syms: list[Symbol], track_nets: frozenset[str] = frozen
             if on:
                 report.error("train_order.track", f"{ix.name}: train order board {name} has its {', '.join(on)} on the track; "
                              "a train order board has no track pin", source=loc(s))
+        elif appliance == "mast":                                     # its Name's atoms, stated (ADR 0003 rules 5 to 7)
+            atoms = mast_atoms(name)
+            if atoms is None:
+                report.missing("mast.name", f"{ix.name}: mast {name}: its Name is not a signal number, a side letter and head letters "
+                               "(ADR 0003 rules 5 to 7, 784WBC), so its signal, facing and heads are not stated", source=loc(s))
+            else:
+                row["given"]["signal"], relations["facing"], row["given"]["heads"] = atoms[0], atoms[1], ",".join(atoms[2])
         elif is_switch(s):
             for p in ports_of(s):
                 relations[p] = pin_refs(s, p)

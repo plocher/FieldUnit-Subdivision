@@ -162,6 +162,19 @@ def names_on_side(context, name, pin, side):
     assert _pin_name(context, pin) in got, f"{name}: side {side} names {got!r}, not {pin!r}"
 
 
+@then('in interlocking "{ix}", "{name}" names "{pin}" on side {side}')
+def names_on_side_in(context, name, ix, pin, side):
+    """The same, for a name two interlockings both use (Corporal's and Sargent's switch 1)."""
+    got = context.model["interlockings"][ix]["appliances"][name].get("relations", {}).get(side) or []
+    assert _pin_name(context, pin) in got, f"{ix}:{name}: side {side} names {got!r}, not {pin!r}"
+
+
+@then('"{name}" is written with no {field}')
+def appliance_not_given(context, name, field):
+    got = _appliance(context, name).get("given", {})
+    assert field not in got, f"{name}: {field} is {got[field]!r}"
+
+
 @then('"{name}" stands on no track')
 def no_track(context, name):
     got = {k: v for k, v in _appliance(context, name).get("relations", {}).items() if isinstance(v, list)}
