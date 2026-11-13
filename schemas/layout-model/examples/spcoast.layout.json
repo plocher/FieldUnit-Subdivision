@@ -590,6 +590,20 @@
         },
         {
           "derived": {
+            "serves": "Christopher:1MC"
+          },
+          "given": {
+            "Appliance": "lamp",
+            "Name": "1MC"
+          },
+          "relations": {
+            "bindings": {
+              "LAMP": "Christopher/0x23/A5"
+            }
+          }
+        },
+        {
+          "derived": {
             "serves": "Christopher:1NAT"
           },
           "given": {
@@ -615,6 +629,20 @@
           "relations": {
             "bindings": {
               "OCC": "Christopher/0x23/A7"
+            }
+          }
+        },
+        {
+          "derived": {
+            "serves": "Christopher:2MC"
+          },
+          "given": {
+            "Appliance": "lamp",
+            "Name": "2MC"
+          },
+          "relations": {
+            "bindings": {
+              "LAMP": "Christopher/0x23/A6"
             }
           }
         },
@@ -829,34 +857,6 @@
           "given": {
             "Appliance": "mast",
             "Name": "818SA"
-          }
-        },
-        {
-          "derived": {
-            "serves": "Christopher:MC1"
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Name": "MC1"
-          },
-          "relations": {
-            "bindings": {
-              "LAMP": "Christopher/0x23/A5"
-            }
-          }
-        },
-        {
-          "derived": {
-            "serves": "Christopher:MC2"
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Name": "MC2"
-          },
-          "relations": {
-            "bindings": {
-              "LAMP": "Christopher/0x23/A6"
-            }
           }
         }
       ],
@@ -2184,6 +2184,20 @@
         },
         {
           "derived": {
+            "serves": "Corporal:1MC"
+          },
+          "given": {
+            "Appliance": "lamp",
+            "Name": "1MC"
+          },
+          "relations": {
+            "bindings": {
+              "LAMP": "Corporal/0x22/A4"
+            }
+          }
+        },
+        {
+          "derived": {
             "serves": "Corporal:1T1"
           },
           "given": {
@@ -2379,20 +2393,6 @@
           "relations": {
             "bindings": {
               "OCC": "Corporal/0x22/A3"
-            }
-          }
-        },
-        {
-          "derived": {
-            "serves": "Corporal:MC1"
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Name": "MC1"
-          },
-          "relations": {
-            "bindings": {
-              "LAMP": "Corporal/0x22/A4"
             }
           }
         }
@@ -3181,6 +3181,7 @@
           "relations": {
             "TC": [
               "00a0aac7-9dc5-481c-9a54-4b8b1c1c7667.EoT",
+              "09e3accb-e790-4a54-88e4-1ec5c15f3d37.track",
               "37df07ea-ec58-47c2-b85d-9e8ebbf6d84a.approach"
             ]
           }
@@ -3196,6 +3197,7 @@
           },
           "relations": {
             "TC": [
+              "5a44252e-ccfa-4000-a442-6ec443675692.track",
               "5c92a95e-63ba-402a-9085-3443c8a4607d.approach",
               "930a119b-3f7e-4e76-98ef-6582a7af706e.EoT"
             ]
@@ -3213,6 +3215,7 @@
           "relations": {
             "TC": [
               "73922a59-4f81-4d5c-9f30-e00035472018.approach",
+              "75749609-a07c-489e-abe5-eca1058275e9.track",
               "abf604d8-e63c-4d03-b737-ead2ff401e5b.EoT"
             ]
           }
@@ -3255,14 +3258,14 @@
           },
           "relations": {
             "C": [
-              "afb8959c-a535-4e6b-825a-e55ba6987d13.track",
               "cf49749f-23ad-4177-a884-0289ca315847.B"
             ],
             "N": [
               "7823ab17-00ea-45ea-ab58-7a776e76b03c.A"
             ],
             "R": [
-              "37df07ea-ec58-47c2-b85d-9e8ebbf6d84a.governed"
+              "37df07ea-ec58-47c2-b85d-9e8ebbf6d84a.governed",
+              "79241608-7cdb-423d-977a-e9c2613f0268.track"
             ]
           }
         },
@@ -3438,9 +3441,11 @@
               "7823ab17-00ea-45ea-ab58-7a776e76b03c.B"
             ],
             "N": [
-              "5c92a95e-63ba-402a-9085-3443c8a4607d.governed"
+              "5c92a95e-63ba-402a-9085-3443c8a4607d.governed",
+              "d1aa7fa5-c477-440f-b53e-80bbba6f71bc.track"
             ],
             "R": [
+              "5d262b41-8252-4cbf-9336-847764736da3.track",
               "73922a59-4f81-4d5c-9f30-e00035472018.governed"
             ]
           }
@@ -3895,14 +3900,6 @@
           },
           {
             "at": {
-              "x": 81.28,
-              "y": 46.99
-            },
-            "glyph": "Railroad-Trackplan:GCOR Rule 6.13 Yard Limits",
-            "row": "afb8959c-a535-4e6b-825a-e55ba6987d13"
-          },
-          {
-            "at": {
               "x": 109.22,
               "y": 15.24
             },
@@ -3922,8 +3919,26 @@
               "x": 140.97,
               "y": 63.5
             },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 BEGIN_CTC",
+            "mirror": "y",
+            "row": "79241608-7cdb-423d-977a-e9c2613f0268"
+          },
+          {
+            "at": {
+              "x": 140.97,
+              "y": 63.5
+            },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "row": "37df07ea-ec58-47c2-b85d-9e8ebbf6d84a"
+          },
+          {
+            "at": {
+              "x": 142.24,
+              "y": 30.48
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 BEGIN_CTC",
+            "mirror": "y",
+            "row": "5d262b41-8252-4cbf-9336-847764736da3"
           },
           {
             "at": {
@@ -3938,8 +3953,41 @@
               "x": 142.24,
               "y": 46.99
             },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 BEGIN_CTC",
+            "mirror": "y",
+            "row": "d1aa7fa5-c477-440f-b53e-80bbba6f71bc"
+          },
+          {
+            "at": {
+              "x": 142.24,
+              "y": 46.99
+            },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "row": "5c92a95e-63ba-402a-9085-3443c8a4607d"
+          },
+          {
+            "at": {
+              "x": 143.51,
+              "y": 63.5
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 6.13 Yard Limits",
+            "row": "09e3accb-e790-4a54-88e4-1ec5c15f3d37"
+          },
+          {
+            "at": {
+              "x": 144.78,
+              "y": 30.48
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 6.13 Yard Limits",
+            "row": "75749609-a07c-489e-abe5-eca1058275e9"
+          },
+          {
+            "at": {
+              "x": 144.78,
+              "y": 46.99
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 6.13 Yard Limits",
+            "row": "5a44252e-ccfa-4000-a442-6ec443675692"
           },
           {
             "at": {
@@ -4110,6 +4158,7 @@
             "id": "00a0aac7-9dc5-481c-9a54-4b8b1c1c7667",
             "relations": {
               "EoT": [
+                "09e3accb-e790-4a54-88e4-1ec5c15f3d37.track",
                 "37df07ea-ec58-47c2-b85d-9e8ebbf6d84a.approach",
                 "GCaltrain:01T.TC"
               ]
@@ -4127,6 +4176,7 @@
             "id": "930a119b-3f7e-4e76-98ef-6582a7af706e",
             "relations": {
               "EoT": [
+                "5a44252e-ccfa-4000-a442-6ec443675692.track",
                 "5c92a95e-63ba-402a-9085-3443c8a4607d.approach",
                 "GCaltrain:02T.TC"
               ]
@@ -4145,6 +4195,7 @@
             "relations": {
               "EoT": [
                 "73922a59-4f81-4d5c-9f30-e00035472018.approach",
+                "75749609-a07c-489e-abe5-eca1058275e9.track",
                 "GCaltrain:03T.TC"
               ]
             }
@@ -4187,7 +4238,6 @@
                 "GCaltrain:771.R"
               ],
               "B": [
-                "afb8959c-a535-4e6b-825a-e55ba6987d13.track",
                 "GCaltrain:773.C"
               ]
             }
@@ -4276,9 +4326,11 @@
             "relations": {
               "approach": [
                 "00a0aac7-9dc5-481c-9a54-4b8b1c1c7667.EoT",
+                "09e3accb-e790-4a54-88e4-1ec5c15f3d37.track",
                 "GCaltrain:01T.TC"
               ],
               "governed": [
+                "79241608-7cdb-423d-977a-e9c2613f0268.track",
                 "GCaltrain:773.R"
               ],
               "mast": "GCaltrain:774NE"
@@ -4299,10 +4351,12 @@
             "id": "5c92a95e-63ba-402a-9085-3443c8a4607d",
             "relations": {
               "approach": [
+                "5a44252e-ccfa-4000-a442-6ec443675692.track",
                 "930a119b-3f7e-4e76-98ef-6582a7af706e.EoT",
                 "GCaltrain:02T.TC"
               ],
               "governed": [
+                "d1aa7fa5-c477-440f-b53e-80bbba6f71bc.track",
                 "GCaltrain:775.N"
               ],
               "mast": "GCaltrain:774ND"
@@ -4323,10 +4377,12 @@
             "id": "73922a59-4f81-4d5c-9f30-e00035472018",
             "relations": {
               "approach": [
+                "75749609-a07c-489e-abe5-eca1058275e9.track",
                 "abf604d8-e63c-4d03-b737-ead2ff401e5b.EoT",
                 "GCaltrain:03T.TC"
               ],
               "governed": [
+                "5d262b41-8252-4cbf-9336-847764736da3.track",
                 "GCaltrain:775.R"
               ],
               "mast": "GCaltrain:774NC"
@@ -4353,30 +4409,6 @@
           {
             "derived": {
               "by": "inherited",
-              "circuit": "GCaltrain:01T",
-              "name": "GCaltrain:01T",
-              "regime": "GCOR_RULE_6_13"
-            }
-          },
-          {
-            "derived": {
-              "by": "inherited",
-              "circuit": "GCaltrain:02T",
-              "name": "GCaltrain:02T",
-              "regime": "GCOR_RULE_6_13"
-            }
-          },
-          {
-            "derived": {
-              "by": "inherited",
-              "circuit": "GCaltrain:03T",
-              "name": "GCaltrain:03T",
-              "regime": "GCOR_RULE_6_13"
-            }
-          },
-          {
-            "derived": {
-              "by": "inherited",
               "circuit": "GCaltrain:771T1",
               "name": "GCaltrain:771T1",
               "regime": "GCOR_RULE_10"
@@ -4384,9 +4416,25 @@
           },
           {
             "derived": {
-              "by": "inherited",
-              "circuit": "GCaltrain:775T1",
-              "name": "GCaltrain:775T1",
+              "by": "marker",
+              "circuit": "GCaltrain:01T",
+              "name": "GCaltrain:01T",
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "marker",
+              "circuit": "GCaltrain:02T",
+              "name": "GCaltrain:02T",
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "marker",
+              "circuit": "GCaltrain:03T",
+              "name": "GCaltrain:03T",
               "regime": "GCOR_RULE_6_13"
             }
           },
@@ -4395,7 +4443,15 @@
               "by": "marker",
               "circuit": "GCaltrain:773T1",
               "name": "GCaltrain:773T1",
-              "regime": "GCOR_RULE_6_13"
+              "regime": "GCOR_RULE_10"
+            }
+          },
+          {
+            "derived": {
+              "by": "marker",
+              "circuit": "GCaltrain:775T1",
+              "name": "GCaltrain:775T1",
+              "regime": "GCOR_RULE_10"
             }
           }
         ],
@@ -4403,17 +4459,105 @@
           {
             "derived": {
               "circuits": {
-                "track": "GCaltrain:773T1"
+                "track": "GCaltrain:01T"
               }
             },
             "given": {
               "Kind": "GCOR_RULE_6_13"
             },
-            "id": "afb8959c-a535-4e6b-825a-e55ba6987d13",
+            "id": "09e3accb-e790-4a54-88e4-1ec5c15f3d37",
             "relations": {
               "track": [
-                "cf49749f-23ad-4177-a884-0289ca315847.B",
-                "GCaltrain:773.C"
+                "00a0aac7-9dc5-481c-9a54-4b8b1c1c7667.EoT",
+                "37df07ea-ec58-47c2-b85d-9e8ebbf6d84a.approach",
+                "GCaltrain:01T.TC"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "GCaltrain:02T"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_6_13"
+            },
+            "id": "5a44252e-ccfa-4000-a442-6ec443675692",
+            "relations": {
+              "track": [
+                "5c92a95e-63ba-402a-9085-3443c8a4607d.approach",
+                "930a119b-3f7e-4e76-98ef-6582a7af706e.EoT",
+                "GCaltrain:02T.TC"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "GCaltrain:03T"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_6_13"
+            },
+            "id": "75749609-a07c-489e-abe5-eca1058275e9",
+            "relations": {
+              "track": [
+                "73922a59-4f81-4d5c-9f30-e00035472018.approach",
+                "abf604d8-e63c-4d03-b737-ead2ff401e5b.EoT",
+                "GCaltrain:03T.TC"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "GCaltrain:773T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "79241608-7cdb-423d-977a-e9c2613f0268",
+            "relations": {
+              "track": [
+                "37df07ea-ec58-47c2-b85d-9e8ebbf6d84a.governed",
+                "GCaltrain:773.R"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "GCaltrain:775T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "5d262b41-8252-4cbf-9336-847764736da3",
+            "relations": {
+              "track": [
+                "73922a59-4f81-4d5c-9f30-e00035472018.governed",
+                "GCaltrain:775.R"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "GCaltrain:775T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "d1aa7fa5-c477-440f-b53e-80bbba6f71bc",
+            "relations": {
+              "track": [
+                "5c92a95e-63ba-402a-9085-3443c8a4607d.governed",
+                "GCaltrain:775.N"
               ]
             }
           }
@@ -4855,6 +4999,20 @@
         },
         {
           "derived": {
+            "serves": "Gilroy:1MC"
+          },
+          "given": {
+            "Appliance": "lamp",
+            "Name": "1MC"
+          },
+          "relations": {
+            "bindings": {
+              "LAMP": "Gilroy/LIGHT.1MC.LAMP/ON"
+            }
+          }
+        },
+        {
+          "derived": {
             "serves": "Gilroy:1NAT"
           },
           "given": {
@@ -4878,6 +5036,20 @@
           "relations": {
             "bindings": {
               "OCC": "Gilroy/SENSOR.01T.OCC/S"
+            }
+          }
+        },
+        {
+          "derived": {
+            "serves": "Gilroy:2MC"
+          },
+          "given": {
+            "Appliance": "lamp",
+            "Name": "2MC"
+          },
+          "relations": {
+            "bindings": {
+              "LAMP": "Gilroy/LIGHT.2MC.LAMP/ON"
             }
           }
         },
@@ -5170,34 +5342,6 @@
           "given": {
             "Appliance": "train_order_mast",
             "Name": "Gilroy"
-          }
-        },
-        {
-          "derived": {
-            "serves": "Gilroy:MC1"
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Name": "MC1"
-          },
-          "relations": {
-            "bindings": {
-              "LAMP": "Gilroy/LIGHT.MC1.LAMP/ON"
-            }
-          }
-        },
-        {
-          "derived": {
-            "serves": "Gilroy:MC2"
-          },
-          "given": {
-            "Appliance": "lamp",
-            "Name": "MC2"
-          },
-          "relations": {
-            "bindings": {
-              "LAMP": "Gilroy/LIGHT.MC2.LAMP/ON"
-            }
           }
         }
       ],
@@ -6159,12 +6303,12 @@
         },
         {
           "derived": {
-            "serves": "Luchessa:1MCK"
+            "serves": "Luchessa:1MC"
           },
           "given": {
             "Address": "1",
             "Appliance": "lamp",
-            "Name": "1MCK"
+            "Name": "1MC"
           },
           "relations": {
             "bindings": {
@@ -8386,6 +8530,7 @@
           },
           "relations": {
             "TC": [
+              "8d074623-7f61-494c-baf9-eab233b23372.track",
               "9dab8882-d710-4792-a368-e1172a63c349.A",
               "95cf20c8-c0c4-4eb0-9e11-b416e37726f9.B"
             ]
@@ -8483,7 +8628,8 @@
           "relations": {
             "TC": [
               "3493c95f-075b-48ce-9dfc-fbd16de5eb7a.B",
-              "b4e79e42-3e0b-4ec3-a43f-1bf238392547.A"
+              "b4e79e42-3e0b-4ec3-a43f-1bf238392547.A",
+              "edbce5a0-0080-440c-8729-2e4760b683ad.track"
             ]
           }
         },
@@ -8547,9 +8693,9 @@
           "relations": {
             "TC": [
               "4ff0a280-f62c-4928-afcb-b3114c00e7b5.A",
-              "68b1bfdd-be9c-418d-b285-f92e096773ef.track",
               "3478e3b9-eb36-424c-bb66-b3db1669812d.approach",
-              "11824084-b6b5-4457-b631-d07fb6074fa9.track"
+              "11824084-b6b5-4457-b631-d07fb6074fa9.track",
+              "b2ffcd0a-4c93-4651-b137-da7ac96b4c7d.track"
             ]
           }
         },
@@ -8570,6 +8716,7 @@
               "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.B"
             ],
             "N": [
+              "2be400f1-2979-496f-9aac-28df7a1237c8.track",
               "a68352d0-96a1-4423-9b0b-87c21e4b044c.governed"
             ],
             "R": [
@@ -8589,6 +8736,7 @@
           "relations": {
             "TC": [
               "32d0914a-6cc5-4bb4-b1e5-efaa17503738.B",
+              "83563ac3-2761-4afd-9540-f4ebbbb66378.track",
               "e7c0fc59-c176-4268-ba19-dd327eb73662.A"
             ]
           }
@@ -8652,10 +8800,10 @@
           },
           "relations": {
             "TC": [
-              "1d2e57a4-2962-4c91-97d5-0b1932abf784.track",
+              "5e7945d6-5aa8-43a3-ae4c-10805f5b6584.track",
               "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
               "293515f7-9155-4100-a639-23f6d051ab4e.approach",
-              "67636818-c46b-4590-ae77-42eaa941c41a.track"
+              "86316793-1b1c-41e2-850f-add834629692.track"
             ]
           }
         },
@@ -8671,7 +8819,8 @@
           "relations": {
             "TC": [
               "95f9e1f9-ea74-450c-a6fd-d38f4a25b6e5.A",
-              "793f0198-f601-462f-aad2-4b09f2152b59.B"
+              "793f0198-f601-462f-aad2-4b09f2152b59.B",
+              "729717e1-7ccc-4ae4-8bf8-28bc352988fc.track"
             ]
           }
         },
@@ -8743,6 +8892,7 @@
               "b7884720-ce7a-4598-9662-09e70242a75a.A"
             ],
             "R": [
+              "a24daed7-889a-4852-9b09-8db732ad9007.track",
               "d5c58279-b96e-4f47-82d4-7b4ba58012ad.governed"
             ]
           }
@@ -8759,6 +8909,7 @@
           "relations": {
             "TC": [
               "4c41471a-a4b9-4668-afcc-c166ba44818f.A",
+              "a456f373-7b2b-4f73-8b47-48c83b8efe4b.track",
               "d5a18f20-f129-4945-b9e2-9f3d864f9b36.B"
             ]
           }
@@ -8823,6 +8974,7 @@
           "relations": {
             "TC": [
               "96f07de7-860e-496e-bb6a-40c7171ba222.A",
+              "b93f47a4-a472-497d-993b-6a005de55415.track",
               "c06095b3-8f8a-4812-8dd9-41b08a1d0f3c.B"
             ]
           }
@@ -8895,7 +9047,8 @@
               "cc7d8257-24fb-4b80-8be5-430952765082.A"
             ],
             "R": [
-              "515cb1a5-ad1f-4cdb-9040-7dc42819b984.governed"
+              "515cb1a5-ad1f-4cdb-9040-7dc42819b984.governed",
+              "aa9dca99-6269-40f3-9059-b79a75f8c4d8.track"
             ]
           }
         },
@@ -8910,6 +9063,7 @@
           },
           "relations": {
             "TC": [
+              "4a78f08d-15f4-4206-8714-1c28f098d416.track",
               "055b30ce-2e51-401c-95f9-2f5128602125.B",
               "c25da741-efe1-482c-aa07-70a7c30dea96.A"
             ]
@@ -8983,7 +9137,8 @@
               "745b5ac7-b6b4-4f7f-9b19-edc6003d829b.A"
             ],
             "R": [
-              "45d85c6d-f7a5-4d7d-b7a5-5e9907b4f0af.governed"
+              "45d85c6d-f7a5-4d7d-b7a5-5e9907b4f0af.governed",
+              "bb819693-fcdd-4018-b4d0-46691427b26a.track"
             ]
           }
         },
@@ -9007,6 +9162,7 @@
               "7230c21c-200c-47e3-8462-61dd6db29a60.A"
             ],
             "R": [
+              "28a0eaa1-4462-4301-9000-3e89d64382dc.track",
               "29dc489d-a8e9-4359-adb5-95899e4e99aa.governed"
             ]
           }
@@ -9028,9 +9184,11 @@
               "7230c21c-200c-47e3-8462-61dd6db29a60.B"
             ],
             "N": [
+              "1a0e8387-3dc6-4df9-8e5c-58be496f90f1.track",
               "be95c00a-9e6d-4b80-9014-98920c40141e.governed"
             ],
             "R": [
+              "ca839bdd-6efa-4dac-a9ff-1bd9b7bc13d0.track",
               "f2263aa1-aa98-4fd6-8f13-a39ebfe78ac1.governed"
             ]
           }
@@ -9055,6 +9213,7 @@
               "e61c90d1-e074-4ea7-a662-bb59f5b2877c.B"
             ],
             "R": [
+              "6ebfae11-c5dd-4092-adc5-52fbcc4d8c94.track",
               "c25da741-efe1-482c-aa07-70a7c30dea96.B"
             ]
           }
@@ -9079,6 +9238,7 @@
               "7ad1261f-95aa-4c26-80e3-a656991b037e.B"
             ],
             "R": [
+              "05cdc2c6-acd8-4cc9-9f7f-2c947cc07fee.track",
               "96f07de7-860e-496e-bb6a-40c7171ba222.B"
             ]
           }
@@ -9103,7 +9263,8 @@
               "96078e5d-263c-40c1-8485-db7e9daaa444.B"
             ],
             "R": [
-              "4c41471a-a4b9-4668-afcc-c166ba44818f.B"
+              "4c41471a-a4b9-4668-afcc-c166ba44818f.B",
+              "e5c7a81c-397d-44d8-bf2c-42f56fd8f8b1.track"
             ]
           }
         },
@@ -9127,7 +9288,8 @@
               "4ed0d121-850e-463b-ac95-42abecf48b10.B"
             ],
             "R": [
-              "95f9e1f9-ea74-450c-a6fd-d38f4a25b6e5.B"
+              "95f9e1f9-ea74-450c-a6fd-d38f4a25b6e5.B",
+              "9070faa8-f3e7-4387-8ed0-52e7b55a4a2d.track"
             ]
           }
         },
@@ -9151,6 +9313,7 @@
               "cc756de4-608c-4963-b1ae-0ac549200d12.B"
             ],
             "R": [
+              "8b0c4939-f748-48d7-b807-2e04a993d179.track",
               "e7c0fc59-c176-4268-ba19-dd327eb73662.B"
             ]
           }
@@ -9172,10 +9335,12 @@
               "77fdeaf8-4b06-442a-9da5-96da05361350.A"
             ],
             "N": [
-              "b4e79e42-3e0b-4ec3-a43f-1bf238392547.B"
+              "b4e79e42-3e0b-4ec3-a43f-1bf238392547.B",
+              "eabe0739-ecc4-4361-a819-ae5568488e2c.track"
             ],
             "R": [
-              "9dab8882-d710-4792-a368-e1172a63c349.B"
+              "9dab8882-d710-4792-a368-e1172a63c349.B",
+              "365072a9-3d9d-4383-ab26-cde4cf0ec062.track"
             ]
           }
         },
@@ -9239,8 +9404,7 @@
               "fa08f12d-ce74-4c72-a82e-c48292c8ba79.governed"
             ],
             "N": [
-              "293515f7-9155-4100-a639-23f6d051ab4e.governed",
-              "f09a5424-4540-468b-a372-0a6b05246674.track"
+              "293515f7-9155-4100-a639-23f6d051ab4e.governed"
             ],
             "R": [
               "3478e3b9-eb36-424c-bb66-b3db1669812d.governed",
@@ -10705,6 +10869,34 @@
             "Appliance": "mast",
             "Name": "840SA"
           }
+        },
+        {
+          "derived": {
+            "serves": "Watsonville:Arrival"
+          },
+          "given": {
+            "Appliance": "selector",
+            "Name": "Arrival"
+          },
+          "relations": {
+            "bindings": {
+              "VAL": "SouthCTC/0x50/ENC"
+            }
+          }
+        },
+        {
+          "derived": {
+            "serves": "Watsonville:Departure"
+          },
+          "given": {
+            "Appliance": "selector",
+            "Name": "Departure"
+          },
+          "relations": {
+            "bindings": {
+              "VAL": "SouthCTC/0x51/ENC"
+            }
+          }
         }
       ],
       "geometry": {
@@ -10781,7 +10973,7 @@
           },
           "02T": {
             "at": {
-              "x": 53.34,
+              "x": 60.96,
               "y": 41.91
             },
             "glyph": "Railroad-Trackplan:Track Circuit_Yellow"
@@ -11169,25 +11361,16 @@
               "x": 21.59,
               "y": 11.43
             },
-            "glyph": "Railroad-Trackplan:GCOR Rule 10 BEGIN_CTC",
-            "mirror": "y",
-            "row": "f09a5424-4540-468b-a372-0a6b05246674"
-          },
-          {
-            "at": {
-              "x": 21.59,
-              "y": 11.43
-            },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "row": "293515f7-9155-4100-a639-23f6d051ab4e"
           },
           {
             "at": {
-              "x": 24.13,
+              "x": 26.67,
               "y": 11.43
             },
-            "glyph": "Railroad-Trackplan:GCOR Rule 9.14 DoT_Left",
-            "row": "1d2e57a4-2962-4c91-97d5-0b1932abf784"
+            "glyph": "Railroad-Trackplan:Ladder",
+            "row": "86316793-1b1c-41e2-850f-add834629692"
           },
           {
             "at": {
@@ -11208,28 +11391,20 @@
           },
           {
             "at": {
-              "x": 30.48,
+              "x": 33.02,
               "y": 24.13
             },
-            "glyph": "Railroad-Trackplan:GCOR Rule 6.13 Yard Limits",
-            "row": "68b1bfdd-be9c-418d-b285-f92e096773ef"
-          },
-          {
-            "at": {
-              "x": 30.48,
-              "y": 24.13
-            },
-            "glyph": "Railroad-Trackplan:GCOR Rule 9.14 DoT_Right",
-            "mirror": "x",
-            "row": "11824084-b6b5-4457-b631-d07fb6074fa9"
+            "glyph": "Railroad-Trackplan:Ladder",
+            "row": "b2ffcd0a-4c93-4651-b137-da7ac96b4c7d"
           },
           {
             "at": {
               "x": 41.91,
               "y": 11.43
             },
-            "glyph": "Railroad-Trackplan:GCOR Rule 6.13 Yard Limits",
-            "row": "67636818-c46b-4590-ae77-42eaa941c41a"
+            "glyph": "Railroad-Trackplan:GCOR Rule 9.14 DoT_Left",
+            "mirror": "x",
+            "row": "5e7945d6-5aa8-43a3-ae4c-10805f5b6584"
           },
           {
             "at": {
@@ -11241,11 +11416,29 @@
           },
           {
             "at": {
+              "x": 41.91,
+              "y": 24.13
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 9.14 DoT_Right",
+            "mirror": "x",
+            "row": "11824084-b6b5-4457-b631-d07fb6074fa9"
+          },
+          {
+            "at": {
               "x": 62.23,
               "y": 21.59
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
             "row": "5f276ffe-c689-4585-a8c3-0ff4d86823bc"
+          },
+          {
+            "at": {
+              "x": 66.04,
+              "y": 11.43
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 BEGIN_CTC",
+            "mirror": "y",
+            "row": "2be400f1-2979-496f-9aac-28df7a1237c8"
           },
           {
             "at": {
@@ -11268,6 +11461,15 @@
               "x": 76.2,
               "y": 24.13
             },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 BEGIN_CTC",
+            "mirror": "y",
+            "row": "a24daed7-889a-4852-9b09-8db732ad9007"
+          },
+          {
+            "at": {
+              "x": 76.2,
+              "y": 24.13
+            },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "row": "d5c58279-b96e-4f47-82d4-7b4ba58012ad"
           },
@@ -11278,6 +11480,15 @@
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
             "row": "cc7d8257-24fb-4b80-8be5-430952765082"
+          },
+          {
+            "at": {
+              "x": 83.82,
+              "y": 31.75
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 BEGIN_CTC",
+            "mirror": "y",
+            "row": "aa9dca99-6269-40f3-9059-b79a75f8c4d8"
           },
           {
             "at": {
@@ -11300,16 +11511,17 @@
               "x": 91.44,
               "y": 39.37
             },
-            "glyph": "Railroad-Trackplan:IRJ-Signal",
-            "row": "45d85c6d-f7a5-4d7d-b7a5-5e9907b4f0af"
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 BEGIN_CTC",
+            "mirror": "y",
+            "row": "bb819693-fcdd-4018-b4d0-46691427b26a"
           },
           {
             "at": {
               "x": 91.44,
-              "y": 74.93
+              "y": 39.37
             },
-            "glyph": "Railroad-Trackplan:IRJ",
-            "row": "4ff0a280-f62c-4928-afcb-b3114c00e7b5"
+            "glyph": "Railroad-Trackplan:IRJ-Signal",
+            "row": "45d85c6d-f7a5-4d7d-b7a5-5e9907b4f0af"
           },
           {
             "at": {
@@ -11318,6 +11530,23 @@
             },
             "glyph": "Railroad-Trackplan:IRJ_Diag",
             "row": "7230c21c-200c-47e3-8462-61dd6db29a60"
+          },
+          {
+            "at": {
+              "x": 97.79,
+              "y": 74.93
+            },
+            "glyph": "Railroad-Trackplan:IRJ",
+            "row": "4ff0a280-f62c-4928-afcb-b3114c00e7b5"
+          },
+          {
+            "at": {
+              "x": 99.06,
+              "y": 46.99
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 BEGIN_CTC",
+            "mirror": "y",
+            "row": "28a0eaa1-4462-4301-9000-3e89d64382dc"
           },
           {
             "at": {
@@ -11332,8 +11561,26 @@
               "x": 106.68,
               "y": 54.61
             },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 BEGIN_CTC",
+            "mirror": "y",
+            "row": "ca839bdd-6efa-4dac-a9ff-1bd9b7bc13d0"
+          },
+          {
+            "at": {
+              "x": 106.68,
+              "y": 54.61
+            },
             "glyph": "Railroad-Trackplan:IRJ-Signal",
             "row": "f2263aa1-aa98-4fd6-8f13-a39ebfe78ac1"
+          },
+          {
+            "at": {
+              "x": 113.03,
+              "y": 62.23
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 BEGIN_CTC",
+            "mirror": "y",
+            "row": "1a0e8387-3dc6-4df9-8e5c-58be496f90f1"
           },
           {
             "at": {
@@ -11516,8 +11763,24 @@
               "x": 154.94,
               "y": 11.43
             },
+            "glyph": "Railroad-Trackplan:GCOR Rule 6.13 Yard Limits",
+            "row": "8d074623-7f61-494c-baf9-eab233b23372"
+          },
+          {
+            "at": {
+              "x": 154.94,
+              "y": 11.43
+            },
             "glyph": "Railroad-Trackplan:IRJ",
             "row": "9dab8882-d710-4792-a368-e1172a63c349"
+          },
+          {
+            "at": {
+              "x": 154.94,
+              "y": 24.13
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 6.13 Yard Limits",
+            "row": "edbce5a0-0080-440c-8729-2e4760b683ad"
           },
           {
             "at": {
@@ -11532,8 +11795,24 @@
               "x": 154.94,
               "y": 31.75
             },
+            "glyph": "Railroad-Trackplan:GCOR Rule 6.13 Yard Limits",
+            "row": "83563ac3-2761-4afd-9540-f4ebbbb66378"
+          },
+          {
+            "at": {
+              "x": 154.94,
+              "y": 31.75
+            },
             "glyph": "Railroad-Trackplan:IRJ",
             "row": "e7c0fc59-c176-4268-ba19-dd327eb73662"
+          },
+          {
+            "at": {
+              "x": 154.94,
+              "y": 39.37
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 6.13 Yard Limits",
+            "row": "729717e1-7ccc-4ae4-8bf8-28bc352988fc"
           },
           {
             "at": {
@@ -11548,8 +11827,24 @@
               "x": 154.94,
               "y": 46.99
             },
+            "glyph": "Railroad-Trackplan:GCOR Rule 6.13 Yard Limits",
+            "row": "a456f373-7b2b-4f73-8b47-48c83b8efe4b"
+          },
+          {
+            "at": {
+              "x": 154.94,
+              "y": 46.99
+            },
             "glyph": "Railroad-Trackplan:IRJ",
             "row": "4c41471a-a4b9-4668-afcc-c166ba44818f"
+          },
+          {
+            "at": {
+              "x": 154.94,
+              "y": 54.61
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 6.13 Yard Limits",
+            "row": "b93f47a4-a472-497d-993b-6a005de55415"
           },
           {
             "at": {
@@ -11564,8 +11859,72 @@
               "x": 154.94,
               "y": 62.23
             },
+            "glyph": "Railroad-Trackplan:GCOR Rule 6.13 Yard Limits",
+            "row": "4a78f08d-15f4-4206-8714-1c28f098d416"
+          },
+          {
+            "at": {
+              "x": 154.94,
+              "y": 62.23
+            },
             "glyph": "Railroad-Trackplan:IRJ",
             "row": "c25da741-efe1-482c-aa07-70a7c30dea96"
+          },
+          {
+            "at": {
+              "x": 157.48,
+              "y": 11.43
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 END_CTC",
+            "row": "365072a9-3d9d-4383-ab26-cde4cf0ec062"
+          },
+          {
+            "at": {
+              "x": 157.48,
+              "y": 24.13
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 END_CTC",
+            "row": "eabe0739-ecc4-4361-a819-ae5568488e2c"
+          },
+          {
+            "at": {
+              "x": 157.48,
+              "y": 31.75
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 END_CTC",
+            "row": "8b0c4939-f748-48d7-b807-2e04a993d179"
+          },
+          {
+            "at": {
+              "x": 157.48,
+              "y": 39.37
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 END_CTC",
+            "row": "9070faa8-f3e7-4387-8ed0-52e7b55a4a2d"
+          },
+          {
+            "at": {
+              "x": 157.48,
+              "y": 46.99
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 END_CTC",
+            "row": "e5c7a81c-397d-44d8-bf2c-42f56fd8f8b1"
+          },
+          {
+            "at": {
+              "x": 157.48,
+              "y": 54.61
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 END_CTC",
+            "row": "05cdc2c6-acd8-4cc9-9f7f-2c947cc07fee"
+          },
+          {
+            "at": {
+              "x": 157.48,
+              "y": 62.23
+            },
+            "glyph": "Railroad-Trackplan:GCOR Rule 10 END_CTC",
+            "row": "6ebfae11-c5dd-4092-adc5-52fbcc4d8c94"
           },
           {
             "at": {
@@ -11680,7 +12039,7 @@
             "derived": {
               "circuit": "Watsonville:01T"
             },
-            "points": "93.98,74.93 226.06,74.93",
+            "points": "100.33,74.93 226.06,74.93",
             "relations": {
               "from": "4ff0a280-f62c-4928-afcb-b3114c00e7b5.B",
               "to": "623dbaf7-6a99-4c76-9cd4-ed14f750b23d.approach"
@@ -11740,9 +12099,19 @@
             "derived": {
               "circuit": "Watsonville:02T"
             },
-            "points": "30.48,24.13 35.56,24.13 53.34,41.91 86.36,74.93 91.44,74.93",
+            "points": "30.48,24.13 33.02,24.13",
             "relations": {
               "from": "3478e3b9-eb36-424c-bb66-b3db1669812d.approach",
+              "to": "b2ffcd0a-4c93-4651-b137-da7ac96b4c7d.track"
+            }
+          },
+          {
+            "derived": {
+              "circuit": "Watsonville:02T"
+            },
+            "points": "41.91,24.13 43.18,24.13 60.96,41.91 93.98,74.93 97.79,74.93",
+            "relations": {
+              "from": "11824084-b6b5-4457-b631-d07fb6074fa9.track",
               "to": "4ff0a280-f62c-4928-afcb-b3114c00e7b5.A"
             }
           },
@@ -12171,10 +12540,12 @@
             "id": "9dab8882-d710-4792-a368-e1172a63c349",
             "relations": {
               "A": [
+                "8d074623-7f61-494c-baf9-eab233b23372.track",
                 "95cf20c8-c0c4-4eb0-9e11-b416e37726f9.B",
                 "Watsonville:1BT.TC"
               ],
               "B": [
+                "365072a9-3d9d-4383-ab26-cde4cf0ec062.track",
                 "Watsonville:25.R"
               ]
             }
@@ -12196,6 +12567,7 @@
                 "Watsonville:1CT.TC"
               ],
               "B": [
+                "8d074623-7f61-494c-baf9-eab233b23372.track",
                 "9dab8882-d710-4792-a368-e1172a63c349.A",
                 "Watsonville:1BT.TC"
               ]
@@ -12280,9 +12652,11 @@
             "relations": {
               "A": [
                 "3493c95f-075b-48ce-9dfc-fbd16de5eb7a.B",
+                "edbce5a0-0080-440c-8729-2e4760b683ad.track",
                 "Watsonville:2BT.TC"
               ],
               "B": [
+                "eabe0739-ecc4-4361-a819-ae5568488e2c.track",
                 "Watsonville:25.N"
               ]
             }
@@ -12305,6 +12679,7 @@
               ],
               "B": [
                 "b4e79e42-3e0b-4ec3-a43f-1bf238392547.A",
+                "edbce5a0-0080-440c-8729-2e4760b683ad.track",
                 "Watsonville:2BT.TC"
               ]
             }
@@ -12366,9 +12741,9 @@
             "id": "4ff0a280-f62c-4928-afcb-b3114c00e7b5",
             "relations": {
               "A": [
-                "68b1bfdd-be9c-418d-b285-f92e096773ef.track",
                 "3478e3b9-eb36-424c-bb66-b3db1669812d.approach",
                 "11824084-b6b5-4457-b631-d07fb6074fa9.track",
+                "b2ffcd0a-4c93-4651-b137-da7ac96b4c7d.track",
                 "Watsonville:02T.TC"
               ],
               "B": [
@@ -12391,9 +12766,11 @@
             "relations": {
               "A": [
                 "32d0914a-6cc5-4bb4-b1e5-efaa17503738.B",
+                "83563ac3-2761-4afd-9540-f4ebbbb66378.track",
                 "Watsonville:3BT.TC"
               ],
               "B": [
+                "8b0c4939-f748-48d7-b807-2e04a993d179.track",
                 "Watsonville:23.R"
               ]
             }
@@ -12415,6 +12792,7 @@
                 "Watsonville:3CT.TC"
               ],
               "B": [
+                "83563ac3-2761-4afd-9540-f4ebbbb66378.track",
                 "e7c0fc59-c176-4268-ba19-dd327eb73662.A",
                 "Watsonville:3BT.TC"
               ]
@@ -12497,9 +12875,9 @@
             "id": "78d813b1-144a-4e54-8d3d-0a64f49eb2d6",
             "relations": {
               "A": [
-                "1d2e57a4-2962-4c91-97d5-0b1932abf784.track",
+                "5e7945d6-5aa8-43a3-ae4c-10805f5b6584.track",
                 "293515f7-9155-4100-a639-23f6d051ab4e.approach",
-                "67636818-c46b-4590-ae77-42eaa941c41a.track",
+                "86316793-1b1c-41e2-850f-add834629692.track",
                 "Watsonville:03T.TC"
               ],
               "B": [
@@ -12521,9 +12899,11 @@
             "relations": {
               "A": [
                 "793f0198-f601-462f-aad2-4b09f2152b59.B",
+                "729717e1-7ccc-4ae4-8bf8-28bc352988fc.track",
                 "Watsonville:4BT.TC"
               ],
               "B": [
+                "9070faa8-f3e7-4387-8ed0-52e7b55a4a2d.track",
                 "Watsonville:21.R"
               ]
             }
@@ -12546,6 +12926,7 @@
               ],
               "B": [
                 "95f9e1f9-ea74-450c-a6fd-d38f4a25b6e5.A",
+                "729717e1-7ccc-4ae4-8bf8-28bc352988fc.track",
                 "Watsonville:4BT.TC"
               ]
             }
@@ -12607,10 +12988,12 @@
             "id": "4c41471a-a4b9-4668-afcc-c166ba44818f",
             "relations": {
               "A": [
+                "a456f373-7b2b-4f73-8b47-48c83b8efe4b.track",
                 "d5a18f20-f129-4945-b9e2-9f3d864f9b36.B",
                 "Watsonville:5BT.TC"
               ],
               "B": [
+                "e5c7a81c-397d-44d8-bf2c-42f56fd8f8b1.track",
                 "Watsonville:19.R"
               ]
             }
@@ -12633,6 +13016,7 @@
               ],
               "B": [
                 "4c41471a-a4b9-4668-afcc-c166ba44818f.A",
+                "a456f373-7b2b-4f73-8b47-48c83b8efe4b.track",
                 "Watsonville:5BT.TC"
               ]
             }
@@ -12714,10 +13098,12 @@
             "id": "96f07de7-860e-496e-bb6a-40c7171ba222",
             "relations": {
               "A": [
+                "b93f47a4-a472-497d-993b-6a005de55415.track",
                 "c06095b3-8f8a-4812-8dd9-41b08a1d0f3c.B",
                 "Watsonville:6BT.TC"
               ],
               "B": [
+                "05cdc2c6-acd8-4cc9-9f7f-2c947cc07fee.track",
                 "Watsonville:17.R"
               ]
             }
@@ -12740,6 +13126,7 @@
               ],
               "B": [
                 "96f07de7-860e-496e-bb6a-40c7171ba222.A",
+                "b93f47a4-a472-497d-993b-6a005de55415.track",
                 "Watsonville:6BT.TC"
               ]
             }
@@ -12801,10 +13188,12 @@
             "id": "c25da741-efe1-482c-aa07-70a7c30dea96",
             "relations": {
               "A": [
+                "4a78f08d-15f4-4206-8714-1c28f098d416.track",
                 "055b30ce-2e51-401c-95f9-2f5128602125.B",
                 "Watsonville:7BT.TC"
               ],
               "B": [
+                "6ebfae11-c5dd-4092-adc5-52fbcc4d8c94.track",
                 "Watsonville:15.R"
               ]
             }
@@ -12826,6 +13215,7 @@
                 "Watsonville:7CT.TC"
               ],
               "B": [
+                "4a78f08d-15f4-4206-8714-1c28f098d416.track",
                 "c25da741-efe1-482c-aa07-70a7c30dea96.A",
                 "Watsonville:7BT.TC"
               ]
@@ -13079,6 +13469,7 @@
                 "Watsonville:1ET.TC"
               ],
               "governed": [
+                "2be400f1-2979-496f-9aac-28df7a1237c8.track",
                 "Watsonville:3.N"
               ],
               "mast": "Watsonville:840NA"
@@ -13127,6 +13518,7 @@
                 "Watsonville:2ET.TC"
               ],
               "governed": [
+                "a24daed7-889a-4852-9b09-8db732ad9007.track",
                 "Watsonville:5.R"
               ],
               "mast": "Watsonville:840NB"
@@ -13148,8 +13540,8 @@
             "relations": {
               "approach": [
                 "4ff0a280-f62c-4928-afcb-b3114c00e7b5.A",
-                "68b1bfdd-be9c-418d-b285-f92e096773ef.track",
                 "11824084-b6b5-4457-b631-d07fb6074fa9.track",
+                "b2ffcd0a-4c93-4651-b137-da7ac96b4c7d.track",
                 "Watsonville:02T.TC"
               ],
               "governed": [
@@ -13178,6 +13570,7 @@
                 "Watsonville:3ET.TC"
               ],
               "governed": [
+                "aa9dca99-6269-40f3-9059-b79a75f8c4d8.track",
                 "Watsonville:7.R"
               ],
               "mast": "Watsonville:840NC"
@@ -13198,13 +13591,12 @@
             "id": "293515f7-9155-4100-a639-23f6d051ab4e",
             "relations": {
               "approach": [
-                "1d2e57a4-2962-4c91-97d5-0b1932abf784.track",
+                "5e7945d6-5aa8-43a3-ae4c-10805f5b6584.track",
                 "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
-                "67636818-c46b-4590-ae77-42eaa941c41a.track",
+                "86316793-1b1c-41e2-850f-add834629692.track",
                 "Watsonville:03T.TC"
               ],
               "governed": [
-                "f09a5424-4540-468b-a372-0a6b05246674.track",
                 "Watsonville:837.N"
               ],
               "mast": "Watsonville:838NAB"
@@ -13229,6 +13621,7 @@
                 "Watsonville:4ET.TC"
               ],
               "governed": [
+                "bb819693-fcdd-4018-b4d0-46691427b26a.track",
                 "Watsonville:9.R"
               ],
               "mast": "Watsonville:840ND"
@@ -13253,6 +13646,7 @@
                 "Watsonville:5ET.TC"
               ],
               "governed": [
+                "28a0eaa1-4462-4301-9000-3e89d64382dc.track",
                 "Watsonville:11.R"
               ],
               "mast": "Watsonville:840NE"
@@ -13277,6 +13671,7 @@
                 "Watsonville:6ET.TC"
               ],
               "governed": [
+                "ca839bdd-6efa-4dac-a9ff-1bd9b7bc13d0.track",
                 "Watsonville:13.R"
               ],
               "mast": "Watsonville:840NF"
@@ -13301,6 +13696,7 @@
                 "Watsonville:7ET.TC"
               ],
               "governed": [
+                "1a0e8387-3dc6-4df9-8e5c-58be496f90f1.track",
                 "Watsonville:13.N"
               ],
               "mast": "Watsonville:840NG"
@@ -13314,14 +13710,6 @@
               "circuit": "Sargent:1NAT",
               "name": "Sargent:1NAT",
               "regime": "GCOR_RULE_10"
-            }
-          },
-          {
-            "derived": {
-              "by": "inherited",
-              "circuit": "Watsonville:1BT",
-              "name": "Watsonville:1BT",
-              "regime": "GCOR_RULE_6_13"
             }
           },
           {
@@ -13353,7 +13741,7 @@
               "by": "inherited",
               "circuit": "Watsonville:01T",
               "name": "Watsonville:01T",
-              "regime": "GCOR_RULE_6_13"
+              "regime": "GCOR_RULE_10"
             }
           },
           {
@@ -13361,15 +13749,7 @@
               "by": "inherited",
               "circuit": "Watsonville:2AT",
               "name": "Watsonville:2AT",
-              "regime": "GCOR_RULE_6_13"
-            }
-          },
-          {
-            "derived": {
-              "by": "inherited",
-              "circuit": "Watsonville:2BT",
-              "name": "Watsonville:2BT",
-              "regime": "GCOR_RULE_6_13"
+              "regime": "GCOR_RULE_10"
             }
           },
           {
@@ -13399,9 +13779,9 @@
           {
             "derived": {
               "by": "inherited",
-              "circuit": "Watsonville:3BT",
-              "name": "Watsonville:3BT",
-              "regime": "GCOR_RULE_6_13"
+              "circuit": "Watsonville:02T",
+              "name": "Watsonville:02T",
+              "regime": "GCOR_RULE_10"
             }
           },
           {
@@ -13431,17 +13811,9 @@
           {
             "derived": {
               "by": "inherited",
-              "circuit": "Watsonville:3T1",
-              "name": "Watsonville:3T1",
-              "regime": "GCOR_RULE_6_13"
-            }
-          },
-          {
-            "derived": {
-              "by": "inherited",
-              "circuit": "Watsonville:4BT",
-              "name": "Watsonville:4BT",
-              "regime": "GCOR_RULE_6_13"
+              "circuit": "Watsonville:03T",
+              "name": "Watsonville:03T",
+              "regime": "GCOR_RULE_10"
             }
           },
           {
@@ -13465,14 +13837,6 @@
               "by": "inherited",
               "circuit": "Watsonville:4ET",
               "name": "Watsonville:4ET",
-              "regime": "GCOR_RULE_6_13"
-            }
-          },
-          {
-            "derived": {
-              "by": "inherited",
-              "circuit": "Watsonville:5BT",
-              "name": "Watsonville:5BT",
               "regime": "GCOR_RULE_6_13"
             }
           },
@@ -13503,22 +13867,6 @@
           {
             "derived": {
               "by": "inherited",
-              "circuit": "Watsonville:5T1",
-              "name": "Watsonville:5T1",
-              "regime": "GCOR_RULE_6_13"
-            }
-          },
-          {
-            "derived": {
-              "by": "inherited",
-              "circuit": "Watsonville:6BT",
-              "name": "Watsonville:6BT",
-              "regime": "GCOR_RULE_6_13"
-            }
-          },
-          {
-            "derived": {
-              "by": "inherited",
               "circuit": "Watsonville:6CT",
               "name": "Watsonville:6CT",
               "regime": "GCOR_RULE_6_13"
@@ -13537,14 +13885,6 @@
               "by": "inherited",
               "circuit": "Watsonville:6ET",
               "name": "Watsonville:6ET",
-              "regime": "GCOR_RULE_6_13"
-            }
-          },
-          {
-            "derived": {
-              "by": "inherited",
-              "circuit": "Watsonville:7BT",
-              "name": "Watsonville:7BT",
               "regime": "GCOR_RULE_6_13"
             }
           },
@@ -13574,98 +13914,154 @@
           },
           {
             "derived": {
-              "by": "inherited",
+              "by": "marker",
+              "circuit": "Watsonville:1BT",
+              "name": "Watsonville:1BT",
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "marker",
+              "circuit": "Watsonville:2BT",
+              "name": "Watsonville:2BT",
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "marker",
+              "circuit": "Watsonville:3BT",
+              "name": "Watsonville:3BT",
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "marker",
+              "circuit": "Watsonville:3T1",
+              "name": "Watsonville:3T1",
+              "regime": "GCOR_RULE_10"
+            }
+          },
+          {
+            "derived": {
+              "by": "marker",
+              "circuit": "Watsonville:4BT",
+              "name": "Watsonville:4BT",
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "marker",
+              "circuit": "Watsonville:5BT",
+              "name": "Watsonville:5BT",
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "marker",
+              "circuit": "Watsonville:5T1",
+              "name": "Watsonville:5T1",
+              "regime": "GCOR_RULE_10"
+            }
+          },
+          {
+            "derived": {
+              "by": "marker",
+              "circuit": "Watsonville:6BT",
+              "name": "Watsonville:6BT",
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "marker",
+              "circuit": "Watsonville:7BT",
+              "name": "Watsonville:7BT",
+              "regime": "GCOR_RULE_6_13"
+            }
+          },
+          {
+            "derived": {
+              "by": "marker",
               "circuit": "Watsonville:7T1",
               "name": "Watsonville:7T1",
-              "regime": "GCOR_RULE_6_13"
+              "regime": "GCOR_RULE_10"
             }
           },
           {
             "derived": {
-              "by": "inherited",
+              "by": "marker",
               "circuit": "Watsonville:9T1",
               "name": "Watsonville:9T1",
-              "regime": "GCOR_RULE_6_13"
+              "regime": "GCOR_RULE_10"
             }
           },
           {
             "derived": {
-              "by": "inherited",
+              "by": "marker",
               "circuit": "Watsonville:11T1",
               "name": "Watsonville:11T1",
-              "regime": "GCOR_RULE_6_13"
+              "regime": "GCOR_RULE_10"
             }
           },
           {
             "derived": {
-              "by": "inherited",
+              "by": "marker",
               "circuit": "Watsonville:13T1",
               "name": "Watsonville:13T1",
-              "regime": "GCOR_RULE_6_13"
+              "regime": "GCOR_RULE_10"
             }
           },
           {
             "derived": {
-              "by": "inherited",
+              "by": "marker",
               "circuit": "Watsonville:15T1",
               "name": "Watsonville:15T1",
-              "regime": "GCOR_RULE_6_13"
+              "regime": "GCOR_RULE_10"
             }
           },
           {
             "derived": {
-              "by": "inherited",
+              "by": "marker",
               "circuit": "Watsonville:17T1",
               "name": "Watsonville:17T1",
-              "regime": "GCOR_RULE_6_13"
+              "regime": "GCOR_RULE_10"
             }
           },
           {
             "derived": {
-              "by": "inherited",
+              "by": "marker",
               "circuit": "Watsonville:19T1",
               "name": "Watsonville:19T1",
-              "regime": "GCOR_RULE_6_13"
+              "regime": "GCOR_RULE_10"
             }
           },
           {
             "derived": {
-              "by": "inherited",
+              "by": "marker",
               "circuit": "Watsonville:21T1",
               "name": "Watsonville:21T1",
-              "regime": "GCOR_RULE_6_13"
+              "regime": "GCOR_RULE_10"
             }
           },
           {
             "derived": {
-              "by": "inherited",
+              "by": "marker",
               "circuit": "Watsonville:23T1",
               "name": "Watsonville:23T1",
-              "regime": "GCOR_RULE_6_13"
+              "regime": "GCOR_RULE_10"
             }
           },
           {
             "derived": {
-              "by": "inherited",
+              "by": "marker",
               "circuit": "Watsonville:25T1",
               "name": "Watsonville:25T1",
-              "regime": "GCOR_RULE_6_13"
-            }
-          },
-          {
-            "derived": {
-              "by": "marker",
-              "circuit": "Watsonville:02T",
-              "name": "Watsonville:02T",
-              "regime": "GCOR_RULE_6_13"
-            }
-          },
-          {
-            "derived": {
-              "by": "marker",
-              "circuit": "Watsonville:03T",
-              "name": "Watsonville:03T",
-              "regime": "GCOR_RULE_6_13"
+              "regime": "GCOR_RULE_10"
             }
           },
           {
@@ -13681,6 +14077,42 @@
           {
             "derived": {
               "circuits": {
+                "track": "Watsonville:1BT"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_6_13"
+            },
+            "id": "8d074623-7f61-494c-baf9-eab233b23372",
+            "relations": {
+              "track": [
+                "9dab8882-d710-4792-a368-e1172a63c349.A",
+                "95cf20c8-c0c4-4eb0-9e11-b416e37726f9.B",
+                "Watsonville:1BT.TC"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:2BT"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_6_13"
+            },
+            "id": "edbce5a0-0080-440c-8729-2e4760b683ad",
+            "relations": {
+              "track": [
+                "3493c95f-075b-48ce-9dfc-fbd16de5eb7a.B",
+                "b4e79e42-3e0b-4ec3-a43f-1bf238392547.A",
+                "Watsonville:2BT.TC"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
                 "track": "Watsonville:02T"
               }
             },
@@ -13692,8 +14124,8 @@
             "relations": {
               "track": [
                 "4ff0a280-f62c-4928-afcb-b3114c00e7b5.A",
-                "68b1bfdd-be9c-418d-b285-f92e096773ef.track",
                 "3478e3b9-eb36-424c-bb66-b3db1669812d.approach",
+                "b2ffcd0a-4c93-4651-b137-da7ac96b4c7d.track",
                 "Watsonville:02T.TC"
               ]
             }
@@ -13705,15 +14137,50 @@
               }
             },
             "given": {
-              "Kind": "GCOR_RULE_6_13"
+              "Kind": "LADDER"
             },
-            "id": "68b1bfdd-be9c-418d-b285-f92e096773ef",
+            "id": "b2ffcd0a-4c93-4651-b137-da7ac96b4c7d",
             "relations": {
               "track": [
                 "4ff0a280-f62c-4928-afcb-b3114c00e7b5.A",
                 "3478e3b9-eb36-424c-bb66-b3db1669812d.approach",
                 "11824084-b6b5-4457-b631-d07fb6074fa9.track",
                 "Watsonville:02T.TC"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:3BT"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_6_13"
+            },
+            "id": "83563ac3-2761-4afd-9540-f4ebbbb66378",
+            "relations": {
+              "track": [
+                "32d0914a-6cc5-4bb4-b1e5-efaa17503738.B",
+                "e7c0fc59-c176-4268-ba19-dd327eb73662.A",
+                "Watsonville:3BT.TC"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:3T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "2be400f1-2979-496f-9aac-28df7a1237c8",
+            "relations": {
+              "track": [
+                "a68352d0-96a1-4423-9b0b-87c21e4b044c.governed",
+                "Watsonville:3.N"
               ]
             }
           },
@@ -13727,12 +14194,12 @@
               "Direction": "LEFT",
               "Kind": "GCOR_RULE_9_14"
             },
-            "id": "1d2e57a4-2962-4c91-97d5-0b1932abf784",
+            "id": "5e7945d6-5aa8-43a3-ae4c-10805f5b6584",
             "relations": {
               "track": [
                 "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
                 "293515f7-9155-4100-a639-23f6d051ab4e.approach",
-                "67636818-c46b-4590-ae77-42eaa941c41a.track",
+                "86316793-1b1c-41e2-850f-add834629692.track",
                 "Watsonville:03T.TC"
               ]
             }
@@ -13744,12 +14211,12 @@
               }
             },
             "given": {
-              "Kind": "GCOR_RULE_6_13"
+              "Kind": "LADDER"
             },
-            "id": "67636818-c46b-4590-ae77-42eaa941c41a",
+            "id": "86316793-1b1c-41e2-850f-add834629692",
             "relations": {
               "track": [
-                "1d2e57a4-2962-4c91-97d5-0b1932abf784.track",
+                "5e7945d6-5aa8-43a3-ae4c-10805f5b6584.track",
                 "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
                 "293515f7-9155-4100-a639-23f6d051ab4e.approach",
                 "Watsonville:03T.TC"
@@ -13759,17 +14226,293 @@
           {
             "derived": {
               "circuits": {
-                "track": "Watsonville:837T1"
+                "track": "Watsonville:4BT"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_6_13"
+            },
+            "id": "729717e1-7ccc-4ae4-8bf8-28bc352988fc",
+            "relations": {
+              "track": [
+                "95f9e1f9-ea74-450c-a6fd-d38f4a25b6e5.A",
+                "793f0198-f601-462f-aad2-4b09f2152b59.B",
+                "Watsonville:4BT.TC"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:5BT"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_6_13"
+            },
+            "id": "a456f373-7b2b-4f73-8b47-48c83b8efe4b",
+            "relations": {
+              "track": [
+                "4c41471a-a4b9-4668-afcc-c166ba44818f.A",
+                "d5a18f20-f129-4945-b9e2-9f3d864f9b36.B",
+                "Watsonville:5BT.TC"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:5T1"
               }
             },
             "given": {
               "Kind": "GCOR_RULE_10"
             },
-            "id": "f09a5424-4540-468b-a372-0a6b05246674",
+            "id": "a24daed7-889a-4852-9b09-8db732ad9007",
             "relations": {
               "track": [
-                "293515f7-9155-4100-a639-23f6d051ab4e.governed",
-                "Watsonville:837.N"
+                "d5c58279-b96e-4f47-82d4-7b4ba58012ad.governed",
+                "Watsonville:5.R"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:6BT"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_6_13"
+            },
+            "id": "b93f47a4-a472-497d-993b-6a005de55415",
+            "relations": {
+              "track": [
+                "96f07de7-860e-496e-bb6a-40c7171ba222.A",
+                "c06095b3-8f8a-4812-8dd9-41b08a1d0f3c.B",
+                "Watsonville:6BT.TC"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:7BT"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_6_13"
+            },
+            "id": "4a78f08d-15f4-4206-8714-1c28f098d416",
+            "relations": {
+              "track": [
+                "055b30ce-2e51-401c-95f9-2f5128602125.B",
+                "c25da741-efe1-482c-aa07-70a7c30dea96.A",
+                "Watsonville:7BT.TC"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:7T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "aa9dca99-6269-40f3-9059-b79a75f8c4d8",
+            "relations": {
+              "track": [
+                "515cb1a5-ad1f-4cdb-9040-7dc42819b984.governed",
+                "Watsonville:7.R"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:9T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "bb819693-fcdd-4018-b4d0-46691427b26a",
+            "relations": {
+              "track": [
+                "45d85c6d-f7a5-4d7d-b7a5-5e9907b4f0af.governed",
+                "Watsonville:9.R"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:11T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "28a0eaa1-4462-4301-9000-3e89d64382dc",
+            "relations": {
+              "track": [
+                "29dc489d-a8e9-4359-adb5-95899e4e99aa.governed",
+                "Watsonville:11.R"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:13T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "1a0e8387-3dc6-4df9-8e5c-58be496f90f1",
+            "relations": {
+              "track": [
+                "be95c00a-9e6d-4b80-9014-98920c40141e.governed",
+                "Watsonville:13.N"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:13T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "ca839bdd-6efa-4dac-a9ff-1bd9b7bc13d0",
+            "relations": {
+              "track": [
+                "f2263aa1-aa98-4fd6-8f13-a39ebfe78ac1.governed",
+                "Watsonville:13.R"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:15T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "6ebfae11-c5dd-4092-adc5-52fbcc4d8c94",
+            "relations": {
+              "track": [
+                "c25da741-efe1-482c-aa07-70a7c30dea96.B",
+                "Watsonville:15.R"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:17T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "05cdc2c6-acd8-4cc9-9f7f-2c947cc07fee",
+            "relations": {
+              "track": [
+                "96f07de7-860e-496e-bb6a-40c7171ba222.B",
+                "Watsonville:17.R"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:19T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "e5c7a81c-397d-44d8-bf2c-42f56fd8f8b1",
+            "relations": {
+              "track": [
+                "4c41471a-a4b9-4668-afcc-c166ba44818f.B",
+                "Watsonville:19.R"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:21T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "9070faa8-f3e7-4387-8ed0-52e7b55a4a2d",
+            "relations": {
+              "track": [
+                "95f9e1f9-ea74-450c-a6fd-d38f4a25b6e5.B",
+                "Watsonville:21.R"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:23T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "8b0c4939-f748-48d7-b807-2e04a993d179",
+            "relations": {
+              "track": [
+                "e7c0fc59-c176-4268-ba19-dd327eb73662.B",
+                "Watsonville:23.R"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:25T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "365072a9-3d9d-4383-ab26-cde4cf0ec062",
+            "relations": {
+              "track": [
+                "9dab8882-d710-4792-a368-e1172a63c349.B",
+                "Watsonville:25.R"
+              ]
+            }
+          },
+          {
+            "derived": {
+              "circuits": {
+                "track": "Watsonville:25T1"
+              }
+            },
+            "given": {
+              "Kind": "GCOR_RULE_10"
+            },
+            "id": "eabe0739-ecc4-4361-a819-ae5568488e2c",
+            "relations": {
+              "track": [
+                "b4e79e42-3e0b-4ec3-a43f-1bf238392547.B",
+                "Watsonville:25.N"
               ]
             }
           },
@@ -14424,6 +15167,60 @@
           },
           {
             "points": "-2.8337,-1.6458 -2.0649,-0.8161 -0.6739,-2.0973 -1.4914,-2.9881",
+            "type": "polyline"
+          }
+        ]
+      },
+      "Railroad-Trackplan:Ladder": {
+        "ports": {
+          "To": {
+            "x": 0.0,
+            "y": 0.0
+          }
+        },
+        "shape": [
+          {
+            "points": "0.254,-1.6511 0.254,-1.27",
+            "type": "polyline"
+          },
+          {
+            "points": "0.254,-2.2861 0.254,-1.6511",
+            "type": "polyline"
+          },
+          {
+            "points": "0.254,-2.9211 0.254,-2.2861",
+            "type": "polyline"
+          },
+          {
+            "points": "0.254,-3.4925 0.254,-2.8575",
+            "type": "polyline"
+          },
+          {
+            "points": "-0.254,-1.651 -0.254,-1.27",
+            "type": "polyline"
+          },
+          {
+            "points": "-0.254,-1.7146 0.254,-1.7146",
+            "type": "polyline"
+          },
+          {
+            "points": "-0.254,-2.286 -0.254,-1.651",
+            "type": "polyline"
+          },
+          {
+            "points": "-0.254,-2.921 -0.254,-2.286",
+            "type": "polyline"
+          },
+          {
+            "points": "-0.254,-2.3496 0.254,-2.3496",
+            "type": "polyline"
+          },
+          {
+            "points": "-0.254,-3.048 0.254,-3.048",
+            "type": "polyline"
+          },
+          {
+            "points": "-0.254,-3.4924 -0.254,-2.8574",
             "type": "polyline"
           }
         ]
@@ -15587,13 +16384,13 @@
               "IC": "GPIO"
             }
           },
-          "LIGHT.MC1.LAMP": {
+          "LIGHT.1MC.LAMP": {
             "given": {
               "IC": "MQTT-JMRI",
               "Kind": "LIGHT"
             }
           },
-          "LIGHT.MC2.LAMP": {
+          "LIGHT.2MC.LAMP": {
             "given": {
               "IC": "MQTT-JMRI",
               "Kind": "LIGHT"
@@ -16003,7 +16800,7 @@
               "IC": "MAX7313"
             }
           },
-          "0x2E": {
+          "0x2F": {
             "given": {
               "IC": "MAX7313"
             }
@@ -16056,6 +16853,16 @@
           "0x29": {
             "given": {
               "IC": "MAX7313"
+            }
+          },
+          "0x50": {
+            "given": {
+              "IC": "KnobEncoderRGB"
+            }
+          },
+          "0x51": {
+            "given": {
+              "IC": "KnobEncoderRGB"
             }
           }
         },
@@ -17015,10 +17822,10 @@
           },
           "relations": {
             "bindings": {
-              "NWK": "SouthCTC/0x2E/A1",
-              "NWS": "SouthCTC/0x2E/A8",
-              "RWK": "SouthCTC/0x2E/A2",
-              "RWS": "SouthCTC/0x2E/A7"
+              "NWK": "SouthCTC/0x2F/A1",
+              "NWS": "SouthCTC/0x2F/A8",
+              "RWK": "SouthCTC/0x2F/A2",
+              "RWS": "SouthCTC/0x2F/A7"
             },
             "column": "SouthCTC:0"
           }
@@ -17451,6 +18258,48 @@
               "WLK": "SouthCTC/0x2C/A1",
               "WLQK": "SouthCTC/0x2C/A2",
               "WLS": "SouthCTC/0x2C/A7"
+            },
+            "column": "SouthCTC:13"
+          }
+        },
+        {
+          "derived": {
+            "controls": [
+              "Sargent:836HS",
+              "Sargent:836NGS",
+              "Sargent:836SGS"
+            ],
+            "indications": [
+              "Sargent:836NGK",
+              "Sargent:836SGK",
+              "Sargent:836TEK"
+            ],
+            "masts": [
+              "Sargent:836NAB",
+              "Sargent:836SA",
+              "Sargent:836SB"
+            ],
+            "serves": "Sargent:836"
+          },
+          "given": {
+            "Appliance": "lever",
+            "Control.HS": "836HS",
+            "Control.NGS": "836NGS",
+            "Control.SGS": "836SGS",
+            "Indication.NGK": "836NGK",
+            "Indication.SGK": "836SGK",
+            "Indication.TEK": "836TEK",
+            "Name": "836",
+            "Style": "signal"
+          },
+          "relations": {
+            "bindings": {
+              "HS": "SouthCTC/0x2C/B3",
+              "NGK": "SouthCTC/0x2C/B6",
+              "NGS": "SouthCTC/0x2C/B2",
+              "SGK": "SouthCTC/0x2C/B7",
+              "SGS": "SouthCTC/0x2C/B4",
+              "TEK": "SouthCTC/0x2C/B8"
             },
             "column": "SouthCTC:13"
           }
@@ -18342,6 +19191,34 @@
             },
             "column": "SouthCTC:10"
           }
+        },
+        {
+          "given": {
+            "Appliance": "lever",
+            "Control.CODE": "",
+            "Name": "CODE",
+            "Style": "code"
+          },
+          "relations": {
+            "bindings": {
+              "CODE": "SouthCTC/0x50/Press"
+            },
+            "interlocking": "Watsonville"
+          }
+        },
+        {
+          "given": {
+            "Appliance": "lever",
+            "Control.CODE": "",
+            "Name": "CODE",
+            "Style": "code"
+          },
+          "relations": {
+            "bindings": {
+              "CODE": "SouthCTC/0x51/Press"
+            },
+            "interlocking": "Watsonville"
+          }
         }
       ],
       "given": {
@@ -18354,7 +19231,7 @@
   },
   "provenance": {
     "libraries": {
-      "Railroad-Trackplan": "split-projects-final-164-g87f6aa4"
+      "Railroad-Trackplan": "split-projects-final-165-g0ab8dd8"
     },
     "referenceData": {
       "aspectNames": {
@@ -18392,6 +19269,11 @@
         "schemaVersion": 0,
         "version": "2026-10-27.2"
       },
+      "permissiveness": {
+        "file": "layout-model/reference/permissiveness.json",
+        "schemaVersion": 0,
+        "version": "2026-11-13"
+      },
       "policies": {
         "file": "layout-model/reference/policies.json",
         "schemaVersion": 0,
@@ -18400,7 +19282,7 @@
       "regimes": {
         "file": "layout-model/reference/regimes.json",
         "schemaVersion": 0,
-        "version": "2026-11-10"
+        "version": "2026-11-13.1"
       },
       "stations": {
         "file": "layout-model/reference/stations.json",
@@ -18415,7 +19297,7 @@
     },
     "rules": "0.1.0",
     "source": {
-      "describe": "split-projects-final-164-g87f6aa4",
+      "describe": "split-projects-final-165-g0ab8dd8",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad",
