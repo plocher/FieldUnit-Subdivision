@@ -11,25 +11,27 @@ A route belongs to the mast that displays it (the owner, 2026-11-13). Its terms:
 - ``alignment``: every switch and derail passed, in walk order, with its one position. A derail is passed C to R or R
   to C, so it is ``REVERSE`` (its through position).
 - ``circuits``: the circuits passed, in walk order; ``entrance`` the first, the circuit the mast governs into (the
-  knockdown circuit). ``approach``: the circuit on the approach side of the mast's joint, where one is stated.
+  knockdown circuit). ``regimes``: aligned with ``circuits``, the regime of each (its piece's ``derived.regime``),
+  null where none is stated (the owner, 2026-11-13). ``approach``: the circuit on the approach side of the mast's
+  joint, where one is stated.
 - ``end``: the next mast that governs the same movement, ``{"mast": ..., "demand": ...}``, the demand under the same
-  rule as the entering one (an automatic mast is named with no ``demand``); or a limit, ``{"limit": ...}``: the Kind
-  of an end of track (``NEXT_CP``, ``BUMPER``, ``INDUSTRY``), or ``REGIME`` (with ``from`` and ``to``) at a joint
-  where the regime of the track changes and the track beyond is not interlocking track (ADR 0013 §7.1: a regime
-  boundary, the successor of the retired END_CTC end; §13: interlocking track is a piece a CONTROLLED mast governs
-  into or that holds a dispatcher-controlled switch's port). A regime boundary inside an interlocking (Gilroy
-  Caltrain's yard limits between 771 and 773) is passed. No ``end``: the walk could not finish, reported
-  ``route.end`` at missing.
+  rule as the entering one (an automatic mast is named with no ``demand``); or the end of track, ``{"limit": ...}``,
+  the Kind of the end (``NEXT_CP``, ``BUMPER``, ``INDUSTRY``). A regime marker is never a limit (the owner,
+  2026-11-13): the route passes it, and the regime contributes to the ceiling. No ``end``: the walk could not finish,
+  reported ``route.end`` at missing.
 - ``opposing``: the masts on the route's track that govern against the movement, each ``{"mast": ..., "demand":
   ...}`` with the demand under the same rule. A converging movement is a different alignment, so a different route,
   and no term here.
-- ``ceiling``: the word an ``IndicationCeiling`` stated on an appliance the route passes gives for the position it is
-  passed in (the field is ``NORMAL/REVERSE``; 827D ``STOP/RESTRICTING`` passed ``REVERSE`` gives ``RESTRICTING``);
-  ``ceilings`` the stated sources. A route that passes none is ``CLEAR``, stated (the owner, 2026-11-13): each term
-  contributes one indication from its own value set and CLEAR is the unrestricted contribution under the least
-  permissive. The heuristics of ADR 0012 §5.4 (a switch reversed gives APPROACH, ...) are policies reference data
-  with no rows yet; they join as contributions when the rows land (#62). A route that passes stated ceilings with
-  different words keeps them all in ``ceilings`` and states no single ``ceiling``: their order is reference data.
+- ``ceiling``: the least permissive of its contributions (``ceilings``), by the ``permissiveness`` reference table;
+  ``CLEAR``, stated, when there are none (the owner, 2026-11-13: each term contributes one indication from its own
+  value set, and CLEAR is the unrestricted contribution). A contribution is the word an ``IndicationCeiling`` stated
+  on an appliance the route passes gives for the position it is passed in (``{"appliance", "position", "word"}``;
+  the field is ``NORMAL/REVERSE``, so 827D ``STOP/RESTRICTING`` passed REVERSE gives RESTRICTING), or the word the
+  ``regimes`` reference table gives a regime whose track the route passes, dark track included
+  (``{"regime", "word"}``; GCOR 6.13, Yard Limits, gives RESTRICTING; GCOR 10.0, Rules Applicable Only in CTC, gives
+  nothing). The heuristics of ADR 0012 §5.4 (a switch reversed gives APPROACH, ...) are policies reference data with
+  no rows yet; they join as contributions when the rows land (#62). Two least contributions of one rank with
+  different words state no single ``ceiling``.
 
 The walk (ADR 0012 §5.3) follows the track's stated adjacency and each joint's masts: the direction is the movement
 along the track, never LEFT or RIGHT. Crossing a joint from side X to side Y, a mast that governs into Y governs the
@@ -46,7 +48,7 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable, Optional
 
 from tools.layout_model.grammar import dispatcher_controlled, is_derail
-from tools.layout_model.reference import load
+from tools.layout_model.reference import least_permissive, load, regime_ceiling
 from tools.layout_model.report import MISSING, Report
 
 VERSION = "0.1.0"                 # this library's version (ADR 0012 §7), pre-release with the rules
@@ -69,7 +71,8 @@ class Route:
     approach: Optional[str] = None
     end: Optional[dict[str, str]] = None
     opposing: list[dict[str, str]] = field(default_factory=list)
-    ceilings: list[dict[str, str]] = field(default_factory=list)   # {appliance, position, word}
+    ceilings: list[dict[str, str]] = field(default_factory=list)   # {appliance, position, word} | {regime, word}
+    regimes: list[Optional[str]] = field(default_factory=list)     # aligned with circuits
 
     @property
     def entrance(self) -> Optional[str]:
@@ -77,8 +80,7 @@ class Route:
 
     @property
     def ceiling(self) -> Optional[str]:
-        words = {c["word"] for c in self.ceilings}
-        return CLEAR if not words else words.pop() if len(words) == 1 else None
+        return least_permissive(c["word"] for c in self.ceilings) if self.ceilings else CLEAR
 
     def label(self) -> str:
         return f"{self.mast} [{', '.join(f'{s} {p}' for s, p in self.alignment) or 'no switch'}]"
@@ -90,6 +92,7 @@ class Route:
             out["demand"] = dict(self.demand)
         out["alignment"] = [{"appliance": s, "position": p} for s, p in self.alignment]
         out["circuits"] = list(self.circuits)
+        out["regimes"] = list(self.regimes)
         if self.entrance:
             out["entrance"] = self.entrance
         if self.approach:
@@ -230,32 +233,6 @@ class _Track:
                 return self.regime_of[f"track@{p}"]
         return None
 
-    def interlocking_track(self, pin: str) -> bool:
-        """Whether the joint-bounded piece of track a pin is on is interlocking track (ADR 0013 §13, as the reference
-        derivation reads it): a CONTROLLED mast governs into it, or it holds a dispatcher-controlled switch's or
-        derail's port. The piece is the pin's net and every net joined to it through a switch's or derail's ports."""
-        todo, nets = [pin], set()
-        while todo:
-            p = todo.pop()
-            root = self._find(p) if p in self.parent else None
-            if root is None or root in nets:
-                continue
-            nets.add(root)
-            for q in self.nets.get(root, []):
-                w = self.pins.get(q)
-                if w is None:
-                    continue
-                if w.kind == "switch":
-                    b, a = self.appliances[w.owner]
-                    if dispatcher_controlled(w.owner.partition(":")[2], self.model["interlockings"][b].get("appliances", {})):
-                        return True
-                    todo.extend(f"{w.owner}.{port}" for port in ("C", "N", "R") if f"{w.owner}.{port}" in self.parent)
-                elif w.kind == "joint":
-                    if any(side == w.side and self.appliance(m).get("given", {}).get("Kind") == "CONTROLLED"
-                           for m, side in self.joint_masts.get(w.owner, [])):
-                        return True
-        return False
-
     def appliance(self, q: str) -> dict[str, Any]:
         return self.appliances.get(q, ("", {}))[1]
 
@@ -310,6 +287,11 @@ def find(model: dict[str, Any]) -> Routes:
         seed = Route(q, t.demand(q, b), approach=t.circuit_of_pin.get(approach_pin) or t.circuit(t.net(approach_pin)))
         routes: list[Route] = []
         _walk(t, b, seed, start, frozenset(), routes, entered_at_points, add)
+        unique: list[Route] = []                              # one route reaching two end rows of one Kind (an
+        for r in routes:                                      # industry drawn on two sheets) is one route
+            if all(r.as_dict() != u.as_dict() for u in unique):
+                unique.append(r)
+        routes = unique
         for r in routes:
             passed.update(s for s, _ in r.alignment)
         out[q] = routes
@@ -331,8 +313,13 @@ def _walk(t: _Track, scope: str, r: Route, pin: str, seen: frozenset[str], out: 
     """Continue ``r`` into the net of ``pin``, entered through ``pin``; every finished or stopped route goes to ``out``."""
     net = t.net(pin)
     c = t.circuit(net) if net else None
+    regime = t.regime(net) if net else None
     if c and (not r.circuits or r.circuits[-1] != c):
         r.circuits.append(c)
+        r.regimes.append(regime)
+    word = regime_ceiling(regime)
+    if word and all(x.get("regime") != regime for x in r.ceilings):
+        r.ceilings.append({"regime": regime, "word": word})
     exits = [p for p in sorted(net) if p != pin and t.pins.get(p) and t.pins[p].kind in ("switch", "joint", "end")]
     if not exits:
         add("route.end", f"the route {r.label()} runs onto track that ends with nothing stated beyond "
@@ -406,14 +393,9 @@ def _joint(t, scope, r, x, w, net, seen, out, entered_at_points, add) -> None:
         add("route.end", f"the route {r.label()} crosses a joint to a side wired to nothing", _path(r.mast))
         out.append(r)
         return
-    here, there = t.regime(net), t.regime(t.net(nxt))
-    if here and there and here != there and not t.interlocking_track(nxt):
-        r.end = {"limit": "REGIME", "from": here, "to": there}
-        out.append(r)
-        return
     _walk(t, scope, r, nxt, seen, out, entered_at_points, add)
 
 
 def _copy(r: Route) -> Route:
     return Route(r.mast, r.demand, list(r.alignment), list(r.circuits), r.approach, dict(r.end) if r.end else None,
-                 [dict(o) for o in r.opposing], [dict(c) for c in r.ceilings])
+                 [dict(o) for o in r.opposing], [dict(c) for c in r.ceilings], list(r.regimes))

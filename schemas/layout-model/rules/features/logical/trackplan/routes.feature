@@ -1,8 +1,9 @@
 Feature: The routes of a mast
   A route belongs to the mast that displays it (the owner, 2026-11-13). A route runs from a controlled mast, in the
-  direction it governs, until the next mast that governs the same movement, or a limit: a NextCP, an end of track, or
-  a joint where the regime of the track changes (ADR 0012 §5.3; ADR 0013 §7.1 retires END_CTC for the regime
-  boundary). At a switch entered at C the route takes N or R; entered at N or R it leaves by C. A derail has legs C
+  direction it governs, until the next mast that governs the same movement, or the end of track: a bumper, an
+  industry end, or a NextCP edge with no signal beyond (ADR 0012 §5.3). A regime marker is never a limit (the owner,
+  2026-11-13): the route passes it, states the regime of each circuit it passes, and the regime may contribute to its
+  ceiling (reference data: GCOR 6.13, Yard Limits, contributes RESTRICTING). At a switch entered at C the route takes N or R; entered at N or R it leaves by C. A derail has legs C
   and R only, and a route through it needs it REVERSE. A route is a single path: one position per switch.
   The direction is the movement along the track, never LEFT or RIGHT: the walk follows the track and each mast's
   relations.facing, and LEFT or RIGHT is only the demand word of a signal (written `<signal>(<direction>)` here; the library states the atoms).
@@ -122,14 +123,15 @@ Feature: The routes of a mast
     And the route of "830NAB" aligned "829 REVERSE" passes "829T1, 1NAT"
     And the route of "830NAB" aligned "829 REVERSE" is opposed by masts "830SAB"
 
-  Scenario: a route ends at the joint where the regime of the track changes beyond the interlocking
+  Scenario: a route passes a regime marker and continues to the end of track
     When the routes are found
-    Then the route of "828SA" aligned "827 REVERSE, 827D REVERSE" ends at the limit "REGIME"
+    Then the route of "828SA" aligned "827 REVERSE, 827D REVERSE" ends at the limit "BUMPER"
     And the route of "828SA" aligned "827 REVERSE, 827D REVERSE" passes "827T1, 01T"
+    And the route of "828SA" aligned "827 REVERSE, 827D REVERSE" passes regimes "GCOR_RULE_10, GCOR_RULE_10"
 
-  Scenario: a regime boundary inside the interlocking is passed
-    Interlocking track is a piece a controlled mast governs into or that holds a dispatcher-controlled switch's port
-    (ADR 0013 §13). Gilroy Caltrain's station tracks are yard limits inside the interlocking.
+  Scenario: a route from yard limits passes the regime marker into CTC and continues to the end of track
+    Gilroy Caltrain: the station tracks are under GCOR 6.13 (Yard Limits); the switch beyond the marker is under
+    GCOR 10.0 (Rules Applicable Only in CTC).
     Given interlocking "U" has these appliances:
       | Name  | Appliance     | Style   | Kind       | TC  | CP Name | signal | heads | relations.facing |
       | 9     | switch        | powered |            | 9T1 | U       |        |       |                  |
@@ -160,6 +162,44 @@ Feature: The routes of a mast
     Then "774NC" has routes aligned "9 NORMAL; 9 REVERSE"
     And the route of "774NC" aligned "9 NORMAL" ends at the limit "NEXT_CP"
     And the route of "774NC" aligned "9 NORMAL" passes "3T, 9T1"
+    And the route of "774NC" aligned "9 NORMAL" passes regimes "GCOR_RULE_6_13, GCOR_RULE_10"
+
+  Scenario: a route through yard limits is held to RESTRICTING
+    The owner, 2026-11-13: GCOR 6.13 (Yard Limits) contributes RESTRICTING everywhere in yard limits; the word is
+    reference data (regimes.ceilings). GCOR 10.0 (Rules Applicable Only in CTC) contributes nothing.
+    Given interlocking "U" has these appliances:
+      | Name  | Appliance     | Style   | Kind       | TC  | CP Name | signal | heads | relations.facing |
+      | 9     | switch        | powered |            | 9T1 | U       |        |       |                  |
+      | 774SA | mast          |         | CONTROLLED |     | U       | 774    | A     | RIGHT            |
+      | 3T    | track_circuit |         |            |     | U       |        |       |                  |
+      | 1T    | track_circuit |         |            |     | U       |        |       |                  |
+    And interlocking "U" has these joints:
+      | Id | Kind       | CP Name | relations.mast |
+      | M1 | IRJ_SIGNAL | U       | U:774SA        |
+      | M2 | IRJ        |         |                |
+    And interlocking "U" has these ends:
+      | Id | Kind    |
+      | G1 | BUMPER  |
+      | G2 | NEXT_CP |
+    And interlocking "U" has these policies:
+      | Id | Kind           |
+      | Q1 | GCOR_RULE_6_13 |
+      | Q2 | GCOR_RULE_10   |
+    And interlocking "U" has these wires:
+      | Wire | Pins                        |
+      | a    | M1.approach 1T.TC           |
+      | b    | M1.governed 9.C Q2.track    |
+      | c    | 9.N M2.B                    |
+      | d    | M2.A 3T.TC Q1.track G1.EoT  |
+      | e    | 9.R G2.track                |
+    And the desk has these levers for interlocking "U":
+      | Name | Style  |
+      | 774  | signal |
+    When the routes are found
+    Then the route of "774SA" aligned "9 NORMAL" ends at the limit "BUMPER"
+    And the route of "774SA" aligned "9 NORMAL" passes regimes "GCOR_RULE_10, GCOR_RULE_6_13"
+    And the route of "774SA" aligned "9 NORMAL" has ceiling "RESTRICTING"
+    And the route of "774SA" aligned "9 REVERSE" has ceiling "CLEAR"
 
   Scenario: a route through a dependent derail takes the derail's stated ceiling for REVERSE
     When the routes are found

@@ -58,11 +58,19 @@ class Sufficiency(unittest.TestCase):
                     self.assertTrue(self.found.of(f"{b}:{n}"), f"{b}:{n}")
 
     def test_corporal_matches_the_hand_walked_routes_in_alignment_circuits_and_entrance(self):
-        got = sorted((bare(r.mast, "Corporal"), sorted((bare(s, "Corporal"), p) for s, p in r.alignment),
-                      [bare(c, "Corporal") for c in r.circuits if c.startswith("Corporal:")], bare(r.entrance, "Corporal"))
-                     for m, rs in self.found.routes.items() if m.startswith("Corporal:") for r in rs)
-        want = sorted((m, sorted(a), c, e) for m, a, c, e in CORPORAL)
-        self.assertEqual(got, want)
+        """Each hand-walked route is the start of the library's: the same mast, entrance and alignment, its circuits
+        first. The stand-in stops 828SA's route through 827 REVERSE at 01T; a regime marker is no limit (the owner,
+        2026-11-13), so the library's continues over switch 1 to the industry and to Sargent: four routes there."""
+        ours = [(bare(r.mast, "Corporal"), [(bare(s, "Corporal"), p) for s, p in r.alignment],
+                 [bare(c, "Corporal") for c in r.circuits if c.startswith("Corporal:")], bare(r.entrance, "Corporal"))
+                for m, rs in self.found.routes.items() if m.startswith("Corporal:") for r in rs]
+        for mast, alignment, circuits, entrance in CORPORAL:
+            match = [o for o in ours if o[0] == mast and o[3] == entrance and sorted(o[1][:len(alignment)]) == sorted(alignment)
+                     and o[2][:len(circuits)] == circuits]
+            self.assertTrue(match, (mast, alignment))
+            exact = [o for o in match if len(o[1]) == len(alignment)]
+            longer = alignment == [("827", "REVERSE"), ("827D", "REVERSE")] and mast == "828SA"
+            self.assertEqual((len(exact), len(match)), (0, 4) if longer else (1, 1), (mast, alignment))
 
     def test_luchessa_has_its_ten_structural_routes(self):
         got = {bare(m, "Luchessa"): sorted((sorted({bare(s, "Luchessa"): p for s, p in r.alignment}.items()) for r in rs))
@@ -75,7 +83,8 @@ class Sufficiency(unittest.TestCase):
         self.assertEqual(r.as_dict(), {
             "mast": "Corporal:830NAB", "demand": {"interlocking": "Corporal", "signal": "830", "direction": "LEFT"},
             "alignment": [{"appliance": "Corporal:829", "position": "NORMAL"}, {"appliance": "Corporal:827", "position": "NORMAL"}],
-            "circuits": ["Corporal:829T1", "Corporal:827T1", "Christopher:2NAT"], "entrance": "Corporal:829T1",
+            "circuits": ["Corporal:829T1", "Corporal:827T1", "Christopher:2NAT"],
+            "regimes": ["GCOR_RULE_10", "GCOR_RULE_10", "GCOR_RULE_10"], "entrance": "Corporal:829T1",
             "approach": "Corporal:832T", "end": {"mast": "Christopher:816NAB", "demand": {"interlocking": "Christopher", "signal": "816", "direction": "LEFT"}},
             "opposing": [{"mast": "Corporal:828SA", "demand": {"interlocking": "Corporal", "signal": "828", "direction": "RIGHT"}}], "ceiling": "CLEAR"})
 
@@ -93,12 +102,17 @@ class Boundaries(unittest.TestCase):
                     [node.module or ""] if isinstance(node, ast.ImportFrom) else []
                 self.assertFalse(any("layout_compiler" in n for n in names), path.name)
 
-    def test_ceilings_that_differ_state_no_single_ceiling(self):
+    def test_the_ceiling_is_the_least_permissive_contribution(self):
         r = routes.Route("X:1NA", ceilings=[{"appliance": "X:1", "position": "REVERSE", "word": "APPROACH"},
-                                            {"appliance": "X:3", "position": "REVERSE", "word": "RESTRICTING"}])
+                                            {"regime": "GCOR_RULE_6_13", "word": "RESTRICTING"}])
+        self.assertEqual(r.ceiling, "RESTRICTING")
+        self.assertEqual(len(r.as_dict()["ceilings"]), 2)
+
+    def test_two_least_contributions_of_one_rank_with_different_words_state_no_single_ceiling(self):
+        r = routes.Route("X:1NA", ceilings=[{"appliance": "X:1", "position": "REVERSE", "word": "DIVERGING_RESTRICTING"},
+                                            {"regime": "GCOR_RULE_6_13", "word": "RESTRICTING"}])
         self.assertIsNone(r.ceiling)
         self.assertNotIn("ceiling", r.as_dict())
-        self.assertEqual(len(r.as_dict()["ceilings"]), 2)
 
 
 if __name__ == "__main__":

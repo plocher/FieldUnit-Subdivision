@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "layout-model/reference/regimes.schema.json",
   "title": "regimes",
-  "description": "The regimes a piece of track may be under (ADR 0013 §7.1): rows keyed by the GCOR Rule POLICY marker's Kind, each the chapter or rule title. ctc is the regime of track within a control point; currentOfTraffic the direction sign's Kind, which is not a regime.",
+  "description": "The regimes a piece of track may be under (ADR 0013 §7.1): rows keyed by the GCOR Rule POLICY marker's Kind, each the chapter or rule title. ctc is the regime of track within a control point; currentOfTraffic the direction sign's Kind, which is not a regime. ceilings: the indication a regime contributes to the ceiling of a route that passes its track, by regime; a regime not listed contributes nothing.",
   "type": "object",
   "required": [
     "table",
@@ -51,6 +51,16 @@
     "currentOfTraffic": {
       "type": "string",
       "pattern": "^GCOR_RULE_[0-9_]+$"
+    },
+    "ceilings": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^GCOR_RULE_[0-9_]+$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[A-Z_]+$"
+      }
     }
   }
 }

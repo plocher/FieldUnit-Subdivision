@@ -15,7 +15,7 @@ file's `provenance.referenceData.<table>.file` names (relative to `schemas/`). N
 | `provenance` | where the rows come from: the owner's ruling, the document and date, or the standard opened |
 | `rows` | the table, keyed as its schema says |
 
-A table may hold its own constants beside `rows` (`regimes`: `ctc`, `currentOfTraffic`). The schema beside each file is
+A table may hold its own constants beside `rows` (`regimes`: `ctc`, `currentOfTraffic`, `ceilings`). The schema beside each file is
 the contract; `tests/test_reference_data.py` validates every file against it.
 
 ## The tables
@@ -29,7 +29,8 @@ the contract; `tests/test_reference_data.py` validates every file against it.
 | `codeLineCapacity` | code line type | stations, controls, indications in steps; `options` or `steps` forms; `source` |
 | `codeLineSteps` | code line type, appliance class | controls and indications in steps |
 | `trainOrderInputs` | rulebook or `default` | `inputs`, a list ranked from the most restrictive, each `{input, indication}`; `rest`. Resolved onto a face keyed by rank |
-| `regimes` | GCOR Rule marker Kind | the chapter or rule title |
+| `regimes` | GCOR Rule marker Kind | the chapter or rule title; `ceilings`: the indication a regime contributes to the ceiling of a route that passes its track (GCOR 6.13, Yard Limits: RESTRICTING) |
+| `permissiveness` | indication word | its rank, 0 the least permissive; a route's ceiling is its least permissive contribution |
 | `aspectNames` | JMRI signal system, indication | the aspect name, or a map by mast Kind |
 | `headModels` | head Style | `source`; `words`: head word → outputs (`lamp`, `arm`) |
 | `policies` | rulebook, head count, mast indication | the head word of each position top down (no row shipped yet, #62) |
