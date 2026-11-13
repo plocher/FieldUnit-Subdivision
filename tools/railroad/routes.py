@@ -28,8 +28,10 @@ A route belongs to the mast that displays it (the owner, 2026-11-13). Its terms:
   on an appliance the route passes gives for the position it is passed in (``{"appliance", "position", "word"}``;
   the field is ``NORMAL/REVERSE``, so 827D ``STOP/RESTRICTING`` passed REVERSE gives RESTRICTING), or the word the
   ``regimes`` reference table gives a regime whose track the route passes, dark track included
-  (``{"regime", "word"}``; GCOR 6.13, Yard Limits, gives RESTRICTING; GCOR 10.0, Rules Applicable Only in CTC, gives
-  nothing). The heuristics of ADR 0012 §5.4 (a switch reversed gives APPROACH, ...) are policies reference data with
+  (``{"regime", "word"}``; GCOR 6.13, Yard Limits, gives RESTRICTING; GCOR 10.0, Rules Applicable Only in CTC, and
+  GCOR 14, Track Warrant Control, give nothing), or a default the ``regimes`` table gives (``{"default", "word"}``;
+  the owner, 2026-11-13): ``industry`` for a piece of track an industry end stands on, which the route passes or ends
+  on, and ``none`` for a piece with no stated regime, dark track included; both RESTRICTING. The heuristics of ADR 0012 §5.4 (a switch reversed gives APPROACH, ...) are policies reference data with
   no rows yet; they join as contributions when the rows land (#62). Two least contributions of one rank with
   different words state no single ``ceiling``.
 
@@ -48,7 +50,7 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable, Optional
 
 from tools.layout_model.grammar import dispatcher_controlled, is_derail
-from tools.layout_model.reference import least_permissive, load, regime_ceiling
+from tools.layout_model.reference import default_ceiling, least_permissive, load, regime_ceiling
 from tools.layout_model.report import MISSING, Report
 
 VERSION = "0.1.0"                 # this library's version (ADR 0012 §7), pre-release with the rules
@@ -219,9 +221,26 @@ class _Track:
     def circuit(self, net: list[str]) -> Optional[str]:
         return next((self.circuit_of_pin[p] for p in sorted(net) if p in self.circuit_of_pin), None)
 
-    def regime(self, net: list[str]) -> Optional[str]:
-        """The regime of the piece a net is on (``track.pieces``): by its circuit, else by the name of an end on it,
-        else by a pin-made name (``track@<pin>``)."""
+    def piece(self, net: list[str]) -> list[list[str]]:
+        """The joint-bounded piece of track a net is on: the net and every net joined to it through a switch's or
+        derail's ports (ADR 0013 §7.1)."""
+        if not net:
+            return []
+        todo, seen, out = [net[0]], set(), []
+        while todo:
+            p = todo.pop()
+            root = self._find(p)
+            if root in seen:
+                continue
+            seen.add(root)
+            out.append(self.nets[root])
+            for q in self.nets[root]:
+                w = self.pins.get(q)
+                if w and w.kind == "switch":
+                    todo.extend(f"{w.owner}.{port}" for port in ("C", "N", "R") if f"{w.owner}.{port}" in self.parent)
+        return out
+
+    def _regime_of_net(self, net: list[str]) -> Optional[str]:
         c = self.circuit(net)
         if c and c in self.regime_of:
             return self.regime_of[c]
@@ -232,6 +251,17 @@ class _Track:
             if f"track@{p}" in self.regime_of:
                 return self.regime_of[f"track@{p}"]
         return None
+
+    def regime(self, net: list[str]) -> Optional[str]:
+        """The regime of the piece a net is on (``track.pieces``' ``derived.regime``), found by the piece's circuit,
+        else by the name of an end on it, else by a pin-made name (``track@<pin>``); None where none is stated."""
+        return next((r for n in self.piece(net) if (r := self._regime_of_net(n))), None)
+
+    def industry(self, net: list[str]) -> bool:
+        """Whether the piece a net is on is industry track: an end of Kind INDUSTRY stands on it."""
+        return any(self.pins.get(p) and self.pins[p].kind == "end"
+                   and self.rows[self.pins[p].owner][2].get("given", {}).get("Kind") == "INDUSTRY"
+                   for n in self.piece(net) for p in n)
 
     def appliance(self, q: str) -> dict[str, Any]:
         return self.appliances.get(q, ("", {}))[1]
@@ -317,9 +347,13 @@ def _walk(t: _Track, scope: str, r: Route, pin: str, seen: frozenset[str], out: 
     if c and (not r.circuits or r.circuits[-1] != c):
         r.circuits.append(c)
         r.regimes.append(regime)
-    word = regime_ceiling(regime)
-    if word and all(x.get("regime") != regime for x in r.ceilings):
-        r.ceilings.append({"regime": regime, "word": word})
+    if net:
+        contributions = [("regime", regime, regime_ceiling(regime))] if regime else [("default", "none", default_ceiling("none"))]
+        if t.industry(net):
+            contributions.append(("default", "industry", default_ceiling("industry")))
+        for key, value, word in contributions:
+            if word and all(x.get(key) != value for x in r.ceilings):
+                r.ceilings.append({key: value, "word": word})
     exits = [p for p in sorted(net) if p != pin and t.pins.get(p) and t.pins[p].kind in ("switch", "joint", "end")]
     if not exits:
         add("route.end", f"the route {r.label()} runs onto track that ends with nothing stated beyond "

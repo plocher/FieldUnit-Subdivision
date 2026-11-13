@@ -62,6 +62,12 @@ def regime_ceiling(regime: Optional[str]) -> Optional[str]:
     return load("regimes").get("ceilings", {}).get(regime or "")
 
 
+def default_ceiling(kind: str) -> Optional[str]:
+    """The indication a route's ceiling takes from track of a default kind (the owner, 2026-11-13): ``industry``, a
+    piece an industry end stands on; ``none``, a piece with no stated regime. None for a kind with no entry."""
+    return load("regimes").get("defaults", {}).get(kind)
+
+
 def least_permissive(words) -> Optional[str]:
     """The least permissive of indication words by the ``permissiveness`` table; None for none, or when two words of
     the least rank differ (equally permissive, so no one word is the least). A word with no row is None too."""

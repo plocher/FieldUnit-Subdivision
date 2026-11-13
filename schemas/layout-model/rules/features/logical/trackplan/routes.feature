@@ -245,6 +245,62 @@ Feature: The routes of a mast
     Then the route of "2NA" aligned "nothing" ends at mast "4SA" demanding "4(RIGHT)"
     And the route of "2NA" aligned "nothing" passes "3T"
 
+  Scenario Outline: a route onto industry track, or track with no stated regime, is held to RESTRICTING
+    The owner, 2026-11-13: industry track and track with no stated regime contribute RESTRICTING by default; a
+    stated regime with no ceiling entry contributes nothing (GCOR 10.0, Rules Applicable Only in CTC; GCOR 14, Track
+    Warrant Control). The words are reference data (regimes.defaults, regimes.ceilings).
+    Given interlocking "W" has these appliances:
+      | Name | Appliance     | Kind       | CP Name | signal | heads | relations.facing |
+      | 2NA  | mast          | CONTROLLED | W       | 2      | A     | LEFT             |
+      | 3T   | track_circuit |            | W       |        |       |                  |
+    And interlocking "W" has these joints:
+      | Id | Kind       | CP Name | relations.mast |
+      | K2 | IRJ_SIGNAL | W       | W:2NA          |
+    And interlocking "W" has these ends:
+      | Id | Kind  |
+      | H1 | <end> |
+    And interlocking "W" has these policies:
+      | Id | Kind     |
+      | R1 | <regime> |
+    And interlocking "W" has these wires:
+      | Wire | Pins                              |
+      | a    | K2.governed 3T.TC H1.<pin> R1.track |
+    And the desk has these levers for interlocking "W":
+      | Name | Style  |
+      | 2    | signal |
+    When the routes are found
+    Then the route of "2NA" aligned "nothing" ends at the limit "<end>"
+    And the route of "2NA" aligned "nothing" has ceiling "<ceiling>"
+
+    Examples:
+      | end      | pin   | regime         | ceiling     |
+      | INDUSTRY | EoT   | GCOR_RULE_10   | RESTRICTING |
+      | BUMPER   | EoT   | GCOR_RULE_10   | CLEAR       |
+      | BUMPER   | EoT   | GCOR_RULE_14   | CLEAR       |
+      | BUMPER   | EoT   | GCOR_RULE_6_13 | RESTRICTING |
+      | NEXT_CP  | track | GCOR_RULE_10   | CLEAR       |
+
+  Scenario: a route onto dark track with no stated regime is held to RESTRICTING
+    Given interlocking "W" has these appliances:
+      | Name | Appliance     | Kind       | CP Name | signal | heads | relations.facing |
+      | 2NA  | mast          | CONTROLLED | W       | 2      | A     | LEFT             |
+    And interlocking "W" has these joints:
+      | Id | Kind       | CP Name | relations.mast |
+      | K2 | IRJ_SIGNAL | W       | W:2NA          |
+    And interlocking "W" has these ends:
+      | Id | Kind   |
+      | H1 | BUMPER |
+    And interlocking "W" has these wires:
+      | Wire | Pins              |
+      | a    | K2.governed H1.EoT |
+    And the desk has these levers for interlocking "W":
+      | Name | Style  |
+      | 2    | signal |
+    When the routes are found
+    Then the route of "2NA" aligned "nothing" ends at the limit "BUMPER"
+    And the route of "2NA" aligned "nothing" passes no circuit
+    And the route of "2NA" aligned "nothing" has ceiling "RESTRICTING"
+
   @route.end
   Scenario: track that ends with nothing stated leaves the route without an end
     Given interlocking "W" has these appliances:

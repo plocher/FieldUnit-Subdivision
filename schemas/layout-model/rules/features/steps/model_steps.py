@@ -990,6 +990,12 @@ def opposed_demands(context, mast, alignment, demands):
     assert got == want, f"opposing demands {got}, not {want}"
 
 
+@then('the route of "{mast}" aligned "{alignment}" passes no circuit')
+def passes_no_circuit(context, mast, alignment):
+    got = _route(context, mast, alignment).circuits
+    assert not got, f"circuits {got}"
+
+
 @then('the route of "{mast}" aligned "{alignment}" passes regimes "{regimes}"')
 def passes_regimes(context, mast, alignment, regimes):
     """The regime of each circuit passed, aligned with the circuits."""
