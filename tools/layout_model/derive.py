@@ -85,7 +85,9 @@ names every other track pin its wire reaches, so the relation is symmetric):
   ``signal`` serves its number in its interlocking, and derives ``masts``, every mast there whose ``given.signal`` is
   that number; a number no mast states is ``lever.serves`` at error. A ``CONTROLLED`` mast whose signal number no
   desk signal lever serves is ``mast.lever`` at missing (what works it is not drawn yet, like ``switch.lever``); an
-  ``ABSOLUTE`` or ``PERMISSIVE`` mast is automatic and has none.
+  ``ABSOLUTE`` or ``PERMISSIVE`` mast is automatic and has none, so a desk signal lever none of whose masts is
+  ``CONTROLLED`` is ``lever.masts`` at missing, the complement (the owner, 2026-11-13: Corporal's lever 832 before
+  the renumber of Railroad 520c509, its masts PERMISSIVE).
 - **A train order board** (``Appliance train_order``; the owner, 2026-11-03 and 2026-11-08) is an operator-controlled,
   non-vital indicator used in Time Table and Train Order territory: never a signal in the interlocking sense, never
   in a route, never in a control point. It derives no ``controlPoint`` and no chain runs through it (the exclusion an
@@ -1269,7 +1271,9 @@ class _Derivation:
         ``Control.X`` is a control (``783NWS``) and ``Indication.X`` an indication expression whose tokens the desk
         consumes (``!795WLK``); an empty field binds none (``Control.UNUSED``), and a bound pin with neither is reported
         (``desk.token``), never filled in from the lever's name. The lever serves an appliance of its interlocking: a
-        switch or lock it works, a maintainer call, or a signal lever's masts (``lever.serves``). Which station receives
+        switch or lock it works, a maintainer call, or a signal lever's masts (``lever.serves``); a signal lever whose
+        masts are all automatic works nothing the dispatcher controls, ``lever.masts`` at missing (the complement of
+        ``mast.lever``; the owner, 2026-11-13). Which station receives
         and sends what is the code line's (``codeline``); the code lever binds nothing of a station."""
         for ou_name, ou in self.m.get("officeUnits", {}).items():
             for i, dev in enumerate(ou.get("devices", [])):
@@ -1287,6 +1291,12 @@ class _Derivation:
                 masts = self._masts_of_signal(ix, b, n)
                 if masts:                                                             # a signal lever works the masts of its signal (rule 5)
                     _set_derived(dev, {**dev["derived"], "masts": masts})
+                    kinds = {m: ix["appliances"][m.partition(":")[2]].get("given", {}).get("Kind") for m in masts}
+                    if "signal" in styles(g) and "CONTROLLED" not in kinds.values():       # the complement of mast.lever (the owner, 2026-11-13)
+                        self.r.add("lever.masts", f"{what} is a signal lever on a column of the office, but no mast of signal {n} in {b} is "
+                                   f"CONTROLLED ({', '.join(f'{m.partition(chr(58))[2]} is {k or 'of no Kind'}' for m, k in kinds.items())}); an "
+                                   "automatic mast has no lever, so what the lever works is not drawn yet", where,
+                                   tuple(f"interlockings/{b}/appliances/{m.partition(':')[2]}" for m in masts))
                 elif n not in ix.get("appliances", {}):
                     self.r.add("lever.serves", f"{what} serves {d['serves']}, but {b} has no switch, lock, maintainer call or mast of "
                                f"signal {n}", where, (f"interlockings/{b}",))
