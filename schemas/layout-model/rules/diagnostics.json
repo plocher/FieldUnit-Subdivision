@@ -170,18 +170,18 @@
       "feature": "physical/io/driver_jmri_mast.feature#a signal system no table names",
       "replacedBy": null
     },
-    "head.plan": {
-      "level": "error",
+    "head.model": {
+      "level": "missing",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "physical/field/device_mast_head.feature#a head whose Style names no head model row",
       "replacedBy": null
     },
-    "head.vocabulary": {
-      "level": "error",
+    "head.position": {
+      "level": "info",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "physical/field/device_mast_head.feature#two heads on one mast pin with different indication sets are reported as information",
       "replacedBy": null
     },
     "joint.loop": {
@@ -221,7 +221,7 @@
     },
     "mast.device": {
       "level": "missing",
-      "lifecycle": "proposed",
+      "lifecycle": "active",
       "since": "0.1.0",
       "feature": "physical/field/device_mast_head.feature#a mast with no field mast device",
       "replacedBy": null
@@ -244,7 +244,7 @@
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "physical/field/device_mast_head.feature#a head wired to a position the mast's name does not letter",
       "replacedBy": null
     },
     "mast.joint": {
@@ -283,8 +283,8 @@
       "replacedBy": null
     },
     "mast.presents": {
-      "level": "error",
-      "lifecycle": "proposed",
+      "level": "info",
+      "lifecycle": "active",
       "since": "0.1.0",
       "feature": "physical/field/device_mast_head.feature#a mast whose head cannot present a word the mast must show",
       "replacedBy": null

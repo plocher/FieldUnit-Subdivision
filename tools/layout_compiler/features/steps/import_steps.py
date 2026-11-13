@@ -96,6 +96,12 @@ def not_reported(context):
     assert not hits, f"reported: {[str(d) for d in hits]}"
 
 
+@then('nothing is reported on "{ref}"')
+def nothing_on(context, ref):
+    hits = [d for d in context.seams.report.diags if _on(d, ref)]
+    assert not hits, f"reported on {ref}: {[str(d) for d in hits]}"
+
+
 def _appliance(context, name: str) -> dict:
     """The appliance called ``name``, in whichever interlocking of the model holds it."""
     found = [ix["appliances"][name] for ix in context.model["interlockings"].values() if name in ix.get("appliances", {})]
@@ -221,11 +227,14 @@ def binds(context, ref, pin, route):
     assert got == route, f"{ref}: {pin} binds {got!r}, not {route!r}"
 
 
-# ----------------------------------------------------------------------- rules stated before the importer has them
+# ----------------------------------------------------------------------- head positions (issue #80)
 
 @then('the head "{ref}" is position "{position}" of "{mast}"')
 def position(context, ref, position, mast):
-    raise Pending("head position = mast pin, issue #80")
+    """A head's IND wire reaches a position pin of its signal mast device (issue #80; the owner, 2026-11-04)."""
+    d = _device(context, ref)
+    assert d.mast == f"{context.interlocking}:{mast}", f"{ref}: its mast is {d.mast!r}, not {mast!r}"
+    assert d.position == position, f"{ref}: its position is {d.position!r}, not {position!r}"
 
 
 # ----------------------------------------------------------------------- encoded drivers (the owner, 2026-11-10)

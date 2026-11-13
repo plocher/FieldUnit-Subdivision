@@ -163,6 +163,7 @@ class Device:
     interlocking: Optional[str] = None                                # relation: the folder, for a device in no column (D6)
     mast: Optional[str] = None                                        # relation: a head's or a train order lever's IND wire to its field mast device
     face: Optional[str] = None                                        # relation: the train order mast pin that wire reaches, the face (the owner, 2026-11-08)
+    position: Optional[str] = None                                    # relation: the signal mast pin that wire reaches, the head's position A, B, C (#80)
     bindings: list[Binding] = field(default_factory=list)
 
 
@@ -764,17 +765,18 @@ def _columns(sm: Seams) -> None:
 
 
 def _mast_on_ind(sm: Seams, s: Symbol, at: str, lever: bool = False) -> tuple[Optional[Symbol], Optional[str]]:
-    """The field mast device a head's or a train order lever's IND wire reaches, and the face it reaches when that mast
-    is a train order mast (the owner, 2026-11-08): a train order mast device (Appliance ``train_order_mast``) has one
-    passive pin per face, and a head or a lever on that pin's net is that face's. A head reaches a signal mast
-    (Appliance ``mast``) or a train order mast; a lever reaches a train order mast only. Nothing reached is
-    ``head.mast`` or ``lever.face`` at missing (the mast or the face is not yet drawn); two masts, or two faces of
-    one, is ``head.masts`` or ``lever.faces`` at error. A signal mast's pins are its head positions (issue #80), not
-    read here: its face is None."""
+    """The field mast device a head's or a train order lever's IND wire reaches, and the pin of it the wire lands on: a
+    signal mast device (Appliance ``mast``) has one passive pin per head position, A, B, C top down, and a head on that
+    pin's net is that position's (issue #80; the owner, 2026-11-04: a head is anonymous, keyed by its mast and the pin);
+    a train order mast device (Appliance ``train_order_mast``) has one passive pin per face, and a head or a lever on
+    that pin's net is that face's (the owner, 2026-11-08). A head reaches a signal mast or a train order mast; a lever
+    reaches a train order mast only. Nothing reached is ``head.mast`` or ``lever.face`` at missing (the mast, the
+    position or the face is not yet drawn); two masts, or two pins of one, is ``head.masts`` or ``lever.faces`` at
+    error. Any number of heads may share a pin (the owner, 2026-11-09): what each presents is the derivation's."""
     ind = sm.source.net_of(s.ref, "IND")
     kinds = ("train_order_mast",) if lever else ("mast", "train_order_mast")
     hits = [p for p in ind.others(s.ref) if sm.source.symbols[p.ref].role == "DEVICE" and sm.source.symbols[p.ref].get("Appliance") in kinds] if ind else []
-    what = "train order lever" if lever else f"head device {s.lib_id.split(':')[1]} letter {s.get('Head')!r}"
+    what = "train order lever" if lever else f"head device {s.lib_id.split(':')[1]}"
     if not hits:
         if lever:
             sm.report.missing("lever.face", f"{what}: its IND is wired to no face pin of a train order mast device; the face it serves is not yet drawn", source=at)
@@ -790,11 +792,11 @@ def _mast_on_ind(sm: Seams, s: Symbol, at: str, lever: bool = False) -> tuple[Op
             sm.report.error("head.masts", text, source=at)
         return None, None
     m = sm.source.symbols[masts[0]]
-    if m.get("Appliance") != "train_order_mast":
-        return m, None
     faces = sorted({base(p.pin) for p in hits})
     if len(faces) > 1:
-        text = f"{what}: its IND reaches {len(faces)} faces of train order mast {key_of(m)!r} ({', '.join(faces)}); a head or a lever is one face's"
+        text = (f"{what}: its IND reaches {len(faces)} faces of train order mast {key_of(m)!r} ({', '.join(faces)}); a head or a lever is one face's"
+                if m.get("Appliance") == "train_order_mast" else
+                f"{what}: its IND reaches {len(faces)} positions of mast {key_of(m)!r} ({', '.join(faces)}); a head is one position's")
         if lever:
             sm.report.error("lever.faces", text, source=at)
         else:
@@ -823,7 +825,7 @@ def _driver_route(sm: Seams, p) -> Optional[tuple[Driver, str]]:
 def _devices(sm: Seams) -> None:
     for s in sm.source.where("DEVICE") + sm.source.where("PANEL"):
         appliance = s.get("Appliance")
-        name = device_name(s, sm.report)
+        name = None if _anonymous(s) else device_name(s, sm.report)   # a head or a train order lever has no name of its own (the owner, 2026-11-04, 2026-11-08)
         dev = Device(s, appliance, styles_of(s), given=given_of(s, keyed=False))
         at = loc(s)
         placed = False
@@ -851,12 +853,14 @@ def _devices(sm: Seams) -> None:
             if ix is None:
                 sm.report.error("device.interlocking", f"device {appliance} {s.value!r}: no Interlocking on its sheet or above", source=at)
                 continue
-            if appliance == "head":                                    # its IND wire reaches its Mast, or a train order mast's face pin (the owner, 2026-11-03, 2026-11-08)
-                m, dev.face = _mast_on_ind(sm, s, at)
+            if appliance == "head":                                    # its IND wire reaches a position pin of its mast, or a train order mast's face pin (#80; the owner, 2026-11-03, 2026-11-08)
+                m, pin = _mast_on_ind(sm, s, at)
                 if m is not None:
                     dev.mast = qualify(device_name(m, sm.report) or "", ix.name)
-                if not s.get("Head") and dev.face is None:            # a train order face's head has no letter: the face names it
-                    sm.report.missing("head.letter", "a head device has no Head letter", source=at)
+                    if m.get("Appliance") == "train_order_mast":
+                        dev.face = pin
+                    else:
+                        dev.position = pin
             elif appliance == "lever" and "train_order" in styles_of(s):   # a fascia lever serves the face its IND wire reaches (the owner, 2026-11-08)
                 m, dev.face = _mast_on_ind(sm, s, at, lever=True)
                 if m is not None:

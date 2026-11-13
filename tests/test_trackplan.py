@@ -109,10 +109,6 @@ J3   | IRJ-Signal       | TRACK     | Kind=IRJ_SIGNAL CP_Name=East
 M1   | Mast_Double      | APPLIANCE | Appliance=mast Style=double Kind=CONTROLLED Name=836NAB
 M2   | Mast_Single      | APPLIANCE | Appliance=mast Style=single Kind=CONTROLLED Name=836SA
 M3   | Mast_Dwarf       | APPLIANCE | Appliance=mast Style=dwarf Kind=CONTROLLED Name=836SB
-HA   | Signal Head - CPL | APPLIANCE | Appliance=head Style=CPL Name=A
-HB   | Signal Head - CPL | APPLIANCE | Appliance=head Style=CPL Name=B
-HC   | Signal Head - CL  | APPLIANCE | Appliance=head Style=CL Name=A
-HD   | Signal Head - Semaphore-UQ | APPLIANCE | Appliance=head Style=UQ Name=B
 TC1  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=1NAT CP_Name=East
 TC2  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=1SAT CP_Name=East
 TC3  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=2SAT CP_Name=East
@@ -360,9 +356,7 @@ class Membership(unittest.TestCase):
         self.assertEqual(sm.report.errors, [])
         self.assertEqual(control_points(ix), {n: "East" for n in ("835", "836NAB", "836SA", "836SB", "1NAT", "1SAT", "2SAT")})
         self.assertEqual({j["derived"]["controlPoint"] for j in ix["track"]["joints"]}, {"X:East"})
-        self.assertEqual(ix["appliances"]["836NAB"]["heads"], {"A": {"given": {"Appliance": "head", "Style": "CPL"}},
-                                                               "B": {"given": {"Appliance": "head", "Style": "CPL"}}})
-        self.assertEqual(ix["appliances"]["836SB"]["heads"], {"B": {"given": {"Appliance": "head", "Style": "UQ"}}})
+        self.assertNotIn("heads", ix["appliances"]["836NAB"])                   # a mast's head positions are its field mast device's pins (#80)
         self.assertNotIn("CP Name", ix["appliances"]["835"]["given"])          # stated nowhere: derived, never written as given
 
     def test_two_appliances_with_one_name_are_an_error(self):
@@ -556,7 +550,7 @@ class DoubleJoint(unittest.TestCase):
         self.assertEqual(rows(ix, "joints"), [{"given": {"Kind": "IRJ_SIGNALS"},
                                                "relations": {"A": ["X:832T.TC"], "B": ["X:834T.TC"], "masts": {"A": "X:832NA", "B": "X:832SA"}},
                                                "derived": {"circuits": {"A": "X:832T", "B": "X:834T"}}}])
-        self.assertEqual(diags(sm, "joint", "track.kind", "mast"), [])
+        self.assertEqual(diags(sm, "joint", "track.kind", "mast"), [("mast.device", "832NA"), ("mast.device", "832SA")])   # no field devices drawn (#80)
         self.assertEqual(layout_model.errors(emit.emit(sm)), [])
 
     def test_each_mast_derives_its_governed_side_from_its_pin_and_its_approach_from_the_other(self):
@@ -814,7 +808,7 @@ X1   | Driver-I2C-MAX7311            | IODRIVER | IC=MAX7311 Address=0x20
         self.assertIn("2 faces of train order mast 'Gilroy' (E, W)", d.text)
         sm, _ = compile_(self.STATION + self.SIGNAL + self.FIELD, self.TRACK + "ew | DM1.E DM1.W HE.IND\n")
         self.assertEqual(diags(sm, "head.masts"), [("head.masts", "HE")])
-        self.assertEqual(diags(sm, "head.letter"), [("head.letter", "HE"), ("head.letter", "HW")])   # a head on no face has no letter either
+        self.assertEqual(diags(sm, "head.letter", "identity.name"), [])                            # a head is anonymous (#80)
 
     def test_a_pin_on_the_track_is_an_error(self):
         sm, ix = compile_(self.STATION + self.SIGNAL, "w | TC1.TC NX1.To TO1.H\n")
@@ -1037,21 +1031,22 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(len(self.sm.report.by_code("next_cp.drawn")), 0)
         self.assertEqual(len(self.sm.report.by_code("mast.powered")), 0)
         # Railroad eef8217: switch.lever on Watsonville's twelve powered switches 3 to 25 only (GCaltrain's 771 has its
-        # lever on column 0, Gilroy's locks 777 and 781 their Local-Lock levers, so no switch.lock.local); identity.name
-        # and head.letter are the anonymous head devices, #80's. Railroad 0b39d49: Gilroy's JMRI encoding states
-        # JMRI.SignalSystem = SPTCO-1969, so its six SIGNALMAST drivers derive jmriSignalSystem and no
-        # driver.jmri.signal_system is left (six at eef8217, #85). Every piece has a regime. No warning: Hollister is
-        # marked off_layout and no mast lacks its Kind.
+        # lever on column 0, Gilroy's locks 777 and 781 their Local-Lock levers, so no switch.lock.local). Railroad
+        # 0b39d49: Gilroy's JMRI encoding states JMRI.SignalSystem = SPTCO-1969, so its six SIGNALMAST drivers derive
+        # jmriSignalSystem and no driver.jmri.signal_system is left (six at eef8217, #85). Every piece has a regime. No
+        # warning: Hollister is marked off_layout and no mast lacks its Kind. #80 (2026-11-12): the heads are anonymous
+        # positions, so the 60 identity.name and 58 head.letter are retired; every mast has a field mast device with
+        # its heads wired (no mast.device), no pin carries two heads (no head.position) and no mast states Indications
+        # (no mast.presents); the drawing is 0b39d49's (Railroad 97be8aa moved only symbols/manual.html and the README).
         missing = Counter(d.code for d in self.sm.report.diags if d.severity == "missing")
         self.assertEqual({k: v for k, v in missing.items() if k.startswith("switch.")}, {"switch.lever": 12})
         self.assertEqual(sorted(d.where for d in self.sm.report.by_code("switch.lever")), sorted(f"interlockings/Watsonville/appliances/{n}" for n in range(3, 27, 2)))
-        heads = [d for ix in self.model["interlockings"].values() for d in ix["devices"] if d["given"]["Appliance"] == "head"]
-        self.assertEqual(missing["identity.name"], len(heads))
-        self.assertEqual(set(missing), {"switch.lever", "identity.name", "head.letter"})
+        self.assertEqual(set(missing), {"switch.lever"})
+        self.assertEqual(self.sm.report.by_code("mast.device") + self.sm.report.by_code("head.position") + self.sm.report.by_code("mast.presents"), [])
         self.assertEqual(self.model["layout"]["ioEncodings"]["JMRI"]["given"]["JMRI.SignalSystem"], "SPTCO-1969")
         jmri_masts = {k: v["derived"]["jmriSignalSystem"] for k, v in self.model["layout"]["processors"]["Gilroy"]["drivers"].items() if v["given"].get("Kind") == "SIGNALMAST"}
         self.assertEqual(jmri_masts, {f"SIGNALMAST.{m}": "SPTCO-1969" for m in ["778NAB", "778NC", "778SAB", "778SC", "Gilroy.E", "Gilroy.W"]})
-        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 7, "missing": 130})
+        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 7, "missing": 12})   # 130 before #80
         self.assertEqual(sorted(d.entities[0] for d in self.sm.report.by_code("regime.limits")), [f"interlockings/{n}" for n in sorted(self.model["interlockings"])])
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):

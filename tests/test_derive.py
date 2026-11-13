@@ -95,6 +95,11 @@ def only(diags, *prefixes) -> list[tuple[str, str]]:
     return [d for d in diags if d[0].startswith(prefixes)]
 
 
+# The trackplan fixtures draw no field mast devices, so every mast is mast.device at missing (#80).
+NO_MAST_DEVICES = [("mast.device", m) for m in ("836NAB", "836SA", "836SB")]
+NO_BLOCK_DEVICES = [("mast.device", m) for m in ("832NA", "832SA")]
+
+
 def row(ix: dict, rid: str) -> dict:
     return next(r for k in LISTS for r in ix["track"].get(k, []) if r["id"] == rid)
 
@@ -130,7 +135,7 @@ class Circuits(unittest.TestCase):
     def test_components_stop_at_joints_and_a_switchs_ports_are_one_circuit(self):
         out, diags = run(layout(X=interlocking(ONE_SWITCH, ONE_SWITCH_WIRES, "East")))
         ix = out["interlockings"]["X"]
-        self.assertEqual(diags, [("next_cp.off_layout", "X"), *[("regime.none", "X")] * 4, ("switch.lever", "835"), ("switch.lock.local", "835")])   # no regime marker on any of the four pieces; the lock switch's field pair is not drawn here (the owner, 2026-11-09)
+        self.assertEqual(diags, [*NO_MAST_DEVICES, ("next_cp.off_layout", "X"), *[("regime.none", "X")] * 4, ("switch.lever", "835"), ("switch.lock.local", "835")])   # no regime marker on any of the four pieces; the lock switch's field pair is not drawn here (the owner, 2026-11-09)
         self.assertEqual({j: row(ix, j)["derived"]["circuits"] for j in ("J1", "J2", "J3")}, {
             "J1": {"governed": "X:835T1", "approach": "X:1NAT"},
             "J2": {"governed": "X:835T1", "approach": "X:1SAT"},
@@ -202,28 +207,28 @@ class Checks(unittest.TestCase):
 
     def test_a_mast_on_no_joint_and_on_two(self):
         _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("rel.mast=X:836SB", ""), ONE_SWITCH_WIRES, "East")))
-        self.assertEqual(only(diags, "mast"), [("mast.joint", "836SB")])
+        self.assertEqual(only(diags, "mast"), [*NO_MAST_DEVICES, ("mast.joint", "836SB")])
         _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("rel.mast=X:836SB", "rel.mast=X:836SA"), ONE_SWITCH_WIRES, "East")))
-        self.assertEqual(only(diags, "mast"), [("mast.joint", "836SB"), ("mast.joints", "836SA")])
+        self.assertEqual(only(diags, "mast"), [*NO_MAST_DEVICES, ("mast.joint", "836SB"), ("mast.joints", "836SA")])
 
     def test_a_mast_states_what_it_is_or_is_missing(self):
         """ADR 0013 §5: Kind CONTROLLED, ABSOLUTE or PERMISSIVE is a stated fact; none, or another word, is missing."""
         _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("Style=dwarf Kind=CONTROLLED", "Style=dwarf"), ONE_SWITCH_WIRES, "East")))
-        self.assertEqual(only(diags, "mast"), [("mast.kind", "836SB")])
+        self.assertEqual(only(diags, "mast"), [*NO_MAST_DEVICES, ("mast.kind", "836SB")])
         _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("Style=dwarf Kind=CONTROLLED", "Style=dwarf Kind=AUTOMATIC"), ONE_SWITCH_WIRES, "East")))
-        self.assertEqual(only(diags, "mast"), [("mast.kind", "836SB")])
+        self.assertEqual(only(diags, "mast"), [*NO_MAST_DEVICES, ("mast.kind", "836SB")])
         self.assertEqual(derive.derive(layout(X=interlocking(ONE_SWITCH.replace("Style=dwarf Kind=CONTROLLED", "Style=dwarf"), ONE_SWITCH_WIRES, "East")))[1]
                          .by_code("mast.kind")[0].severity, "missing")
         for kind in ("CONTROLLED", "ABSOLUTE", "PERMISSIVE"):
             _, diags = run(layout(X=interlocking(ONE_SWITCH.replace("Style=dwarf Kind=CONTROLLED", f"Style=dwarf Kind={kind}"), ONE_SWITCH_WIRES, "East")))
-            self.assertEqual(only(diags, "mast"), [], kind)
+            self.assertEqual(only(diags, "mast"), NO_MAST_DEVICES, kind)
 
     def test_a_mast_that_is_not_controlled_over_a_powered_switch_is_a_warning(self):
         """ADR 0013 §5: a PERMISSIVE or ABSOLUTE mast whose governed circuit holds a powered switch or derail port (§4:
         Style powered or dual, or a CP Name) is reported; over an electric lock, a hand-throw switch or a switch on its
         approach side it is not; a CONTROLLED mast never is. The check sets nothing."""
         def masts(things: str, wires: str = ONE_SWITCH_WIRES) -> list[tuple[str, str]]:
-            return only(run(layout(X=interlocking(things, wires, "East")))[1], "mast")
+            return [d for d in only(run(layout(X=interlocking(things, wires, "East")))[1], "mast") if d[0] != "mast.device"]   # no field devices drawn here
         permissive = ONE_SWITCH.replace("836SA  | appliance | Appliance=mast Style=single Kind=CONTROLLED",
                                         "836SA  | appliance | Appliance=mast Style=single Kind=PERMISSIVE")
         self.assertEqual(masts(permissive), [])                                                   # 835 is an electric lock
@@ -240,13 +245,22 @@ class Checks(unittest.TestCase):
         self.assertEqual(masts(permissive.replace("Style=lock", "Style=powered"), turned), [])
 
     def test_a_mast_named_for_heads_it_does_not_carry_and_one_letter_on_two_masts(self):
+        """ADR 0003 rule 7 against the wired positions (#80): a mast's name letters count its positions, the k-th letter
+        the k-th pin top down (774NC is signal 774N's head C on a single mast device, pin A). A head on a pin beyond the
+        last letter is the error; a position with no head is not yet drawn, no finding."""
         ix = interlocking(ONE_SWITCH, ONE_SWITCH_WIRES, "East")
-        ix["appliances"]["836NAB"]["heads"] = {"A": {"given": {"Style": "CPL"}}, "C": {"given": {"Style": "CPL"}}}
+        ix["devices"] = [{"given": {"Appliance": "mast", "Name": "836NAB"}},
+                         {"given": {"Appliance": "head", "Style": "TypeD"}, "relations": {"mast": "X:836NAB", "position": "A"}},
+                         {"given": {"Appliance": "head", "Style": "TypeD"}, "relations": {"mast": "X:836NAB", "position": "C"}}]
         _, diags = run(layout(X=ix))
-        self.assertEqual(only(diags, "mast"), [("mast.heads", "836NAB")])
+        self.assertEqual(only(diags, "mast"), [("mast.device", "836SA"), ("mast.device", "836SB"), ("mast.heads", "836NAB")])
+        ix["devices"][2]["relations"]["position"] = "B"
+        self.assertEqual(only(run(layout(X=ix))[1], "mast.heads"), [])
+        ix["devices"] = ix["devices"][:2]                                                     # B not yet drawn: nothing
+        self.assertEqual(only(run(layout(X=ix))[1], "mast.heads"), [])
         ix = interlocking(ONE_SWITCH.replace("836SA  |", "836NA  |").replace("X:836SA", "X:836NA"), ONE_SWITCH_WIRES, "East")
         _, diags = run(layout(X=ix))
-        self.assertEqual(only(diags, "mast"), [("mast.letters", "836NA")])
+        self.assertEqual(only(diags, "mast.letters"), [("mast.letters", "836NA")])
 
     def test_a_switch_with_no_track_and_a_next_cp_that_names_nothing(self):
         out, diags = run(layout(X=interlocking("9 | appliance | Appliance=switch Style=lock TC=9T1\nN1 | ends | Kind=NEXT_CP\n", "", "East")))
@@ -319,7 +333,7 @@ class DoubleJoint(unittest.TestCase):
 
     def test_a_mast_on_a_double_joint_stands_on_a_joint_and_has_its_sides(self):
         out, diags = run(self.block({"A": "X:832NA", "B": "X:832SA"}))
-        self.assertEqual(only(diags, "mast", "joint"), [])
+        self.assertEqual(only(diags, "mast", "joint"), NO_BLOCK_DEVICES)
         apps = out["interlockings"]["X"]["appliances"]
         self.assertEqual(apps["832NA"]["derived"]["circuits"], {"governed": "X:832T", "approach": "X:834T"})
         self.assertEqual(apps["832SA"]["derived"]["circuits"], {"governed": "X:834T", "approach": "X:832T"})
@@ -378,16 +392,16 @@ class DoubleJoint(unittest.TestCase):
         ix["appliances"]["9D"] = {"given": {"Appliance": "switch", "Style": "derail,powered"}, "relations": {"C": ["J1.B", "X:834T.TC"]}}
         row(ix, "J1")["relations"]["B"] = ["X:834T.TC", "X:9D.C"]
         ix["appliances"]["834T"]["relations"]["TC"] = ["J1.B", "X:9D.C"]
-        self.assertEqual(only(run(m)[1], "mast"), [("mast.powered", "832SA")])
+        self.assertEqual(only(run(m)[1], "mast"), [*NO_BLOCK_DEVICES, ("mast.powered", "832SA")])
         ix["appliances"]["9"] = {"given": {"Appliance": "switch", "Style": "lock", "CP Name": "East"}, "relations": {"C": ["J1.B"]}}
-        self.assertEqual(only(run(m)[1], "mast"), [])
+        self.assertEqual(only(run(m)[1], "mast"), NO_BLOCK_DEVICES)
 
     def test_a_side_with_no_mast_leaves_that_mast_on_no_joint_and_one_mast_on_both_sides_is_on_two(self):
         out, diags = run(self.block({"A": "X:832NA"}))
-        self.assertEqual(only(diags, "mast"), [("mast.joint", "832SA")])
+        self.assertEqual(only(diags, "mast"), [*NO_BLOCK_DEVICES, ("mast.joint", "832SA")])
         self.assertNotIn("circuits", out["interlockings"]["X"]["appliances"]["832SA"].get("derived", {}))
         _, diags = run(self.block({"A": "X:832NA", "B": "X:832NA"}))
-        self.assertEqual(only(diags, "mast"), [("mast.joint", "832SA"), ("mast.joints", "832NA")])
+        self.assertEqual(only(diags, "mast"), [*NO_BLOCK_DEVICES, ("mast.joint", "832SA"), ("mast.joints", "832NA")])
 
 
 # Two houses, the Christopher shape: switches 813 and 815 (with 815A in its gang) on North, 817 on South; siding 01T
@@ -815,7 +829,7 @@ class OfficeUnits(unittest.TestCase):
         m = layout(X=interlocking("", "", "East"), Y=interlocking("2 | appliance | Appliance=switch Style=powered\n", "", "West", "Y"))
         m["interlockings"]["X"]["devices"] = [
             {"given": {"Appliance": "switch", "Name": "1"}},
-            {"given": {"Appliance": "head", "Head": "A"}, "relations": {"mast": "X:2NA"}},
+            {"given": {"Appliance": "head", "Style": "TypeD"}, "relations": {"mast": "X:2NA", "position": "A"}},
             {"given": {"Appliance": "lever", "Style": "code", "Name": "Code"}}]
         m["officeUnits"] = {"Desk": {"columns": {"1": {"given": {"CP Name": "east"}}, "2": {"relations": {"interlocking": "Y"}}},
                                      "devices": [lamp("", "X", IndicationToken="1T, 2T"),
@@ -832,8 +846,9 @@ class OfficeUnits(unittest.TestCase):
         self.assertEqual([d.get("derived") for d in ou["devices"]],
                          [{"indications": ["X:1TK", "X:2TK"], "expression": "X:1TK | X:2TK"}, {"serves": "Y:3"}, {"serves": "Y:2"},
                           {"indications": ["Y:4TK"], "expression": "Y:4TK"}])
-        self.assertEqual([d.get("derived") for d in out["interlockings"]["X"]["devices"]], [{"serves": "X:1"}, {"serves": "X:2NA"}, None])
-        self.assertEqual(diags, [("desk.legacy_token", "0"), ("desk.legacy_token", "3"), ("head.plan", "1"), ("lever.serves", "1"),
+        self.assertEqual([d.get("derived") for d in out["interlockings"]["X"]["devices"]],
+                         [{"serves": "X:1"}, {"serves": "X:2NA", "presents": ["STOP", "APPROACH", "ADVANCE_APPROACH", "CLEAR", "DARK"]}, None])
+        self.assertEqual(diags, [("desk.legacy_token", "0"), ("desk.legacy_token", "3"), ("lever.serves", "1"),
                                  ("reference.codeline", "0"), ("reference.codeline", "0"), ("reference.codeline", "3"), ("switch.track", "2")])
 
     def test_a_lamp_in_a_column_is_still_in_its_sheets_interlocking(self):
@@ -900,17 +915,60 @@ class Desk(unittest.TestCase):
 
 
 class Heads(unittest.TestCase):
-    def check(self, mast: str, style: str, devices: list[tuple[str, str]]) -> list[tuple[str, str]]:
-        ix = interlocking(f"{mast} | appliance | Appliance=mast Style=single Kind=CONTROLLED\n", "", "East")
-        ix["appliances"][mast]["heads"] = {mast[-1]: {"given": {"Appliance": "head", "Style": style}}}
-        ix["devices"] = [{"given": {"Appliance": a, "Style": s, "Head": mast[-1]}, "relations": {"mast": f"X:{mast}"}} for a, s in devices]
-        return only(run(layout(X=ix))[1], "head")
+    """A head is a position on its mast (#80; the owner, 2026-11-04 and 2026-11-09): anonymous, keyed by its mast and the
+    pin its IND reaches; its Style indexes the head model table; demand is the explicit Indications list until #62."""
 
-    def test_a_device_of_another_style_than_its_trackplan_head_is_an_error(self):
-        self.assertEqual(self.check("100NA", "CPL", [("head", "CL")]), [("head.vocabulary", "0")])
+    @staticmethod
+    def model(mast: str = "100NA", heads: tuple[tuple[str, str], ...] = (("A", "TypeD"),), indications: str = "", device: bool = True) -> dict:
+        ix = interlocking(f"{mast} | appliance | Appliance=mast Style=single Kind=CONTROLLED" + (f" Indications={indications}" if indications else "") + "\n", "", "East")
+        ix["devices"] = ([{"given": {"Appliance": "mast", "Name": mast}}] if device else []) + \
+            [{"given": {"Appliance": "head", "Style": s}, "relations": {"mast": f"X:{mast}", "position": p}} for p, s in heads]
+        return layout(X=ix)
 
-    def test_a_semaphores_night_lamp_is_allowed(self):
-        self.assertEqual(self.check("100SB", "UQ", [("head", "UQ"), ("head", "CL")]), [])
+    def test_a_head_presents_its_models_words_and_the_mast_derives_its_positions(self):
+        out, diags = run(self.model(heads=(("A", "TypeD"), ("B", "LQ2"))))
+        ix = out["interlockings"]["X"]
+        self.assertEqual([d.get("derived") for d in ix["devices"]],
+                         [{"serves": "X:100NA"}, {"serves": "X:100NA", "presents": ["STOP", "APPROACH", "ADVANCE_APPROACH", "CLEAR", "DARK"]},
+                          {"serves": "X:100NA", "presents": ["STOP", "CLEAR", "DARK"]}])
+        self.assertEqual(ix["appliances"]["100NA"]["derived"]["positions"],
+                         {"A": ["STOP", "APPROACH", "ADVANCE_APPROACH", "CLEAR", "DARK"], "B": ["STOP", "CLEAR", "DARK"]})
+        self.assertNotIn("demand", ix["appliances"]["100NA"]["derived"])
+        self.assertEqual(only(diags, "head", "mast.device", "mast.presents"), [])
+
+    def test_a_style_with_no_head_model_row_is_missing(self):
+        out, diags = run(self.model(heads=(("A", "CPL"),)))
+        self.assertEqual(only(diags, "head"), [("head.model", "1")])
+        self.assertNotIn("presents", out["interlockings"]["X"]["devices"][1]["derived"])
+        self.assertNotIn("positions", out["interlockings"]["X"]["appliances"]["100NA"]["derived"])   # nothing known presents nothing
+
+    def test_a_mast_with_no_field_device_or_no_head_wired_is_missing(self):
+        self.assertEqual(only(run(self.model(heads=(), device=False))[1], "mast.device"), [("mast.device", "100NA")])
+        _, diags = run(self.model(heads=()))
+        self.assertEqual(only(diags, "mast.device"), [("mast.device", "100NA")])
+        (d,) = derive.derive(self.model(heads=()))[1].by_code("mast.device")
+        self.assertEqual((d.severity, d.entities), ("missing", ("interlockings/X/appliances/100NA", "interlockings/X/devices/0")))
+
+    def test_two_heads_on_one_pin_present_their_union_and_differ_at_info(self):
+        """The owner, 2026-11-09: a repeater or a head upgrade with both in service; never an error."""
+        out, diags = run(self.model(heads=(("A", "LQ2"), ("A", "TypeD"))))
+        self.assertEqual(out["interlockings"]["X"]["appliances"]["100NA"]["derived"]["positions"],
+                         {"A": ["STOP", "CLEAR", "DARK", "APPROACH", "ADVANCE_APPROACH"]})
+        self.assertEqual(only(diags, "head"), [("head.position", "1")])
+        (d,) = derive.derive(self.model(heads=(("A", "LQ2"), ("A", "TypeD"))))[1].by_code("head.position")
+        self.assertEqual((d.severity, d.entities), ("info", ("interlockings/X/devices/1", "interlockings/X/devices/2", "interlockings/X/appliances/100NA")))
+        self.assertEqual(only(run(self.model(heads=(("A", "TypeD"), ("A", "TypeD"))))[1], "head"), [])
+
+    def test_demand_is_the_explicit_list_and_a_single_position_that_cannot_present_it_informs(self):
+        out, diags = run(self.model(heads=(("A", "LQ2"),), indications="STOP,APPROACH,CLEAR"))
+        self.assertEqual(out["interlockings"]["X"]["appliances"]["100NA"]["derived"]["demand"], ["STOP", "APPROACH", "CLEAR"])
+        self.assertEqual(only(diags, "mast.presents", "mast.device"), [("mast.presents", "100NA")])
+        (d,) = derive.derive(self.model(heads=(("A", "LQ2"),), indications="STOP,APPROACH,CLEAR"))[1].by_code("mast.presents")
+        self.assertEqual(d.severity, "info")
+        self.assertIn("it cannot present APPROACH", d.text)
+        self.assertEqual(only(run(self.model(heads=(("A", "TypeD"),), indications="STOP,APPROACH,CLEAR"))[1], "mast.presents"), [])
+        # several positions show the mast's indication through the policy table, not seeded yet: nothing is reported
+        self.assertEqual(only(run(self.model("100NAB", heads=(("A", "LQ2"), ("B", "LQ2")), indications="STOP,APPROACH,CLEAR"))[1], "mast.presents"), [])
 
 
 class TrainOrders(unittest.TestCase):
@@ -945,7 +1003,7 @@ class TrainOrders(unittest.TestCase):
     def test_it_derives_no_control_point_and_breaks_no_chain(self):
         for plan in ((TWO_HOUSES, TWO_HOUSES_WIRES, NORTH_SOUTH), (ONE_SWITCH, ONE_SWITCH_WIRES, "East")):
             out, diags = run(self.model(plan))
-            self.assertEqual(only(diags, "control_point", "train_order", "mast", "lever", "interlocking"), [], plan[2])
+            self.assertEqual([d for d in only(diags, "control_point", "train_order", "mast", "lever", "interlocking") if d[0] != "mast.device"], [], plan[2])   # no field devices for the plan's masts
             to = out["interlockings"]["X"]["appliances"]["Gilroy"]
             self.assertNotIn("controlPoint", to.get("derived", {}), plan[2])
             self.assertEqual({n: cp for n, cp in control_points(out).items() if n != "Gilroy"}, control_points(run(layout(X=interlocking(*plan)))[0]))
@@ -1043,17 +1101,13 @@ class TrainOrders(unittest.TestCase):
         self.assertEqual(only(run(m)[1], "train_order.station"), [("train_order.station", "Gilroy")])
 
     def test_a_faces_head_is_not_a_mast_head(self):
-        """A head on a face pin (relations.face) serves the board and is no mast's head: the head checks do not read it
-        (the board has no trackplan head). A lettered head wired to a mast device named like the board names no mast
-        head (head.plan), with the board named in the hint (the owner, 2026-11-03, 2026-11-08)."""
+        """A head on a face pin (relations.face) serves the board and is no mast's head: the position checks do not read
+        it (the board has no positions and no head model match; the owner, 2026-11-03, 2026-11-08)."""
         out, diags = run(self.model())
         self.assertEqual(only(diags, "head", "train_order", "device"), [])
-        m = self.model(devices=[self.MAST, self.lever("N", "STOP"), self.head("", letter="N")])
-        self.assertEqual(only(run(m)[1], "head"), [("head.plan", "2")])
-        (d,) = derive.derive(m)[1].by_code("head.plan")
-        self.assertEqual(d.text, "X: head devices for mast Gilroy head N, but the trackplan draws no such head "
-                                 "(Gilroy is a train order board; it has no trackplan head: its faces are its field mast's pins, "
-                                 "and a head on a face pin has no letter)")
+        self.assertEqual([d.get("derived") for d in out["interlockings"]["X"]["devices"] if d["given"]["Appliance"] == "head"],
+                         [{"serves": "X:Gilroy"}, {"serves": "X:Gilroy"}])
+        self.assertNotIn("positions", out["interlockings"]["X"]["appliances"]["Gilroy"].get("derived", {}))
 
     def test_a_signal_mast_drawn_facing_against_its_letter_is_a_warning(self):
         """The owner, 2026-11-08: the glyph's turn (relations.facing) must agree with the Name letter (ADR 0003 D1); the
@@ -1154,7 +1208,7 @@ class SPCoastExample(unittest.TestCase):
         self.assertNotIn("rules", stripped["provenance"])
         out, report = derive.derive(stripped)
         self.assertEqual(layout_model.dumps(out), text)
-        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 7, "missing": 12})   # Railroad 0b39d49: regime.limits for the seven interlockings (every piece has a regime: the interlockings share their block circuits by hierarchical nets, GCaltrain's boundary joint stops its yard); switch.lever on Watsonville's twelve powered switches 3 to 25 (GCaltrain's 771 has its lever on column 0, Gilroy's locks 777 and 781 their Local-Lock levers); no driver.jmri.signal_system since Gilroy's JMRI encoding states JMRI.SignalSystem = SPTCO-1969 (six at eef8217, #85); the importer's identity.name and head.letter are not the derivation's
+        self.assertEqual(report.counts(), {"error": 0, "warning": 0, "info": 7, "missing": 12})   # Railroad 0b39d49 (refrozen for #80 on 2026-11-12, provenance 97be8aa: only symbols/manual.html and the README moved since): regime.limits for the seven interlockings (every piece has a regime: the interlockings share their block circuits by hierarchical nets, GCaltrain's boundary joint stops its yard); switch.lever on Watsonville's twelve powered switches 3 to 25 (GCaltrain's 771 has its lever on column 0, Gilroy's locks 777 and 781 their Local-Lock levers); no driver.jmri.signal_system since Gilroy's JMRI encoding states JMRI.SignalSystem = SPTCO-1969 (six at eef8217, #85); every mast has its field device and heads (no mast.device), no mast states Indications (no mast.presents)
 
 
 if __name__ == "__main__":

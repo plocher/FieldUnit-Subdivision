@@ -131,15 +131,21 @@ the trackplan head symbols.
 
 ## Model step (after the symbols)
 
-- Head position from the pin on the `head.mast` relation: `seams.py:164` (`Device.mast`) already reads the head's
-  IND wire to its mast; the pin letter it lands on is the position. The field mast device binds to the trackplan
-  mast by Name.
-- Demand derivation lands with #62 (routes, blocks, ceilings): Stop always, the rest earned; an explicit
-  `Indications` list replaces it with the difference reported.
-- Match: demand ⊆ presents, through the policy table per position; diagnostics missing / error.
-- `derived.presents` per head position; FieldUnit's `Aspect` composites become derived (a FieldUnit defect against
-  the shared list, by the order of authority); schema additive change; the ADR line moving "head casts with Head
-  letter" to the field sheet becomes "head position = mast pin".
+Landed with issue #80 (2026-11-12; ADR 0009 §3.7 rewritten in place): head position = mast pin.
+
+- Head position from the pin on the `head.mast` relation: `relations.position` on the head device, read by
+  `seams._mast_on_ind` from the IND wire; the field mast device binds to the trackplan mast by Name. No Name, no
+  Head letter on a head (`head.letter` and `identity.name` on heads retired).
+- `derived.presents` per head from `reference.head_model(style)` (TypeD, SA, H2, LQ2, LQ3, UQ3 seeded, each row with
+  its source); `derived.positions` per mast, what any head on the pin presents; `head.model` (missing) for a Style
+  with no row; `head.position` (info) for two heads on one pin with different words (ruling 2026-11-09).
+- Demand: `derived.demand` is the explicit `Indications` list until #62 derives it (Stop always, the rest earned);
+  the difference between the two is reported once both exist.
+- Match: `mast.device` (missing) with no field mast device or no head wired; `mast.presents` (info) on a
+  one-position mast whose head cannot present a demanded word; a mast with several positions waits on
+  `reference.policy(rulebook)`, which lands with #62. `mast.heads` (error) compares the Name's letter count with the
+  wired positions. Schema 3.2.0 (additive). FieldUnit's `Aspect` composites becoming derived is still a FieldUnit
+  defect against the shared list (order of authority).
 
 ## Migration (SPCoast sheets, later)
 

@@ -66,6 +66,14 @@ names every other track pin its wire reaches, so the relation is symmetric):
   ``PERMISSIVE`` mast belongs to no control point (ADR 0013 §5: automatic masts state no CP Name; §4: block track is
   outside every interlocking): it derives no ``controlPoint``, under one house as under several, and no chain runs
   through it. A mast with no Kind keeps today's handling (``mast.kind`` reports it).
+- **A head is a position on its mast** (issue #80; the owner, 2026-11-04 and 2026-11-09): a head device has no name;
+  its ``relations.mast`` and ``relations.position`` name the field mast device and the pin, A, B, C top down, its IND
+  wire reaches. Its Style is its model, the index into the head model table (``reference.head_model``): the head
+  derives ``presents``, the table's head words; a Style with no row is ``head.model`` at missing. The mast derives
+  ``positions``, each with the words it presents, and ``demand`` from an explicit ``Indications`` list until #62
+  derives it. A mast with no field mast device or no head wired is ``mast.device`` at missing; two heads on one pin
+  presenting different words are ``head.position`` at info; a single-position mast whose head cannot present a
+  demanded word is ``mast.presents`` at info; a mast with several positions waits on the policy table (``positions``).
 - **A train order board** (``Appliance train_order``; the owner, 2026-11-03 and 2026-11-08) is an operator-controlled,
   non-vital indicator used in Time Table and Train Order territory: never a signal in the interlocking sense, never
   in a route, never in a control point. It derives no ``controlPoint`` and no chain runs through it (the exclusion an
@@ -723,10 +731,16 @@ class _Plan:
             if facing and direction_of(m.group(1)[-1]) not in (None, facing):      # the glyph's turn against the letter (the owner, 2026-11-08)
                 self.r.add("mast.facing", f"{self.name}: mast {name} is drawn facing {facing} but its letter {m.group(1)[-1]} says "
                            f"{direction_of(m.group(1)[-1])} (ADR 0003 D1); turn the glyph or rename the mast", where)
-            heads = sorted(a.get("heads", {}))
-            if heads and list(m.group(2)) != heads:
-                self.r.add("mast.heads", f"{self.name}: mast {name} names heads {m.group(2)}, but the heads drawn on it are "
-                           f"{''.join(heads)} (ADR 0003 rule 7)", where)
+            wired = sorted({d["relations"]["position"] for d in self.ix.get("devices", [])          # the positions heads are wired to (#80)
+                            if d.get("given", {}).get("Appliance") == "head" and d.get("relations", {}).get("position")
+                            and d["relations"].get("mast") == qualify(name, self.name)})
+            pins = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[:len(m.group(2))]              # the k-th letter is the k-th pin, top down (#80)
+            extra = [p for p in wired if p not in pins]
+            if extra:
+                self.r.add("mast.heads", f"{self.name}: mast {name} names {len(m.group(2))} head{'s' * (len(m.group(2)) > 1)} "
+                           f"({m.group(2)}), but a head is wired to position{'s' * (len(extra) > 1)} {', '.join(extra)} of its field "
+                           f"mast device, beyond pin {pins[-1]} (ADR 0003 rule 7; a head's position is the mast pin its IND reaches, "
+                           "A, B, C top down, #80)", where)
             for letter in m.group(2):
                 other = letters_of_signal[m.group(1)].setdefault(letter, name)
                 if other != name:
@@ -851,7 +865,7 @@ class _Derivation:
         self.desk()
         self.codeline()
         self.control_sources()
-        self.heads()
+        self.positions()
         self.train_orders()
         self.reach()
         self.jmri_masts()
@@ -1329,48 +1343,79 @@ class _Derivation:
 
     # --------------------------------------------------------------------------------------------- heads
 
-    def heads(self) -> None:
-        """A head device to its trackplan head by mast name and letter; the vocabularies must match (ADR 0009 §3.7):
-        one device of the drawn style per head, another style ``head.vocabulary`` at error (wrong). A mast head with
-        no device stays unreported, as today (an automatic mast's devices are not yet drawn). A head device reaches
-        its mast through ``relations.mast``; one wired to a train order mast's face pin (``relations.face``) is a
-        face's head, not a mast's, and is not read here: the board has no trackplan head (the owner, 2026-11-08). A
-        head with a letter wired to a signal mast device named like a board is ``head.plan`` (no mast of that name
-        has that head)."""
+    def positions(self) -> None:
+        """A head is a position on its mast (issue #80; the owner, 2026-11-04 and 2026-11-09): a head device's
+        ``relations.mast`` and ``relations.position`` name the field mast device and the pin (A, B, C top down) its IND
+        wire reaches. Its Style is its model: ``derived.presents`` is the head words of its model table,
+        ``reference.head_model`` (the keys); a Style with no row is ``head.model`` at missing, what it presents unknown,
+        never guessed. Any number of heads may share a pin (a fascia repeater of a mast hidden from the aisle, a head
+        upgrade with both in service): the position presents what any of them presents, and two heads on one pin with
+        different words are ``head.position`` at info, naming the pin, the heads and the difference: a normal
+        configuration, never an error. The mast derives ``positions``, each with the words it presents, and ``demand``,
+        the words it must show: an explicit ``Indications`` list, the settled exception, until the demand derivation lands
+        with #62 (a mast that states none derives no demand and nothing is reported for it). A mast no field mast
+        device serves, or whose device has no head wired, is ``mast.device`` at missing. The match, demand ⊆ presents: on
+        a mast with one position the head shows the mast's indication itself, so a demanded word the position does not
+        present is ``mast.presents`` at info (what the head does with it is its table's indication filter, never an
+        error); a mast with several positions shows its indication through the policy table, ``reference.policy``, which
+        is not seeded yet, so nothing is reported for it. A head on a train order mast's face (``relations.face``) is the
+        board's (``train_orders``), not read here."""
+        user = self.ref.get("headModels")
         for name, ix in self.m.get("interlockings", {}).items():
-            plan: dict[tuple[str, str], str] = {}
-            for mast, a in ix.get("appliances", {}).items():
-                for letter, h in a.get("heads", {}).items():
-                    plan[(mast, letter)] = h.get("given", {}).get("Style", "")
-            by_head: dict[tuple[str, str], list[tuple[int, dict[str, Any]]]] = defaultdict(list)
-            for i, d in enumerate(ix.get("devices", [])):
-                g, rel = d.get("given", {}), d.get("relations", {})
-                serves = d.get("derived", {}).get("serves")
-                if g.get("Appliance") == "head" and serves and g.get("Head") and not rel.get("face"):
-                    by_head[(serves.partition(":")[2], g["Head"])].append((i, d))
-            for (mast, letter), devs in sorted(by_head.items()):
-                where = f"interlockings/{name}/devices/{devs[0][0]}"
-                others = tuple(f"interlockings/{name}/devices/{i}" for i, _ in devs[1:])
-                mast_path = (f"interlockings/{name}/appliances/{mast}",) if mast in ix.get("appliances", {}) else ()
-                style = plan.get((mast, letter))
-                if style is None:
-                    board = _train_order(ix.get("appliances", {}).get(mast, {}))
-                    self.r.add("head.plan", f"{name}: head devices for mast {mast} head {letter}, but the trackplan draws no such head"
-                               + (f" ({mast} is a train order board; it has no trackplan head: its faces are its field mast's pins, "
-                                  "and a head on a face pin has no letter)" if board else ""), where, others + mast_path)
+            served: dict[str, list[str]] = defaultdict(list)                        # mast -> its field mast device rows
+            on: dict[tuple[str, str], list[tuple[int, dict[str, Any]]]] = defaultdict(list)   # (mast, position) -> its heads
+            for i, dev in enumerate(ix.get("devices", [])):
+                g, rel = dev.get("given", {}), dev.get("relations", {})
+                serves = dev.get("derived", {}).get("serves") or ""
+                if serves.partition(":")[0] != name:
                     continue
-                primary = [d for _, d in devs if style in styles(d["given"])]
-                lamps = [d for _, d in devs if style not in styles(d["given"]) and style in ("UQ", "LQ")
-                         and (d["given"].get("Appliance") == "lamp" or "CL" in styles(d["given"]))]
-                for i, d in devs:
-                    if d not in primary and d not in lamps:
-                        self.r.add("head.vocabulary", f"{name}: the trackplan draws {mast} head {letter} as {style}, but its device is "
-                                   f"{d['given'].get('Style')}. Fix: change the trackplan head, or bind a {style} device",
-                                   f"interlockings/{name}/devices/{i}", mast_path)
-                wrong = [d for _, d in devs if d not in primary and d not in lamps]
-                if len(primary) > 1 or (not primary and not wrong):
-                    self.r.add("head.vocabulary", f"{name}: {mast} head {letter} ({style}) has {len(primary)} devices of its style; "
-                               "one expected", where, others + mast_path)
+                mast, where = serves.partition(":")[2], f"interlockings/{name}/devices/{i}"
+                if g.get("Appliance") == "mast":
+                    served[mast].append(where)
+                elif g.get("Appliance") == "head" and rel.get("position") and not rel.get("face"):
+                    words = reference.presents(g.get("Style"), user)
+                    if words is None:
+                        self.r.add("head.model", f"{name}: the head at position {rel['position']} of {mast} is Style {g.get('Style')!r}, which "
+                                   f"names no head model table row ({', '.join(sorted(reference.HEAD_MODELS, key=sort_key))}); "
+                                   "what it presents is not known", where)
+                    else:
+                        _set_derived(dev, {**dev.get("derived", {}), "presents": words})
+                    on[(mast, rel["position"])].append((i, dev))
+            presented: dict[str, dict[str, list[str]]] = defaultdict(dict)          # mast -> position -> the words it presents
+            for (mast, pos), heads in sorted(on.items(), key=lambda kv: (sort_key(kv[0][0]), sort_key(kv[0][1]))):
+                union: list[str] = []
+                for _, d in heads:
+                    union += [w for w in d.get("derived", {}).get("presents", []) if w not in union]
+                presented[mast][pos] = union
+                sets = {tuple(d.get("derived", {}).get("presents", [])) for _, d in heads}
+                if len(heads) > 1 and len(sets) > 1:
+                    paths = tuple(f"interlockings/{name}/devices/{i}" for i, _ in heads)
+                    mast_path = (f"interlockings/{name}/appliances/{mast}",) if mast in ix.get("appliances", {}) else ()
+                    each = "; ".join(f"{d.get('given', {}).get('Style')} presents {', '.join(d.get('derived', {}).get('presents', [])) or 'nothing known'}"
+                                     for _, d in heads)
+                    self.r.add("head.position", f"{name}: position {pos} of {mast} has {len(heads)} heads that present different words "
+                               f"({each}); the position presents {', '.join(union)}. A repeater or a head upgrade with both in service "
+                               "is a normal configuration", paths[0], paths[1:] + mast_path)
+            for mast, a in ix.get("appliances", {}).items():
+                if a.get("given", {}).get("Appliance") != "mast":
+                    continue
+                where = f"interlockings/{name}/appliances/{mast}"
+                positions = presented.get(mast, {})
+                demand = [w.strip() for w in a.get("given", {}).get("Indications", "").split(",") if w.strip()]
+                _set_derived(a, {**a.get("derived", {}), "positions": positions, "demand": demand})
+                if mast not in served:
+                    self.r.add("mast.device", f"{name}: mast {mast} has no field mast device; a mast device named for it, with a head on "
+                               "each position pin, is expected", where)
+                elif not positions:
+                    self.r.add("mast.device", f"{name}: mast {mast}: its field mast device has no head wired to a position pin", where,
+                               tuple(served[mast]))
+                if demand and len(positions) == 1:
+                    (pos, words), = positions.items()
+                    cannot = [w for w in demand if w not in words]
+                    if cannot:
+                        self.r.add("mast.presents", f"{name}: mast {mast} must show {', '.join(demand)}, but position {pos} presents "
+                                   f"{', '.join(words)}: it cannot present {', '.join(cannot)}; what its head shows for them is its "
+                                   "model table's business", where, tuple(f"interlockings/{name}/devices/{i}" for i, _ in on[(mast, pos)]))
 
     # -------------------------------------------------------------------------------------- train orders
 
@@ -1527,8 +1572,9 @@ class _Derivation:
                         hit = reached.setdefault(f"{parts[0]}/{parts[1]}", {"mast": None, "positions": set()})
                         if g.get("Appliance") == "head":
                             hit["mast"] = rel.get("mast")
-                            if rel.get("face"):
-                                hit["positions"].add(rel["face"])
+                            for k in ("face", "position"):                   # a face's head, or a position's (#80)
+                                if rel.get(k):
+                                    hit["positions"].add(rel[k])
                         else:
                             hit["mast"] = dev.get("derived", {}).get("serves")
                             hit["positions"].add(pin)
