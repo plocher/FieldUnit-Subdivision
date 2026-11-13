@@ -1,6 +1,6 @@
 # 0015. The file is not the model: writers compile, the file carries three parts, consumers read only the file
 
-- Status: **proposed** 2026-11-13. The ask: ratify the eight decisions below.
+- Status: **accepted by the owner 2026-11-13**. The ask was: ratify the eight decisions below.
 - Amends: ADR 0011 §1 and §3 (the Layout Data Model File is the saved output of a writer, not the model itself; the
   stamp names the layout part's hash); ADR 0012 §5.1 (a domain library's results are written into the file's derived
   part at save), §6 (the file carries the reference rows it uses, not a path to the tables); the owner's ruling 10 of
@@ -10,7 +10,7 @@
   Orchestration session (routes delivery, the DRY concern for Studio, the lifecycle of the parts), and the netlist
   rule of `AGENTS.md` (a cache of a source is volatile).
 
-## Decisions requested
+## Decisions requested (all ratified 2026-11-13)
 
 1. **The model has parts; the file carries them.** The layout's data model is three parts: reference data, layout
    data (stated) and derived data. Run-time state is a fourth kind of data and is never in the model. The Layout Data
