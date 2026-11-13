@@ -1,0 +1,13 @@
+{
+  "table": "encodingTransportPairing",
+  "schemaVersion": 0,
+  "version": "2026-10-23",
+  "provenance": "ADR 0009 §3.10: an encoding's Kind pairs with its transport's Kind.",
+  "rows": {
+    "AAR": "MQTT",
+    "USS506": "TIMECODE",
+    "BITS": "TIMECODE",
+    "JMRI": "MQTT",
+    "CMRI": "CMRI"
+  }
+}

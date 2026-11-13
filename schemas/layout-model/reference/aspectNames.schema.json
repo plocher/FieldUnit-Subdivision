@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "layout-model/reference/aspectNames.schema.json",
+  "title": "aspectNames",
+  "description": "The aspect name a JMRI signal mast driver publishes for an indication: rows keyed by JMRI signal system (the symbol field JMRI.SignalSystem), then indication; a row is one name for every mast Kind, or a map by Kind (CONTROLLED, ABSOLUTE, PERMISSIVE) where the system folds the plate into the name. An indication with no row is not presentable in that system.",
+  "type": "object",
+  "required": [
+    "table",
+    "schemaVersion",
+    "version",
+    "provenance",
+    "rows"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "table": {
+      "const": "aspectNames",
+      "description": "The table's name, the file's stem; provenance.referenceData of a layout file names it."
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The version of this schema the file is written to. 0 until the KiCad importer and FieldUnit work end to end; no bump rules before then (the owner, 2026-11-13)."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}(\\.\\d+)?$",
+      "description": "The table's provenance date, with .n when it was revised again that day. A layout file names it in provenance.referenceData.<table>.version."
+    },
+    "provenance": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Where the rows come from: the owner's ruling, the document and date, or the standard opened."
+    },
+    "rows": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "propertyNames": {
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "additionalProperties": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "object",
+              "propertyNames": {
+                "enum": [
+                  "CONTROLLED",
+                  "ABSOLUTE",
+                  "PERMISSIVE"
+                ]
+              },
+              "additionalProperties": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

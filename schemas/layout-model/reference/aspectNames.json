@@ -1,0 +1,31 @@
+{
+  "table": "aspectNames",
+  "schemaVersion": 0,
+  "version": "2026-11-10",
+  "provenance": "The owner, 2026-11-05 (issue #96) and 2026-11-11: JMRI aspect names by signal system (the folder under JMRI's xml/signals), indication and mast Kind. The tables are ours and editable; JMRI's aspects.xml is a source for names, not an authority. basic adds RESTRICTING, which JMRI's basic lacks. In SPTCO-1969 lunar was dropped in later eras (red over yellow): an edit to the DIVERGING_RESTRICTING row.",
+  "rows": {
+    "basic": {
+      "CLEAR": "Clear",
+      "APPROACH": "Approach",
+      "STOP": "Stop",
+      "DIVERGING_CLEAR": "Diverging Clear",
+      "DIVERGING_APPROACH": "Diverging Approach",
+      "RESTRICTING": "Restricting"
+    },
+    "SPTCO-1969": {
+      "CLEAR": "Block Signal Green",
+      "APPROACH": "Approach Signal Yellow",
+      "RESTRICTING": "Restricting",
+      "STOP": {
+        "CONTROLLED": "Home Signal Red",
+        "ABSOLUTE": "Home Signal Red",
+        "PERMISSIVE": "Stop and Proceed"
+      },
+      "DIVERGING_CLEAR": "Block Signal Green for Diverging Route",
+      "APPROACH_DIVERGING": "Block Signal Yellow over Green",
+      "APPROACH_MEDIUM": "Approach Medium - Flashing Yellow",
+      "DIVERGING_APPROACH": "Home Signal Yellow for Diverging Route",
+      "DIVERGING_RESTRICTING": "Home Signal Red over Lunar"
+    }
+  }
+}

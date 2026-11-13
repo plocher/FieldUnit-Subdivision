@@ -1,0 +1,30 @@
+{
+  "table": "codeLineSteps",
+  "schemaVersion": 0,
+  "version": "2026-11-01.3",
+  "provenance": "The owner, 2026-11-01: the function steps each appliance class takes on a code line type. A switch takes two each way; a signal lever's three controls (NGS, SGS, HS) take three steps; null is not known yet, never assumed.",
+  "rows": {
+    "USS506": {
+      "switch": {
+        "controls": 2,
+        "indications": 2
+      },
+      "signal": {
+        "controls": 3,
+        "indications": 3
+      },
+      "lock": {
+        "controls": 1,
+        "indications": 2
+      },
+      "track_circuit": {
+        "controls": 0,
+        "indications": 1
+      },
+      "maintainer_call": {
+        "controls": 1,
+        "indications": 1
+      }
+    }
+  }
+}

@@ -228,17 +228,32 @@ reported at `missing`, never at error (ADR 0011 §6). Example: Watsonville has n
 intentional TBD (the owner, 2026-10-26: on the single track from Corporal, Corporal's 830S and the automatic block
 between are the proxy). The routes library reports a facing switch at a limit with no entering signal at `missing`.
 
-## 6. Reference data
+## 6. Reference data[^refdata]
 
-Rulebooks and their policies (which `AspectResolver` applies, the indication each ceiling heuristic yields, later a
-speed rating's limit) are reference data, not layout data. There are too many railroads, eras and rulebooks to ship
-them all.
+Rulebooks and their policies (the indication each ceiling heuristic yields, which head word each position shows,
+later a speed rating's limit), the token forms of a code line, a head model's words, JMRI's aspect names and the
+train order words are reference data, not layout data. There are too many railroads, eras and rulebooks to ship them
+all, so the shape is fixed and the contents grow as they are encountered (the owner, 2026-11-13).
 
-- A placeholder package, delivered with FieldUnit beside the libraries and tools that read it.
-- One lookup by railroad, era and rulebook (the layout's `railroad`, `era` and `rulebook`). No consumer hard-codes a
-  table.
-- The user's own reference data layers over the shipped defaults; the user's wins.
-- Contents TBD. Only the interface and the override order are fixed now.
+- **Data files, the source.** One JSON file per table under the schema folder, `schemas/layout-model/reference/<table>.json`,
+  each with a small JSON schema beside it, a `schemaVersion` (0 until the KiCad importer and FieldUnit work end to end;
+  no bump rules before then) and a `version`, its provenance date. The files are the source and not an output: there
+  is no second compiler. `tools/layout_model/reference.py` loads them and holds no table literal (a gate checks both).
+  A consumer in another repository reads a table as plain JSON at the path the layout file names.
+- **Resolved per entity into `derived`.** The reference derivation looks the tables up for each entity and writes the
+  result beside it (`tools/layout_model/reference_data.py`): a train order face's `inputs` keyed by rank and its `rest` word, a
+  head's `presents`, a mast position's `shows` (the owner's lookup: mast indication, head count, head number,
+  context), a JMRI driver's `aspectNames`, a code line's `station` and `tokens`. A reader takes the resolved words from
+  the file and never a table by name.
+- **Selection stated, never re-derived.** The layout's `given.Railroad`, `Era` and `Rulebook`, the Railroad symbol's
+  fields, choose the row of every layout-keyed table; `layout.derived.reference` names the row each resolved to. An
+  entity's own fields choose the rest (a head's `Style`, a driver's `JMRI.SignalSystem`, a code line's `Kind`). An
+  explicit override is a stated field beside the item it overrides (a train order board's `Rest` and
+  `Shows.<input>`, a mast's `Indications`), as FieldUnit ADR 0010 D2 has it: reference data selected by the model,
+  optionally overridden by explicit choices carried in the model.
+- **Provenance.** `provenance.referenceData.<table>` names each table's file, version and schema version.
+- The user's own reference data layers over the shipped defaults; the user's wins. A key with no row resolves to
+  nothing, never a guess.
 
 ## 7. Versioning
 
@@ -316,7 +331,7 @@ applied §5.3:
 | Reference derivation | `tools/layout_model/derive.py` (ADR 0011 §5) |
 | Domain libraries | `tools/railroad/` (`routes.py`, `blocks.py`, `ceilings.py`, `codeline.py`), each with its version and its features |
 | Naming grammar and Style classes, shared by the reference derivation and the domain libraries | `tools/layout_model/grammar.py`[^libs] |
-| Reference data | FieldUnit, path TBD |
+| Reference data | `schemas/layout-model/reference/`, one JSON file per table with its schema; loaded by `tools/layout_model/reference.py`, resolved by `reference_data.py`[^refdata] |
 
 All move to FieldUnit with the schema (view O15).
 
@@ -348,3 +363,7 @@ All move to FieldUnit with the schema (view O15).
 [^checks]: Rewritten in place on 2026-10-29 (the owner): the package is primitives, not an executive (§1); §3.3
     registers rule checks, which name every entity they are about, and import diagnostics move to the importer. The
     earlier wording is at commit `2bf4bb1`.
+
+[^refdata]: Rewritten in place on 2026-11-13 (the owner, M1 of the FieldUnit Corporal spike, issue #134): the
+    placeholder package becomes JSON data files under the schema folder, resolved per entity into `derived`, with the
+    selection stated in the file. The earlier wording is at commit `662e9b8`.

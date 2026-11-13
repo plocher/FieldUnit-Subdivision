@@ -1,0 +1,21 @@
+{
+  "table": "trainOrderInputs",
+  "schemaVersion": 0,
+  "version": "2026-11-08",
+  "provenance": "The owner, 2026-11-05 and 2026-11-08 (docs/review/signal-symbols-worklist.md, Rulings 2026-11-08: train order boards): a train order lever has the inputs STOP and SLOW; nothing asserted shows the rest word CLEAR; otherwise the highest-ranked asserted input wins (FieldUnit ADR 0010 D1, D2). CALLON is the block signal's indication, not a train order control. The words are indications, never a colour or a blade angle.",
+  "rows": {
+    "default": {
+      "inputs": [
+        {
+          "input": "STOP",
+          "indication": "STOP"
+        },
+        {
+          "input": "SLOW",
+          "indication": "APPROACH"
+        }
+      ],
+      "rest": "CLEAR"
+    }
+  }
+}

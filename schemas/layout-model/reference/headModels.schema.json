@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "layout-model/reference/headModels.schema.json",
+  "title": "headModels",
+  "description": "A head's model by its Style (issue #80): a row is head word to what the head does for it, one column per output the model has (lamp: which lamp is lit; arm: the blade position; null: out or unchanged). The row's keys are what the head presents, a subset of the indication list plus DARK. The right-hand side is the encoder's instruction, never a model fact; source names where the row comes from.",
+  "type": "object",
+  "required": [
+    "table",
+    "schemaVersion",
+    "version",
+    "provenance",
+    "rows"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "table": {
+      "const": "headModels",
+      "description": "The table's name, the file's stem; provenance.referenceData of a layout file names it."
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The version of this schema the file is written to. 0 until the KiCad importer and FieldUnit work end to end; no bump rules before then (the owner, 2026-11-13)."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}(\\.\\d+)?$",
+      "description": "The table's provenance date, with .n when it was revised again that day. A layout file names it in provenance.referenceData.<table>.version."
+    },
+    "provenance": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Where the rows come from: the owner's ruling, the document and date, or the standard opened."
+    },
+    "rows": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "source",
+          "words"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "words": {
+            "type": "object",
+            "minProperties": 1,
+            "propertyNames": {
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "description": "Keyed by the head device's Style (TypeD, SA, H2, UQ3, LQ2, LQ3)."
+    }
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "table": "headModels",
+  "schemaVersion": 0,
+  "version": "2026-11-12",
+  "provenance": "The owner, 2026-11-04 and 2026-11-09 (docs/review/signal-symbols-worklist.md, Reference data and Rulings 2026-11-09; issue #80): a head's Style is its model. A row is head word to what the head does for it, one column per output the model has (lamp, arm); the right-hand side is the encoder's instruction, never a model fact. Each row's source names the worklist seed or the symbol's Description in Railroad-Field.kicad_sym.",
+  "rows": {
+    "TypeD": {
+      "source": "worklist seed 2026-11-04; Device-Head-TypeD Description: GRS Type D colour-light signal head",
+      "words": {
+        "STOP": {
+          "lamp": "R"
+        },
+        "APPROACH": {
+          "lamp": "Y"
+        },
+        "ADVANCE_APPROACH": {
+          "lamp": "Y flashing"
+        },
+        "CLEAR": {
+          "lamp": "G"
+        },
+        "DARK": {
+          "lamp": null
+        }
+      }
+    },
+    "SA": {
+      "source": "worklist seed 2026-11-04 (the TypeD table); Device-Head-SA Description: GRS SA searchlight signal head",
+      "words": {
+        "STOP": {
+          "lamp": "R"
+        },
+        "APPROACH": {
+          "lamp": "Y"
+        },
+        "ADVANCE_APPROACH": {
+          "lamp": "Y flashing"
+        },
+        "CLEAR": {
+          "lamp": "G"
+        },
+        "DARK": {
+          "lamp": null
+        }
+      }
+    },
+    "H2": {
+      "source": "worklist seed 2026-11-04 (the TypeD table); Device-Head-H2 Description: US&S H-2 searchlight signal head",
+      "words": {
+        "STOP": {
+          "lamp": "R"
+        },
+        "APPROACH": {
+          "lamp": "Y"
+        },
+        "ADVANCE_APPROACH": {
+          "lamp": "Y flashing"
+        },
+        "CLEAR": {
+          "lamp": "G"
+        },
+        "DARK": {
+          "lamp": null
+        }
+      }
+    },
+    "UQ3": {
+      "source": "worklist seed 2026-11-04 (UQ) with the arm positions named by the Style (the owner, 2026-11-09); Device-Head-Semaphore-UQ3 Description: 3-position Upper-quadrant semaphore signal head",
+      "words": {
+        "STOP": {
+          "arm": "horizontal",
+          "lamp": "on"
+        },
+        "APPROACH": {
+          "arm": "diagonal",
+          "lamp": "on"
+        },
+        "CLEAR": {
+          "arm": "vertical",
+          "lamp": "on"
+        },
+        "DARK": {
+          "arm": null,
+          "lamp": "off"
+        }
+      }
+    },
+    "LQ2": {
+      "source": "worklist seed 2026-11-04 (LQ); Device-Head-Semaphore-LQ2 Description: 2-position Lower-quadrant semaphore signal head",
+      "words": {
+        "STOP": {
+          "arm": "horizontal",
+          "lamp": "on"
+        },
+        "CLEAR": {
+          "arm": "dropped",
+          "lamp": "on"
+        },
+        "DARK": {
+          "arm": null,
+          "lamp": "off"
+        }
+      }
+    },
+    "LQ3": {
+      "source": "Device-Head-Semaphore-LQ3 Description: 3-position Lower-quadrant semaphore signal head (three arm positions, so the three running words); the lamp column as LQ2's; the arm angles are not stated (unverified)",
+      "words": {
+        "STOP": {
+          "arm": "horizontal",
+          "lamp": "on"
+        },
+        "APPROACH": {
+          "arm": "dropped halfway",
+          "lamp": "on"
+        },
+        "CLEAR": {
+          "arm": "dropped",
+          "lamp": "on"
+        },
+        "DARK": {
+          "arm": null,
+          "lamp": "off"
+        }
+      }
+    }
+  }
+}

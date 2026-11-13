@@ -102,3 +102,30 @@ Feature: The faces of a train order board
       | SLOW          | APPROACH   |
       | STOP          | STOP       |
       | STOP and SLOW | STOP       |
+
+  Scenario: a face's inputs are ranked from the most restrictive, with the rest word
+    Given train order mast "Gilroy" has a lever on face "N" wiring "SLOW, STOP"
+    When the layout is derived
+    Then the "N" face of "Gilroy" ranks "STOP=STOP, SLOW=APPROACH" and rests at "CLEAR"
+
+  Scenario: a face whose lever wires one input ranks that one
+    Given train order mast "Gilroy" has a lever on face "N" wiring "SLOW"
+    When the layout is derived
+    Then the "N" face of "Gilroy" ranks "SLOW=APPROACH" and rests at "CLEAR"
+
+  Scenario: the layout's rulebook selects the words
+    Given the user's train order inputs for rulebook "SP" rank "STOP=STOP, SLOW=RESTRICTING" and rest "CLEAR"
+    And the layout states Rulebook "SP"
+    And train order mast "Gilroy" has a lever on face "N" wiring "STOP, SLOW"
+    When the layout is derived
+    Then the "N" face of "Gilroy" ranks "STOP=STOP, SLOW=RESTRICTING" and rests at "CLEAR"
+    And the "N" face of "Gilroy" can show "CLEAR, RESTRICTING, STOP"
+
+  Scenario: the board's own Rest and Shows.<input> override the table, beside the item
+    Given interlocking "Gilroy" has these appliances:
+      | Name  | Appliance   | Style  | Station | relations.station | Rest     | Shows.SLOW  |
+      | North | train_order | double | Gilroy  | Gilroy            | APPROACH | RESTRICTING |
+    And train order mast "North" has a lever on face "N" wiring "STOP, SLOW"
+    When the layout is derived
+    Then the "N" face of "North" ranks "STOP=STOP, SLOW=RESTRICTING" and rests at "APPROACH"
+    And the "N" face of "North" can show "APPROACH, RESTRICTING, STOP"

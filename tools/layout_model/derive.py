@@ -100,7 +100,7 @@ names every other track pin its wire reaches, so the relation is symmetric):
   face pins name directions, N or W and S or E (ADR 0003 D1, ``grammar.direction_of``); a single board's one face
   takes the direction the glyph is turned to on the sheet, ``relations.facing``. The board derives ``faces``, each
   with ``direction`` and ``indications``, the words it can show: CLEAR, which nothing asserted shows, and the word of
-  each input its lever binds (``reference.TRAIN_ORDER_INPUTS``: STOP shows STOP, SLOW APPROACH). Which word a face
+  each input its lever binds (the ``trainOrderInputs`` table the layout's Rulebook selects, ``reference_data``: STOP shows STOP, SLOW APPROACH), with the ranked ``inputs`` and the ``rest`` word FieldUnit sets a face up with. Which word a face
   shows at run time, the most restrictive asserted input winning, is FieldUnit's behaviour (its issue #44), not a
   model fact. A board no field mast device serves, or whose device has no face wired, is ``train_order.device`` at
   missing; a face with no lever is ``train_order.lever`` at missing (facts not yet drawn); a face that names no
@@ -164,6 +164,7 @@ from typing import Any, Optional
 from tools.railroad import codeline
 
 from . import expression, reference
+from . import reference_data as refdata
 from .grammar import GANG, HAND, POWERED, depends_on, direction_of, dispatcher_controlled, is_derail, is_powered, regime, regime_word, styles
 from . import sort_key
 from .report import Report
@@ -835,6 +836,7 @@ class _Derivation:
     def __init__(self, model: dict[str, Any], reference_data: dict[str, Any]) -> None:
         self.m = model
         self.ref = reference_data
+        self.rd = refdata.Resolver(model, reference_data)   # the tables resolved per entity (ADR 0012 §6)
         self.r = _Reporter()
         self.report = self.r.report
         self.plans: dict[str, _Plan] = {}
@@ -892,6 +894,7 @@ class _Derivation:
         self.levers()
         self.codeline()
         self.derails()
+        self.rd.resolve_layout()
         self.control_sources()
         self.positions()
         self.train_orders()
@@ -1453,8 +1456,9 @@ class _Derivation:
         device serves, or whose device has no head wired, is ``mast.device`` at missing. The match, demand ⊆ presents: on
         a mast with one position the head shows the mast's indication itself, so a demanded word the position does not
         present is ``mast.presents`` at info (what the head does with it is its table's indication filter, never an
-        error); a mast with several positions shows its indication through the policy table, ``reference.policy``, which
-        is not seeded yet, so nothing is reported for it. A head on a train order mast's face (``relations.face``) is the
+        error); a mast with several positions shows its indication through the policy table, ``reference.policy``, resolved
+        per position as ``shows`` (mast indication -> head word) where the rulebook has a row for the head count; none is
+        seeded yet, so nothing is written or reported for it. A head on a train order mast's face (``relations.face``) is the
         board's (``train_orders``), not read here."""
         user = self.ref.get("headModels")
         for name, ix in self.m.get("interlockings", {}).items():
@@ -1498,8 +1502,10 @@ class _Derivation:
                 where = f"interlockings/{name}/appliances/{mast}"
                 letters = dict(zip(PINS, head_letters(a)))                              # the k-th stated letter is pin k (the owner, 2026-11-12)
                 presents = presented.get(mast, {})
-                positions = {pin: _clean({"letter": letters.get(pin), "presents": presents.get(pin)})
-                             for pin in sorted(set(letters) | set(presents), key=sort_key)}
+                pins = sorted(set(letters) | set(presents), key=sort_key)
+                shows = self.rd.shows(len(pins)) or [None] * len(pins)          # the policy row for this head count, if any
+                positions = {pin: _clean({"letter": letters.get(pin), "presents": presents.get(pin), "shows": shows[k]})
+                             for k, pin in enumerate(pins)}
                 for (m, pin), heads in on.items():                                      # a head derives its mast's letter for its pin
                     if m == mast:
                         for _, d in heads:
@@ -1532,7 +1538,7 @@ class _Derivation:
         ``relations.face``, so the faces are the pins something is wired to. A double board's face pins name
         directions (ADR 0003 D1); a single board's one face takes ``relations.facing``, the way its glyph is turned.
         Each face derives ``direction`` and ``indications``, the words it can show: CLEAR, which nothing asserted
-        shows, and the word of each input its lever binds (``reference.TRAIN_ORDER_INPUTS``). A board no device
+        shows, and the word of each input its lever binds, with the ranked ``inputs`` and the ``rest`` word (the ``trainOrderInputs`` row the layout's Rulebook selects, resolved by ``reference_data``; the board's ``Rest`` and ``Shows.<input>`` override it). A board no device
         serves, or whose device has no face wired, is ``train_order.device`` at missing, and a face with no lever
         ``train_order.lever`` at missing: facts not yet drawn. A face that names no direction, a single board's second
         face, or a face two levers serve is ``train_order.face`` at error: wrong, not incomplete."""
@@ -1597,8 +1603,7 @@ class _Derivation:
                         self.r.add("train_order.face", f"{name}: train order board {n} face {face} is served by {len(levers)} levers; one "
                                    "expected", f"interlockings/{name}/devices/{levers[0]}", (here,) + tuple(f"interlockings/{name}/devices/{i}" for i in levers[1:]))
                     bound = {b for i in levers for b in ix["devices"][i].get("relations", {}).get("bindings", {})}
-                    words = [reference.TRAIN_ORDER_CLEAR] + [word for pin, word in reference.TRAIN_ORDER_INPUTS if pin in bound]
-                    faces[face] = {"direction": direction, "indications": sorted(words, key=sort_key)}   # the list carries the set
+                    faces[face] = {"direction": direction, **self.rd.train_order_face(bound, a.get("given", {}))}
                 _set_derived(a, {**a.get("derived", {}), "faces": faces})
 
     # --------------------------------------------------------------------------------------------- reach
@@ -1706,6 +1711,9 @@ class _Derivation:
                                f"aspect name table ({', '.join(sorted(systems))})", where)
                 else:
                     derived["jmriSignalSystem"] = system
+                    ix_name, _, mast = (derived.get("mast") or "").partition(":")
+                    kind = self.m.get("interlockings", {}).get(ix_name, {}).get("appliances", {}).get(mast, {}).get("given", {}).get("Kind")
+                    derived["aspectNames"] = self.rd.aspect_names(system, kind)     # indication -> the name it publishes
                 _set_derived(d, derived)
 
 

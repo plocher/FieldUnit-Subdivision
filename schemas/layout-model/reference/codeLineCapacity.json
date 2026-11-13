@@ -1,0 +1,62 @@
+{
+  "table": "codeLineCapacity",
+  "schemaVersion": 0,
+  "version": "2026-11-01",
+  "provenance": "The owner, 2026-11-01 (ADR 0013 §11, §21): what one code line type can carry, set by the physical machine, counted in function steps. Each row's source names where it comes from; null is no limit, or a limit the layout sets.",
+  "rows": {
+    "USS504": {
+      "stations": 15,
+      "controls": 7,
+      "indications": 7,
+      "source": "owner-supplied 2026-11-01, unverified"
+    },
+    "USS506": {
+      "stations": 35,
+      "controls": 7,
+      "indications": 7,
+      "source": "RRS506 (GLOSSARY §6); 506, 506A, 506B"
+    },
+    "USS506C": {
+      "stations": 35,
+      "controls": 7,
+      "indications": 35,
+      "source": "RRS506 (GLOSSARY §6)"
+    },
+    "GRS_K": {
+      "stations": null,
+      "controls": 8,
+      "indications": 11,
+      "source": "owner-supplied 2026-11-01, unverified; stations by the 8- or 10-step selection setup"
+    },
+    "GRS_H": {
+      "options": [
+        {
+          "stations": 64,
+          "controls": 4,
+          "indications": 13
+        },
+        {
+          "stations": 32,
+          "controls": 5,
+          "indications": 13
+        },
+        {
+          "stations": 16,
+          "controls": 6,
+          "indications": 13
+        }
+      ],
+      "source": "owner-supplied 2026-11-01, unverified"
+    },
+    "GRS_SYNCROSTEP": {
+      "steps": 13,
+      "source": "owner-supplied 2026-11-01, unverified; apportioned per layout"
+    },
+    "AAR": {
+      "stations": null,
+      "controls": null,
+      "indications": null,
+      "source": "GLOSSARY: no capacity limit"
+    }
+  }
+}
