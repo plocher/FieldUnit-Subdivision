@@ -140,6 +140,11 @@ def house(context, name, house):
     _interlocking(context, name)["houses"] = {house: {}}
 
 
+@given('interlocking "{name}" has houses "{houses}"')
+def houses(context, name, houses):
+    _interlocking(context, name)["houses"] = {h.strip(): {} for h in houses.split(",")}
+
+
 @given('the timetable has station "{station}"')
 def station(context, station):
     _model(context)["layout"].setdefault("stations", {})[station] = {"given": {"Kind": "STATION"}}
@@ -556,6 +561,80 @@ def on_code_line(context, name):
     """One AAR-token code line; the interlocking is its own station."""
     _model(context)["layout"].setdefault("codelines", {})["Line"] = {"given": {"Kind": "AAR"}}
     _interlocking(context, name).setdefault("relations", {})["codeline"] = "Line"
+
+
+ENCODINGS = {"US&S 506": "USS506", "AAR token": "AAR"}
+
+
+@given('interlocking "{name}" is on {article} {kind} code line')
+def on_code_line_of(context, name, article, kind):
+    """One code line of the named encoding (US&S 506: each house is a station; AAR token: the interlocking is)."""
+    _model(context)["layout"].setdefault("codelines", {})["Line"] = {"given": {"Kind": ENCODINGS[kind]}}
+    _interlocking(context, name).setdefault("relations", {})["codeline"] = "Line"
+
+
+def _desk(context) -> dict:
+    return _model(context).setdefault("officeUnits", {}).setdefault("Desk", {"columns": {}, "devices": []})
+
+
+@given("the desk has these columns:")
+def desk_columns(context):
+    """Desk columns: ``Column`` the number, ``CP Name`` the house or interlocking it names (empty states none),
+    ``Interlocking`` the sheet it is drawn on (``relations.interlocking``)."""
+    for row in context.table:
+        column = {"relations": {"interlocking": row["Interlocking"].strip()}}
+        if row["CP Name"].strip():
+            column["given"] = {"CP Name": row["CP Name"].strip()}
+        _desk(context)["columns"][row["Column"].strip()] = column
+
+
+@given("the desk has these levers:")
+def desk_levers_on_columns(context):
+    """Desk levers in columns: ``Name`` the appliance, ``Style`` the lever's, ``Column`` its desk column, ``Controls``
+    and ``Indications`` the tokens of its bound pins (one pin per token, as Control.<pin> and Indication.<pin>)."""
+    for row in context.table:
+        given_ = {"Appliance": "lever", "Name": row["Name"].strip(), "Style": row["Style"].strip()}
+        bindings = {}
+        for field, column in (("Control", "Controls"), ("Indication", "Indications")):
+            for token in (t.strip() for t in row.get(column, "").split(",") if t.strip()):
+                pin = f"P{len(bindings) + 1}"
+                given_[f"{field}.{pin}"] = token
+                bindings[pin] = f"Desk/0x20/A{len(bindings)}"
+        _desk(context)["devices"].append({"given": given_, "relations": {"column": f"Desk:{row['Column'].strip()}", "bindings": bindings}})
+
+
+def _stations(context) -> dict:
+    if not hasattr(context, "stations"):
+        context.stations = {f"{b}:{h}" if h else b: s for (b, h), s in codeline.stations(context.derived).stations.items()}
+    return context.stations
+
+
+def _station(context, name: str):
+    stations = _stations(context)
+    assert name in stations, f"{name} is no station; stations: {sorted(stations)}"
+    return stations[name]
+
+
+def _tokens(text: str) -> list[str]:
+    return [] if text.strip() == "nothing" else sorted(t.strip() for t in text.split(",") if t.strip())
+
+
+@then('the stations of "{name}" are "{stations}"')
+def stations_of(context, name, stations):
+    got = sorted(s for s in _stations(context) if s.partition(":")[0] == name)
+    assert got == sorted(_tokens(stations)), f"the stations of {name} are {got!r}"
+
+
+@then('station "{name}" receives {controls}')
+def receives(context, name, controls):
+    got = sorted(_station(context, name).controls)
+    assert got == _tokens(controls.strip('"')), f"station {name} receives {got!r}"
+
+
+@then('station "{name}" must send {indications}')
+def must_send(context, name, indications):
+    got = sorted(_station(context, name).indications)
+    assert got == _tokens(indications.strip('"')), f"station {name} must send {got!r}"
 
 
 @given('the desk has these lamps for interlocking "{name}":')
