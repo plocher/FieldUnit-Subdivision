@@ -241,7 +241,22 @@ other joint's face; the net is the fact, never the marker's position on the shee
 joints' faces (a piece of one net between two joints) stands at neither and passes its regime across both. At
 Watsonville, the `GCOR_RULE_6_13` (GCOR 6.13, Yard Limits) marker on staging piece 1BT covers 1CT, 1DT and 1ET
 across plain joints, and the `GCOR_RULE_10` (CTC, Chapter 10) marker pinned on the ladder face of the signal joint
-(`IRJ_SIGNAL`) at 1ET stays on the ladder. `IRJ-END_CTC` and the Kind `END_CTC` are retired. The prototype's signs are rendered from the two adjacent regimes: a face reads END of the regime
+(`IRJ_SIGNAL`) at 1ET stays on the ladder.
+
+A joint is therefore one of three cases, with two results (owner, 2026-11-13):
+
+| Case | Example | Result |
+| --- | --- | --- |
+| Both faces pinned | Gilroy Caltrain 03T: CTC on the switch side, 6.13 on the station track | The joint passes no regime |
+| Neither face pinned | Watsonville J2 to J4: the 6.13 marker's net holds two joints | The regime flows across |
+| One face pinned | Watsonville J1 and the signal joint S: CTC on the ladder stub | The joint passes no regime |
+
+A net that holds a marker does not by itself pin a face: the 6.13 marker on 1BT pins neither J1 nor J2. A marker on
+a stub with one joint covers that stub only.
+
+![A regime marker pinned on a joint face (Watsonville staging track 1)](0013/regime-pinned-face.svg)
+
+`IRJ-END_CTC` and the Kind `END_CTC` are retired. The prototype's signs are rendered from the two adjacent regimes: a face reads END of the regime
 behind the crew and BEGIN of the one ahead, and the far face reads the mirror pair, so the drawing states no pair that
 could disagree; the BEGIN and END glyph symbols of one regime share one Kind. A DTC `Block Limit` joint, a TRACK marker
 that cuts a regime piece into blocks with no circuits, is added when a layout needs it. A regime may contribute to
