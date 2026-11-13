@@ -2,8 +2,7 @@ Feature: The routes of a mast
   A route belongs to the mast that displays it (the owner, 2026-11-13). A route runs from a controlled mast, in the
   direction it governs, until the next mast that governs the same movement, or the end of track: a bumper, an
   industry end, or a NextCP edge with no signal beyond (ADR 0012 §5.3). A regime marker is never a limit (the owner,
-  2026-11-13): the route passes it, states the regime of each circuit it passes, and the regime may contribute to its
-  ceiling (reference data: GCOR 6.13, Yard Limits, contributes RESTRICTING). At a switch entered at C the route takes N or R; entered at N or R it leaves by C. A derail has legs C
+  2026-11-13): the route passes it, and the regime may contribute to its ceiling (reference data: GCOR 6.13, Yard Limits, contributes RESTRICTING). At a switch entered at C the route takes N or R; entered at N or R it leaves by C. A derail has legs C
   and R only, and a route through it needs it REVERSE. A route is a single path: one position per switch.
   The direction is the movement along the track, never LEFT or RIGHT: the walk follows the track and each mast's
   relations.facing, and LEFT or RIGHT is only the demand word of a signal (written `<signal>(<direction>)` here; the library states the atoms).
@@ -127,7 +126,6 @@ Feature: The routes of a mast
     When the routes are found
     Then the route of "828SA" aligned "827 REVERSE, 827D REVERSE" ends at the limit "BUMPER"
     And the route of "828SA" aligned "827 REVERSE, 827D REVERSE" passes "827T1, 01T"
-    And the route of "828SA" aligned "827 REVERSE, 827D REVERSE" passes regimes "GCOR_RULE_10, GCOR_RULE_10"
 
   Scenario: a route from yard limits passes the regime marker into CTC and continues to the end of track
     Gilroy Caltrain: the station tracks are under GCOR 6.13 (Yard Limits); the switch beyond the marker is under
@@ -162,7 +160,7 @@ Feature: The routes of a mast
     Then "774NC" has routes aligned "9 NORMAL; 9 REVERSE"
     And the route of "774NC" aligned "9 NORMAL" ends at the limit "NEXT_CP"
     And the route of "774NC" aligned "9 NORMAL" passes "3T, 9T1"
-    And the route of "774NC" aligned "9 NORMAL" passes regimes "GCOR_RULE_6_13, GCOR_RULE_10"
+    And the route of "774NC" aligned "9 NORMAL" has ceiling "RESTRICTING"
 
   Scenario: a route through yard limits is held to RESTRICTING
     The owner, 2026-11-13: GCOR 6.13 (Yard Limits) contributes RESTRICTING everywhere in yard limits; the word is
@@ -197,7 +195,6 @@ Feature: The routes of a mast
       | 774  | signal |
     When the routes are found
     Then the route of "774SA" aligned "9 NORMAL" ends at the limit "BUMPER"
-    And the route of "774SA" aligned "9 NORMAL" passes regimes "GCOR_RULE_10, GCOR_RULE_6_13"
     And the route of "774SA" aligned "9 NORMAL" has ceiling "RESTRICTING"
     And the route of "774SA" aligned "9 REVERSE" has ceiling "CLEAR"
 

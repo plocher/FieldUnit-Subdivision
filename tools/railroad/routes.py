@@ -11,9 +11,9 @@ A route belongs to the mast that displays it (the owner, 2026-11-13). Its terms:
 - ``alignment``: every switch and derail passed, in walk order, with its one position. A derail is passed C to R or R
   to C, so it is ``REVERSE`` (its through position).
 - ``circuits``: the circuits passed, in walk order; ``entrance`` the first, the circuit the mast governs into (the
-  knockdown circuit). ``regimes``: aligned with ``circuits``, the regime of each (its piece's ``derived.regime``),
-  null where none is stated (the owner, 2026-11-13). ``approach``: the circuit on the approach side of the mast's
-  joint, where one is stated.
+  knockdown circuit). A circuit gives the route only STOP or CLEAR; a regime's effect is a ceiling contribution
+  (the owner, 2026-11-13). ``approach``: the circuit on the approach side of the mast's joint, where one is
+  stated.
 - ``end``: the next mast that governs the same movement, ``{"mast": ..., "demand": ...}``, the demand under the same
   rule as the entering one (an automatic mast is named with no ``demand``); or the end of track, ``{"limit": ...}``,
   the Kind of the end (``NEXT_CP``, ``BUMPER``, ``INDUSTRY``). A regime marker is never a limit (the owner,
@@ -42,7 +42,7 @@ names that interlocking's things by qualified name; every demand states its inte
 
 The vital boundary (ADR 0012 §5.2): no locking and no evaluation. Names are never parsed: the library reads the
 stated atoms (``given.signal``, ``relations.facing``, the lever's ``derived.masts``, a joint's ``relations.mast`` or
-``relations.masts``, a derail's port names) and the derived circuits and regimes, under ADR 0011's reader policy.
+``relations.masts``, a derail's port names) and the derived circuits and regimes (for ceilings), under ADR 0011's reader policy.
 """
 from __future__ import annotations
 
@@ -73,8 +73,7 @@ class Route:
     approach: Optional[str] = None
     end: Optional[dict[str, str]] = None
     opposing: list[dict[str, str]] = field(default_factory=list)
-    ceilings: list[dict[str, str]] = field(default_factory=list)   # {appliance, position, word} | {regime, word}
-    regimes: list[Optional[str]] = field(default_factory=list)     # aligned with circuits
+    ceilings: list[dict[str, str]] = field(default_factory=list)   # {appliance, position, word} | {regime, word} | {default, word}
 
     @property
     def entrance(self) -> Optional[str]:
@@ -94,7 +93,6 @@ class Route:
             out["demand"] = dict(self.demand)
         out["alignment"] = [{"appliance": s, "position": p} for s, p in self.alignment]
         out["circuits"] = list(self.circuits)
-        out["regimes"] = list(self.regimes)
         if self.entrance:
             out["entrance"] = self.entrance
         if self.approach:
@@ -346,7 +344,6 @@ def _walk(t: _Track, scope: str, r: Route, pin: str, seen: frozenset[str], out: 
     regime = t.regime(net) if net else None
     if c and (not r.circuits or r.circuits[-1] != c):
         r.circuits.append(c)
-        r.regimes.append(regime)
     if net:
         contributions = [("regime", regime, regime_ceiling(regime))] if regime else [("default", "none", default_ceiling("none"))]
         if t.industry(net):
@@ -432,4 +429,4 @@ def _joint(t, scope, r, x, w, net, seen, out, entered_at_points, add) -> None:
 
 def _copy(r: Route) -> Route:
     return Route(r.mast, r.demand, list(r.alignment), list(r.circuits), r.approach, dict(r.end) if r.end else None,
-                 [dict(o) for o in r.opposing], [dict(c) for c in r.ceilings], list(r.regimes))
+                 [dict(o) for o in r.opposing], [dict(c) for c in r.ceilings])

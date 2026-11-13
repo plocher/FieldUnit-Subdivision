@@ -210,8 +210,8 @@ A route runs from a signal, in the direction it governs, until it reaches the ne
 direction, or the end of track: a bumper, an industry end, or a NextCP edge with no signal beyond. "Direction" is the
 movement along the track, never LEFT or RIGHT: the walk follows the track and each mast's facing, so a reversing loop
 (Watsonville) needs no exception. A regime marker is never a limit. End CTC is the marker between GCOR 10.0 (Rules
-Applicable Only in CTC) and another regime; the route passes it, as it passes any regime marker. A route states the
-regime of each circuit it passes, and a regime may contribute to the route's ceiling (§5.4; reference data: GCOR
+Applicable Only in CTC) and another regime; the route passes it, as it passes any regime marker. A regime may
+contribute to the ceiling of a route that passes its track (§5.4; reference data: GCOR
 6.13, Yard Limits, contributes RESTRICTING).[^routelimit] Opposing signals are passed: a route can leave a protected
 siding whose points end is protected against traffic the other way. At a switch entered at C the route takes N or R;
 entered at N or R it leaves by C. A derail has legs C and R only. A route's identity is its entrance, its end and its

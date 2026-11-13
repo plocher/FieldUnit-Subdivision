@@ -84,7 +84,7 @@ class Sufficiency(unittest.TestCase):
             "mast": "Corporal:830NAB", "demand": {"interlocking": "Corporal", "signal": "830", "direction": "LEFT"},
             "alignment": [{"appliance": "Corporal:829", "position": "NORMAL"}, {"appliance": "Corporal:827", "position": "NORMAL"}],
             "circuits": ["Corporal:829T1", "Corporal:827T1", "Christopher:2NAT"],
-            "regimes": ["GCOR_RULE_10", "GCOR_RULE_10", "GCOR_RULE_10"], "entrance": "Corporal:829T1",
+            "entrance": "Corporal:829T1",
             "approach": "Corporal:832T", "end": {"mast": "Christopher:816NAB", "demand": {"interlocking": "Christopher", "signal": "816", "direction": "LEFT"}},
             "opposing": [{"mast": "Corporal:828SA", "demand": {"interlocking": "Corporal", "signal": "828", "direction": "RIGHT"}}], "ceiling": "CLEAR"})
 

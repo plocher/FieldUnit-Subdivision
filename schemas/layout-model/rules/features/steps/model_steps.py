@@ -996,13 +996,6 @@ def passes_no_circuit(context, mast, alignment):
     assert not got, f"circuits {got}"
 
 
-@then('the route of "{mast}" aligned "{alignment}" passes regimes "{regimes}"')
-def passes_regimes(context, mast, alignment, regimes):
-    """The regime of each circuit passed, aligned with the circuits."""
-    got = _route(context, mast, alignment).regimes
-    assert got == _names(regimes), f"regimes {got}, not {_names(regimes)}"
-
-
 @then('the route of "{mast}" aligned "{alignment}" has ceiling "{word}"')
 def route_ceiling(context, mast, alignment, word):
     got = _route(context, mast, alignment).ceiling
