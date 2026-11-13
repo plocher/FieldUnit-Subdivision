@@ -1,7 +1,7 @@
 """Code line capacity and steps reference data (ADR 0013 §11, §21): a station's need is counted in steps, not tokens."""
 import unittest
 
-from tools.layout_model.reference import HEAD_MODELS, REFERENCE_DATA, code_line_capacity, code_line_steps, head_model, policy, presents
+from tools.layout_model.reference import HEAD_MODELS, code_line_capacity, code_line_steps, head_model, policy, presents, provenance
 
 
 class CodeLineCapacity(unittest.TestCase):
@@ -33,8 +33,8 @@ class CodeLineCapacity(unittest.TestCase):
         self.assertEqual(code_line_capacity("USS506", {"USS506": {"indications": 9}})["indications"], 9)
 
     def test_versioned(self):
-        self.assertIn("codeLineCapacity", REFERENCE_DATA)
-        self.assertIn("codeLineSteps", REFERENCE_DATA)
+        self.assertIn("codeLineCapacity", provenance())
+        self.assertIn("codeLineSteps", provenance())
 
 
 if __name__ == "__main__":
@@ -61,7 +61,7 @@ class HeadModels(unittest.TestCase):
         self.assertIsNone(presents("CPL"))
         self.assertIsNone(presents(None))
         self.assertEqual(presents("CPL", {"CPL": {"words": {"STOP": {}, "CLEAR": {}}}}), ["STOP", "CLEAR"])
-        self.assertIn("headModels", REFERENCE_DATA)
+        self.assertIn("headModels", provenance())
 
     def test_no_policy_table_is_seeded(self):
         self.assertIsNone(policy("GCOR"))

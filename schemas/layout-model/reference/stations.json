@@ -1,0 +1,11 @@
+{
+  "table": "stations",
+  "schemaVersion": 0,
+  "version": "2026-10-27",
+  "provenance": "The owner, 2026-10-27: on a US&S 506 line each house answers at its own address; on an AAR token line, which has no vocabulary limit, the interlocking is one station.",
+  "rows": {
+    "default": "interlocking",
+    "USS506": "house",
+    "AAR": "interlocking"
+  }
+}

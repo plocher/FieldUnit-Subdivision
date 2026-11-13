@@ -152,7 +152,7 @@ def station(context, station):
 
 @when("the layout is derived")
 def derived(context):
-    context.derived, context.report = derive.derive(_model(context))
+    context.derived, context.report = derive.derive(_model(context), getattr(context, "user", None))
 
 
 @then('"{name}" has derived {key} "{value}"')
@@ -358,9 +358,10 @@ def shows(context, face, name, word):
     """The run-time rule is FieldUnit's (its issue #44), not the model library's: the step reads the ordered input
     table of the reference data, most restrictive first, and the word of the first asserted input, else CLEAR."""
     asserted = set(context.asserted)
-    unknown = asserted - {pin for pin, _ in reference.TRAIN_ORDER_INPUTS}
+    _, row = reference.train_order_inputs(getattr(context, "rulebook", None), getattr(context, "user_train_order", None))
+    unknown = asserted - {i["input"] for i in row["inputs"]}
     assert not unknown, f"not a train order input: {', '.join(sorted(unknown))}"
-    got = next((w for pin, w in reference.TRAIN_ORDER_INPUTS if pin in asserted), reference.TRAIN_ORDER_CLEAR)
+    got = next((i["indication"] for i in row["inputs"] if i["input"] in asserted), row["rest"])
     assert got == word, f"{', '.join(context.asserted) or 'nothing'} asserted shows {got!r}, not {word!r}"
 
 
@@ -745,3 +746,108 @@ def aspect_name(context, indication, kind, name):
 def no_aspect_name(context, indication, kind):
     got = reference.aspect_name(context.signal_system, indication, kind, context.user_aspects or None)
     assert got is None, f"{context.signal_system}: {indication} on a {kind} mast is {got!r}"
+
+
+# ------------------------------------------------------- reference data selected by the layout, resolved per entity (ADR 0012 §6)
+
+def _pairs(text: str) -> list[tuple[str, str]]:
+    """``A=B, C=D``."""
+    return [tuple(p.strip() for p in item.split("=", 1)) for item in text.split(",") if item.strip()]
+
+
+def _user(context) -> dict:
+    if not hasattr(context, "user"):
+        context.user = {}
+    return context.user
+
+
+@given('the layout states Railroad "{railroad}", Era "{era}" and Rulebook "{rulebook}"')
+def layout_selection(context, railroad, era, rulebook):
+    _model(context)["layout"].setdefault("given", {}).update({"Railroad": railroad, "Era": era, "Rulebook": rulebook})
+    context.rulebook = rulebook
+
+
+@given('the layout states Rulebook "{rulebook}"')
+def layout_rulebook(context, rulebook):
+    _model(context)["layout"].setdefault("given", {})["Rulebook"] = rulebook
+    context.rulebook = rulebook
+
+
+@given('the user\'s train order inputs for rulebook "{rulebook}" rank "{pairs}" and rest "{rest}"')
+def user_train_order(context, rulebook, pairs, rest):
+    row = {"inputs": [{"input": i, "indication": w} for i, w in _pairs(pairs)], "rest": rest}
+    _user(context).setdefault("trainOrderInputs", {})[rulebook] = row
+    context.user_train_order = _user(context)["trainOrderInputs"]
+
+
+@given('the user\'s policy for rulebook "{rulebook}" with {count:d} heads says "{rows}"')
+def user_policy(context, rulebook, count, rows):
+    """``CLEAR = CLEAR, STOP; STOP = STOP, STOP``: mast indication = the head word of each position top down."""
+    table = {}
+    for item in rows.split(";"):
+        indication, _, words = item.partition("=")
+        table[indication.strip()] = [w.strip() for w in words.split(",") if w.strip()]
+    _user(context).setdefault("policies", {}).setdefault(rulebook, {})[str(count)] = table
+
+
+@given('the user\'s indication tokens for encoding "{encoding}" class "{cls}" are "{templates}"')
+def user_tokens(context, encoding, cls, templates):
+    _user(context).setdefault("indicationTokens", {}).setdefault(encoding, {})[cls] = [t.strip() for t in templates.split(",")]
+
+
+@given('the layout has code line "{name}" of Kind "{kind}"')
+def code_line(context, name, kind):
+    _model(context)["layout"].setdefault("codelines", {})[name] = {"given": {"Kind": kind}}
+
+
+@then('the layout resolved "{table}" to row "{key}"')
+def resolved(context, table, key):
+    got = context.derived["layout"].get("derived", {}).get("reference", {}).get(table)
+    assert got == key, f"layout.derived.reference.{table} is {got!r}, not {key!r}"
+
+
+@then('the layout resolved no row of "{table}"')
+def resolved_none(context, table):
+    got = context.derived["layout"].get("derived", {}).get("reference", {})
+    assert table not in got, f"layout.derived.reference names {table}: {got[table]!r}"
+
+
+@then('code line "{name}" has station "{what}"')
+def code_line_station(context, name, what):
+    got = context.derived["layout"]["codelines"][name].get("derived", {}).get("station")
+    assert got == what, f"code line {name}: derived.station is {got!r}, not {what!r}"
+
+
+@then('code line "{name}" has templates "{cls}: {templates}"')
+def code_line_templates(context, name, cls, templates):
+    got = context.derived["layout"]["codelines"][name].get("derived", {}).get("tokens", {}).get(cls)
+    want = [t.strip() for t in templates.split(",")]
+    assert got == want, f"code line {name}: derived.tokens.{cls} is {got!r}, not {want!r}"
+
+
+@then('the "{face}" face of "{name}" ranks "{pairs}" and rests at "{rest}"')
+def face_ranks(context, face, name, pairs, rest):
+    f = _face(context, name, face)
+    inputs = f.get("inputs", {})
+    assert list(inputs) == [str(k) for k in range(1, len(inputs) + 1)], f"{name} face {face}: inputs are keyed by rank from 1, not {list(inputs)}"
+    got = [(i["input"], i["indication"]) for i in inputs.values()]
+    assert got == _pairs(pairs), f"{name} face {face}: inputs are {got!r}, not {_pairs(pairs)!r}"
+    assert f.get("rest") == rest, f"{name} face {face}: rest is {f.get('rest')!r}, not {rest!r}"
+
+
+@then('position "{position}" of "{mast}" shows "{pairs}"')
+def position_shows(context, position, mast, pairs):
+    got = _position(context, mast, position).get("shows")
+    assert got == dict(_pairs(pairs)), f"{mast} position {position}: shows {got!r}, not {dict(_pairs(pairs))!r}"
+
+
+@then('position "{position}" of "{mast}" shows nothing')
+def position_shows_nothing(context, position, mast):
+    got = _position(context, mast, position).get("shows")
+    assert got is None, f"{mast} position {position}: shows {got!r}"
+
+
+@then('the driver "{key}" on "{proc}" publishes the aspect names "{pairs}"')
+def driver_aspect_names(context, key, proc, pairs):
+    got = _driver(context, key, proc).get("derived", {}).get("aspectNames")
+    assert got == dict(_pairs(pairs)), f"{key}: derived.aspectNames is {got!r}, not {dict(_pairs(pairs))!r}"

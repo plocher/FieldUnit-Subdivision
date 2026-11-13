@@ -1,0 +1,9 @@
+{
+  "table": "driverEncodings",
+  "schemaVersion": 0,
+  "version": "2026-10-23",
+  "provenance": "ADR 0009 §3.3, §3.6, §3.12 (IC native or encoded): a driver whose IC is an encoding needs that I/O encoding on its processor.",
+  "rows": {
+    "MQTT-JMRI": "JMRI"
+  }
+}

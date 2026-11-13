@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "layout-model/reference/driverEncodings.schema.json",
+  "title": "driverEncodings",
+  "description": "A driver whose IC is an encoding needs that I/O encoding on its processor (ADR 0009 §3.3, §3.6): rows keyed by the driver IC, each the encoding Kind.",
+  "type": "object",
+  "required": [
+    "table",
+    "schemaVersion",
+    "version",
+    "provenance",
+    "rows"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "table": {
+      "const": "driverEncodings",
+      "description": "The table's name, the file's stem; provenance.referenceData of a layout file names it."
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The version of this schema the file is written to. 0 until the KiCad importer and FieldUnit work end to end; no bump rules before then (the owner, 2026-11-13)."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}(\\.\\d+)?$",
+      "description": "The table's provenance date, with .n when it was revised again that day. A layout file names it in provenance.referenceData.<table>.version."
+    },
+    "provenance": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Where the rows come from: the owner's ruling, the document and date, or the standard opened."
+    },
+    "rows": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^\\S.*$"
+      }
+    }
+  }
+}

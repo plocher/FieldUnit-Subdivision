@@ -162,3 +162,29 @@ Feature: A head is a position on its mast
       | 784WBC | mast      | double | CONTROLLED | 784    | B,C   | LEFT             |
     When the layout is derived
     Then it is not reported
+
+  Scenario: a position shows the policy row's head word for each mast indication
+    Given the user's policy for rulebook "SP" with 2 heads says "CLEAR = CLEAR, STOP; APPROACH = APPROACH, STOP; STOP = STOP, STOP"
+    And the layout states Rulebook "SP"
+    And interlocking "Luchessa" has these appliances:
+      | Name   | Appliance | Style  | Kind       | signal | heads |
+      | 784EAB | mast      | double | CONTROLLED | 784    | A,B   |
+    And field mast "784EAB" has these heads:
+      | Position | Style |
+      | A        | TypeD |
+      | B        | TypeD |
+    When the layout is derived
+    Then position "A" of "784EAB" shows "CLEAR=CLEAR, APPROACH=APPROACH, STOP=STOP"
+    And position "B" of "784EAB" shows "CLEAR=STOP, APPROACH=STOP, STOP=STOP"
+
+  Scenario: a mast whose rulebook and head count have no policy row shows nothing, never a guess
+    Given the layout states Rulebook "GCOR"
+    And interlocking "Luchessa" has these appliances:
+      | Name   | Appliance | Style  | Kind       | signal | heads |
+      | 784EAB | mast      | double | CONTROLLED | 784    | A,B   |
+    And field mast "784EAB" has these heads:
+      | Position | Style |
+      | A        | TypeD |
+      | B        | TypeD |
+    When the layout is derived
+    Then position "A" of "784EAB" shows nothing

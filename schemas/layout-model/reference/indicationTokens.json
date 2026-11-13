@@ -1,0 +1,32 @@
+{
+  "table": "indicationTokens",
+  "schemaVersion": 0,
+  "version": "2026-10-27.2",
+  "provenance": "The owner, 2026-10-27 (ADR 0011 amendment): by the AAR nomenclature behind every code line, controls end in S and indications in K, so every encoding shares the default until a railroad or an encoding says otherwise. Forms: FieldUnit docs/GLOSSARY.md §10.3 and WireCodec.h (AarTextCodec); a lock WLK and WLQK, not NWK/RWK (the owner, 2026-10-27); a non-vital lamp <name>K, the desk's form (settled by the desk, 2026-10-27).",
+  "rows": {
+    "default": {
+      "track_circuit": [
+        "{name}K"
+      ],
+      "switch": [
+        "{name}NWK",
+        "{name}RWK"
+      ],
+      "lock": [
+        "{name}WLK",
+        "{name}WLQK"
+      ],
+      "signal": [
+        "{lever}NGK",
+        "{lever}SGK",
+        "{lever}TEK"
+      ],
+      "maintainer_call": [
+        "{name}K"
+      ],
+      "lamp": [
+        "{name}K"
+      ]
+    }
+  }
+}

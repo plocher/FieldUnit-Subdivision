@@ -96,3 +96,11 @@ Feature: A JMRI signal mast driver publishes a mast's indication
     And field mast device "778NAB" of interlocking "X" binds "A, B" to "Field/SIGNALMAST.778NAB/IND"
     When the layout is derived
     Then it is reported as an error on "SIGNALMAST.778NAB"
+
+  Scenario: the driver derives the aspect names it publishes, for its system and its mast's Kind
+    Given processor "Field" has these drivers:
+      | Key               | IC        | Kind       |
+      | SIGNALMAST.778NAB | MQTT-JMRI | SIGNALMAST |
+    And field mast device "778NAB" of interlocking "X" binds "A, B" to "Field/SIGNALMAST.778NAB/IND"
+    When the layout is derived
+    Then the driver "SIGNALMAST.778NAB" on "Field" publishes the aspect names "CLEAR=Clear, APPROACH=Approach, STOP=Stop, DIVERGING_CLEAR=Diverging Clear, DIVERGING_APPROACH=Diverging Approach, RESTRICTING=Restricting"

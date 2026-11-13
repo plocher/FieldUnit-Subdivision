@@ -1,0 +1,1898 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spcoast.com/schemas/layout-model/v3.4.0.json",
+  "title": "Layout Data Model File",
+  "description": "ADR 0008 rev 4 on ADR 0009, reshaped by ADR 0011 and ADR 0012. One file holds one layout: every entity and row holds three maps, given (what a person stated as fields, as drawn), relations (what a person stated as connections, each the name it reaches) and derived (what the rules compute, stamped by provenance.rules). Readers take meaning from derived, then relations, then given. Collections, identities (map keys, a row's name and id) and geometry stay outside the maps. Absent is absent. Nothing here names a sheet, a net, a reference or a KiCad symbol unit. Version 3.1.0 is a working schema, reshaped in place (2026-10-27; v3.1.0-migration.md); 3.2.0 adds the head positions of issue #80 (2026-11-12; v3.2.0-migration.md); 3.3.0 states a mast's atoms (given.signal, given.heads, relations.facing) and keys its positions by pin with the letter (2026-11-12; v3.3.0-migration.md). 3.4.0 resolves the reference data per entity and names each table's file (2026-11-13; v3.4.0-migration.md).",
+  "type": "object",
+  "required": [
+    "schema",
+    "layout"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "layout-model/v3.4.0"
+    },
+    "layout": {
+      "$ref": "#/$defs/layout"
+    },
+    "interlockings": {
+      "$ref": "#/$defs/namedMap",
+      "additionalProperties": {
+        "$ref": "#/$defs/interlocking"
+      }
+    },
+    "officeUnits": {
+      "$ref": "#/$defs/namedMap",
+      "additionalProperties": {
+        "$ref": "#/$defs/officeUnit"
+      }
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    }
+  },
+  "$defs": {
+    "name": {
+      "description": "An entity's own name within its scope: case preserved, compared case-folded, never a colon or a slash, no leading or trailing space, no line break or tab.",
+      "type": "string",
+      "pattern": "^[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?$"
+    },
+    "qualifiedName": {
+      "description": "A reference to an entity of a namespace other than the layout: an interlocking or an OfficeUnit, a colon, the entity's name (Luchessa:783, SPCoast South:12). Always this form (ADR 0008 §4.5; three-maps D19).",
+      "type": "string",
+      "pattern": "^[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?:[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?$"
+    },
+    "layoutName": {
+      "description": "A reference to an entity of the layout scope (an interlocking, office unit, transport, code line, I/O encoding or processor): its bare name.",
+      "$ref": "#/$defs/name"
+    },
+    "route": {
+      "description": "A device pin's binding: bus owner, address on that bus, driver pin. Three segments: a processor's bus, processor/address/pin (Sargent/0x20/B1). Four: a CMRInet Node's bus, transport/UA/IB.n or OB.n/pin (CMRInet/30/OB.7/D). The segment count tells the owner's kind (ADR 0009 §3.3, §3.5).",
+      "type": "string",
+      "oneOf": [
+        {
+          "pattern": "^[^:/\\s]+/[^:/\\s]+/[^:/\\s]+$"
+        },
+        {
+          "pattern": "^[^:/\\s]+/[^:/\\s]+/(IB|OB)\\.\\d+/[^:/\\s]+$"
+        }
+      ]
+    },
+    "namedMap": {
+      "description": "A dictionary keyed by entity name.",
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/name"
+      }
+    },
+    "given": {
+      "description": "Every field a person stated on the entity, keyed as drawn, every value a string as KiCad states it (ADR 0011 §2). Left out: KiCad's housekeeping (Reference, Value, Footprint, Datasheet, Description, Sheetname, Sheetfile, ki_*), Role (it picks the collection), the library's Pin.* contract, the key field, and any empty field but a token field (Indication, Control.<pin>, Indication.<pin>). Which keys apply is reference data, not this schema's; a reader that wants a number or a list parses the string.",
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1,
+        "not": {
+          "enum": [
+            "Reference",
+            "Value",
+            "Footprint",
+            "Datasheet",
+            "Description",
+            "Sheetname",
+            "Sheetfile",
+            "Role"
+          ]
+        },
+        "pattern": "^(?!ki_)(?!Pin\\.)"
+      },
+      "patternProperties": {
+        "^(Control\\.|Indication(\\.|$))": {
+          "type": "string",
+          "description": "A token field on any entity, Indication or a per-pin Control.<pin> or Indication.<pin> (the owner, 2026-10-28 and 10-29): stated even when empty, since an empty one says there is deliberately no token; an absent one is not done yet."
+        }
+      },
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "relations": {
+      "description": "Every connection a person stated, each written as the name it reaches (ADR 0011 §2): a layout name, a qualified name, a port, a route, or a list of them; a device's bindings are a map from function to route. An entity's definition names the relations it may hold.",
+      "type": "object"
+    },
+    "derived": {
+      "description": "What the rules compute from given and relations, by a conforming derivation stamped in provenance.rules (ADR 0011 §3); never a copy of a stated value. An entity's definition names the keys it may hold.",
+      "type": "object"
+    },
+    "numericGiven": {
+      "type": "string",
+      "pattern": "^-?\\d+(\\.\\d+)?$",
+      "description": "Numeric text, as drawn."
+    },
+    "rowId": {
+      "description": "A track row's stable opaque identity (three-maps D10): by default the KiCad per-instance UUID of its symbol. Unique in the file; never a name.",
+      "type": "string",
+      "pattern": "^[^\\s:/.]+$"
+    },
+    "portRef": {
+      "description": "A switch's track port, a track circuit marker's TC, or a pin of a named track symbol, by qualified name: the switch, marker or symbol, a dot, and the pin as the model names it (a switch's C, N or R, a derail's C or R; a marker's TC; an industry's EoT): Luchessa:783.R, Luchessa:1SAT.TC, Luchessa:Gilroy Industry.EoT.",
+      "type": "string",
+      "pattern": "^[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?:[^:/\\s](?:[^:/\\t\\n\\r]*[^:/\\s])?\\.[A-Za-z][A-Za-z0-9_]*$"
+    },
+    "rowPortRef": {
+      "description": "A pin of an unnamed track row, by the row's id, a dot and its side (approach, governed, A, B, track, CTC, DARK, EoT; a consumer's TC).",
+      "type": "string",
+      "pattern": "^[^\\s:/.]+\\.[A-Za-z][A-Za-z0-9_]*$"
+    },
+    "labelEnd": {
+      "description": "A run's end on a hierarchical label (ADR 0013 §7.1): label: and the label's name as drawn (label:ToSargentMT). It states the name only; pairing across sheets is netlist connectivity, which the circuits carry.",
+      "type": "string",
+      "pattern": "^label:[^\\s/](?:[^/\\t\\n\\r]*[^\\s/])?$"
+    },
+    "portRefs": {
+      "description": "Every other track pin a track pin's wire reaches, sorted and without repeats (three-maps D5; the owner, 2026-10-27): a switch port, a track circuit marker's TC or a named track row's side by qualified name, an unnamed track row's side by the row's id. A pin drawn on another interlocking's sheet is named the same way, by its own interlocking (ADR 0013 §7.1: block track is drawn across sheets; Corporal:834T.TC on Sargent's 834 joint). Never a pin of the same symbol; symmetric: the pin named here names this one back.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/portRef"
+          },
+          {
+            "$ref": "#/$defs/rowPortRef"
+          }
+        ]
+      }
+    },
+    "layout": {
+      "description": "The layout and its layout-scope entities. Its name is the Railroad symbol's Name; given holds the Railroad symbol's other fields (Railroad, Region, Era, Rulebook, by which reference data is looked up, ADR 0012 §6). derived.reference names, per layout-keyed reference table, the row the selection resolved to; the selection itself is the stated given, never copied.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "given": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/given"
+            }
+          ]
+        },
+        "name": {
+          "$ref": "#/$defs/name"
+        },
+        "transports": {
+          "$ref": "#/$defs/namedMap",
+          "additionalProperties": {
+            "$ref": "#/$defs/transport"
+          }
+        },
+        "codelines": {
+          "$ref": "#/$defs/namedMap",
+          "additionalProperties": {
+            "$ref": "#/$defs/encodingInstance"
+          }
+        },
+        "ioEncodings": {
+          "$ref": "#/$defs/namedMap",
+          "additionalProperties": {
+            "$ref": "#/$defs/encodingInstance"
+          }
+        },
+        "processors": {
+          "$ref": "#/$defs/namedMap",
+          "additionalProperties": {
+            "$ref": "#/$defs/processor"
+          }
+        },
+        "stations": {
+          "description": "The layout's timetable stations by Name (the owner, 2026-11-03): places on the line, each with its Milepost. Distinct from a code line station (reference.STATION: a house or an interlocking addressed on a code line), which this map never holds.",
+          "$ref": "#/$defs/namedMap",
+          "additionalProperties": {
+            "$ref": "#/$defs/station"
+          }
+        },
+        "glyphs": {
+          "$ref": "#/$defs/glyphs"
+        },
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "reference": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "description": "Each reference table keyed by the layout's selection (given.Railroad, Era, Rulebook) to the row key it resolved to: trainOrderInputs to the Rulebook's row or default; policies to the Rulebook where the table has a row for it. A table with no row for this layout is not named (ADR 0012 §6)."
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "transport": {
+      "description": "A mechanism (ADR 0009 §3.4): a broker, a serial port and baud, DC pulses. One entity however many times it is placed; given merged over its placements (Kind, Broker, Port, Baud). Each placement's Processor wire is an anchor.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "given": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/given"
+            }
+          ]
+        },
+        "relations": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/relations"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "anchors": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/layoutName"
+                  },
+                  "description": "The processors on which an instance of this transport is drawn and wired."
+                }
+              }
+            }
+          ]
+        },
+        "nodes": {
+          "type": "object",
+          "description": "CMRInet Nodes on this line, keyed by UA (their Address); the container is the relation (three-maps D12). A node and its bits are told apart by given.Kind: NODE for the node, IB or OB for a bit.",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[^:/\\s]+$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/cmrinetNode"
+          }
+        }
+      }
+    },
+    "cmrinetNode": {
+      "description": "A CMRInet Node: a driver on the line that provides a bus for its bits (ADR 0009 §3.5). given holds IC, Kind (NODE), NodeType (an ordinary node setting), InputBytes and OutputBytes as drawn; the KiCad importer checks the declared bytes cover the bits used.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "given": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/given"
+            },
+            {
+              "properties": {
+                "InputBytes": {
+                  "$ref": "#/$defs/numericGiven"
+                },
+                "OutputBytes": {
+                  "$ref": "#/$defs/numericGiven"
+                }
+              }
+            }
+          ]
+        },
+        "bits": {
+          "type": "object",
+          "description": "The bits in use, keyed IB.n or OB.n (computed from given.Kind, IB or OB, which is the bit's direction, and the Bit field); each is a driver with one pin D.",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^(IB|OB)\\.\\d+$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/driver"
+          }
+        }
+      }
+    },
+    "encodingInstance": {
+      "description": "An encoding riding a transport instance (ADR 0009 §3.4): a code line (codelines{}) or remote I/O (ioEncodings{}). given holds Kind (AAR, USS506, BITS, JMRI, CMRI) and its fields with macros expanded (Topic, Version, Chart).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "given": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/given"
+            }
+          ]
+        },
+        "relations": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/relations"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "transport": {
+                  "$ref": "#/$defs/layoutName"
+                },
+                "processor": {
+                  "$ref": "#/$defs/layoutName",
+                  "description": "The anchor of the transport placement this encoding is wired to (three-maps D7)."
+                }
+              }
+            }
+          ]
+        },
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "station": {
+                  "type": "string",
+                  "enum": [
+                    "house",
+                    "interlocking"
+                  ],
+                  "description": "What one station on this code line is, from the stations table by given.Kind (the owner, 2026-10-27): each house at its own address, or the interlocking as one station. Only on a code line."
+                },
+                "tokens": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1
+                  },
+                  "description": "The office indication token templates by appliance class for this code line's encoding, from the indicationTokens table ({name} the appliance's or circuit's name, {lever} a signal's lever number). The station packets are not stored (the owner, 2026-10-28): tools/railroad/codeline.py computes them from these rows. Only on a code line."
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "processor": {
+      "description": "What runs a FieldUnit's or OfficeUnit's logic and anchors its connections (ADR 0009 §3.3). given (Kind, Board) merged over its placements. Its drivers are keyed by their address on its bus; the container is the relation.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "given": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/given"
+            }
+          ]
+        },
+        "drivers": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[^:/\\s]+$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/driver"
+          }
+        },
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "transports": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/layoutName"
+                  },
+                  "description": "The transports this processor reaches (ADR 0013 §11): those it anchors and the code line transports of the FieldUnits it runs, reached through the code line (ADR 0008 §4.9). Sorted."
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "driver": {
+      "description": "A driver on a bus, keyed by its Address, or for an encoded driver (a JMRI object) by Kind.served[.functions]: its object class, the device it serves and the functions its pin names state (ADR 0005 S4, R11; three-maps D11; the owner, 2026-11-10 and 2026-11-11). A nameless head or train order lever serves under the mast pin its IND wire reaches (SIGNALMAST.Gilroy.E). A driver pin named like the device pin it lands on serves that function and adds nothing (TURNOUT.777 on the switch's M, N, R); a driver pin named otherwise reads the function it is wired to and takes the device pin's name (SENSOR.777.OCC, SENSOR.Gilroy.E.STOP), sorted. A SignalMast on a mast carries the positions it stands in for unless its net covers every one (SIGNALMAST.778NAB.A, SIGNALMAST.778NAB). A drawn Address is a stated field, never the key. given holds IC, Kind, Address, JMRI.SignalSystem and its fields (frequency_hz, Bit, Node, ...).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "given": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/given"
+            }
+          ]
+        },
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "mast": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "A JMRI signal mast driver's mast: the mast whose indication it publishes, by the device rows whose bindings reach it (a mast device's position pins, or a head's own pin; the owner, 2026-11-05, 2026-11-10)."
+                },
+                "positions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "The positions the driver stands in for: the mast device pins on its net, or the face or position of the head it serves. Sorted."
+                },
+                "topic": {
+                  "type": "string",
+                  "description": "The MQTT topic a JMRI signal mast driver publishes on: the channel prefix (the JMRI encoding's Topic) and the driver's Address as the tail (issue #96). Absent while no Address is stated: the published name's form is issue #99's."
+                },
+                "jmriSignalSystem": {
+                  "type": "string",
+                  "description": "The JMRI signal system whose aspect names the driver publishes: a JMRI identity, the signal system folder under JMRI's xml/signals (SPTCO-1969, basic), stated as JMRI.SignalSystem on the driver, else on its JMRI encoding (issue #96: eras never end, they only start; the owner, 2026-11-11). The reference aspect-name tables are keyed by it (aspect_name)."
+                },
+                "aspectNames": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "description": "Each indication the driver's signal system presents on a mast of its mast's Kind, to the aspect name it publishes: the aspectNames table resolved for this driver (ADR 0012 §6). Absent while the signal system is not stated or names no table."
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "interlocking": {
+      "description": "An interlocking, the namespace of its houses, appliances, track and devices. Its FieldUnit runs on relations.processor (three-maps D14).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "given": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/given"
+            }
+          ]
+        },
+        "relations": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/relations"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "codeline": {
+                  "$ref": "#/$defs/layoutName",
+                  "description": "The one code line this FieldUnit attaches to, by its Codeline wire (ADR 0009 §3.8)."
+                },
+                "processor": {
+                  "$ref": "#/$defs/layoutName",
+                  "description": "The processor that runs its FieldUnit, by its Processor wire."
+                }
+              }
+            }
+          ]
+        },
+        "houses": {
+          "$ref": "#/$defs/namedMap",
+          "additionalProperties": {
+            "$ref": "#/$defs/house"
+          }
+        },
+        "appliances": {
+          "description": "The trackplan's named things by name (ADR 0010 §4.1).",
+          "$ref": "#/$defs/namedMap",
+          "additionalProperties": {
+            "$ref": "#/$defs/appliance"
+          }
+        },
+        "track": {
+          "$ref": "#/$defs/trackplan"
+        },
+        "devices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/device"
+          }
+        },
+        "geometry": {
+          "$ref": "#/$defs/geometry"
+        },
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {},
+              "description": "Nothing yet. A station's controls and indications are not stored (the owner, 2026-10-28): tools/railroad/codeline.py computes them on demand."
+            }
+          ]
+        }
+      }
+    },
+    "house": {
+      "description": "An instrument house at a control point, keyed by its CP Name; on a US&S 506 line it is a field station, addressed by its column (derived, not written). What a station receives and sends is not stored: tools/railroad/codeline.py computes it on demand (the owner, 2026-10-28).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "given": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/given"
+            },
+            {
+              "properties": {
+                "Milepost": {
+                  "$ref": "#/$defs/numericGiven"
+                }
+              }
+            }
+          ]
+        },
+        "relations": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/relations"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "maintainerCall": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "The maintainer call on its MC wire."
+                },
+                "codeline": {
+                  "$ref": "#/$defs/layoutName",
+                  "description": "The code line on its Codeline wire, where drawn."
+                }
+              }
+            }
+          ]
+        },
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {},
+              "description": "Nothing yet. A station's controls and indications are not stored (the owner, 2026-10-28): tools/railroad/codeline.py computes them on demand."
+            }
+          ]
+        }
+      }
+    },
+    "station": {
+      "description": "A timetable station (STRUCTURE, Kind STATION; the owner, 2026-11-03), keyed by its Name: a place on the line that a train order signal names in its Station field. given holds its Milepost and its other stated fields; relations.interlocking the interlocking whose sheet it is drawn under (ADR 0004 D12), absent for one drawn under none. Not a code line station (reference.STATION: a house or an interlocking addressed on a code line).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "given": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/given"
+            },
+            {
+              "properties": {
+                "Milepost": {
+                  "$ref": "#/$defs/numericGiven"
+                }
+              }
+            }
+          ]
+        },
+        "relations": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/relations"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "interlocking": {
+                  "$ref": "#/$defs/layoutName",
+                  "description": "The interlocking whose sheet the station is drawn under (ADR 0004 D12 sheet scope)."
+                }
+              }
+            }
+          ]
+        },
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {},
+              "description": "Nothing yet."
+            }
+          ]
+        }
+      }
+    },
+    "device": {
+      "description": "One row of devices[]: one device instance, without identity (ADR 0008 §4.5), so its Name lands in given. given holds Appliance, Style (as drawn, a comma list), Address, Invert, Indication (a lamp's expression), its per-pin Control.<pin> and Indication.<pin>, and its other fields.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "given": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/given"
+            }
+          ]
+        },
+        "relations": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/relations"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "bindings": {
+                  "type": "object",
+                  "description": "Each device pin's wire to a driver pin: function (the pin, polarity marks removed) to route.",
+                  "additionalProperties": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/$defs/route"
+                      },
+                      {
+                        "type": "array",
+                        "minItems": 2,
+                        "items": {
+                          "$ref": "#/$defs/route"
+                        }
+                      }
+                    ]
+                  }
+                },
+                "column": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "The OfficeUnit column a panel device sits in, qualified by its OfficeUnit (SPCoast South:12)."
+                },
+                "interlocking": {
+                  "$ref": "#/$defs/layoutName",
+                  "description": "The interlocking a panel device in no column belongs to, stated only by the sheet hierarchy (three-maps D6)."
+                },
+                "mast": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "A head device's or a train order lever's mast, by its IND wire to a field mast device: a signal mast (Appliance mast) or a train order mast (Appliance train_order_mast; the owner, 2026-11-08)."
+                },
+                "position": {
+                  "type": "string",
+                  "pattern": "^[A-Z]$",
+                  "description": "The signal mast device pin a head's IND wire reaches: its position on that mast, A, B, C top down (issue #80; the owner, 2026-11-04). A head has no name: it is this position of relations.mast. Absent for a head on a train order mast's face."
+                },
+                "face": {
+                  "type": "string",
+                  "description": "The train order mast pin a head's or a train order lever's IND wire reaches: the face it is on (the owner, 2026-11-08). A double board's face pins are named N, S, E or W; a single board's one pin has any name. Absent for a head on a signal mast (relations.position)."
+                }
+              }
+            }
+          ]
+        },
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "serves": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "The appliance this device serves (given.Name in its scope); for a head device or a train order lever, the mast device its IND wire reaches (relations.mast). A train_order_mast device serves its board by Name; the board's faces derive on the appliance."
+                },
+                "presents": {
+                  "description": "A head's head words, the keys of its model table (reference data, head_model keyed by given.Style; issue #80): the subset of the indication list, plus DARK, this head can show. Absent for a Style with no row (head.model).",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "controls": {
+                  "description": "A lever's controls: the Control.<pin> of each bound pin, qualified by its station's interlocking (Luchessa:783NWS); an empty one binds none.",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/qualifiedName"
+                  }
+                },
+                "expression": {
+                  "type": "string",
+                  "description": "A desk lamp's Indication, normalized (tools/layout_model/expression.py: | or, & and, ! not, parentheses; a comma read as |), every token qualified: Luchessa:1NATK | Luchessa:2NATK."
+                },
+                "indications": {
+                  "description": "The indications a device consumes, qualified: the tokens of a lever's Indication.<pin> expressions (Christopher:813WLK), or of a lamp's Indication expression (its legacy IndicationToken, each circuit with the K of an indication added, when it states no Indication), unqualified tokens in the lamp's own interlocking (relations.interlocking); each must be one an appliance of the named interlocking reports (tools/railroad/codeline.py).",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/indicationRef"
+                  }
+                },
+                "letter": {
+                  "type": "string",
+                  "pattern": "^[A-Z]$",
+                  "description": "A head's railroad letter: its mast's given.heads letter for the pin its IND reaches (relations.position; the owner, 2026-11-12). Derived, never stated on the head, so a mast's heads are edited in one place. Absent for a head on a train order face, and for a pin beyond the mast's letters."
+                },
+                "masts": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/qualifiedName"
+                  },
+                  "description": "A desk signal lever's masts: every mast of the interlocking it serves whose given.signal is the lever's number, sorted (ADR 0003 rule 5; the owner, 2026-11-12). From the stated atom, never from a Name. Absent on every other lever; a signal lever with none is lever.serves."
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "officeUnit": {
+      "description": "An OfficeUnit (never machine): given Style, the processor that runs it, its columns and its panel devices.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "given": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/given"
+            }
+          ]
+        },
+        "relations": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/relations"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "processor": {
+                  "$ref": "#/$defs/layoutName"
+                }
+              }
+            }
+          ]
+        },
+        "columns": {
+          "$ref": "#/$defs/namedMap",
+          "additionalProperties": {
+            "$ref": "#/$defs/column"
+          }
+        },
+        "devices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/device"
+          }
+        },
+        "geometry": {
+          "type": "object"
+        }
+      }
+    },
+    "column": {
+      "description": "A logical column tied to a control point (owner's ruling 2026-10-23), keyed by its Column number. given.\"CP Name\" names a house or an interlocking (the owner, 2026-10-28); on a line whose station is a house (US&S 506) it must name a house.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "given": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/given"
+            }
+          ]
+        },
+        "relations": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/relations"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "interlocking": {
+                  "$ref": "#/$defs/layoutName",
+                  "description": "Its interlocking where only the sheet hierarchy states it (no CP Name; three-maps D6)."
+                }
+              }
+            }
+          ]
+        },
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "house": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "The house its CP Name names, qualified; absent when it names the interlocking or nothing. On a line whose station is a house it is the column's station; on an AAR token line it is location only."
+                },
+                "interlocking": {
+                  "$ref": "#/$defs/layoutName",
+                  "description": "The interlocking its CP Name names, directly or through a house."
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "provenance": {
+      "description": "A property of the file about the whole layout and nothing below it: what wrote this file, the rules version its derived maps were computed by, and the one source it was imported from, the KiCad project.",
+      "type": "object",
+      "required": [
+        "sourceType",
+        "writer"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "sourceType": {
+          "type": "string"
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "The project file, relative to its repository."
+            },
+            "describe": {
+              "type": "string",
+              "description": "git describe of that repository."
+            }
+          }
+        },
+        "libraries": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "referenceData": {
+          "type": "object",
+          "description": "Each reference table the derivation read (ADR 0012 §6; the owner, 2026-11-13): its data file under the schema folder (relative to schemas/), its version (the table's provenance date) and the schema version the file is written to. The tables are the source, resolved per entity into derived; a consumer reads the resolved words from the file, or the table itself at this path.",
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "file",
+              "version",
+              "schemaVersion"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "file": {
+                "type": "string",
+                "pattern": "^layout-model/reference/[A-Za-z]+\\.json$"
+              },
+              "version": {
+                "type": "string"
+              },
+              "schemaVersion": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "writer": {
+          "type": "object",
+          "required": [
+            "name",
+            "version"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            }
+          }
+        },
+        "rules": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "The derivation rules' semantic version that produced every derived map (ADR 0011 §3, ADR 0012 §7); present exactly when derived is."
+        }
+      }
+    },
+    "coordinate": {
+      "type": "number"
+    },
+    "point": {
+      "type": "object",
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "$ref": "#/$defs/coordinate"
+        },
+        "y": {
+          "$ref": "#/$defs/coordinate"
+        }
+      }
+    },
+    "polyline": {
+      "description": "Ordered vertices, SVG points syntax: 'x,y x,y ...'. A string because a JSON list is sorted by the canonical form.",
+      "type": "string",
+      "pattern": "^-?\\d+(\\.\\d+)?,-?\\d+(\\.\\d+)?( -?\\d+(\\.\\d+)?,-?\\d+(\\.\\d+)?)+$"
+    },
+    "glyphKey": {
+      "description": "The drawing's own name for a glyph: library and symbol, 'Railroad-Trackplan:Switch_Lock'. The library's version is in provenance.",
+      "type": "string",
+      "pattern": "^[^:\\s][^:]*:[^:\\s][^:]*$"
+    },
+    "placement": {
+      "description": "Where a glyph sits: its anchor (the glyph's origin, which is its bottom-left pin) on the page, its turn (degrees, counter-clockwise as seen on the page, 0/90/180/270) and its mirror (x: top for bottom; y: left for right), applied mirror first, then turn, then translate; and which glyph.",
+      "type": "object",
+      "required": [
+        "at",
+        "glyph"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "$ref": "#/$defs/point"
+        },
+        "glyph": {
+          "$ref": "#/$defs/glyphKey"
+        },
+        "rotation": {
+          "type": "integer",
+          "enum": [
+            90,
+            180,
+            270
+          ]
+        },
+        "mirror": {
+          "type": "string",
+          "enum": [
+            "x",
+            "y"
+          ]
+        }
+      }
+    },
+    "track": {
+      "description": "One drawn run of track. points is geometry's own; derived.circuit the circuit it carries (absent for dark track); relations.from and .to what each end meets: a switch port or a named track row's pin by name (Luchessa:783.R), an unnamed track row's pin by the row's id and side (three-maps D5, D10), or the hierarchical label the run ends on, label:<Name> as drawn (label:ToSargentMT; ADR 0013 §7.1: block track is drawn across sheets and a hierarchical label continues the run; what is on the other sheet is the netlist's, never stated here). An end at a junction is absent.",
+      "type": "object",
+      "required": [
+        "points"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "points": {
+          "$ref": "#/$defs/polyline"
+        },
+        "relations": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "from": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/portRef"
+                },
+                {
+                  "$ref": "#/$defs/rowPortRef"
+                },
+                {
+                  "$ref": "#/$defs/labelEnd"
+                }
+              ]
+            },
+            "to": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/portRef"
+                },
+                {
+                  "$ref": "#/$defs/rowPortRef"
+                },
+                {
+                  "$ref": "#/$defs/labelEnd"
+                }
+              ]
+            }
+          }
+        },
+        "derived": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "circuit": {
+              "$ref": "#/$defs/qualifiedName"
+            }
+          }
+        }
+      }
+    },
+    "marker": {
+      "description": "A track row's placement (a joint, END CTC, NextCP, an industry, a policy sign, a consumer): the row it places, by id (three-maps D10), and its placement and glyph. It copies no fact of the row.",
+      "type": "object",
+      "required": [
+        "row",
+        "at",
+        "glyph"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "row": {
+          "$ref": "#/$defs/rowId"
+        },
+        "at": {
+          "$ref": "#/$defs/point"
+        },
+        "glyph": {
+          "$ref": "#/$defs/glyphKey"
+        },
+        "rotation": {
+          "type": "integer",
+          "enum": [
+            90,
+            180,
+            270
+          ]
+        },
+        "mirror": {
+          "type": "string",
+          "enum": [
+            "x",
+            "y"
+          ]
+        }
+      }
+    },
+    "stroke": {
+      "description": "KiCad's stroke, written only where it is not the default: a width in millimetres (KiCad's 0 means 'the default, which depends on context' and is not written), a dash type other than solid.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "dash",
+            "dot",
+            "dash_dot",
+            "dash_dot_dot"
+          ]
+        }
+      }
+    },
+    "fill": {
+      "description": "KiCad's fill, written only where there is one: outline (the stroke colour), background (the sheet's body colour) or a colour of its own.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "outline",
+            "background",
+            "color"
+          ]
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9a-f]{6}$"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "primitive": {
+      "description": "One drawn element of a glyph, in the glyph's frame: millimetres, x right, y down, the anchor pin at 0,0.",
+      "oneOf": [
+        {
+          "description": "Connected line segments.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "points"
+          ],
+          "properties": {
+            "type": {
+              "const": "polyline"
+            },
+            "points": {
+              "$ref": "#/$defs/polyline"
+            },
+            "stroke": {
+              "$ref": "#/$defs/stroke"
+            },
+            "fill": {
+              "$ref": "#/$defs/fill"
+            }
+          }
+        },
+        {
+          "description": "A circle.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "center",
+            "radius"
+          ],
+          "properties": {
+            "type": {
+              "const": "circle"
+            },
+            "center": {
+              "$ref": "#/$defs/point"
+            },
+            "radius": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "stroke": {
+              "$ref": "#/$defs/stroke"
+            },
+            "fill": {
+              "$ref": "#/$defs/fill"
+            }
+          }
+        },
+        {
+          "description": "A circular arc through three points, as KiCad states it.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "start",
+            "mid",
+            "end"
+          ],
+          "properties": {
+            "type": {
+              "const": "arc"
+            },
+            "start": {
+              "$ref": "#/$defs/point"
+            },
+            "mid": {
+              "$ref": "#/$defs/point"
+            },
+            "end": {
+              "$ref": "#/$defs/point"
+            },
+            "stroke": {
+              "$ref": "#/$defs/stroke"
+            },
+            "fill": {
+              "$ref": "#/$defs/fill"
+            }
+          }
+        },
+        {
+          "description": "An axis-aligned rectangle by two opposite corners.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "start",
+            "end"
+          ],
+          "properties": {
+            "type": {
+              "const": "rectangle"
+            },
+            "start": {
+              "$ref": "#/$defs/point"
+            },
+            "end": {
+              "$ref": "#/$defs/point"
+            },
+            "stroke": {
+              "$ref": "#/$defs/stroke"
+            },
+            "fill": {
+              "$ref": "#/$defs/fill"
+            }
+          }
+        },
+        {
+          "description": "Fixed text that is part of the picture (the H of a hand-thrown switch). A field shown through the symbol is not a primitive: the Layout Data Model File carries the field.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "text",
+            "at",
+            "size"
+          ],
+          "properties": {
+            "type": {
+              "const": "text"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1
+            },
+            "at": {
+              "$ref": "#/$defs/point"
+            },
+            "size": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "rotation": {
+              "type": "number"
+            },
+            "justify": {
+              "type": "string",
+              "pattern": "^(left|right|top|bottom)( (left|right|top|bottom))?$"
+            },
+            "stroke": {
+              "$ref": "#/$defs/stroke"
+            },
+            "fill": {
+              "$ref": "#/$defs/fill"
+            }
+          }
+        }
+      ]
+    },
+    "glyph": {
+      "description": "One picture, stated once: its ports (every pin, by name, in the glyph's frame; the anchor pin is 0,0) and its shape. The shape is a list and the canonical form sorts it: drawing order is not a fact.",
+      "type": "object",
+      "required": [
+        "ports",
+        "shape"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ports": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/point"
+          }
+        },
+        "shape": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/primitive"
+          }
+        }
+      }
+    },
+    "glyphs": {
+      "description": "layout.glyphs: every glyph any interlocking's geometry names, by glyph key; nothing the layout does not draw.",
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[^:\\s][^:]*:[^:\\s][^:]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/glyph"
+      }
+    },
+    "geometry": {
+      "description": "interlockings.<name>.geometry: an independent section whose one contract with the rest of the file is identity (three-maps D10). Placements are keyed by railroad name, markers name their track row by id, runs name what their ends meet.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "appliances": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/placement"
+          }
+        },
+        "houses": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/placement"
+          }
+        },
+        "mileposts": {
+          "description": "Milepost anchors by milepost (ADR 0004 D7: the Value is the milepost, so it is the marker's name). Luchessa draws two; Sargent none.",
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^\\d+(\\.\\d+)?$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/placement"
+          }
+        },
+        "track": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/track"
+          }
+        },
+        "markers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/marker"
+          }
+        }
+      }
+    },
+    "appliance": {
+      "description": "A named thing on the trackplan (ADR 0010 §4.1, by Role APPLIANCE), keyed by its Name: given.Appliance is switch (Style derail for a derail), mast, track_circuit (Style virtual for a virtual circuit, boundary for a detector at a joint, ADR 0013 §10), lamp, contact, actuator (three one-pin appliances read alike, each on the track its pin is wired to; no rule tells an actuator from a lamp yet; #82) or train_order (a train order signal: an operator-controlled, non-vital indicator with heads for a face, never a signal in the interlocking sense, in a route or in a control point; the owner, 2026-11-03). A reference to another interlocking's appliance is not an appliance of this one.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "given": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/given"
+            },
+            {
+              "properties": {
+                "Appliance": {
+                  "type": "string",
+                  "enum": [
+                    "switch",
+                    "mast",
+                    "track_circuit",
+                    "lamp",
+                    "contact",
+                    "actuator",
+                    "train_order"
+                  ]
+                },
+                "Milepost": {
+                  "$ref": "#/$defs/numericGiven"
+                },
+                "signal": {
+                  "type": "string",
+                  "pattern": "^\\d+$",
+                  "description": "A mast's signal number, the desk lever's number (784 of 784WBC; ADR 0003 rules 2 and 5; the owner, 2026-11-12). Stated by the writer: the KiCad importer decomposes the drawn Name, Studio states it and composes the label. Nothing reads a Name for it. On Appliance mast; absent on a mast whose Name is not the grammar (the importer's mast.name)."
+                },
+                "heads": {
+                  "type": "string",
+                  "pattern": "^[A-Z](,[A-Z])*$",
+                  "description": "A mast's head letters top down, a comma list (B,C of 784WBC; ADR 0003 rules 6 and 7; the owner, 2026-11-12): the k-th letter is the k-th position, the field mast device's pin A, B, C. A one-head mast states one letter. Stated like signal; on Appliance mast."
+                }
+              }
+            },
+            {
+              "required": [
+                "Appliance"
+              ]
+            }
+          ]
+        },
+        "relations": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/relations"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "C": {
+                  "$ref": "#/$defs/portRefs"
+                },
+                "N": {
+                  "$ref": "#/$defs/portRefs"
+                },
+                "R": {
+                  "$ref": "#/$defs/portRefs"
+                },
+                "TC": {
+                  "$ref": "#/$defs/portRefs",
+                  "description": "A track circuit marker's TC pin."
+                },
+                "A": {
+                  "$ref": "#/$defs/portRefs",
+                  "description": "A boundary track circuit's A pin (Style boundary, ADR 0013 §10): one of the two nets at its joint. A track pin like a marker's TC; it names no circuit."
+                },
+                "B": {
+                  "$ref": "#/$defs/portRefs",
+                  "description": "A boundary track circuit's B pin, the other net at its joint."
+                },
+                "house": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "A maintainer call's house, by its MC wire (three-maps D8)."
+                },
+                "track": {
+                  "$ref": "#/$defs/portRefs",
+                  "description": "The track a lamp, contact or actuator stands on, by the wire on its one pin (#82; the owner, 2026-11-09): every track pin on that wire. One-sided: no track pin names the appliance's pin back. Track with no circuit is track like any other. Absent, the appliance stands at its Milepost and CP Name."
+                },
+                "switch": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "The switch or lock a dependent derail follows (ADR 0003 D8; the owner, 2026-11-13): Luchessa:795 on 795D. Stated by the writer: the KiCad importer reads the drawn Name's gang id once and states it here; the derivation and every consumer read this relation and never a Name. Absent on an independent derail and on every switch."
+                },
+                "station": {
+                  "$ref": "#/$defs/layoutName",
+                  "description": "A train order signal's timetable station (Appliance train_order; the owner, 2026-11-03): its Station field, naming a layout.stations entry by Name. Unqualified: stations are layout entities."
+                },
+                "facing": {
+                  "type": "string",
+                  "enum": [
+                    "LEFT",
+                    "RIGHT"
+                  ],
+                  "description": "Which way a mast faces, LEFT or RIGHT (the owner, 2026-11-08 and 2026-11-12). On Appliance mast it is the Name's side letter as the KiCad importer states it (ADR 0003 D1: N and W LEFT, S and E RIGHT), one of the mast's three atoms with given.signal and given.heads; the glyph's turn must agree (the importer's geometry.facing). On Appliance train_order, and on a mast whose Name is not the grammar, it is the glyph's turn: unturned faces the LEFT trains, a half turn RIGHT, a mirror across y swaps them; absent for a quarter turn. A single train order board's one face takes this direction."
+                }
+              }
+            }
+          ]
+        },
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "controlPoint": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "The house (control point) the appliance belongs to: its own given.CP; else the one house of its interlocking; else the house its chain of relations reaches."
+                },
+                "osCircuit": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "The circuit a switch's or derail's track carries: its marker's name, or else the switch's given.TC. Absent on dark track."
+                },
+                "members": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/qualifiedName"
+                  },
+                  "description": "A virtual track circuit's member circuits, its Members resolved."
+                },
+                "positions": {
+                  "type": "object",
+                  "description": "A mast's head positions, keyed by the field mast device pin (A, B, C top down; issue #80; the owner, 2026-11-04, 2026-11-09 and 2026-11-12): letter is the railroad's head letter for that pin, the k-th of given.heads; presents the head words any head wired to the pin presents, from the head model table by Style. A lettered pin with no head wired has no presents; a wired pin beyond the letters has no letter (mast.heads). Absent while the mast states no heads and none is wired. The pin is the physical fact every seam uses (the device's wiring, a driver's key); the letter is the name; keyed by the pin so that A never means pin A on one mast and head A on another. shows is the position's column of the rulebook's policy row for this head count, when one exists.",
+                  "propertyNames": {
+                    "pattern": "^[A-Z]$"
+                  },
+                  "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "letter": {
+                        "type": "string",
+                        "pattern": "^[A-Z]$"
+                      },
+                      "presents": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "shows": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "string"
+                        },
+                        "description": "The head word this position shows for each mast indication: the policies table row for the layout's Rulebook and the mast's head count, this position's column (the owner's lookup: mast indication, head count, head number, context). Absent while no row states it; none is shipped yet (#62)."
+                      }
+                    }
+                  }
+                },
+                "demand": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "The indications a mast must be able to show: its explicit Indications list, the settled exception (the owner, 2026-11-04), until the demand derivation lands (#62: STOP always, every other word earned by a governed route's ceiling or block spacing). Absent when none is stated."
+                },
+                "track": {
+                  "type": "string",
+                  "description": "The piece of track a lamp, contact or actuator stands on, by the piece's name (#82; the owner, 2026-11-09): the circuit that names it; else the name of an end of track on it (an industry); else a name made from one of its pins, track@<pin>, which nobody stated (rule check appliance.track.unnamed)."
+                },
+                "circuits": {
+                  "type": "object",
+                  "description": "A mast on a double signal joint (IRJ_SIGNALS, ADR 0013 §6): governed is the circuit on the side its SIGNAL pin names, approach the circuit on the other side, the shape a single signal joint's row carries (ADR 0012 §8). A boundary track circuit (ADR 0013 §10): A and B, the circuit on each of its pins, what it counts toward. A side on dark track is absent.",
+                  "additionalProperties": false,
+                  "properties": {
+                    "governed": {
+                      "$ref": "#/$defs/qualifiedName"
+                    },
+                    "approach": {
+                      "$ref": "#/$defs/qualifiedName"
+                    },
+                    "A": {
+                      "$ref": "#/$defs/qualifiedName"
+                    },
+                    "B": {
+                      "$ref": "#/$defs/qualifiedName"
+                    },
+                    "track": {
+                      "$ref": "#/$defs/qualifiedName",
+                      "description": "The circuit that names the piece a lamp, contact or actuator stands on (#82), a circuit of its own interlocking (rule check appliance.circuit). Absent where no circuit names the piece."
+                    }
+                  }
+                },
+                "faces": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/$defs/face"
+                  },
+                  "description": "A train order board's faces, keyed by the face pin of its field mast device something is wired to (the owner, 2026-11-08). Only on Appliance train_order; absent while no device serves it or no face is wired (train_order.device)."
+                },
+                "derails": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/qualifiedName"
+                  },
+                  "description": "A switch's or lock's dependent derails (ADR 0003 D8): every derail of its interlocking whose relations.switch names it, qualified and sorted. Absent when none does."
+                }
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "given"
+      ]
+    },
+    "trackSymbol": {
+      "description": "A track row (a joint, an end, a policy sign): its id, its name where it has one (an industry), given (Kind as the libraries spell it, CP, Direction, Interlocking), each side's wire as relations.<side> and each side's circuit as derived.circuits.<side>. Sides are named for what they do (ADR 0012 §8): a signal joint's approach and governed; a policy sign's and a NextCP's track; a plain joint's A and B, and a double signal joint's (IRJ_SIGNALS, ADR 0013 §6: approach and governed are relative to each of its masts, derived on the mast); an end's EoT as drawn.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "given": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/given"
+            },
+            {
+              "properties": {
+                "Kind": {
+                  "type": "string",
+                  "pattern": "^[A-Z][A-Z0-9_]*$"
+                },
+                "Direction": {
+                  "type": "string",
+                  "enum": [
+                    "LEFT",
+                    "RIGHT",
+                    "BOTH"
+                  ]
+                },
+                "Style": {
+                  "type": "string",
+                  "description": "On a NextCP, off_layout: the interlocking it names will never be drawn (ADR 0013 §21 gap 7; the owner, 2026-11-03), so nothing is reported for it and nothing pairs back."
+                }
+              }
+            },
+            {
+              "required": [
+                "Kind"
+              ]
+            }
+          ]
+        },
+        "id": {
+          "$ref": "#/$defs/rowId"
+        },
+        "name": {
+          "$ref": "#/$defs/qualifiedName",
+          "description": "The row's name where it has one (an industry)."
+        },
+        "relations": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/relations"
+            },
+            {
+              "properties": {
+                "mast": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "A signal joint's mast, by its SIGNAL wire; a plate's mast (RULE_290_G, RULE_290_R; ADR 0013 §5), the mast whose SIGNAL wire its To pin sits on."
+                },
+                "masts": {
+                  "type": "object",
+                  "description": "A double signal joint's masts (IRJ_SIGNALS, ADR 0013 §6): A the mast on its SIGNAL_A wire, which governs into side A; B the mast on SIGNAL_B, into side B. A side with no mast is absent.",
+                  "additionalProperties": false,
+                  "properties": {
+                    "A": {
+                      "$ref": "#/$defs/qualifiedName"
+                    },
+                    "B": {
+                      "$ref": "#/$defs/qualifiedName"
+                    }
+                  }
+                }
+              },
+              "propertyNames": {
+                "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+              },
+              "additionalProperties": {
+                "$ref": "#/$defs/portRefs",
+                "description": "Every other track pin this side's wire reaches: switch ports, markers' TC and named rows' sides by name, unnamed rows' sides by id (three-maps D5)."
+              }
+            }
+          ]
+        },
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "circuits": {
+                  "description": "The circuit at each side; a side on dark track is absent. On block track drawn across sheets (ADR 0013 §7.1) a side may carry another interlocking's circuit, named by that sheet's marker (Corporal:834T on Sargent's 834 joint).",
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+                  },
+                  "additionalProperties": {
+                    "$ref": "#/$defs/qualifiedName"
+                  }
+                },
+                "controlPoint": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "A signal joint's control point: its given.CP, or its mast's, or the interlocking's one house."
+                }
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "given"
+      ]
+    },
+    "trackplan": {
+      "description": "The interlocking's track as the netlist states it, by circuit, port and row id, never by coordinate (ADR 0010 C6). A circuit is the track between joints and ends, joined through a switch's or derail's ports; dark track has no circuit.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "joints": {
+          "description": "IRJ, IRJ_SIGNAL and IRJ_SIGNALS: insulated joints, each between the circuits on its two sides; a signal joint's governed side is where the route it protects begins; a double signal joint (ADR 0013 §6) has a mast on each side, relations.masts.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/trackSymbol"
+          }
+        },
+        "ends": {
+          "description": "NEXT_CP, BUMPER, INDUSTRY: where the drawn track ends, and what lies beyond. A regime boundary is no end: it is a plain IRJ with a GCOR Rule marker on each side (ADR 0013 §7.1), and the track beyond it is in the model under its own regime.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/trackSymbol"
+          }
+        },
+        "policies": {
+          "description": "The policy signs on the circuit at their pin: the regime markers (GCOR_RULE_10, GCOR_RULE_14, GCOR_RULE_16, GCOR_RULE_6_13, GCOR_RULE_6_28; ADR 0013 §7.1, their extent in pieces) and the current-of-traffic sign (GCOR_RULE_9_14 with its Direction; §8); and the plates (RULE_290_G, RULE_290_R; ADR 0013 §5), each on a mast (relations.mast) and on no track.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/trackSymbol"
+          }
+        },
+        "links": {
+          "description": "Switch ports that meet with no joint or end between them (Luchessa:795.R and Luchessa:795D.R), with the circuit there: computed from the ports' relations.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/link"
+          }
+        },
+        "pieces": {
+          "description": "The joint-bounded pieces of track this interlocking's track touches, one row each, computed (ADR 0013 §7.1): track connectivity through nets and switch ports across every interlocking, cut at every joint. Each is named as this interlocking names its track (its circuit, an end on it, or track@<pin>), carries its circuit where one names it, and its regime, a GCOR Rule Kind, with how it was found: marker (a GCOR Rule sign on it) or inherited (across a joint from the piece beside it; interlocking track inherits like any other track, the owner 2026-11-10). A piece with no regime, or whose regime is an error, states none.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/piece"
+          }
+        },
+        "consumers": {
+          "description": "Consumers of another station's indications, drawn on this trackplan.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/consumer"
+          }
+        }
+      }
+    },
+    "piece": {
+      "description": "One joint-bounded piece of track with its regime (ADR 0013 §7.1): computed, never stated.",
+      "type": "object",
+      "required": [
+        "derived"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "required": [
+                "name"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "The piece as this interlocking names its track: its circuit, an end on it (an industry), or track@<pin> when nobody stated a name."
+                },
+                "circuit": {
+                  "$ref": "#/$defs/qualifiedName"
+                },
+                "regime": {
+                  "type": "string",
+                  "pattern": "^GCOR_RULE_[0-9_]+$",
+                  "description": "The GCOR Rule Kind the piece is under; absent when none is found or its regime is an error."
+                },
+                "by": {
+                  "type": "string",
+                  "enum": [
+                    "marker",
+                    "inherited"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "link": {
+      "description": "Switch ports that meet with no joint or end between them (Luchessa:795.R and Luchessa:795D.R), with the circuit there: computed from the ports' relations.",
+      "type": "object",
+      "required": [
+        "derived"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "derived": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/derived"
+            },
+            {
+              "required": [
+                "ports"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "ports": {
+                  "type": "array",
+                  "minItems": 2,
+                  "items": {
+                    "$ref": "#/$defs/portRef"
+                  }
+                },
+                "circuit": {
+                  "$ref": "#/$defs/qualifiedName"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "indicationRef": {
+      "description": "An office indication token another interlocking's station sends, qualified by that interlocking: Corporal:2NATK. By the AAR nomenclature behind every code line, an indication ends in K (the owner, 2026-10-27).",
+      "allOf": [
+        {
+          "$ref": "#/$defs/qualifiedName"
+        },
+        {
+          "pattern": "K$"
+        }
+      ]
+    },
+    "consumer": {
+      "description": "A one-sided consumer of another station's office indication, drawn on this trackplan (the owner, 2026-10-27): a track circuit marker named for another interlocking's circuit (Sargent's Corporal:2NAT). It is a row, identified by id; its fields as drawn in given, its Name included; relations.TC its wire, which its neighbours name as <id>.TC; relations.indication the token it consumes (Corporal:2NATK). The circuit it stands on is the one that token indicates.",
+      "type": "object",
+      "required": [
+        "id",
+        "given"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/rowId"
+        },
+        "given": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/given"
+            }
+          ]
+        },
+        "relations": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/relations"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "TC": {
+                  "$ref": "#/$defs/portRefs"
+                },
+                "indication": {
+                  "$ref": "#/$defs/indicationRef"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "face": {
+      "description": "One face of a train order board, derived on the board (the owner, 2026-11-08): keyed by the field mast pin its head and lever are wired to. direction is the direction the face serves: a double board's from its pin letter (ADR 0003 D1: N and W LEFT, S and E RIGHT), a single board's from the board's relations.facing. inputs are the inputs its lever binds, keyed by rank from 1, the most restrictive, each with the indication it shows; rest the word nothing asserted shows; indications the set of words the face can show. The words come from the trainOrderInputs table row the layout's Rulebook selects (reference data, ADR 0012 §6), the board's Rest and Shows.<input> overriding them (FieldUnit ADR 0010 D2). The run-time rule, the highest-ranked asserted input wins, is FieldUnit's (ADR 0010 D1).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "type": "string",
+          "enum": [
+            "LEFT",
+            "RIGHT"
+          ]
+        },
+        "indications": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "inputs": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[1-9][0-9]*$"
+          },
+          "description": "The inputs the face's lever binds, keyed by rank from 1, the most restrictive (a map, not a list: a list in the file is a set, ADR 0008 §4.8). Absent when the lever binds none.",
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "input",
+              "indication"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "input": {
+                "type": "string"
+              },
+              "indication": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "rest": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

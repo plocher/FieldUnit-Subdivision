@@ -1,193 +1,121 @@
-"""Reference data: general facts, not layout data (ADR 0008 §4.7, ADR 0012 §6). A placeholder: the tables a writer and
-the reference derivation share, each versioned so provenance can name it. Contents are TBD by the owner; only the
-lookup and its override order are fixed: one lookup by key, the user's own table layered over the shipped default.
+"""Reference data: general facts, not layout data (ADR 0008 §4.7, ADR 0012 §6). The tables are JSON data files under the
+schema folder, ``schemas/layout-model/reference/<table>.json``, each with its schema beside it, a ``schemaVersion``
+(0 until the KiCad importer and FieldUnit work end to end) and a ``version``, its provenance date (the owner, 2026-11-13: the
+files are the source, not an output; there is no second compiler). This module loads them and holds no table literal
+(gate ``tests/test_reference_data.py``). The lookups keep one shape: one lookup by key, the user's own table layered over
+the shipped one, the user's wins; a key with no row is None, never guessed. Per-entity resolution into ``derived`` is
+``reference_data.py``.
 """
 from __future__ import annotations
 
-from typing import Optional
+import json
+from functools import lru_cache
+from pathlib import Path
+from typing import Any, Optional
 
-# Versioned so provenance can name it.
-REFERENCE_DATA = {"encodingTransportPairing": "2026-10-23", "driverEncodings": "2026-10-23", "indicationTokens": "2026-10-27.2", "stations": "2026-10-27", "codeLineCapacity": "2026-11-01", "codeLineSteps": "2026-11-01.3",
-                  "trainOrderInputs": "2026-11-08", "regimes": "2026-11-10", "aspectNames": "2026-11-10", "headModels": "2026-11-12"}
-# An encoding's Kind pairs with its transport's Kind (ADR 0009 §3.10).
-TRANSPORT_OF_ENCODING = {"AAR": "MQTT", "USS506": "TIMECODE", "BITS": "TIMECODE", "JMRI": "MQTT", "CMRI": "CMRI"}
-# A driver whose IC is an encoding needs that I/O encoding on its processor (ADR 0009 §3.3, §3.6, §3.12 "IC native or encoded").
-ENCODING_OF_IC = {"MQTT-JMRI": "JMRI"}
-
-# The office indications a station sends on its code line, by the code line's encoding Kind: each a list of token
-# templates by appliance class. By the AAR nomenclature behind every code line, controls end in S and indications in K
-# (the owner, 2026-10-27; ADR 0011 amendment), so every encoding shares the default until a railroad or an encoding
-# says otherwise. The forms are FieldUnit's (docs/GLOSSARY.md §10.3, "FieldUnit tokens by appliance"; WireCodec.h's
-# AarTextCodec): a track circuit `<name>K`; a switch `<name>NWK`, `<name>RWK`; an electric lock `<name>WLK`,
-# `<name>WLQK`, not NWK/RWK (the owner, 2026-10-27); a signal lever `<lever>NGK`, `<lever>SGK`, `<lever>TEK`; a
-# maintainer call `<name>K`. A virtual track circuit and a non-vital lamp appliance (`NFLK`, `HBA`) send `<name>K`, the
-# form the desk's lamps consume (settled by the desk, 2026-10-27). A name that ends in K is the token already
-# (``indication_of``). ``{name}`` is the appliance's or circuit's name, ``{lever}`` a signal's lever number.
-# A station's controls are not here: they are the desk levers' bindings that end in S (the owner, 2026-10-27).
-INDICATION_TOKENS: dict[str, dict[str, tuple[str, ...]]] = {
-    "default": {
-        "track_circuit": ("{name}K",),
-        "switch": ("{name}NWK", "{name}RWK"),
-        "lock": ("{name}WLK", "{name}WLQK"),
-        "signal": ("{lever}NGK", "{lever}SGK", "{lever}TEK"),
-        "maintainer_call": ("{name}K",),
-        "lamp": ("{name}K",),                     # a non-vital lamp (a flasher, a hot box alarm): the desk's form (2026-10-27)
-    },
-}
+FOLDER = Path(__file__).resolve().parents[2] / "schemas" / "layout-model" / "reference"
+FILE_PREFIX = "layout-model/reference/"               # a table's file as provenance names it, relative to schemas/
 
 
-def indication_tokens(encoding: Optional[str], user: Optional[dict[str, dict[str, tuple[str, ...]]]] = None) -> dict[str, tuple[str, ...]]:
+def tables() -> list[str]:
+    """Every table the folder holds, by name (a file's stem; its schema is beside it)."""
+    return sorted(p.stem for p in FOLDER.glob("*.json") if not p.name.endswith(".schema.json"))
+
+
+def path(table: str) -> Path:
+    return FOLDER / f"{table}.json"
+
+
+def schema_path(table: str) -> Path:
+    return FOLDER / f"{table}.schema.json"
+
+
+@lru_cache(maxsize=None)
+def load(table: str) -> dict[str, Any]:
+    """The whole file of ``table``: ``table``, ``schemaVersion``, ``version``, ``provenance``, ``rows`` and the table's
+    own constants. Read once."""
+    return json.loads(path(table).read_text(encoding="utf-8"))
+
+
+def rows(table: str) -> dict[str, Any]:
+    return load(table)["rows"]
+
+
+def provenance() -> dict[str, dict[str, Any]]:
+    """What a layout file states in ``provenance.referenceData``: each table's file, version and schema version."""
+    return {t: {"file": FILE_PREFIX + path(t).name, "version": load(t)["version"], "schemaVersion": load(t)["schemaVersion"]}
+            for t in tables()}
+
+
+# Loaded names the importer and the derivation read directly.
+TRANSPORT_OF_ENCODING: dict[str, str] = rows("encodingTransportPairing")       # an encoding's Kind to its transport's Kind
+ENCODING_OF_IC: dict[str, str] = rows("driverEncodings")                      # a driver IC that is an encoding, to its Kind
+REGIMES: dict[str, str] = rows("regimes")                                     # GCOR Rule Kind to its title
+CTC: str = load("regimes")["ctc"]                                             # the regime of track within a control point
+CURRENT_OF_TRAFFIC: str = load("regimes")["currentOfTraffic"]                 # a direction fact, not a regime
+HEAD_MODELS: dict[str, dict[str, Any]] = rows("headModels")                   # Style to its row (source, words)
+
+
+def indication_tokens(encoding: Optional[str], user: Optional[dict[str, dict[str, Any]]] = None) -> dict[str, tuple[str, ...]]:
     """The token templates by appliance class for a code line of ``encoding`` (its ``given.Kind``): the shipped default,
     then the shipped table for that encoding, then the user's own default and table for it; the later wins per class."""
     out: dict[str, tuple[str, ...]] = {}
-    for table in (INDICATION_TOKENS, user or {}):
-        out.update(table.get("default", {}))
+    for table in (rows("indicationTokens"), user or {}):
+        out.update({k: tuple(v) for k, v in table.get("default", {}).items()})
         if encoding:
-            out.update(table.get(encoding, {}))
+            out.update({k: tuple(v) for k, v in table.get(encoding, {}).items()})
     return out
 
 
 def indication_of(name: str, template: str = "{name}K") -> str:
     """The token a desk lamp's or a drawn reference's circuit names: the template applied, unless the name is a token
     already (it ends in K, as ``MC1K`` does; FieldUnit's AarTextCodec adds K only when it is absent)."""
-    return name if name[-1:] in ("K", "k") else template.format(name=name)
-
-
-# What one station on a code line is, by the code line's encoding Kind (the owner, 2026-10-27): on a US&S 506 line each
-# house answers at its own address; on an AAR token line, which has no vocabulary limit, the interlocking is one station.
-# An encoding not listed takes the default.
-STATION = {"default": "interlocking", "USS506": "house", "AAR": "interlocking"}
+    return name if name[-1:].upper() == "K" else template.format(name=name)
 
 
 def station_of(encoding: Optional[str], user: Optional[dict[str, str]] = None) -> str:
-    table = {**STATION, **(user or {})}
+    """What one station on a code line of ``encoding`` is: ``house`` or ``interlocking``; an encoding not listed takes
+    the default."""
+    table = {**rows("stations"), **(user or {})}
     return table.get(encoding or "", table["default"])
-
-
-# What one code line type can carry, set by the physical machine (the owner, 2026-11-01): field stations per line, and
-# controls and office indications per field station, each counted in function steps. A step is a timed pulse on the
-# line; a token is symbolic (FieldUnit GLOSSARY §6, "A token is not a step"), so a station's need comes from
-# ``CODE_LINE_STEPS``, never from its token count. None is no limit, or a limit the layout sets. Three forms: fixed per station; ``options``, a
-# trade-off where more stations leave fewer controls (GRS Type H); ``steps``, one pool the railroad shares between
-# station selection and functions (GRS Syncrostep). ``source`` names where the row comes from.
-CODE_LINE_CAPACITY: dict[str, dict] = {
-    "USS504": {"stations": 15, "controls": 7, "indications": 7, "source": "owner-supplied 2026-11-01, unverified"},
-    "USS506": {"stations": 35, "controls": 7, "indications": 7, "source": "RRS506 (GLOSSARY §6); 506, 506A, 506B"},
-    "USS506C": {"stations": 35, "controls": 7, "indications": 35, "source": "RRS506 (GLOSSARY §6)"},
-    "GRS_K": {"stations": None, "controls": 8, "indications": 11,
-              "source": "owner-supplied 2026-11-01, unverified; stations by the 8- or 10-step selection setup"},
-    "GRS_H": {"options": ({"stations": 64, "controls": 4, "indications": 13},
-                          {"stations": 32, "controls": 5, "indications": 13},
-                          {"stations": 16, "controls": 6, "indications": 13}),
-              "source": "owner-supplied 2026-11-01, unverified"},
-    "GRS_SYNCROSTEP": {"steps": 13, "source": "owner-supplied 2026-11-01, unverified; apportioned per layout"},
-    "AAR": {"stations": None, "controls": None, "indications": None, "source": "GLOSSARY: no capacity limit"},
-}
 
 
 def code_line_capacity(encoding: Optional[str], user: Optional[dict[str, dict]] = None) -> Optional[dict]:
     """The capacity row for a code line of ``encoding`` (its ``given.Kind``): the user's own row over the shipped one;
     None when neither has one (capacity unknown, never assumed)."""
-    table = {**CODE_LINE_CAPACITY, **(user or {})}
+    table = {**rows("codeLineCapacity"), **(user or {})}
     return table.get(encoding or "")
-
-
-# The function steps each appliance class takes on a code line type, controls and office indications (the owner,
-# 2026-11-01). A switch takes two each way: its pair says normal, reverse or neither ("don't change" as a control, "in
-# motion" as an indication); both up is invalid. A signal lever's three controls (NGS, SGS, HS) take three steps: HS,
-# the explicit stop, has its own (the owner, 2026-11-01). None is not known yet, never assumed.
-CODE_LINE_STEPS: dict[str, dict[str, dict[str, Optional[int]]]] = {
-    "USS506": {
-        "switch": {"controls": 2, "indications": 2},
-        "signal": {"controls": 3, "indications": 3},
-        "lock": {"controls": 1, "indications": 2},             # a two-position lever, like a maintainer call
-        "track_circuit": {"controls": 0, "indications": 1},
-        "maintainer_call": {"controls": 1, "indications": 1},
-    },
-}
 
 
 def code_line_steps(encoding: Optional[str], user: Optional[dict[str, dict]] = None) -> Optional[dict[str, dict[str, Optional[int]]]]:
     """The steps by appliance class for a code line of ``encoding``: the user's own classes over the shipped ones; None
     when neither has the type (steps unknown, never assumed)."""
-    shipped, own = CODE_LINE_STEPS.get(encoding or ""), (user or {}).get(encoding or "")
+    shipped, own = rows("codeLineSteps").get(encoding or ""), (user or {}).get(encoding or "")
     if shipped is None and own is None:
         return None
     return {**(shipped or {}), **(own or {})}
 
 
-# A train order board's face (the owner, 2026-11-05 and 2026-11-08, docs/review/signal-symbols-worklist.md "Rulings
-# 2026-11-08: train order boards"): a fascia lever (Appliance ``lever``, Style ``train_order``) serves one face and
-# has the inputs STOP and SLOW. Nothing asserted shows CLEAR; otherwise the most restrictive asserted input wins, in
-# this table's order from the most restrictive: STOP shows STOP (orders to pick up), SLOW APPROACH (orders handed up
-# on the fly). CALLON is not a train order control: it is the block signal's indication, used with the board to bring
-# a train stopped at the block boundary up to the station (the owner, 2026-11-08). The fascia control is local: no
-# code line carries it. The words are indications (FieldUnit docs/GLOSSARY.md), never a colour or a blade angle. The
-# run-time logic is FieldUnit's (FieldUnit issue #44); the derivation states only what a face can show from the
-# inputs its lever binds (``derive.train_orders``). The feature's table of what a face shows is checked against this
-# order by its step alone.
-TRAIN_ORDER_INPUTS = (("STOP", "STOP"), ("SLOW", "APPROACH"))
-TRAIN_ORDER_CLEAR = "CLEAR"
-
-
-# The regimes a piece of track may be under (ADR 0013 §7.1 and decision 3; the owner, 2026-11-10; Railroad 0ddd395): each
-# a GCOR Rule POLICY marker's Kind, with the chapter or rule title of the GCOR 8th edition as the owner opened it
-# (2026-11-10, ticket #113). The GCOR prefix scopes the vocabulary to one rulebook; a later Studio presents the era's
-# set. Nothing era-specific yet. A regime is stated by its marker, never derived from signals (GCOR 10.1: CTC limits
-# are designated in the timetable); the marker's extent is derived (``derive.regimes``). The current-of-traffic sign
-# is a direction fact, not a regime, and may share a piece with one (§8).
-REGIMES: dict[str, str] = {
-    "GCOR_RULE_10": "CTC",                                         # Chapter 10
-    "GCOR_RULE_14": "TWC",                                         # Chapter 14, track warrant control
-    "GCOR_RULE_16": "DTC",                                         # Chapter 16, direct traffic control
-    "GCOR_RULE_6_13": "Yard Limits",
-    "GCOR_RULE_6_28": "Movement on Other than Main Track",
-}
-CTC = "GCOR_RULE_10"                                               # the regime of track within a control point
-CURRENT_OF_TRAFFIC = "GCOR_RULE_9_14"                              # "Movement with the Current of Traffic": Direction LEFT or RIGHT
-# JMRI "aspect names" (never shortened to "aspect"), the string a JMRI signal mast driver publishes for a mast's
-# indication (the owner, 2026-11-05, issue #96; the seam is JMRI's MqttSignalMast: ``"<aspect name>; Lit; Unheld"``).
-# Keyed by JMRI signal system (the symbol field JMRI.SignalSystem: the signal system folder under JMRI's xml/signals,
-# SPTCO-1969, basic; the owner, 2026-11-11), then indication, then the mast's Kind (ADR 0013 §5: CONTROLLED, ABSOLUTE, PERMISSIVE): a row
-# is one name for every Kind, or a map by Kind where the system folds the plate into the name (SP's STOP is "Home
-# Signal Red" on a controlled or absolute mast, "Stop and Proceed" on a permissive one). Our indication vocabulary does
-# not change. An indication with no row is not presentable in that system. The tables are ours and editable; JMRI's
-# ``xml/signals/<system>/aspects.xml`` is a source for names, not an authority, and its appearance files and
-# aspectMappings are not adopted. ``basic`` adds RESTRICTING, which JMRI's basic lacks. In SPTCO-1969, lunar was
-# dropped in later eras (red over yellow): an edit to the DIVERGING_RESTRICTING row. ADVANCE_APPROACH and the
-# speed-signalling words have no row there; the owner expects them absent on western roads.
-ASPECT_NAMES: dict[str, dict[str, object]] = {
-    "basic": {
-        "CLEAR": "Clear",
-        "APPROACH": "Approach",
-        "STOP": "Stop",
-        "DIVERGING_CLEAR": "Diverging Clear",
-        "DIVERGING_APPROACH": "Diverging Approach",
-        "RESTRICTING": "Restricting",
-    },
-    "SPTCO-1969": {
-        "CLEAR": "Block Signal Green",
-        "APPROACH": "Approach Signal Yellow",
-        "RESTRICTING": "Restricting",
-        "STOP": {"CONTROLLED": "Home Signal Red", "ABSOLUTE": "Home Signal Red", "PERMISSIVE": "Stop and Proceed"},
-        "DIVERGING_CLEAR": "Block Signal Green for Diverging Route",
-        "APPROACH_DIVERGING": "Block Signal Yellow over Green",
-        "APPROACH_MEDIUM": "Approach Medium - Flashing Yellow",
-        "DIVERGING_APPROACH": "Home Signal Yellow for Diverging Route",
-        "DIVERGING_RESTRICTING": "Home Signal Red over Lunar",
-    },
-}
+def train_order_inputs(rulebook: Optional[str], user: Optional[dict[str, dict[str, Any]]] = None) -> tuple[str, dict[str, Any]]:
+    """The train order face row the layout's ``rulebook`` selects, and the key it resolved to: the user's own row for the
+    rulebook, else the shipped one, else each table's ``default``. A row is ``{"inputs": [{"input", "indication"}, ...],
+    "rest": word}``, the inputs ranked from the most restrictive (FieldUnit ADR 0010 D1, D2)."""
+    for key in ((rulebook,) if rulebook else ()) + ("default",):
+        for table in (user or {}, rows("trainOrderInputs")):
+            if key in table:
+                return key, table[key]
+    raise KeyError("the trainOrderInputs table has no default row")
 
 
 def signal_systems(user: Optional[dict[str, dict[str, object]]] = None) -> set[str]:
     """The signal systems a table names, shipped and the user's own."""
-    return set(ASPECT_NAMES) | set(user or {})
+    return set(rows("aspectNames")) | set(user or {})
 
 
 def aspect_name(system: Optional[str], indication: str, kind: Optional[str], user: Optional[dict[str, dict[str, object]]] = None) -> Optional[str]:
     """The aspect name a JMRI signal mast driver publishes for ``indication`` on a mast of ``kind`` in ``system``: the
     user's own row over the shipped one; None when neither has it (not presentable in that system, never guessed)."""
-    for table in (user or {}, ASPECT_NAMES):
+    for table in (user or {}, rows("aspectNames")):
         row = table.get(system or "", {}).get(indication)
         if row is None:
             continue
@@ -197,44 +125,22 @@ def aspect_name(system: Optional[str], indication: str, kind: Optional[str], use
     return None
 
 
-# Head models (the owner, 2026-11-04 and 2026-11-09, docs/review/signal-symbols-worklist.md "Reference data" and
-# "Rulings 2026-11-09"; issue #80): a head is anonymous, a position on its mast keyed by the mast's Name and the field
-# mast pin its IND is wired to; its Style is its model and the index here. A row is head word -> what the head does
-# for it, one column per output the model has (``lamp``: which lamp is lit; ``arm``: the blade position; a semaphore's
-# ``lamp`` is the lamp behind its roundel, DARK = lamp out, blade unchanged). ``presents`` is the row's keys: the head
-# words the head can show, a subset of the indication list plus DARK. No colour, position or appearance word crosses a
-# seam: the right-hand side is the encoder's instruction (#81 reads its Kind's column), never a model fact. A demanded
-# word outside the subset is the head's indication filter, never a model finding (the owner, 2026-11-09). A Style with
-# no row presents nothing known (``head_model`` is None), reported, never guessed. ``source`` says where the row comes
-# from: the worklist seed, or the symbol's Description in Railroad-Field.kicad_sym (the merged library, Railroad PR 21).
-HEAD_MODELS: dict[str, dict[str, object]] = {
-    "TypeD": {"source": "worklist seed 2026-11-04; Device-Head-TypeD Description: GRS Type D colour-light signal head",
-              "words": {"STOP": {"lamp": "R"}, "APPROACH": {"lamp": "Y"}, "ADVANCE_APPROACH": {"lamp": "Y flashing"},
-                        "CLEAR": {"lamp": "G"}, "DARK": {"lamp": None}}},
-    "SA": {"source": "worklist seed 2026-11-04 (the TypeD table); Device-Head-SA Description: GRS SA searchlight signal head",
-           "words": {"STOP": {"lamp": "R"}, "APPROACH": {"lamp": "Y"}, "ADVANCE_APPROACH": {"lamp": "Y flashing"},
-                     "CLEAR": {"lamp": "G"}, "DARK": {"lamp": None}}},
-    "H2": {"source": "worklist seed 2026-11-04 (the TypeD table); Device-Head-H2 Description: US&S H-2 searchlight signal head",
-           "words": {"STOP": {"lamp": "R"}, "APPROACH": {"lamp": "Y"}, "ADVANCE_APPROACH": {"lamp": "Y flashing"},
-                     "CLEAR": {"lamp": "G"}, "DARK": {"lamp": None}}},
-    "UQ3": {"source": "worklist seed 2026-11-04 (UQ) with the arm positions named by the Style (the owner, 2026-11-09); "
-                      "Device-Head-Semaphore-UQ3 Description: 3-position Upper-quadrant semaphore signal head",
-            "words": {"STOP": {"arm": "horizontal", "lamp": "on"}, "APPROACH": {"arm": "diagonal", "lamp": "on"},
-                      "CLEAR": {"arm": "vertical", "lamp": "on"}, "DARK": {"arm": None, "lamp": "off"}}},
-    "LQ2": {"source": "worklist seed 2026-11-04 (LQ); Device-Head-Semaphore-LQ2 Description: 2-position Lower-quadrant semaphore signal head",
-            "words": {"STOP": {"arm": "horizontal", "lamp": "on"}, "CLEAR": {"arm": "dropped", "lamp": "on"},
-                      "DARK": {"arm": None, "lamp": "off"}}},
-    "LQ3": {"source": "Device-Head-Semaphore-LQ3 Description: 3-position Lower-quadrant semaphore signal head (three arm positions, "
-                      "so the three running words); the lamp column as LQ2's; the arm angles are not stated (unverified)",
-            "words": {"STOP": {"arm": "horizontal", "lamp": "on"}, "APPROACH": {"arm": "dropped halfway", "lamp": "on"},
-                      "CLEAR": {"arm": "dropped", "lamp": "on"}, "DARK": {"arm": None, "lamp": "off"}}},
-}
+def aspect_names(system: Optional[str], kind: Optional[str], user: Optional[dict[str, dict[str, object]]] = None) -> dict[str, str]:
+    """Every indication ``system`` presents on a mast of ``kind``, to its aspect name, in the tables' order; the user's
+    rows over the shipped ones."""
+    out: dict[str, str] = {}
+    for table in (rows("aspectNames"), user or {}):
+        for indication in table.get(system or "", {}):
+            name = aspect_name(system, indication, kind, user)
+            if name is not None:
+                out[indication] = name
+    return out
 
 
 def head_model(style: Optional[str], user: Optional[dict[str, dict[str, object]]] = None) -> Optional[dict[str, dict[str, object]]]:
     """The head model table of a head of ``style`` (its ``given.Style``): head word -> its outputs; the user's own row
     over the shipped one; None when neither has it (what the head presents is unknown, never guessed)."""
-    for table in (user or {}, HEAD_MODELS):
+    for table in (user or {}, rows("headModels")):
         row = table.get(style or "")
         if row is not None:
             return dict(row["words"])
@@ -248,8 +154,12 @@ def presents(style: Optional[str], user: Optional[dict[str, dict[str, object]]] 
     return None if words is None else list(words)
 
 
-def policy(rulebook: Optional[str], user: Optional[dict[str, object]] = None) -> Optional[dict[str, object]]:
-    """The policy table of ``rulebook``: a mast indication -> the head word each position shows (the worklist, "Functions,
-    one fact each"). No table is seeded yet: it lands with the demand derivation (#62), so a mast with more than one
-    position cannot be matched against its demand and nothing is reported for it (``derive.positions``)."""
-    return (user or {}).get(rulebook or "")
+def policy(rulebook: Optional[str], user: Optional[dict[str, object]] = None) -> Optional[dict[str, dict[str, list[str]]]]:
+    """The head policy of ``rulebook``: head count (a string) -> mast indication -> the head word of each position top
+    down (the owner's lookup, 2026-11-13). The user's own row over the shipped one; None when neither has the rulebook.
+    No row is shipped yet: the rows land with the demand derivation (#62), so a mast derives no ``shows`` until then."""
+    for table in (user or {}, rows("policies")):
+        row = table.get(rulebook or "")
+        if row is not None:
+            return row
+    return None

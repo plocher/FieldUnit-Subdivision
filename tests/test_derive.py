@@ -1058,8 +1058,9 @@ class TrainOrders(unittest.TestCase):
         out, diags = run(self.model())
         self.assertEqual(only(diags, "train_order", "device", "head", "lever"), [])
         to = out["interlockings"]["X"]["appliances"]["Gilroy"]
-        self.assertEqual(to["derived"], {"faces": {"N": {"direction": "LEFT", "indications": ["APPROACH", "CLEAR", "STOP"]},
-                                                   "S": {"direction": "RIGHT", "indications": ["CLEAR", "STOP"]}}})
+        stop, slow = {"input": "STOP", "indication": "STOP"}, {"input": "SLOW", "indication": "APPROACH"}
+        self.assertEqual(to["derived"], {"faces": {"N": {"direction": "LEFT", "inputs": {"1": stop, "2": slow}, "rest": "CLEAR", "indications": ["APPROACH", "CLEAR", "STOP"]},
+                                                   "S": {"direction": "RIGHT", "inputs": {"1": stop}, "rest": "CLEAR", "indications": ["CLEAR", "STOP"]}}})
         self.assertNotIn("heads", to)
         self.assertEqual([d["derived"] for d in out["interlockings"]["X"]["devices"]], [{"serves": "X:Gilroy"}] * 5)
         self.assertEqual(layout_model.errors(out), [])
@@ -1072,7 +1073,8 @@ class TrainOrders(unittest.TestCase):
         single = "Gilroy | appliance | Appliance=train_order Style=single Station=Gilroy rel.station=Gilroy rel.facing=RIGHT\n"
         out, diags = run(self.model(devices=[self.MAST, self.head("TO"), self.lever("TO", "STOP")], to=single))
         self.assertEqual(only(diags, "train_order"), [])
-        self.assertEqual(out["interlockings"]["X"]["appliances"]["Gilroy"]["derived"], {"faces": {"TO": {"direction": "RIGHT", "indications": ["CLEAR", "STOP"]}}})
+        self.assertEqual(out["interlockings"]["X"]["appliances"]["Gilroy"]["derived"],
+                         {"faces": {"TO": {"direction": "RIGHT", "inputs": {"1": {"input": "STOP", "indication": "STOP"}}, "rest": "CLEAR", "indications": ["CLEAR", "STOP"]}}})
         self.assertEqual(layout_model.errors(out), [])
         unturned = single.replace(" rel.facing=RIGHT", "")
         m = self.model(devices=[self.MAST, self.lever("TO", "STOP")], to=unturned)
@@ -1108,7 +1110,7 @@ class TrainOrders(unittest.TestCase):
         self.assertEqual(only(diags, "train_order"), [("train_order.lever", "1")])
         (d,) = derive.derive(m)[1].by_code("train_order.lever")
         self.assertEqual((d.severity, d.where, d.entities), ("missing", "interlockings/X/devices/1", ("interlockings/X/devices/1", "interlockings/X/appliances/Gilroy")))
-        self.assertEqual(out["interlockings"]["X"]["appliances"]["Gilroy"]["derived"]["faces"]["N"], {"direction": "LEFT", "indications": ["CLEAR"]})
+        self.assertEqual(out["interlockings"]["X"]["appliances"]["Gilroy"]["derived"]["faces"]["N"], {"direction": "LEFT", "rest": "CLEAR", "indications": ["CLEAR"]})
 
     def test_a_face_that_names_no_direction_or_that_two_levers_serve_is_an_error(self):
         """Wrong, not incomplete (the owner, 2026-11-03): a double board's face A is no direction; one face two levers
@@ -1131,8 +1133,8 @@ class TrainOrders(unittest.TestCase):
         """The owner, 2026-11-08: STOP, then SLOW, each with the word it shows; CALLON is the block signal's indication,
         not a train order control. Which word a face shows at run time is FieldUnit's (its issue #44); the model library
         holds the table, not the rule."""
-        self.assertEqual(reference.TRAIN_ORDER_INPUTS, (("STOP", "STOP"), ("SLOW", "APPROACH")))
-        self.assertEqual(reference.TRAIN_ORDER_CLEAR, "CLEAR")
+        key, row = reference.train_order_inputs(None)
+        self.assertEqual((key, row), ("default", {"inputs": [{"input": "STOP", "indication": "STOP"}, {"input": "SLOW", "indication": "APPROACH"}], "rest": "CLEAR"}))
         self.assertFalse(hasattr(derive, "train_order_indication"))
 
     def test_a_station_the_layout_does_not_draw_is_missing(self):

@@ -1,0 +1,7 @@
+{
+  "table": "policies",
+  "schemaVersion": 0,
+  "version": "2026-11-13",
+  "provenance": "The owner, 2026-11-04 (docs/review/signal-symbols-worklist.md, Functions, one fact each) and 2026-11-13: a head's indication is a lookup of the mast's indication, the head count, the head number and the context. No row is seeded: the rows land with the demand derivation (issue #62) and are the owner's to state, never inferred.",
+  "rows": {}
+}

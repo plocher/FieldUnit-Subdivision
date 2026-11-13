@@ -1,4 +1,4 @@
-"""The seam and trackplan facts as the Layout Data Model File, schema ``layout-model/v3.3.0`` (ADR 0008 rev 4, ADR 0010,
+"""The seam and trackplan facts as the Layout Data Model File, schema ``layout-model/v3.4.0`` (ADR 0008 rev 4, ADR 0010,
 ADR 0011).
 
 The KiCad importer writes two of the three maps (ADR 0011 §2): ``given``, what the person stated as fields, as drawn,
@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from tools.layout_model import derive as derivation
-from tools.layout_model.reference import REFERENCE_DATA
+from tools.layout_model import reference
 
 from .geometry import Geometry
 from .geometry import facing as geo_facing
@@ -23,7 +23,7 @@ from .seams import Seams, token_field
 from .source import Symbol
 from .seams import loc as seams_loc
 
-SCHEMA = "layout-model/v3.3.0"                    # 3.2.0 added the head positions (#80); 3.3.0 states a mast's atoms and keys its positions by pin
+SCHEMA = "layout-model/v3.4.0"                    # 3.3.0 states a mast's atoms; 3.4.0 resolves the reference data per entity (#134)
 WRITER = {"name": "layout_compiler", "version": "0.4.0"}
 FACING = ("mast", "train_order")                  # the appliances whose glyph turn the file states (the owner, 2026-11-08)
 
@@ -187,7 +187,7 @@ def facts(sm: Seams, geometry: Optional[Geometry] = None) -> dict[str, Any]:
         for ou in sm.office_units.values()}
 
     provenance: dict[str, Any] = {"sourceType": "KiCad", "writer": dict(WRITER),
-                                  "referenceData": dict(REFERENCE_DATA), "source": _source(sm.source.project)}
+                                  "referenceData": reference.provenance(), "source": _source(sm.source.project)}
     if geometry is not None:
         provenance["libraries"] = dict(geometry.libraries)
     return _clean({"schema": SCHEMA, "layout": _clean(layout), "interlockings": interlockings, "officeUnits": office_units,
