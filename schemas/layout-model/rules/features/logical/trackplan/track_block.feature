@@ -8,9 +8,9 @@ Feature: Block track between control points
   lever, not the dispatcher's) may lie in a block whatever CP Name it states. Inside CTC the drawn
   block replaces the NextCP; a NextCP stays for a neighbour that is not drawn, and one marked
   off_layout says its neighbour never will be. A wire that joins the legs of two interlockings'
-  switches with no joint between them is a warning: each switch's own facts still derive, but the
-  piece of track is claimed by two interlockings (Corporal's and Sargent's switch 1 through the
-  Beet Loader labels, the owner 2026-11-12). (ADR 0013 §4, §7.1, §21 gap 7)
+  local switches with no joint between them is not reported: neither interlocking claims track that
+  only a crew-worked switch stands on (Corporal's and Sargent's switch 1 on the Beet Loader spur, the
+  owner 2026-11-13). (ADR 0013 §4, §7.1, §21 gap 7)
 
   Background: the home signal 836NAB of house East faces the block toward Y
     Given interlocking "X" has house "East"
@@ -73,8 +73,11 @@ Feature: Block track between control points
     When the layout is derived
     Then it is reported as an error on "X"
 
-  @reference.switches
+  @reference.track
   Scenario: the legs of two interlockings' local switches on one wire with no joint between
+    Two crew-worked switches, one in each interlocking, on one spur (Corporal's and Sargent's switch 1 on the Beet
+    Loader spur; the owner, 2026-11-13): neither interlocking claims track that only a non-dispatcher switch stands
+    on, so nothing is reported.
     Given interlocking "X" has these appliances:
       | Name | Appliance | Style | CP Name |
       | 1    | switch    | local | East    |
@@ -89,11 +92,10 @@ Feature: Block track between control points
       | Wire | Pins      |
       | n    | 1.N X:1.N |
     When the layout is derived
-    Then it is reported as a warning on "X"
-    And it is reported as a warning on "Y"
+    Then it is not reported
 
-  @reference.switches
-  Scenario: block track that reaches one switch of one interlocking
+  @reference.track
+  Scenario: block track that reaches one local switch of one interlocking
     Given interlocking "Y" has these appliances:
       | Name | Appliance | Style | CP Name |
       | 5    | switch    | local | West    |

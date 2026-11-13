@@ -128,10 +128,11 @@ names every other track pin its wire reaches, so the relation is symmetric):
   control point, never in block track (§4), and interlocking track leaves an interlocking at a NextCP, a regime
   boundary or an end.
   A ``local`` switch is the crew's, not the dispatcher's, and like a hand-throw, spring or electrically locked
-  hand-throw switch it may lie in the block (the owner, 2026-11-09). A wire that joins switch ports of two
-  interlockings with no joint between them is ``reference.switches`` at warning (Corporal's and Sargent's switch 1
-  through the Beet Loader labels; the owner, 2026-11-12): each switch's own facts still derive, but one piece of track
-  is claimed by two interlockings. The net creates no consumer and no indication token: the block's token is the codeline
+  hand-throw switch it may lie in the block (the owner, 2026-11-09). A wire that joins the legs of two
+  interlockings' switches with no joint between them is accepted when neither port is dispatcher-controlled (the
+  owner, 2026-11-13: Corporal's and Sargent's switch 1 are two crew-worked switches on the Beet Loader spur): no
+  interlocking claims track that only a non-dispatcher switch stands on. The net creates no consumer and no
+  indication token: the block's token is the codeline
   library's by R12 (§7.2, §12, §18.1). Blocks and interlocking limits are not computed here (the ``blocks`` library).
 - **NextCP pairing** and the **cross-interlocking reference** check. A NextCP whose track is also drawn through to
   another interlocking's track is redundant (ADR 0013 §7.1: inside CTC a NextCP is no longer needed; it stays for an
@@ -986,14 +987,6 @@ class _Derivation:
                 b, _, n = name.partition(":")
                 target = (f"interlockings/{b}",) if b in self.plans else ()
                 if kind in ("switch", "pin"):
-                    theirs = sorted(f"{name}.{s}" for s in ports if f"{name}.{s}" in switch_ports)
-                    mine = sorted(plan.pin(sn, p) for sn, app in plan.appliances.items() for p in ports_of(app)
-                                  if set(app.get("relations", {}).get(p, [])) & set(theirs))
-                    if kind == "switch" and mine and theirs:                      # one piece of track, two interlockings' switches (the owner, 2026-11-12)
-                        self.r.add("reference.switches", f"{a}: switch port{'s' if len(mine) > 1 else ''} {', '.join(mine)} and {b}'s "
-                                   f"{', '.join(theirs)} are on one wire with no joint between; one piece of track is the leg of a switch in "
-                                   "each of two interlockings, so each claims it. Track leaves an interlocking at a NextCP, a regime boundary "
-                                   "or an end (ADR 0009 §3.12)", where, target + self._appliance_path(b, n))
                     controlled = sorted(p for p in switch_ports if self.dispatcher_port(p))
                     if controlled:
                         self.r.add("reference.track", f"{a}: {what} {name} joins this interlocking's track to {b}'s on a wire that holds "
