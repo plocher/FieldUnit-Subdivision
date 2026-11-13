@@ -1351,6 +1351,10 @@
                   "$ref": "#/$defs/portRefs",
                   "description": "The track a lamp, contact or actuator stands on, by the wire on its one pin (#82; the owner, 2026-11-09): every track pin on that wire. One-sided: no track pin names the appliance's pin back. Track with no circuit is track like any other. Absent, the appliance stands at its Milepost and CP Name."
                 },
+                "switch": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "The switch or lock a dependent derail follows (ADR 0003 D8; the owner, 2026-11-13): Luchessa:795 on 795D. Stated by the writer: the KiCad importer reads the drawn Name's gang id once and states it here; the derivation and every consumer read this relation and never a Name. Absent on an independent derail and on every switch."
+                },
                 "station": {
                   "$ref": "#/$defs/layoutName",
                   "description": "A train order signal's timetable station (Appliance train_order; the owner, 2026-11-03): its Station field, naming a layout.stations entry by Name. Unqualified: stations are layout entities."
@@ -1382,6 +1386,13 @@
                 "osCircuit": {
                   "$ref": "#/$defs/qualifiedName",
                   "description": "The circuit a switch's or derail's track carries: its marker's name, or else the switch's given.TC. Absent on dark track."
+                },
+                "derails": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/qualifiedName"
+                  },
+                  "description": "A switch's or lock's dependent derails (ADR 0003 D8): every derail of its interlocking whose relations.switch names it, qualified and sorted. Absent when none does."
                 },
                 "members": {
                   "type": "array",

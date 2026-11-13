@@ -4,8 +4,10 @@ Feature: A derail
   that word is: a powered derail by a desk lever, a dual one by the desk lever and the crew's Local-Lock and
   Local-Switch, a local one by a Local-Switch alone, a manual one by hand. A derail lever is a switch lever named
   for the derail; there is no derail lever word.
-  A derail is dependent when its gang id names a switch or lock gang of the interlocking (ADR 0003 D8): it takes
-  that switch's regime whatever its own word, and is worked through it. One drawn local or manual is a finding.
+  A derail is dependent when it states the switch it follows, relations.switch (ADR 0003 D8: the writer reads the
+  drawn gang id once and states the switch; nothing downstream reads the Name. The owner, 2026-11-13): it takes
+  that switch's regime whatever its own word, and is worked through it; the switch derives its derails. One drawn
+  local or manual is a finding; one that states a switch its interlocking does not have is a finding.
   A derail owns no OS circuit: no <name>T1, no TC. It lies in the circuit of the track its ports are on, as a
   lamp or contact does; a track circuit marker on that track names it. (The owner, 2026-11-09; GLOSSARY: derail)
 
@@ -83,9 +85,9 @@ Feature: A derail
 
   Scenario: a dependent derail takes its switch's regime, an electric lock
     Given interlocking "X" has these appliances:
-      | Name | Appliance | Style          | TC    |
-      | 795  | switch    | lock           | 795T1 |
-      | 795D | switch    | derail,powered |       |
+      | Name | Appliance | Style          | TC    | relations.switch |
+      | 795  | switch    | lock           | 795T1 |                  |
+      | 795D | switch    | derail,powered |       | X:795            |
     And interlocking "X" has these wires:
       | Pins        |
       | 1T.TC J1.A  |
@@ -99,6 +101,7 @@ Feature: A derail
       | 795  | lever     | lock  |
     When the layout is derived
     Then "795D" follows switch "795"
+    And "795" has dependent derails "X:795D"
     And "795D" is not powered
     And "795D" is on circuit "X:795T1"
     And "795D" has no derived osCircuit
@@ -106,9 +109,9 @@ Feature: A derail
 
   Scenario: a dependent derail takes its switch's regime, a powered switch
     Given interlocking "X" has these appliances:
-      | Name | Appliance | Style         | TC    |
-      | 783  | switch    | powered       | 783T1 |
-      | 783D | switch    | derail,manual_sensed |  |
+      | Name | Appliance | Style                | TC    | relations.switch |
+      | 783  | switch    | powered              | 783T1 |                  |
+      | 783D | switch    | derail,manual_sensed |       | X:783            |
     And interlocking "X" has these wires:
       | Pins         |
       | 1T.TC J1.A   |
@@ -122,12 +125,12 @@ Feature: A derail
     And "783D" is powered
     And nothing is reported on "783D"
 
-  Scenario: a derail of a gang with no bare member
+  Scenario: a derail of a gang with no bare member follows the member the writer stated
     Given interlocking "X" has these appliances:
-      | Name | Appliance | Style          | TC    |
-      | 815A | switch    | powered        | 815T1 |
-      | 815B | switch    | powered        | 815T1 |
-      | 815D | switch    | derail,powered |       |
+      | Name | Appliance | Style          | TC    | relations.switch |
+      | 815A | switch    | powered        | 815T1 |                  |
+      | 815B | switch    | powered        | 815T1 |                  |
+      | 815D | switch    | derail,powered |       | X:815A           |
     And interlocking "X" has these wires:
       | Pins           |
       | 1T.TC J1.A     |
@@ -141,12 +144,44 @@ Feature: A derail
     Then "815D" follows switch "815A"
     And "815D" is powered
 
+  @derail.switch
+  Scenario: a derail that states a switch its interlocking does not have
+    Given interlocking "X" has these appliances:
+      | Name | Appliance | Style          | relations.switch |
+      | 795D | switch    | derail,powered | X:795            |
+    And interlocking "X" has these wires:
+      | Pins        |
+      | 795D.C 1T.TC |
+    And the desk has these levers for interlocking "X":
+      | Name | Style  |
+      | 795D | switch |
+    When the layout is derived
+    Then it is reported as an error on "795D"
+    And "795D" follows no switch
+
+  @derail.switch
+  Scenario: a derail that states another derail as its switch
+    Given interlocking "X" has these appliances:
+      | Name | Appliance | Style          | relations.switch |
+      | 5    | switch    | derail,powered |                  |
+      | 5D   | switch    | derail,powered | X:5              |
+    And interlocking "X" has these wires:
+      | Pins       |
+      | 5.C 1T.TC  |
+      | 5.R 5D.C   |
+    And the desk has these levers for interlocking "X":
+      | Name | Style  |
+      | 5    | switch |
+      | 5D   | switch |
+    When the layout is derived
+    Then it is reported as an error on "5D"
+
   @derail.regime
   Scenario Outline: a dependent derail drawn as if worked on its own
     Given interlocking "X" has these appliances:
-      | Name | Appliance | Style   | TC    |
-      | 795  | switch    | lock    | 795T1 |
-      | 795D | switch    | <style> |       |
+      | Name | Appliance | Style   | TC    | relations.switch |
+      | 795  | switch    | lock    | 795T1 |                  |
+      | 795D | switch    | <style> |       | X:795            |
     And interlocking "X" has these wires:
       | Pins         |
       | 1T.TC J1.A   |

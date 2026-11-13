@@ -141,7 +141,8 @@ The scenarios name the codes; the registry says what each code is:
 - Lifecycle: proposed, active, deprecated (with `replacedBy`), retired. A code retires only at a MAJOR version (§7).
 - A gate checks that every code a scenario names is in the registry and every active code is named by a scenario.
 - Import diagnostics are not rule checks. They are problems translating a drawing into a model, located in the
-  drawing's terms (project, sheet, reference, Name), and mean nothing to a code generator or to Studio, which imports
+  drawing's terms (project, sheet, `library:symbol(Name)`, and the pin where one applies; never a KiCad reference, which
+  names nothing a person placed[^source]), and mean nothing to a code generator or to Studio, which imports
   nothing. They belong to the KiCad importer, with their own registry in `tools/layout_compiler`. The importer may also
   locate a rule check's entities in the drawing for its user; that is the importer's work, not the finding's.
 
@@ -339,6 +340,10 @@ All move to FieldUnit with the schema (view O15).
 
 [^libs]: Rewritten in place on 2026-10-28: §5.1 gains the codeline library and §10 gains `codeline.py` and
     `grammar.py`, both built in step 2. The earlier wording is at commit `f18e009`.
+
+[^source]: Amended in place on 2026-11-13 (issue #133; the owner: nothing locates a thing by REFDES). Until commit
+    `662e9b8` the list read "project, sheet, reference, Name" and the importer's `seams.loc` wrote the reference and the
+    Value (`/X/SW1 Railroad-Trackplan:Switch_Lock ''`); it now writes `/X/Railroad-Trackplan:Switch_Lock(835)`.
 
 [^checks]: Rewritten in place on 2026-10-29 (the owner): the package is primitives, not an executive (§1); §3.3
     registers rule checks, which name every entity they are about, and import diagnostics move to the importer. The

@@ -311,7 +311,7 @@ def _interlocking(sm: Seams, ix, trackplan: list[Symbol], model, project: _Proje
     for s in trackplan + [h.sym for h in houses]:
         pl = model.placements.get(s.ref)
         if pl is None:
-            report.error("geometry.placement", f"{ix.name}: {s.ref} ({s.lib_id}) is in the export but not on sheet {model.path.name}", source=loc(s))
+            report.error("geometry.placement", f"{ix.name}: {s.lib_id} {key_of(s) or 'with no name'} is in the export but not on sheet {model.path.name}", source=loc(s))
             continue
         sym = project.symbol(pl.lib_id)
         if sym is None:
@@ -465,7 +465,7 @@ def check_transform(geometry: Geometry, sm: Seams, project_dir: Optional[Path] =
                 port = glyph["ports"][pin.name]
                 got = page_of(row, (port["x"], port["y"]))
                 if _rounded(got) != _rounded(want):
-                    bad.append(f"{ix.name} {s.ref} {pl.lib_id} pin {pin.name}: file transform {_rounded(got)} != KiCad {_rounded(want)}")
+                    bad.append(f"{ix.name} {loc(s, pin.name)}: file transform {_rounded(got)} != KiCad {_rounded(want)}")
     return bad
 
 

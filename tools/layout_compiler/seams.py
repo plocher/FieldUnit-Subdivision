@@ -35,10 +35,14 @@ def token_field(k: str) -> bool:
     return k == "Indication" or k.startswith(PIN_TOKENS)
 
 
-def loc(s: Symbol) -> str:
-    """Where a symbol is in the drawing: sheet, reference, library symbol and Value. An import diagnostic's location is
-    this, in ``Diag.source`` (ADR 0012 §3.3); ``where`` is for a model path."""
-    return f"{s.sheet}{s.ref} {s.lib_id} {s.value!r}"
+def loc(s: Symbol, pin: Optional[str] = None) -> str:
+    """Where a symbol is in the drawing, in the drawing's own terms and never by KiCad reference (the owner, 2026-11-13:
+    nothing locates a thing by REFDES): its sheet, then ``library:symbol(Name)``, the Name its key attribute
+    (``key_of``: Name, CP Name, Column, Address; empty for a thing with none, an anonymous head or a track row, which
+    the model knows by its row id), and ``.pin`` where one pin is meant:
+    ``/South-cTc/Sargent/Railroad-Trackplan:Switch_Powered(836).R``. An import diagnostic's location is this, in
+    ``Diag.source`` (ADR 0012 §3.3); ``where`` is for a model path."""
+    return f"{s.sheet}{s.lib_id}({key_of(s)})" + (f".{pin}" if pin else "")
 
 
 # ---------------------------------------------------------------- entities

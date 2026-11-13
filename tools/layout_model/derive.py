@@ -85,7 +85,9 @@ names every other track pin its wire reaches, so the relation is symmetric):
   ``signal`` serves its number in its interlocking, and derives ``masts``, every mast there whose ``given.signal`` is
   that number; a number no mast states is ``lever.serves`` at error. A ``CONTROLLED`` mast whose signal number no
   desk signal lever serves is ``mast.lever`` at missing (what works it is not drawn yet, like ``switch.lever``); an
-  ``ABSOLUTE`` or ``PERMISSIVE`` mast is automatic and has none.
+  ``ABSOLUTE`` or ``PERMISSIVE`` mast is automatic and has none, so a desk signal lever none of whose masts is
+  ``CONTROLLED`` is ``lever.masts`` at missing, the complement (the owner, 2026-11-13: Corporal's lever 832 before
+  the renumber of Railroad 520c509, its masts PERMISSIVE).
 - **A train order board** (``Appliance train_order``; the owner, 2026-11-03 and 2026-11-08) is an operator-controlled,
   non-vital indicator used in Time Table and Train Order territory: never a signal in the interlocking sense, never
   in a route, never in a control point. It derives no ``controlPoint`` and no chain runs through it (the exclusion an
@@ -136,8 +138,12 @@ names every other track pin its wire reaches, so the relation is symmetric):
   interlocking whose neighbour is not drawn), reported ``next_cp.drawn`` at warning.
 - **A derail** is a switch with the word ``derail`` in its Style, ports C and R (the owner, 2026-11-09). It owns no OS
   circuit: its ``TC`` is not read, and like a lamp or contact it gets ``derived.track`` and ``derived.circuits.track``,
-  the piece its ports lie on. Its regime is a switch word (``grammar.regime``); a dependent derail (ADR 0003 D8) takes
-  its switch's. What works a switch or derail is read from the lever devices named for it (``control_sources``):
+  the piece its ports lie on. Its regime is a switch word (``grammar.regime``); a dependent derail takes its switch's.
+  **A dependent derail states its switch** (ADR 0003 D8; the owner, 2026-11-13): ``relations.switch``, the switch or
+  lock of its interlocking it follows, which the KiCad importer states from the drawn gang id and nothing here reads
+  from a Name (``grammar.depends_on`` reads the relation). The switch derives ``derails``, its dependents. A stated
+  switch that is no switch or lock of the interlocking is ``derail.switch`` at error, and the derail is read as drawn,
+  on its own. What works a switch or derail is read from the lever devices named for it (``control_sources``):
   ``switch.lever``, ``switch.lever.desk``, ``switch.lock.local``, ``switch.lever.hand`` and ``derail.regime``.
 - An OfficeUnit's columns (``house``, ``interlocking``), every device's ``serves``, a desk lamp's ``indications`` and
   ``expression`` (its ``Indication``, ``tools/layout_model/expression.py``), a lever's ``controls`` and ``indications``
@@ -418,7 +424,8 @@ class _Plan:
 
         The houses are the roots. With one house it is every appliance's control point. With two or more, the stated
         ``CP`` fields and the maintainer calls' house are the roots, and the rest inherit along these edges: a gang's
-        switch without a letter to its lettered switches and derails (ADR 0003 D8); a switch to its OS circuit, the
+        switch without a letter to its lettered switches (ADR 0003 D8) and a switch to the derails that state it
+        (``relations.switch``); a switch to its OS circuit, the
         only chain an OS circuit follows; a mast and its signal joint, either way; a signal joint to the circuits on
         its two sides that hold no switch; a circuit across a plain joint to one that holds no switch; a virtual
         circuit's members to it. A stated field wins over every chain, silently, and stops the chains through it.
@@ -485,7 +492,7 @@ class _Plan:
             for p in ports_of(a):
                 if region(self.pin(n, p)):
                     edges[key(n)].add(region(self.pin(n, p)))
-            lead = GANG.sub("", n)
+            lead = self.lead_of(n)
             if lead in switches and lead != n:
                 edges[key(lead)].add(key(n))
         for row in joints:
@@ -544,13 +551,20 @@ class _Plan:
             elif not found:
                 self.r.add("control_point.unreached", f"{self.name}: no house reaches {what}: no CP Name on it and no chain to one", where)
         for n, a in switches.items():
-            lead = GANG.sub("", n)
+            lead = self.lead_of(n)
             if lead in switches and lead != n:
                 mine, theirs = self.cp.get(id(a)), self.cp.get(id(switches[lead]))
                 if mine and theirs and mine != theirs:
                     self.r.add("control_point.gang", f"{self.name}: switch {n} is on {mine} but its gang's {lead} is on {theirs}; "
                                "one gang is one lever", self.where("appliances", n),
                                (self.where("appliances", lead),))
+
+    def lead_of(self, name: str) -> str:
+        """The switch a switch or derail follows for its control point: a derail its stated switch (``relations.switch``;
+        the owner, 2026-11-13), a lettered switch its gang's id (ADR 0003 D8); itself when it follows none."""
+        if is_derail(self.appliances.get(name, {}).get("given", {})):
+            return depends_on(name, self.appliances) or name
+        return GANG.sub("", name)
 
     # -------------------------------------------------------------------------------------------------- write
 
@@ -877,6 +891,7 @@ class _Derivation:
         self.desk()
         self.levers()
         self.codeline()
+        self.derails()
         self.control_sources()
         self.positions()
         self.train_orders()
@@ -1256,7 +1271,9 @@ class _Derivation:
         ``Control.X`` is a control (``783NWS``) and ``Indication.X`` an indication expression whose tokens the desk
         consumes (``!795WLK``); an empty field binds none (``Control.UNUSED``), and a bound pin with neither is reported
         (``desk.token``), never filled in from the lever's name. The lever serves an appliance of its interlocking: a
-        switch or lock it works, a maintainer call, or a signal lever's masts (``lever.serves``). Which station receives
+        switch or lock it works, a maintainer call, or a signal lever's masts (``lever.serves``); a signal lever whose
+        masts are all automatic works nothing the dispatcher controls, ``lever.masts`` at missing (the complement of
+        ``mast.lever``; the owner, 2026-11-13). Which station receives
         and sends what is the code line's (``codeline``); the code lever binds nothing of a station."""
         for ou_name, ou in self.m.get("officeUnits", {}).items():
             for i, dev in enumerate(ou.get("devices", [])):
@@ -1274,6 +1291,12 @@ class _Derivation:
                 masts = self._masts_of_signal(ix, b, n)
                 if masts:                                                             # a signal lever works the masts of its signal (rule 5)
                     _set_derived(dev, {**dev["derived"], "masts": masts})
+                    kinds = {m: ix["appliances"][m.partition(":")[2]].get("given", {}).get("Kind") for m in masts}
+                    if "signal" in styles(g) and "CONTROLLED" not in kinds.values():       # the complement of mast.lever (the owner, 2026-11-13)
+                        self.r.add("lever.masts", f"{what} is a signal lever on a column of the office, but no mast of signal {n} in {b} is "
+                                   f"CONTROLLED ({', '.join(f'{m.partition(chr(58))[2]} is {k or 'of no Kind'}' for m, k in kinds.items())}); an "
+                                   "automatic mast has no lever, so what the lever works is not drawn yet", where,
+                                   tuple(f"interlockings/{b}/appliances/{m.partition(':')[2]}" for m in masts))
                 elif n not in ix.get("appliances", {}):
                     self.r.add("lever.serves", f"{what} serves {d['serves']}, but {b} has no switch, lock, maintainer call or mast of "
                                f"signal {n}", where, (f"interlockings/{b}",))
@@ -1303,6 +1326,29 @@ class _Derivation:
                     self.r.add("mast.lever", f"{name}: mast {mast} is CONTROLLED, signal {g['signal']}, but no desk signal lever {g['signal']} "
                                f"serves {name} on any column; what works it is not drawn yet", f"interlockings/{name}/appliances/{mast}",
                                (f"interlockings/{name}",))
+
+    def derails(self) -> None:
+        """A dependent derail states its switch (ADR 0003 D8; the owner, 2026-11-13): ``relations.switch``, the switch or
+        lock of its own interlocking it follows, which the KiCad importer states from the drawn gang id; nothing here
+        reads a Name. The switch derives ``derails``, its dependents, qualified and sorted. A stated switch that is no
+        switch or lock of the interlocking (absent, another interlocking's, or itself a derail) is ``derail.switch`` at
+        error; the derail is then read as drawn, on its own (``grammar.depends_on`` returns none for it)."""
+        for b, plan in self.plans.items():
+            dependents: dict[str, list[str]] = defaultdict(list)
+            for n, a in plan.appliances.items():
+                stated = a.get("relations", {}).get("switch")
+                if not is_derail(a.get("given", {})) or not stated:
+                    continue
+                sb, _, sn = stated.rpartition(":")
+                target = plan.appliances.get(sn, {}).get("given", {}) if sb in ("", b) else {}
+                if target.get("Appliance") != "switch" or is_derail(target):
+                    self.r.add("derail.switch", f"{b}: derail {n} states switch {stated}, which is no switch or lock of {b}; a dependent "
+                               "derail follows a switch of its own interlocking (ADR 0003 D8)", plan.where("appliances", n), (plan.where(),))
+                    continue
+                dependents[sn].append(qualify(n, b))
+            for sn, names in dependents.items():
+                a = plan.appliances[sn]
+                _set_derived(a, {**a.get("derived", {}), "derails": sorted(names, key=sort_key)})
 
     def control_sources(self) -> None:
         """What works each switch or derail, read from the lever devices named for it (the owner, 2026-11-09): a desk

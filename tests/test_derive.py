@@ -184,7 +184,7 @@ I1 | ends      | Kind=INDUSTRY name="Gilroy Industry"
     def test_ports_that_meet_with_no_joint_between_are_a_link(self):
         things = """
 795  | appliance | Appliance=switch Style=lock TC=795T1 Indication=795T1K
-795D | appliance | Appliance=switch Style=derail
+795D | appliance | Appliance=switch Style=derail rel.switch=X:795
 J1   | joints    | Kind=IRJ_SIGNAL
 """
         out, diags = run(layout(X=interlocking(things, "rr | 795.R 795D.R\ndc | 795D.C J1.governed\n", "Gilroy")))
@@ -426,6 +426,7 @@ class DoubleJoint(unittest.TestCase):
         ix["appliances"]["834T"]["relations"]["TC"] = ["J1.B", "X:9D.C"]
         self.assertEqual(only(run(m)[1], "mast"), [*NO_BLOCK_DEVICES, ("mast.powered", "832SA")])
         ix["appliances"]["9"] = {"given": {"Appliance": "switch", "Style": "lock", "CP Name": "East"}, "relations": {"C": ["J1.B"]}}
+        ix["appliances"]["9D"]["relations"]["switch"] = "X:9"                    # stated by the writer (the owner, 2026-11-13)
         self.assertEqual(only(run(m)[1], "mast"), NO_BLOCK_DEVICES)
 
     def test_a_side_with_no_mast_leaves_that_mast_on_no_joint_and_one_mast_on_both_sides_is_on_two(self):
@@ -813,7 +814,7 @@ J5   | joints    | Kind=IRJ
         self.assertEqual(self.check("9 | appliance | Appliance=switch Style=manual_sensed CP_Name=East\n", "a | J1.A Y:3NAT.TC 9.C\n"), [])
         self.assertEqual(self.check("9 | appliance | Appliance=switch Style=local CP_Name=East\n", "a | J1.A Y:3NAT.TC 9.C\n"), [])
         self.assertEqual(self.check("9 | appliance | Appliance=switch Style=dual CP_Name=East\n", "a | J1.A Y:3NAT.TC 9.C\n"), [("reference.track", "X")])
-        dependent = "9 | appliance | Appliance=switch Style=lock CP_Name=East\n9D | appliance | Appliance=switch Style=derail CP_Name=East\n"
+        dependent = "9 | appliance | Appliance=switch Style=lock CP_Name=East\n9D | appliance | Appliance=switch Style=derail CP_Name=East rel.switch=X:9\n"
         self.assertEqual(self.check(dependent, "a | J1.A Y:3NAT.TC 9.C 9D.C\n"), [])   # a dependent derail follows its lock
 
     def test_a_track_row_named_for_another_interlocking_is_an_error(self):
@@ -1239,7 +1240,7 @@ class SPCoastExample(unittest.TestCase):
         self.assertNotIn("rules", stripped["provenance"])
         out, report = derive.derive(stripped)
         self.assertEqual(layout_model.dumps(out), text)
-        self.assertEqual(report.counts(), {"error": 0, "warning": 2, "info": 7, "missing": 29})   # Railroad 9a1899e (refrozen for the mast atoms on 2026-11-12): regime.limits for the seven interlockings (every piece has a regime: the interlockings share their block circuits by hierarchical nets, GCaltrain's boundary joint stops its yard); switch.lever on Watsonville's twelve powered switches 3 to 25 (GCaltrain's 771 has its lever on column 0, Gilroy's locks 777 and 781 their Local-Lock levers); mast.lever on the seventeen CONTROLLED masts of signals 828, 778, 836 and 840, which have no desk lever; reference.switches from Corporal and from Sargent, whose switch 1 legs share the Beet Loader wires; no driver.jmri.signal_system since Gilroy's JMRI encoding states JMRI.SignalSystem = SPTCO-1969 (six at eef8217, #85); every mast has its field device and heads (no mast.device), no mast states Indications (no mast.presents)
+        self.assertEqual(report.counts(), {"error": 0, "warning": 2, "info": 7, "missing": 27})   # Railroad 87f6aa4, the drawing of 520c509 (refrozen for the Corporal renumber and the derail's stated switch on 2026-11-13): regime.limits for the seven interlockings (every piece has a regime: the interlockings share their block circuits by hierarchical nets, GCaltrain's boundary joint stops its yard); switch.lever on Watsonville's twelve powered switches 3 to 25 (GCaltrain's 771 has its lever on column 0, Gilroy's locks 777 and 781 their Local-Lock levers); mast.lever on the fifteen CONTROLLED masts of signals 778, 836 and 840, which have no desk lever (Corporal's 828 has its lever on column 11 since the renumber); no lever.masts; reference.switches from Corporal and from Sargent, whose switch 1 legs share the Beet Loader wires; no driver.jmri.signal_system since Gilroy's JMRI encoding states JMRI.SignalSystem = SPTCO-1969 (six at eef8217, #85); every mast has its field device and heads (no mast.device), no mast states Indications (no mast.presents)
 
 
 if __name__ == "__main__":

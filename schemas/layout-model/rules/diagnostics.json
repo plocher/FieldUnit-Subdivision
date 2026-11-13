@@ -55,14 +55,14 @@
       "level": "missing",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/office/device_lever_station.feature#a column with no CP Name on a US&S 506 line",
       "replacedBy": null
     },
     "column.house": {
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/office/device_lever_station.feature#a column naming the interlocking on a US&S 506 line",
       "replacedBy": null
     },
     "control_point.chains": {
@@ -105,6 +105,13 @@
       "lifecycle": "active",
       "since": "0.1.0",
       "feature": "logical/trackplan/appliance_derail.feature#a dependent derail drawn as if worked on its own",
+      "replacedBy": null
+    },
+    "derail.switch": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/appliance_derail.feature#a derail that states a switch its interlocking does not have",
       "replacedBy": null
     },
     "desk.expression": {
@@ -203,6 +210,13 @@
       "lifecycle": "active",
       "since": "0.1.0",
       "feature": null,
+      "replacedBy": null
+    },
+    "lever.masts": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/office/device_lever_signal.feature#a signal lever whose masts are all automatic",
       "replacedBy": null
     },
     "lever.serves": {
@@ -384,7 +398,7 @@
       "level": "warning",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/office/device_lever_station.feature#a lamp token that appliances of two houses report on a US&S 506 line",
       "replacedBy": null
     },
     "reference.switches": {
@@ -447,7 +461,7 @@
       "level": "error",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": null,
+      "feature": "logical/office/device_lever_station.feature#one house on two columns of a US&S 506 line",
       "replacedBy": null
     },
     "switch.lever": {

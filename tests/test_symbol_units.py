@@ -112,7 +112,7 @@ class PinUnits(unittest.TestCase):
         for second in (PinRef("D1", "STOP"), PinRef("D1", "STOP", unit="N")):
             with self.assertRaises(ValueError) as e:
                 from_symbols([d1, x1], [both[0], Net("ss", (second, PinRef("X1", "A1")))])
-            self.assertIn("D1: 2 pins named 'STOP'", str(e.exception))
+            self.assertIn("Railroad-Field:Device-TrainOrder(Gilroy): 2 pins named 'STOP'", str(e.exception))   # located by symbol and Name, never by reference
         unnamed = [Net("a", (PinRef("D1", "STOP"), PinRef("X1", "A0"))), Net("b", (PinRef("D1", "STOP"), PinRef("X1", "A1")))]
         src = from_symbols([d1, x1], unnamed)                            # repeats in unnamed units read as before: the last wins
         self.assertEqual(src.net_of("D1", "STOP").name, "b")

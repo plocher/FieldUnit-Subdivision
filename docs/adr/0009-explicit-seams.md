@@ -303,6 +303,7 @@ Captions drawn in symbol bodies follow pin renames.
 | Head device to its position | its `IND` wire to a position pin (A, B, C) of the field mast device named for the trackplan mast[^heads] | none | the mast's stated `heads` count the positions (`mast.heads`); demand ⊆ presents (§3.7)[^atoms] |
 | Signal lever to its masts | the lever's number is the masts' stated `signal` in the lever's interlocking (§3.7)[^atoms] | none | `lever.serves`; a CONTROLLED mast with no lever is `mast.lever` |
 | Track shared by two interlockings' switches | none: a wire joining switch ports of two interlockings with no joint between | none | `reference.switches` at warning (ADR 0013 §7.1 accepts plain block track; a dispatcher-controlled port there is `reference.track`)[^atoms] |
+| Derail to its switch | stated: the importer reads the drawn Name's gang id once (ADR 0003 D8) and writes `relations.switch`, the switch or lock of the derail's interlocking it follows; the switch derives `derails`[^derail] | none: a derail that states no switch is independent | `derail.switch` at error: a stated switch that is no switch or lock of the interlocking |
 | Panel column to its control point | `CP Name` on the column, naming its interlocking or one of its houses[^cpname] | an empty `CP Name`: the column's interlocking | names resolve |
 | Track leaves an interlocking | a `NEXT_CP` (to the next interlocking), a plain `IRJ` beyond which the track carries another regime's `GCOR Rule` marker (ADR 0013 §7.1), or an end (`INDUSTRY`, `BUMPER`)[^track][^regime] | none | a switch port or track row related to another interlocking's is an error (`reference.track`); another interlocking is reached only through its indications |
 | Trackplan symbol in its interlocking | `CP Name` naming the interlocking or one of its houses (§3.9) | its sheet's interlocking; else the one interlocking its track net reaches | none of these is `trackplan.unit` at missing, no row written[^placement] |
@@ -401,6 +402,10 @@ other transports; Studio's own notation.
     in the derivation (`mast.grammar`, `mast.facing`, `lever_of`), `derived.positions` was keyed by the pin letter
     alone, a desk lever found its masts by cutting the letters off, and a track wire shared by two interlockings'
     switches was not reported. The grammar is now read once, in the importer (`grammar.mast_atoms`).
+
+[^derail]: Added 2026-11-13 (issue #133; the owner's ruling of 2026-11-13 that the importer states every atom and
+    nothing downstream parses a Name). Until commit `662e9b8` the derivation paired a derail with its switch by its
+    Name (`grammar.depends_on` read the gang id); the relation is now stated by the writer, as a mast's atoms are[^atoms].
 
 [^mast-kind]: Amended 2026-10-31 (owner, ADR 0013): a mast states `Kind` `CONTROLLED`, `ABSOLUTE` or `PERMISSIVE`; the TRACK Kind `IRJ_SIGNALS` and the track circuit Style `boundary` are added. Before, `APPLIANCE` carried no Kind without exception; the earlier text is at commit aa80e18.
 

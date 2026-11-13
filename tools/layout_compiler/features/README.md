@@ -23,6 +23,8 @@ the same file names as the model features of the same rule.
 `steps/import_steps.py`. A Given is netlist fragments: a table of placed symbols (`Ref`, `Symbol`, `Role`, every
 other column a field) and a table of nets (`Net`, `Pins` as `REF.pin`, or `REF.UNIT.pin` for a pin drawn in a
 named unit of a multi-unit symbol). The interlocking's declaration and its processor are scaffolding the step adds.
+A Then names a thing by its `Ref`, the table's handle; the step finds it by the symbol's location in the drawing
+(`library:symbol(Name)`, `seams.loc`), since a diagnostic's `source` never carries a KiCad reference.
 
 ## Run
 

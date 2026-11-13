@@ -5,6 +5,10 @@ Feature: A signal lever works the masts of its signal
   office. One with none is missing, like a powered switch that no lever works. An ABSOLUTE or PERMISSIVE mast
   is automatic and has no lever. (ADR 0003 rule 5, ADR 0013 §5; the owner 2026-11-12)
 
+  The complement: a desk signal lever none of whose masts is CONTROLLED works nothing the dispatcher controls; it is
+  missing, like a lever with no masts is an error (the owner, 2026-11-13: Corporal's lever 832 before the renumber,
+  its masts PERMISSIVE).
+
   Background: Luchessa's signal 784, two masts
     Given interlocking "Luchessa" has these appliances:
       | Name   | Appliance | Style  | Kind       | signal | heads | relations.facing |
@@ -59,5 +63,30 @@ Feature: A signal lever works the masts of its signal
     And the desk has these levers for interlocking "Luchessa":
       | Name | Style  |
       | 784  | signal |
+    When the layout is derived
+    Then it is not reported
+
+  @lever.masts
+  Scenario: a signal lever whose masts are all automatic
+    Given interlocking "Corporal" has these appliances:
+      | Name  | Appliance | Style  | Kind       | signal | heads | relations.facing |
+      | 832NA | mast      | single | PERMISSIVE | 832    | A     | LEFT             |
+      | 832SA | mast      | single | PERMISSIVE | 832    | A     | RIGHT            |
+    And the desk has these levers for interlocking "Corporal":
+      | Name | Style  |
+      | 832  | signal |
+    When the layout is derived
+    Then lever "832" works masts "Corporal:832NA, Corporal:832SA"
+    And it is reported as missing on "0"
+
+  @lever.masts
+  Scenario: a signal lever with one controlled mast among automatic ones
+    Given interlocking "Corporal" has these appliances:
+      | Name  | Appliance | Style  | Kind       | signal | heads | relations.facing |
+      | 832NA | mast      | single | CONTROLLED | 832    | A     | LEFT             |
+      | 832SA | mast      | single | PERMISSIVE | 832    | A     | RIGHT            |
+    And the desk has these levers for interlocking "Corporal":
+      | Name | Style  |
+      | 832  | signal |
     When the layout is derived
     Then it is not reported
