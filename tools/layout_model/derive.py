@@ -55,8 +55,9 @@ names every other track pin its wire reaches, so the relation is symmetric):
   lists the pieces its track touches with the regime and how it was found. A station-to-station block (decision 2) is a piece that holds no dispatcher-controlled switch and is
   signalled: a ``GCOR_RULE_9_14`` sign, masts facing both ways, or ``ABSOLUTE`` ends; the ``blocks`` library computes
   it. A regime boundary is a plain joint with a marker each side, or a joint declared one (``given.RegimeBoundary``
-  ``yes``, the owner 2026-11-11), which passes no regime: each side states its own or inherits from elsewhere. The
-  ``END_CTC`` end is retired.
+  ``yes``, the owner 2026-11-11), which passes no regime: each side states its own or inherits from elsewhere; so is
+  a joint with a marker pinned on one face (the owner, 2026-11-13): a marker whose net holds that joint face and no
+  other stands at that face, and its regime flows out that side only. The ``END_CTC`` end is retired.
 - **A boundary track circuit** (ADR 0013 §10; ``Appliance track_circuit``, Style ``boundary``) states ``relations.A``
   and ``.B``, the two nets at its joint. It names no circuit: the marker on each net does. Its ``derived.circuits``
   are the circuits on its pins, in A, B order: what it counts toward.
@@ -1030,7 +1031,10 @@ class _Derivation:
         different markers on one piece are ``regime.conflict``; a piece with no marker reachable from two different
         regimes is ``regime.ambiguous``; such a piece gets no regime and passes none on. A joint declared a regime
         boundary (``given.RegimeBoundary`` ``yes``, any joint Kind; the owner, 2026-11-11) adds no adjacency: nothing
-        inherits across it, and each side states its own regime or inherits from elsewhere. A piece with no regime is
+        inherits across it, and each side states its own regime or inherits from elsewhere. A joint with a marker
+        pinned on one face passes no regime either (the owner, 2026-11-13): a marker whose track pin's net holds one
+        joint face and no other stands at that face, and its regime flows out that side only; a marker on a net that
+        holds two joints' faces stands at neither and passes its regime across both. A piece with no regime is
         ``regime.none`` at missing. A CTC piece whose head-block signals (the masts that govern into it) are all
         ``ABSOLUTE`` is ``regime.absolute`` at warning: an automatic signal gives no authority and Chapter 10 gives
         signal-indication authority (§4). Interlocking limits are a derived fact independent of regime (GCOR glossary:
@@ -1053,11 +1057,21 @@ class _Derivation:
         limits: dict[str, set[str]] = defaultdict(set)                           # piece -> the interlockings whose limits it lies in
         heads: dict[str, list[tuple[str, Optional[str]]]] = defaultdict(list)   # piece -> (mast, Kind) governing into it
         adjacent: dict[str, set[str]] = defaultdict(set)
+        faces: dict[str, set[str]] = defaultdict(set)                           # joint face -> the pins on its net
+        for plan in self.plans.values():
+            for row in plan.track.get("joints", []):
+                kind, p = row.get("given", {}).get("Kind"), plan.row_prefix(row)
+                for s in ("governed", "approach") if kind == "IRJ_SIGNAL" else ("A", "B"):
+                    faces[f"{p}.{s}"].update(row.get("relations", {}).get(s) or [])
+        pinned: set[str] = set()                                                # joint faces a regime marker is pinned on
         for a, plan in self.plans.items():
             for row in plan.track.get("policies", []):
                 kind, node = row.get("given", {}).get("Kind"), f"{plan.row_prefix(row)}.track"
                 if kind in reference.REGIMES and node in union:
                     stated[union.find(node)][kind].append(plan.where("track", "policies", row.get("id", "")))
+                    on = {f for f in faces if f in (row.get("relations", {}).get("track") or []) or node in faces[f]}
+                    if len(on) == 1:                                            # its net holds one joint face: it stands at that face
+                        pinned |= on
             for n, app in plan.appliances.items():
                 if dispatcher_controlled(n, plan.appliances):
                     for p in ports_of(app):
@@ -1068,6 +1082,7 @@ class _Derivation:
                 sides = ("governed", "approach") if kind == "IRJ_SIGNAL" else ("A", "B")
                 roots = [union.find(f"{p}.{s}") for s in sides if f"{p}.{s}" in union]
                 boundary = row.get("given", {}).get("RegimeBoundary", "").strip().casefold() == "yes"   # declared: passes no regime
+                boundary |= any(f"{p}.{s}" in pinned for s in sides)            # a marker pinned on a face flows out that side only
                 if len(roots) == 2 and roots[0] != roots[1] and not boundary:
                     adjacent[roots[0]].add(roots[1])
                     adjacent[roots[1]].add(roots[0])
