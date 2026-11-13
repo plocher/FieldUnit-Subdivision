@@ -1054,20 +1054,22 @@ class SPCoastTrackplan(unittest.TestCase):
         # positions, so the 60 identity.name and 58 head.letter are retired; every mast has a field mast device with
         # its heads wired (no mast.device), no pin carries two heads (no head.position) and no mast states Indications
         # (no mast.presents); the drawing is 0b39d49's (Railroad 97be8aa moved only symbols/manual.html and the README).
-        # Railroad 9a1899e (2026-11-12): mast.lever on the seventeen CONTROLLED masts whose signal number has no desk
-        # lever (Corporal's 828, Gilroy's 778, Sargent's 836, Watsonville's 840); the two reference.switches warnings
-        # are Corporal's and Sargent's switch 1 on one wire.
+        # Railroad 87f6aa4, the drawing of 520c509 (2026-11-13): mast.lever on the fifteen CONTROLLED masts whose signal
+        # number has no desk lever (Gilroy's 778, Sargent's 836, Watsonville's 840; Corporal's 828 has its lever on
+        # column 11 since the renumber); no lever.masts; the two reference.switches warnings are Corporal's and
+        # Sargent's switch 1 on one wire.
         missing = Counter(d.code for d in self.sm.report.diags if d.severity == "missing")
         self.assertEqual({k: v for k, v in missing.items() if k.startswith("switch.")}, {"switch.lever": 12})
         self.assertEqual(sorted(d.where for d in self.sm.report.by_code("switch.lever")), sorted(f"interlockings/Watsonville/appliances/{n}" for n in range(3, 27, 2)))
         self.assertEqual(set(missing), {"switch.lever", "mast.lever"})
         self.assertEqual(sorted(d.where.rsplit("/", 1)[-1] for d in self.sm.report.by_code("mast.lever")),
-                         sorted(["828NA", "828SA", "778NAB", "778NC", "778SAB", "778SC", "836NAB", "836SA", "836SB"] + [f"840N{c}" for c in "ABCDEFG"] + ["840SA"]))
+                         sorted(["778NAB", "778NC", "778SAB", "778SC", "836NAB", "836SA", "836SB"] + [f"840N{c}" for c in "ABCDEFG"] + ["840SA"]))
+        self.assertEqual(self.sm.report.by_code("lever.masts"), [])
         self.assertEqual(self.sm.report.by_code("mast.device") + self.sm.report.by_code("head.position") + self.sm.report.by_code("mast.presents"), [])
         self.assertEqual(self.model["layout"]["ioEncodings"]["JMRI"]["given"]["JMRI.SignalSystem"], "SPTCO-1969")
         jmri_masts = {k: v["derived"]["jmriSignalSystem"] for k, v in self.model["layout"]["processors"]["Gilroy"]["drivers"].items() if v["given"].get("Kind") == "SIGNALMAST"}
         self.assertEqual(jmri_masts, {f"SIGNALMAST.{m}": "SPTCO-1969" for m in ["778NAB", "778NC", "778SAB", "778SC", "Gilroy.E", "Gilroy.W"]})
-        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 2, "info": 7, "missing": 29})   # 130 before #80; 12 missing before mast.lever
+        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 2, "info": 7, "missing": 27})   # 130 before #80; 12 missing before mast.lever; 29 before the Corporal renumber
         self.assertEqual(sorted(d.entities[0] for d in self.sm.report.by_code("regime.limits")), [f"interlockings/{n}" for n in sorted(self.model["interlockings"])])
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):

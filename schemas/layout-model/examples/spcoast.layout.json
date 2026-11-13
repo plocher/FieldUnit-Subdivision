@@ -1656,6 +1656,57 @@
             ]
           }
         },
+        "827": {
+          "derived": {
+            "controlPoint": "Corporal:Corporal",
+            "derails": [
+              "Corporal:827D"
+            ],
+            "osCircuit": "Corporal:827T1"
+          },
+          "given": {
+            "Appliance": "switch",
+            "CP Name": "Corporal",
+            "Indication": "827T1K",
+            "Style": "lock",
+            "TC": "827T1"
+          },
+          "relations": {
+            "C": [
+              "903e6628-4d4c-4198-810d-2e454dfab397.governed"
+            ],
+            "N": [
+              "cf821b6b-21f6-4c04-a11b-83cd2de333b2.A"
+            ],
+            "R": [
+              "Corporal:827D.R"
+            ]
+          }
+        },
+        "827D": {
+          "derived": {
+            "circuits": {
+              "track": "Corporal:827T1"
+            },
+            "controlPoint": "Corporal:Corporal",
+            "track": "Corporal:827T1"
+          },
+          "given": {
+            "Appliance": "switch",
+            "CP Name": "Corporal",
+            "IndicationCeiling": "STOP/RESTRICTING",
+            "Style": "derail,powered"
+          },
+          "relations": {
+            "C": [
+              "2d2a9ef0-9b47-40e3-b3ba-013a10286b2a.governed"
+            ],
+            "R": [
+              "Corporal:827.R"
+            ],
+            "switch": "Corporal:827"
+          }
+        },
         "828NA": {
           "derived": {
             "controlPoint": "Corporal:Corporal",
@@ -1719,41 +1770,18 @@
             "Appliance": "switch",
             "CP Name": "Corporal",
             "Indication": "829T1K",
-            "Style": "lock",
+            "Style": "powered",
             "TC": "829T1"
           },
           "relations": {
             "C": [
-              "903e6628-4d4c-4198-810d-2e454dfab397.governed"
+              "89d46d4f-a3c1-4b2c-a64f-c3c0bb576e64.governed"
             ],
             "N": [
-              "cf821b6b-21f6-4c04-a11b-83cd2de333b2.A"
+              "cf821b6b-21f6-4c04-a11b-83cd2de333b2.B"
             ],
             "R": [
-              "Corporal:829D.R"
-            ]
-          }
-        },
-        "829D": {
-          "derived": {
-            "circuits": {
-              "track": "Corporal:829T1"
-            },
-            "controlPoint": "Corporal:Corporal",
-            "track": "Corporal:829T1"
-          },
-          "given": {
-            "Appliance": "switch",
-            "CP Name": "Corporal",
-            "IndicationCeiling": "STOP/RESTRICTING",
-            "Style": "derail,powered"
-          },
-          "relations": {
-            "C": [
-              "2d2a9ef0-9b47-40e3-b3ba-013a10286b2a.governed"
-            ],
-            "R": [
-              "Corporal:829.R"
+              "4a4a8a59-1f6a-4701-9675-e1f591439b8d.governed"
             ]
           }
         },
@@ -1829,30 +1857,6 @@
           },
           "relations": {
             "facing": "RIGHT"
-          }
-        },
-        "831": {
-          "derived": {
-            "controlPoint": "Corporal:Corporal",
-            "osCircuit": "Corporal:831T1"
-          },
-          "given": {
-            "Appliance": "switch",
-            "CP Name": "Corporal",
-            "Indication": "831T1K",
-            "Style": "powered",
-            "TC": "831T1"
-          },
-          "relations": {
-            "C": [
-              "89d46d4f-a3c1-4b2c-a64f-c3c0bb576e64.governed"
-            ],
-            "N": [
-              "cf821b6b-21f6-4c04-a11b-83cd2de333b2.B"
-            ],
-            "R": [
-              "4a4a8a59-1f6a-4701-9675-e1f591439b8d.governed"
-            ]
           }
         },
         "832NA": {
@@ -2209,6 +2213,60 @@
         },
         {
           "derived": {
+            "serves": "Corporal:827"
+          },
+          "given": {
+            "Appliance": "lever",
+            "Invert": "WLK",
+            "Name": "827",
+            "Style": "lock"
+          },
+          "relations": {
+            "bindings": {
+              "WLK": "Corporal/0x21/A1",
+              "WLQ": "Corporal/0x21/A3",
+              "WLQK": "Corporal/0x21/A2"
+            }
+          }
+        },
+        {
+          "derived": {
+            "serves": "Corporal:827"
+          },
+          "given": {
+            "Appliance": "lever",
+            "Name": "827",
+            "Style": "switch"
+          },
+          "relations": {
+            "bindings": {
+              "NWK": "Corporal/0x21/A4",
+              "NWS": "Corporal/0x21/A7",
+              "RWK": "Corporal/0x21/A5",
+              "RWS": "Corporal/0x21/A6"
+            }
+          }
+        },
+        {
+          "derived": {
+            "serves": "Corporal:827"
+          },
+          "given": {
+            "Appliance": "switch",
+            "Name": "827",
+            "Style": "powered, lock, dual"
+          },
+          "relations": {
+            "bindings": {
+              "M": "Corporal/0x21/B1",
+              "N": "Corporal/0x21/B2",
+              "OCC": "Corporal/0x21/B4",
+              "R": "Corporal/0x21/B3"
+            }
+          }
+        },
+        {
+          "derived": {
             "serves": "Corporal:828NA"
           },
           "given": {
@@ -2230,52 +2288,16 @@
             "serves": "Corporal:829"
           },
           "given": {
-            "Appliance": "lever",
-            "Invert": "WLK",
-            "Name": "829",
-            "Style": "lock"
-          },
-          "relations": {
-            "bindings": {
-              "WLK": "Corporal/0x21/A1",
-              "WLQ": "Corporal/0x21/A3",
-              "WLQK": "Corporal/0x21/A2"
-            }
-          }
-        },
-        {
-          "derived": {
-            "serves": "Corporal:829"
-          },
-          "given": {
-            "Appliance": "lever",
-            "Name": "829",
-            "Style": "switch"
-          },
-          "relations": {
-            "bindings": {
-              "NWK": "Corporal/0x21/A4",
-              "NWS": "Corporal/0x21/A7",
-              "RWK": "Corporal/0x21/A5",
-              "RWS": "Corporal/0x21/A6"
-            }
-          }
-        },
-        {
-          "derived": {
-            "serves": "Corporal:829"
-          },
-          "given": {
             "Appliance": "switch",
             "Name": "829",
-            "Style": "powered, lock, dual"
+            "Style": "powered"
           },
           "relations": {
             "bindings": {
-              "M": "Corporal/0x21/B1",
-              "N": "Corporal/0x21/B2",
-              "OCC": "Corporal/0x21/B4",
-              "R": "Corporal/0x21/B3"
+              "M": "Corporal/0x21/B5",
+              "N": "Corporal/0x21/B6",
+              "OCC": "Corporal/0x21/B8",
+              "R": "Corporal/0x21/B7"
             }
           }
         },
@@ -2295,24 +2317,6 @@
           "given": {
             "Appliance": "mast",
             "Name": "830SAB"
-          }
-        },
-        {
-          "derived": {
-            "serves": "Corporal:831"
-          },
-          "given": {
-            "Appliance": "switch",
-            "Name": "831",
-            "Style": "powered"
-          },
-          "relations": {
-            "bindings": {
-              "M": "Corporal/0x21/B5",
-              "N": "Corporal/0x21/B6",
-              "OCC": "Corporal/0x21/B8",
-              "R": "Corporal/0x21/B7"
-            }
           }
         },
         {
@@ -2416,6 +2420,21 @@
             },
             "glyph": "Railroad-Trackplan:Track Circuit"
           },
+          "827": {
+            "at": {
+              "x": 24.13,
+              "y": 35.56
+            },
+            "glyph": "Railroad-Trackplan:Switch_Lock"
+          },
+          "827D": {
+            "at": {
+              "x": 66.04,
+              "y": 19.05
+            },
+            "glyph": "Railroad-Trackplan:Derail",
+            "mirror": "y"
+          },
           "828NA": {
             "at": {
               "x": 74.93,
@@ -2433,18 +2452,11 @@
           },
           "829": {
             "at": {
-              "x": 24.13,
+              "x": 85.09,
               "y": 35.56
             },
-            "glyph": "Railroad-Trackplan:Switch_Lock"
-          },
-          "829D": {
-            "at": {
-              "x": 66.04,
-              "y": 19.05
-            },
-            "glyph": "Railroad-Trackplan:Derail",
-            "mirror": "y"
+            "glyph": "Railroad-Trackplan:Switch_Powered",
+            "rotation": 180
           },
           "830NAB": {
             "at": {
@@ -2459,14 +2471,6 @@
               "y": 55.88
             },
             "glyph": "Railroad-Trackplan:Signal Mast Double",
-            "rotation": 180
-          },
-          "831": {
-            "at": {
-              "x": 85.09,
-              "y": 35.56
-            },
-            "glyph": "Railroad-Trackplan:Switch_Powered",
             "rotation": 180
           },
           "832NA": {
@@ -2680,41 +2684,41 @@
           },
           {
             "derived": {
-              "circuit": "Corporal:829T1"
+              "circuit": "Corporal:827T1"
             },
             "points": "19.05,35.56 24.13,35.56",
             "relations": {
               "from": "903e6628-4d4c-4198-810d-2e454dfab397.governed",
-              "to": "Corporal:829.C"
+              "to": "Corporal:827.C"
             }
           },
           {
             "derived": {
-              "circuit": "Corporal:829T1"
+              "circuit": "Corporal:827T1"
             },
             "points": "66.04,19.05 73.66,19.05",
             "relations": {
-              "from": "Corporal:829D.C",
+              "from": "Corporal:827D.C",
               "to": "2d2a9ef0-9b47-40e3-b3ba-013a10286b2a.governed"
             }
           },
           {
             "derived": {
-              "circuit": "Corporal:831T1"
+              "circuit": "Corporal:829T1"
             },
             "points": "19.05,52.07 55.88,52.07",
             "relations": {
               "from": "4a4a8a59-1f6a-4701-9675-e1f591439b8d.governed",
-              "to": "Corporal:831.R"
+              "to": "Corporal:829.R"
             }
           },
           {
             "derived": {
-              "circuit": "Corporal:831T1"
+              "circuit": "Corporal:829T1"
             },
             "points": "85.09,35.56 91.44,35.56",
             "relations": {
-              "from": "Corporal:831.C",
+              "from": "Corporal:829.C",
               "to": "89d46d4f-a3c1-4b2c-a64f-c3c0bb576e64.governed"
             }
           },
@@ -2827,8 +2831,8 @@
           {
             "derived": {
               "circuits": {
-                "A": "Corporal:829T1",
-                "B": "Corporal:831T1"
+                "A": "Corporal:827T1",
+                "B": "Corporal:829T1"
               }
             },
             "given": {
@@ -2837,10 +2841,10 @@
             "id": "cf821b6b-21f6-4c04-a11b-83cd2de333b2",
             "relations": {
               "A": [
-                "Corporal:829.N"
+                "Corporal:827.N"
               ],
               "B": [
-                "Corporal:831.N"
+                "Corporal:829.N"
               ]
             }
           },
@@ -2876,7 +2880,7 @@
             "derived": {
               "circuits": {
                 "approach": "Christopher:1NAT",
-                "governed": "Corporal:831T1"
+                "governed": "Corporal:829T1"
               },
               "controlPoint": "Corporal:Corporal"
             },
@@ -2893,7 +2897,7 @@
                 "Christopher:1NAT.TC"
               ],
               "governed": [
-                "Corporal:831.R"
+                "Corporal:829.R"
               ],
               "mast": "Corporal:830SAB"
             }
@@ -2902,7 +2906,7 @@
             "derived": {
               "circuits": {
                 "approach": "Christopher:2NAT",
-                "governed": "Corporal:829T1"
+                "governed": "Corporal:827T1"
               },
               "controlPoint": "Corporal:Corporal"
             },
@@ -2919,7 +2923,7 @@
                 "Christopher:2NAT.TC"
               ],
               "governed": [
-                "Corporal:829.C"
+                "Corporal:827.C"
               ],
               "mast": "Corporal:828SA"
             }
@@ -2928,7 +2932,7 @@
             "derived": {
               "circuits": {
                 "approach": "Corporal:01T",
-                "governed": "Corporal:829T1"
+                "governed": "Corporal:827T1"
               },
               "controlPoint": "Corporal:Corporal"
             },
@@ -2944,7 +2948,7 @@
                 "Corporal:01T.TC"
               ],
               "governed": [
-                "Corporal:829D.C"
+                "Corporal:827D.C"
               ],
               "mast": "Corporal:828NA"
             }
@@ -2953,7 +2957,7 @@
             "derived": {
               "circuits": {
                 "approach": "Corporal:832T",
-                "governed": "Corporal:831T1"
+                "governed": "Corporal:829T1"
               },
               "controlPoint": "Corporal:Corporal"
             },
@@ -2969,7 +2973,7 @@
                 "ddd56695-5907-4c47-9faa-18723057031a.A"
               ],
               "governed": [
-                "Corporal:831.C"
+                "Corporal:829.C"
               ],
               "mast": "Corporal:830NAB"
             }
@@ -2978,10 +2982,10 @@
         "links": [
           {
             "derived": {
-              "circuit": "Corporal:829T1",
+              "circuit": "Corporal:827T1",
               "ports": [
-                "Corporal:829.R",
-                "Corporal:829D.R"
+                "Corporal:827.R",
+                "Corporal:827D.R"
               ]
             }
           }
@@ -3006,16 +3010,16 @@
           {
             "derived": {
               "by": "inherited",
-              "circuit": "Corporal:829T1",
-              "name": "Corporal:829T1",
+              "circuit": "Corporal:827T1",
+              "name": "Corporal:827T1",
               "regime": "GCOR_RULE_10"
             }
           },
           {
             "derived": {
               "by": "inherited",
-              "circuit": "Corporal:831T1",
-              "name": "Corporal:831T1",
+              "circuit": "Corporal:829T1",
+              "name": "Corporal:829T1",
               "regime": "GCOR_RULE_10"
             }
           },
@@ -5888,6 +5892,9 @@
         "795": {
           "derived": {
             "controlPoint": "Luchessa:Gilroy",
+            "derails": [
+              "Luchessa:795D"
+            ],
             "osCircuit": "Luchessa:795T1"
           },
           "given": {
@@ -5929,7 +5936,8 @@
             ],
             "R": [
               "Luchessa:795.R"
-            ]
+            ],
+            "switch": "Luchessa:795"
           }
         },
         "799": {
@@ -16699,21 +16707,21 @@
         {
           "derived": {
             "controls": [
-              "Corporal:829WLS"
+              "Corporal:827WLS"
             ],
             "indications": [
-              "Corporal:829WLK",
-              "Corporal:829WLQK"
+              "Corporal:827WLK",
+              "Corporal:827WLQK"
             ],
-            "serves": "Corporal:829"
+            "serves": "Corporal:827"
           },
           "given": {
             "Appliance": "lever",
             "Control.UNUSED": "",
-            "Control.WLS": "829WLS",
-            "Indication.WLK": "!829WLK",
-            "Indication.WLQK": "829WLQK",
-            "Name": "829",
+            "Control.WLS": "827WLS",
+            "Indication.WLK": "!827WLK",
+            "Indication.WLQK": "827WLQK",
+            "Name": "827",
             "Style": "lock"
           },
           "relations": {
@@ -16724,6 +16732,78 @@
               "WLS": "SouthCTC/0x2A/A7"
             },
             "column": "SouthCTC:11"
+          }
+        },
+        {
+          "derived": {
+            "controls": [
+              "Corporal:828HS",
+              "Corporal:828NGS",
+              "Corporal:828SGS"
+            ],
+            "indications": [
+              "Corporal:828NGK",
+              "Corporal:828SGK",
+              "Corporal:828TEK"
+            ],
+            "masts": [
+              "Corporal:828NA",
+              "Corporal:828SA"
+            ],
+            "serves": "Corporal:828"
+          },
+          "given": {
+            "Appliance": "lever",
+            "Control.HS": "828HS",
+            "Control.NGS": "828NGS",
+            "Control.SGS": "828SGS",
+            "Indication.NGK": "828NGK",
+            "Indication.SGK": "828SGK",
+            "Indication.TEK": "828TEK",
+            "Name": "828",
+            "Style": "signal"
+          },
+          "relations": {
+            "bindings": {
+              "HS": "SouthCTC/0x2A/B3",
+              "NGK": "SouthCTC/0x2A/B6",
+              "NGS": "SouthCTC/0x2A/B2",
+              "SGK": "SouthCTC/0x2A/B7",
+              "SGS": "SouthCTC/0x2A/B4",
+              "TEK": "SouthCTC/0x2A/B8"
+            },
+            "column": "SouthCTC:11"
+          }
+        },
+        {
+          "derived": {
+            "controls": [
+              "Corporal:829NWS",
+              "Corporal:829RWS"
+            ],
+            "indications": [
+              "Corporal:829NWK",
+              "Corporal:829RWK"
+            ],
+            "serves": "Corporal:829"
+          },
+          "given": {
+            "Appliance": "lever",
+            "Control.NWS": "829NWS",
+            "Control.RWS": "829RWS",
+            "Indication.NWK": "829NWK",
+            "Indication.RWK": "829RWK",
+            "Name": "829",
+            "Style": "switch"
+          },
+          "relations": {
+            "bindings": {
+              "NWK": "SouthCTC/0x2B/A1",
+              "NWS": "SouthCTC/0x2B/A8",
+              "RWK": "SouthCTC/0x2B/A2",
+              "RWS": "SouthCTC/0x2B/A7"
+            },
+            "column": "SouthCTC:12"
           }
         },
         {
@@ -16753,78 +16833,6 @@
             "Indication.SGK": "830SGK",
             "Indication.TEK": "830TEK",
             "Name": "830",
-            "Style": "signal"
-          },
-          "relations": {
-            "bindings": {
-              "HS": "SouthCTC/0x2A/B3",
-              "NGK": "SouthCTC/0x2A/B6",
-              "NGS": "SouthCTC/0x2A/B2",
-              "SGK": "SouthCTC/0x2A/B7",
-              "SGS": "SouthCTC/0x2A/B4",
-              "TEK": "SouthCTC/0x2A/B8"
-            },
-            "column": "SouthCTC:11"
-          }
-        },
-        {
-          "derived": {
-            "controls": [
-              "Corporal:831NWS",
-              "Corporal:831RWS"
-            ],
-            "indications": [
-              "Corporal:831NWK",
-              "Corporal:831RWK"
-            ],
-            "serves": "Corporal:831"
-          },
-          "given": {
-            "Appliance": "lever",
-            "Control.NWS": "831NWS",
-            "Control.RWS": "831RWS",
-            "Indication.NWK": "831NWK",
-            "Indication.RWK": "831RWK",
-            "Name": "831",
-            "Style": "switch"
-          },
-          "relations": {
-            "bindings": {
-              "NWK": "SouthCTC/0x2B/A1",
-              "NWS": "SouthCTC/0x2B/A8",
-              "RWK": "SouthCTC/0x2B/A2",
-              "RWS": "SouthCTC/0x2B/A7"
-            },
-            "column": "SouthCTC:12"
-          }
-        },
-        {
-          "derived": {
-            "controls": [
-              "Corporal:832HS",
-              "Corporal:832NGS",
-              "Corporal:832SGS"
-            ],
-            "indications": [
-              "Corporal:832NGK",
-              "Corporal:832SGK",
-              "Corporal:832TEK"
-            ],
-            "masts": [
-              "Corporal:832NA",
-              "Corporal:832SA"
-            ],
-            "serves": "Corporal:832"
-          },
-          "given": {
-            "Appliance": "lever",
-            "Control.HS": "832HS",
-            "Control.NGS": "832NGS",
-            "Control.SGS": "832SGS",
-            "Indication.NGK": "832NGK",
-            "Indication.SGK": "832SGK",
-            "Indication.TEK": "832TEK",
-            "Name": "832",
             "Style": "signal"
           },
           "relations": {
@@ -17524,15 +17532,15 @@
         },
         {
           "derived": {
-            "expression": "Corporal:829T1K",
+            "expression": "Corporal:827T1K",
             "indications": [
-              "Corporal:829T1K"
+              "Corporal:827T1K"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "yellow",
-            "Indication": "829T1K",
+            "Indication": "827T1K",
             "Name": "OS",
             "Style": "board"
           },
@@ -17545,15 +17553,15 @@
         },
         {
           "derived": {
-            "expression": "Corporal:831T1K",
+            "expression": "Corporal:829T1K",
             "indications": [
-              "Corporal:831T1K"
+              "Corporal:829T1K"
             ]
           },
           "given": {
             "Appliance": "lamp",
             "Color": "red",
-            "Indication": "831T1K",
+            "Indication": "829T1K",
             "Name": "OS",
             "Style": "board"
           },
@@ -18201,7 +18209,7 @@
   },
   "provenance": {
     "libraries": {
-      "Railroad-Trackplan": "split-projects-final-158-g9a1899e"
+      "Railroad-Trackplan": "split-projects-final-164-g87f6aa4"
     },
     "referenceData": {
       "aspectNames": "2026-11-10",
@@ -18217,7 +18225,7 @@
     },
     "rules": "0.1.0",
     "source": {
-      "describe": "split-projects-final-158-g9a1899e",
+      "describe": "split-projects-final-164-g87f6aa4",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad",
