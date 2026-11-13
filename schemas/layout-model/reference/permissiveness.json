@@ -1,0 +1,25 @@
+{
+  "table": "permissiveness",
+  "schemaVersion": 0,
+  "version": "2026-11-13",
+  "provenance": "FieldUnit src/ControlTable.h:93-123 (permissivenessRank, opened 2026-11-13): each indication word's rank, 0 the least permissive. A route's ceiling is the least permissive of its contributions (the owner, 2026-11-13); words of one rank are equally permissive.",
+  "rows": {
+    "STOP": 0,
+    "RESTRICTING": 1,
+    "DIVERGING_RESTRICTING": 1,
+    "APPROACH_RESTRICTING": 1,
+    "SLOW_APPROACH": 2,
+    "APPROACH_SLOW": 2,
+    "SLOW_CLEAR": 3,
+    "APPROACH": 4,
+    "DIVERGING_APPROACH": 4,
+    "MEDIUM_APPROACH": 4,
+    "APPROACH_MEDIUM": 4,
+    "APPROACH_DIVERGING": 4,
+    "ADVANCE_APPROACH": 5,
+    "DIVERGING_CLEAR": 6,
+    "MEDIUM_CLEAR": 6,
+    "CAB_SPEED": 7,
+    "CLEAR": 8
+  }
+}

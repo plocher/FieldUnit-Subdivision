@@ -14,7 +14,7 @@ import jsonschema
 from tools.layout_model import derive, reference, reference_data
 
 TABLES = {"aspectNames", "codeLineCapacity", "codeLineSteps", "driverEncodings", "encodingTransportPairing", "headModels",
-          "indicationTokens", "policies", "regimes", "stations", "trainOrderInputs"}
+          "indicationTokens", "permissiveness", "policies", "regimes", "stations", "trainOrderInputs"}
 
 
 class Files(unittest.TestCase):
@@ -59,6 +59,11 @@ class Files(unittest.TestCase):
         self.assertEqual(reference.TRANSPORT_OF_ENCODING["USS506"], "TIMECODE")
         self.assertEqual(reference.ENCODING_OF_IC, {"MQTT-JMRI": "JMRI"})
         self.assertEqual(reference.REGIMES[reference.CTC], "CTC")
+        self.assertEqual(reference.regime_ceiling("GCOR_RULE_6_13"), "RESTRICTING")
+        self.assertIsNone(reference.regime_ceiling(reference.CTC))
+        self.assertEqual(reference.default_ceiling("industry"), "RESTRICTING")
+        self.assertEqual(reference.default_ceiling("none"), "RESTRICTING")
+        self.assertEqual(reference.least_permissive(["CLEAR", "RESTRICTING", "APPROACH"]), "RESTRICTING")
         self.assertEqual(reference.presents("TypeD"), ["STOP", "APPROACH", "ADVANCE_APPROACH", "CLEAR", "DARK"])
         self.assertEqual(reference.aspect_name("SPTCO-1969", "STOP", "PERMISSIVE"), "Stop and Proceed")
         self.assertEqual(reference.policy("GCOR"), None)

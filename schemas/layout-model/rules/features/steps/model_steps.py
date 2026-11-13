@@ -11,11 +11,13 @@ checked without a When. A step whose rule is not in the reference derivation yet
 """
 from __future__ import annotations
 
+import re
+
 from behave import given, then, when
 
 from tools import layout_model
 from tools.layout_model import derive, grammar, reference
-from tools.railroad import codeline
+from tools.railroad import codeline, routes
 
 LEVELS = {"an error": "error", "a warning": "warning", "information": "info", "missing": "missing"}
 
@@ -119,10 +121,11 @@ def wires(context, name):
     other row's by its id."""
     ix = _interlocking(context, name)
     rows, named = _rows(ix), _named_rows(ix)
+    ids = {i for other in _model(context)["interlockings"].values() for i in _rows(other)}   # a row id is global
 
     def canonical(pin: str) -> str:
         thing, _, side = pin.rpartition(".")
-        return f"{thing}.{side}" if thing in rows or ":" in thing else f"{name}:{thing}.{side}"
+        return f"{thing}.{side}" if thing in ids or ":" in thing else f"{name}:{thing}.{side}"
 
     for row in context.table:
         pins = row["Pins"].split()
@@ -851,3 +854,149 @@ def position_shows_nothing(context, position, mast):
 def driver_aspect_names(context, key, proc, pairs):
     got = _driver(context, key, proc).get("derived", {}).get("aspectNames")
     assert got == dict(_pairs(pairs)), f"{key}: derived.aspectNames is {got!r}, not {dict(_pairs(pairs))!r}"
+
+
+# ------------------------------------------------------------------- the routes of a mast (tools/railroad/routes.py, #139)
+
+@when("the routes are found")
+def routes_found(context):
+    """Derive, then find the routes; the findings a Then checks are the routes library's."""
+    context.derived, _ = derive.derive(_model(context), getattr(context, "user", None))
+    context.routes = routes.find(context.derived)
+    context.report = context.routes.report
+
+
+def _q(context, mast: str) -> str:
+    """A mast's qualified name: as written when qualified, else the one interlocking that has it."""
+    if ":" in mast:
+        return mast
+    found = [b for b, ix in context.derived["interlockings"].items() if mast in ix.get("appliances", {})]
+    assert len(found) == 1, f"{mast}: in {found}"
+    return f"{found[0]}:{mast}"
+
+
+def _local(scope: str, name: str) -> str:
+    """A name as the scenario writes it: bare in the mast's own interlocking, qualified in another."""
+    b, _, n = name.partition(":")
+    return n if b == scope and n else name
+
+
+def _alignment(context, mast: str, route) -> str:
+    scope = _q(context, mast).partition(":")[0]
+    return ", ".join(f"{_local(scope, s)} {p}" for s, p in route.alignment) or "nothing"
+
+
+def _route(context, mast: str, alignment: str):
+    found = [r for r in context.routes.of(_q(context, mast)) if _alignment(context, mast, r) == alignment]
+    got = [_alignment(context, mast, r) for r in context.routes.of(_q(context, mast))]
+    assert len(found) == 1, f"{mast}: {len(found)} routes aligned {alignment!r}; its routes: {got}"
+    return found[0]
+
+
+def _demand(context, mast: str, text: str) -> dict[str, str]:
+    """A demand as a scenario writes it, ``830(RIGHT)`` or ``Y:816(LEFT)``, as the atoms the library states; a bare
+    demand is in the interlocking of ``mast``. The scenario's words are parsed here, never the model's."""
+    m = re.fullmatch(r"(?:([^:]+):)?(.+)\((LEFT|RIGHT)\)", text.strip())
+    assert m, f"demand {text!r}"
+    return {"interlocking": m.group(1) or _q(context, mast).partition(":")[0], "signal": m.group(2), "direction": m.group(3)}
+
+
+def _names(text: str) -> list[str]:
+    return [t.strip() for t in text.split(",") if t.strip()]
+
+
+@then('"{mast}" has routes aligned "{alignments}"')
+def has_routes(context, mast, alignments):
+    got = [_alignment(context, mast, r) for r in context.routes.of(_q(context, mast))]
+    want = [a.strip() for a in alignments.split(";")]
+    assert sorted(got) == sorted(want), f"{mast}: routes aligned {got}, not {want}"
+
+
+@then('"{mast}" has no routes')
+def has_no_routes(context, mast):
+    got = context.routes.of(_q(context, mast))
+    assert not got, f"{mast}: {[r.label() for r in got]}"
+
+
+@then('the route of "{mast}" aligned "{alignment}" is demanded by "{demand}"')
+def demanded(context, mast, alignment, demand):
+    got, want = _route(context, mast, alignment).demand, _demand(context, mast, demand)
+    assert got == want, f"demand {got!r}, not {want!r}"
+
+
+@then('the route of "{mast}" aligned "{alignment}" has no entering demand')
+def no_demand(context, mast, alignment):
+    got = _route(context, mast, alignment).demand
+    assert got is None, f"demand {got!r}"
+
+
+@then('the route of "{mast}" aligned "{alignment}" passes "{circuits}"')
+def passes(context, mast, alignment, circuits):
+    scope = _q(context, mast).partition(":")[0]
+    got = [_local(scope, c) for c in _route(context, mast, alignment).circuits]
+    assert got == _names(circuits), f"circuits {got}, not {_names(circuits)}"
+
+
+@then('the route of "{mast}" aligned "{alignment}" enters at "{circuit}"')
+def enters(context, mast, alignment, circuit):
+    scope = _q(context, mast).partition(":")[0]
+    got = _route(context, mast, alignment).entrance
+    assert got and _local(scope, got) == circuit, f"entrance {got!r}, not {circuit!r}"
+
+
+@then('the route of "{mast}" aligned "{alignment}" approaches over "{circuit}"')
+def approaches(context, mast, alignment, circuit):
+    scope = _q(context, mast).partition(":")[0]
+    got = _route(context, mast, alignment).approach
+    assert got and _local(scope, got) == circuit, f"approach {got!r}, not {circuit!r}"
+
+
+@then('the route of "{mast}" aligned "{alignment}" ends at mast "{end}" demanding "{demand}"')
+def ends_demanding(context, mast, alignment, end, demand):
+    got = _route(context, mast, alignment).end or {}
+    assert got.get("mast") == _q(context, end) and got.get("demand") == _demand(context, mast, demand), f"end {got}"
+
+
+@then('the route of "{mast}" aligned "{alignment}" ends at mast "{end}" with no demand')
+def ends_no_demand(context, mast, alignment, end):
+    got = _route(context, mast, alignment).end or {}
+    assert got.get("mast") == _q(context, end) and "demand" not in got, f"end {got}"
+
+
+@then('the route of "{mast}" aligned "{alignment}" ends at the limit "{limit}"')
+def ends_at_limit(context, mast, alignment, limit):
+    got = _route(context, mast, alignment).end or {}
+    assert got.get("limit") == limit and "mast" not in got, f"end {got}"
+
+
+@then('the route of "{mast}" aligned "{alignment}" has no end')
+def has_no_end(context, mast, alignment):
+    got = _route(context, mast, alignment).end
+    assert got is None, f"end {got}"
+
+
+@then('the route of "{mast}" aligned "{alignment}" is opposed by masts "{masts}"')
+def opposed_masts(context, mast, alignment, masts):
+    got = sorted(o["mast"] for o in _route(context, mast, alignment).opposing)
+    want = sorted(_q(context, m) for m in _names(masts))
+    assert got == want, f"opposing masts {got}, not {want}"
+
+
+@then('the route of "{mast}" aligned "{alignment}" is opposed by demands "{demands}"')
+def opposed_demands(context, mast, alignment, demands):
+    key = lambda d: (d["interlocking"], d["signal"], d["direction"])
+    got = sorted((o["demand"] for o in _route(context, mast, alignment).opposing if "demand" in o), key=key)
+    want = sorted((_demand(context, mast, d) for d in _names(demands)), key=key)
+    assert got == want, f"opposing demands {got}, not {want}"
+
+
+@then('the route of "{mast}" aligned "{alignment}" passes no circuit')
+def passes_no_circuit(context, mast, alignment):
+    got = _route(context, mast, alignment).circuits
+    assert not got, f"circuits {got}"
+
+
+@then('the route of "{mast}" aligned "{alignment}" has ceiling "{word}"')
+def route_ceiling(context, mast, alignment, word):
+    got = _route(context, mast, alignment).ceiling
+    assert got == word, f"ceiling {got!r}, not {word!r}"

@@ -56,6 +56,30 @@ CURRENT_OF_TRAFFIC: str = load("regimes")["currentOfTraffic"]                 # 
 HEAD_MODELS: dict[str, dict[str, Any]] = rows("headModels")                   # Style to its row (source, words)
 
 
+def regime_ceiling(regime: Optional[str]) -> Optional[str]:
+    """The indication a regime contributes to the ceiling of a route that passes its track (the owner, 2026-11-13:
+    GCOR 6.13, Yard Limits, contributes RESTRICTING); None for a regime that contributes nothing, CTC among them."""
+    return load("regimes").get("ceilings", {}).get(regime or "")
+
+
+def default_ceiling(kind: str) -> Optional[str]:
+    """The indication a route's ceiling takes from track of a default kind (the owner, 2026-11-13): ``industry``, a
+    piece an industry end stands on; ``none``, a piece with no stated regime. None for a kind with no entry."""
+    return load("regimes").get("defaults", {}).get(kind)
+
+
+def least_permissive(words) -> Optional[str]:
+    """The least permissive of indication words by the ``permissiveness`` table; None for none, or when two words of
+    the least rank differ (equally permissive, so no one word is the least). A word with no row is None too."""
+    ranks = rows("permissiveness")
+    words = set(words)
+    if not words or any(w not in ranks for w in words):
+        return None
+    low = min(ranks[w] for w in words)
+    lows = {w for w in words if ranks[w] == low}
+    return lows.pop() if len(lows) == 1 else None
+
+
 def indication_tokens(encoding: Optional[str], user: Optional[dict[str, dict[str, Any]]] = None) -> dict[str, tuple[str, ...]]:
     """The token templates by appliance class for a code line of ``encoding`` (its ``given.Kind``): the shipped default,
     then the shipped table for that encoding, then the user's own default and table for it; the later wins per class."""
