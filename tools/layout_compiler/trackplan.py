@@ -443,7 +443,7 @@ def _shorted(syms: list[Symbol], src, report, interlocking: str) -> None:
                 by_net.setdefault(n.name, []).append(side_of(s, pin))
         for sides in by_net.values():
             if len(sides) > 1:
-                report.error("track.shorted", f"{interlocking}: {s.get('Appliance') or s.kind or s.lib_id} {key_of(s) or s.ref} has "
+                report.error("track.shorted", f"{interlocking}: {s.get('Appliance') or s.kind or s.lib_id} {key_of(s) or 'with no name'} has "
                              f"{' and '.join(sorted(sides))} on one wire with nothing between; insulated joints belong there", source=loc(s))
 
 

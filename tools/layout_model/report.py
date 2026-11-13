@@ -3,7 +3,8 @@ derivation, the domain libraries) is about the model's facts: ``where`` is its p
 ``entities`` every entity it is about, one for a fact wrong in itself, every party for a relationship. An import
 diagnostic (the KiCad importer) is about translating the drawing: its location is ``source``, in the drawing's terms,
 and ``where`` is empty unless it has a model path. The importer also puts in ``source`` where in the drawing a rule
-check's entities are; that is the importer's work, not the finding's.
+check's entities are; that is the importer's work, not the finding's. A location is the sheet and
+``library:symbol(Name)``, with ``.pin`` where one pin is meant; never a KiCad reference (the owner, 2026-11-13).
 
 Levels, most severe first: error, warning, info, missing (ADR 0011 §6: missing is incomplete, never in error).
 """
@@ -21,7 +22,7 @@ class Diag:
     code: str
     text: str
     where: str = ""                   # the model path of the primary entity, empty when there is none
-    source: str = ""                  # the writer's own location (the KiCad importer's: sheet, reference, symbol, Name)
+    source: str = ""                  # the writer's own location (the KiCad importer's: sheet, library:symbol(Name), pin)
     entities: tuple[str, ...] = ()    # a rule check's every entity by model path, ``where`` first
 
     def __str__(self) -> str:

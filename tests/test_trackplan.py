@@ -94,9 +94,20 @@ def track_relations(ix) -> dict[str, list[str]]:
     return out
 
 
+def handle(sm, d) -> str:
+    """What a diagnostic is on: the last part of its model path (a Name, a row id, a device index) or, for an import
+    diagnostic, the fixture's handle for the one symbol its ``source`` locates (``seams.loc``: sheet and
+    library:symbol(Name), never a reference), else the location itself (an anonymous head, one of several joints)."""
+    if d.where:
+        return d.where.rsplit("/", 1)[-1]
+    at = d.source.split("; ")[0]
+    found = [ref for ref, s in sm.source.symbols.items() if seams.loc(s) == at or at.startswith(seams.loc(s) + ".")]
+    return found[0] if len(found) == 1 else at.rsplit("/", 1)[-1]
+
+
 def diags(sm, *prefixes: str) -> list[tuple[str, str]]:
-    """The diagnostics as a table of (code, symbol reference): structured fields, never the message text."""
-    return sorted(((d.code, (d.where or d.source).split(" ")[0].rsplit("/", 1)[-1]) for d in sm.report.diags if d.code.startswith(prefixes)))
+    """The diagnostics as a table of (code, what it is on): structured fields, never the message text."""
+    return sorted(((d.code, handle(sm, d)) for d in sm.report.diags if d.code.startswith(prefixes)))
 
 
 # One switch inside three signal joints of house East: the Sargent shape.
@@ -509,7 +520,7 @@ I1   | Industry        | TRACK     | Kind=INDUSTRY Name=Cannery
 I2   | Industry        | TRACK     | Kind=INDUSTRY Name=Cannery
 """
         sm, _ = compile_(given, "")
-        self.assertEqual(diags(sm, "track.duplicate"), [("track.duplicate", "I2")])
+        self.assertEqual(diags(sm, "track.duplicate"), [("track.duplicate", "Railroad-Trackplan:Industry(Cannery)")])   # two symbols share the location
 
     def test_a_next_cp_names_where_it_leads(self):
         given = """
@@ -692,7 +703,7 @@ class Checks(unittest.TestCase):
 
     def test_two_masts_on_one_signal_joint(self):
         self.check(ONE_SWITCH, ONE_SWITCH_NETS.replace("s2   | J2.SIGNAL M2.SIGNAL", "s2   | J2.SIGNAL M2.SIGNAL M3.SIGNAL")
-                   .replace("s3   | J3.SIGNAL M3.SIGNAL\n", ""), [("joint.masts", "J2")])
+                   .replace("s3   | J3.SIGNAL M3.SIGNAL\n", ""), [("joint.masts", "Railroad-Trackplan:IRJ-Signal()")])   # one of three unnamed joints: located by symbol
 
 class References(unittest.TestCase):
     """A qualified name for another interlocking's thing is one-sided (the owner, 2026-10-27): the importer writes no
@@ -799,16 +810,16 @@ X1   | Driver-I2C-MAX7311            | IODRIVER | IC=MAX7311 Address=0x20
     def test_a_lever_wired_to_no_face_is_missing_and_to_two_faces_an_error(self):
         """Not yet drawn, then wrong (the owner, 2026-11-08). A head on two face pins is head.masts, as on two masts."""
         sm, ix = compile_(self.STATION + self.SIGNAL + self.FIELD, self.TRACK + self.BUS + "es | LE.STOP X1.A0\n")
-        self.assertEqual(diags(sm, "lever."), [("lever.face", "LE"), ("lever.face", "LW")])
+        self.assertEqual(diags(sm, "lever."), [("lever.face", "Railroad-Trackplan:Local-TrainOrder()")] * 2)   # anonymous levers: located by symbol
         self.assertEqual(sm.report.by_code("lever.face")[0].severity, "missing")
         self.assertNotIn("mast", self.by_ref(sm, ix)["LE"].get("relations", {}))
         sm, ix = compile_(self.STATION + self.SIGNAL + self.FIELD, self.TRACK + self.BUS + "ew | DM1.E DM1.W LE.IND\n")
-        self.assertEqual(diags(sm, "lever.faces"), [("lever.faces", "LE")])
+        self.assertEqual(diags(sm, "lever.faces"), [("lever.faces", "Railroad-Trackplan:Local-TrainOrder()")])   # anonymous: located by symbol
         (d,) = sm.report.by_code("lever.faces")
         self.assertEqual(d.severity, "error")
         self.assertIn("2 faces of train order mast 'Gilroy' (E, W)", d.text)
         sm, _ = compile_(self.STATION + self.SIGNAL + self.FIELD, self.TRACK + "ew | DM1.E DM1.W HE.IND\n")
-        self.assertEqual(diags(sm, "head.masts"), [("head.masts", "HE")])
+        self.assertEqual(diags(sm, "head.masts"), [("head.masts", "Railroad-Trackplan:Device-Head-Semaphore-UQ()")])   # anonymous: located by symbol
         self.assertEqual(diags(sm, "head.letter", "identity.name"), [])                            # a head is anonymous (#80)
 
     def test_a_pin_on_the_track_is_an_error(self):
@@ -819,30 +830,31 @@ X1   | Driver-I2C-MAX7311            | IODRIVER | IC=MAX7311 Address=0x20
 
 class Locations(unittest.TestCase):
     def test_a_derived_diagnostic_keeps_its_model_path_and_the_importer_adds_the_symbol(self):
-        """10c: derive names the model path; the importer appends sheet, reference, library symbol and Value."""
+        """10c: derive names the model path; the importer appends the sheet and library:symbol(Name), never a KiCad
+        reference (the owner, 2026-11-13)."""
         sm, _ = compile_(ONE_SWITCH, ONE_SWITCH_NETS.replace("s3   | J3.SIGNAL M3.SIGNAL\n", ""))
         (d,) = sm.report.by_code("mast.joint")
         self.assertEqual(d.where, "interlockings/X/appliances/836SB")
-        self.assertEqual(d.source, "/X/M3 Railroad-Trackplan:Mast_Dwarf ''")
-        self.assertTrue(str(d).endswith("at /X/M3 Railroad-Trackplan:Mast_Dwarf ''"))
+        self.assertEqual(d.source, "/X/Railroad-Trackplan:Mast_Dwarf(836SB)")
+        self.assertTrue(str(d).endswith("at /X/Railroad-Trackplan:Mast_Dwarf(836SB)"))
         (d,) = [d for d in sm.report.by_code("next_cp.interlocking")]
-        self.assertTrue(d.where.startswith("interlockings/X/track/ends/") and d.source.startswith("/X/NX1 "))
+        self.assertTrue(d.where.startswith("interlockings/X/track/ends/") and d.source == "/X/Railroad-Trackplan:NextCP()")   # a row has no Name: its id is in where
 
     def test_an_import_diagnostic_is_located_in_the_drawing_not_the_model(self):
         """ADR 0012 §3.3: an import diagnostic's location is in KiCad terms, in ``source``; it has no model path."""
         sm, _ = compile_(ONE_SWITCH, ONE_SWITCH_NETS.replace("n    | SW1.N J2.A\nr    | SW1.R J3.A", "n    | SW1.N SW1.R J2.A J3.A"))
         (d,) = sm.report.by_code("track.shorted")
         self.assertEqual((d.where, d.entities), ("", ()))
-        self.assertEqual(d.source, "/X/SW1 Railroad-Trackplan:Switch_Lock ''")
+        self.assertEqual(d.source, "/X/Railroad-Trackplan:Switch_Lock(835)")
 
     def test_the_importer_locates_every_party_of_a_relationship(self):
         """ADR 0012 §3.3: a rule check names every entity it is about; the importer locates each in the drawing."""
         sm, _ = compile_(ONE_SWITCH.replace("Name=836SB", "Name=836SAB"), ONE_SWITCH_NETS)
         (d,) = sm.report.by_code("mast.letters")
         self.assertEqual(d.entities, ("interlockings/X/appliances/836SAB", "interlockings/X/appliances/836SA"))
-        self.assertEqual(d.source, "/X/M3 Railroad-Trackplan:Mast_Dwarf ''; /X/M2 Railroad-Trackplan:Mast_Single ''")
-        self.assertTrue(str(d).endswith("[interlockings/X/appliances/836SAB]  at /X/M3 Railroad-Trackplan:Mast_Dwarf ''; "
-                                        "/X/M2 Railroad-Trackplan:Mast_Single ''"))
+        self.assertEqual(d.source, "/X/Railroad-Trackplan:Mast_Dwarf(836SAB); /X/Railroad-Trackplan:Mast_Single(836SA)")
+        self.assertTrue(str(d).endswith("[interlockings/X/appliances/836SAB]  at /X/Railroad-Trackplan:Mast_Dwarf(836SAB); "
+                                        "/X/Railroad-Trackplan:Mast_Single(836SA)"))
 
 
 @unittest.skipUnless(SPCOAST_AVAILABLE, f"SPCoast project not present or kicad-cli missing: {NETLIST or PROJECT}")

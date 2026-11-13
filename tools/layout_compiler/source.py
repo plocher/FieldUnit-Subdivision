@@ -81,7 +81,9 @@ class Source:
             named = [u for u in found if u]
             if named and len(found) > 1 and ("" in found or len(set(named)) < len(named)):
                 where = ", ".join(f"unit {u!r}" if u else "a unit with no name" for u in found)
-                raise ValueError(f"{ref}: {len(found)} pins named {pin!r} ({where}); pins of one name in named units are read "
+                s = self.symbols.get(ref)
+                what = f"{s.sheet}{s.lib_id}({s.fields.get('Name', '')})" if s else "a symbol"
+                raise ValueError(f"{what}: {len(found)} pins named {pin!r} ({where}); pins of one name in named units are read "
                                  "by unit, so each must be in a named unit of its own")
         for net in self.nets:
             for p in net.pins:

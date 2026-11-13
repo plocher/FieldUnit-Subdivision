@@ -77,15 +77,22 @@ def code_of(context) -> str:
     return codes[0]
 
 
-def _on(diag, ref: str) -> bool:
-    return (diag.where or diag.source).split(" ")[0].rsplit("/", 1)[-1] == ref
+def _on(context, diag, ref: str) -> bool:
+    """Whether a diagnostic is on the symbol the table calls ``ref``: located in ``source`` by ``seams.loc`` (never by
+    reference), or its model path ending in the symbol's key or row id."""
+    sym = context.seams.source.symbols[ref]
+    at = seams.loc(sym)
+    if any(p == at or p.startswith(at + ".") for p in diag.source.split("; ")):
+        return True
+    tail = diag.where.rsplit("/", 1)[-1] if diag.where else ""
+    return bool(tail) and tail in (sym.uuid, seams.key_of(sym))
 
 
 @then('it is reported as {level} on "{ref}"')
 def reported(context, level, ref):
     code = code_of(context)
     assert importer.registry()[code]["level"] == LEVELS[level], f"{code} is registered at {importer.registry()[code]['level']}"
-    hits = [d for d in context.seams.report.by_code(code) if _on(d, ref)]
+    hits = [d for d in context.seams.report.by_code(code) if _on(context, d, ref)]
     assert hits, f"{code} is not reported on {ref}; reported: {sorted((d.code, d.source) for d in context.seams.report.diags)}"
     assert all(d.severity == LEVELS[level] for d in hits), f"{code} on {ref} is {hits[0].severity}"
 
@@ -98,7 +105,7 @@ def not_reported(context):
 
 @then('nothing is reported on "{ref}"')
 def nothing_on(context, ref):
-    hits = [d for d in context.seams.report.diags if _on(d, ref)]
+    hits = [d for d in context.seams.report.diags if _on(context, d, ref)]
     assert not hits, f"reported on {ref}: {[str(d) for d in hits]}"
 
 

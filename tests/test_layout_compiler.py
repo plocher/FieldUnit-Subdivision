@@ -283,7 +283,7 @@ class RuleTests(unittest.TestCase):
                 net("he", ("HE", "APP"), ("J1", "IND")), net("ab", ("M2", "A"), ("M2", "B"), ("J2", "IND"))]
         sm = seams.resolve(from_symbols(list(src.symbols.values()) + syms, nets))
         self.assertEqual(set(sm.processors["Alpha"].drivers), {"SENSOR.Gilroy.E.STOP", "SENSOR.Gilroy.E.SLOW", "SIGNALMAST.Gilroy.E", "SIGNALMAST.778NAB"})
-        self.assertEqual([d.source.split(" ")[0] for d in sm.report.by_code("driver.duplicate")], ["/X/S3"])
+        self.assertEqual([d.source for d in sm.report.by_code("driver.duplicate")], ["/X/Railroad-Office:Driver-JMRI-Sensor-Feedback()"])   # an encoded driver has no key attribute
         self.assertEqual(len(sm.processors["Alpha"].drivers["SENSOR.Gilroy.E.SLOW"].syms), 1)
 
     def test_a_driver_pin_named_like_the_device_pin_adds_nothing_and_one_named_otherwise_reads_its_function(self):
@@ -360,7 +360,7 @@ class RuleTests(unittest.TestCase):
         model = emit.emit(sm)
         self.assertEqual(model["layout"]["stations"], {"Gilroy": {"given": {"Kind": "STATION", "Milepost": "77.9"}, "relations": {"interlocking": "X"}},
                                                         "Lick": {"given": {"Kind": "STATION"}}})
-        self.assertEqual([(d.severity, d.source.split(" ")[0]) for d in sm.report.by_code("station.duplicate")], [("error", "/X/ST3")])
+        self.assertEqual([(d.severity, d.source) for d in sm.report.by_code("station.duplicate")], [("error", "/X/Railroad-Office:Station(gilroy)")])
         self.assertEqual(layout_model.errors(model), [])
 
 
