@@ -457,6 +457,20 @@
       "feature": "logical/trackplan/policy_sign.feature#a piece with no regime is missing",
       "replacedBy": null
     },
+    "route.end": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/routes.feature#track that ends with nothing stated leaves the route without an end",
+      "replacedBy": null
+    },
+    "route.entering": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/routes.feature#a facing switch toward a limit with no entering signal",
+      "replacedBy": null
+    },
     "station.columns": {
       "level": "error",
       "lifecycle": "active",
