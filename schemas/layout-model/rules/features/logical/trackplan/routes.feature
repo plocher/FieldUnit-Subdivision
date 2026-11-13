@@ -247,3 +247,34 @@ Feature: The routes of a mast
     When the routes are found
     Then it is reported as missing on "837"
     And the route of "838NA" aligned "837 NORMAL" ends at the limit "NEXT_CP"
+
+  @route.entering
+  Scenario: a facing switch on yard-limits track expects no entering signal
+    The owner, 2026-11-13: only track under signal indication (GCOR 10.0, Rules Applicable Only in CTC) expects a
+    signal to enter a facing switch; a movement into yard limits (GCOR 6.13, Yard Limits) is made at restricted speed.
+    Given interlocking "V" has these appliances:
+      | Name  | Appliance     | Style   | Kind       | TC    | CP Name | signal | heads | relations.facing |
+      | 837   | switch        | powered |            | 837T1 | V       |        |       |                  |
+      | 838NA | mast          |         | CONTROLLED |       | V       | 838    | A     | LEFT             |
+      | 840NA | mast          |         | CONTROLLED |       | V       | 840    | A     | LEFT             |
+    And interlocking "V" has these joints:
+      | Id | Kind       | CP Name | relations.mast |
+      | L1 | IRJ_SIGNAL | V       | V:838NA        |
+      | L2 | IRJ_SIGNAL | V       | V:840NA        |
+    And interlocking "V" has these ends:
+      | Id | Kind    |
+      | F1 | NEXT_CP |
+    And interlocking "V" has these policies:
+      | Id | Kind           |
+      | Q1 | GCOR_RULE_6_13 |
+    And interlocking "V" has these wires:
+      | Wire | Pins                       |
+      | a    | 837.C F1.track Q1.track    |
+      | b    | 837.N L1.governed          |
+      | c    | 837.R L2.governed          |
+    And the desk has these levers for interlocking "V":
+      | Name | Style  |
+      | 838  | signal |
+      | 840  | signal |
+    When the routes are found
+    Then it is not reported

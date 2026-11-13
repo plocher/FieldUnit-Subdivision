@@ -46,6 +46,7 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable, Optional
 
 from tools.layout_model.grammar import dispatcher_controlled, is_derail
+from tools.layout_model.reference import load
 from tools.layout_model.report import MISSING, Report
 
 VERSION = "0.1.0"                 # this library's version (ADR 0012 §7), pre-release with the rules
@@ -54,6 +55,7 @@ RULES_MAJOR = 0                   # the MAJOR of the rules it reads (ADR 0012 §
 OTHER_SIDE = {"A": "B", "B": "A", "approach": "governed", "governed": "approach"}
 POSITION = {"N": "NORMAL", "R": "REVERSE"}
 LIMITS = frozenset({"NEXT_CP", "BUMPER", "INDUSTRY"})
+CTC_REGIME = load("regimes")["ctc"]   # signal indication: GCOR 10.0, Rules Applicable Only in CTC
 CLEAR = "CLEAR"                   # the unrestricted contribution (the owner, 2026-11-13)
 JOINTS = frozenset({"IRJ", "IRJ_SIGNAL", "IRJ_SIGNALS"})
 
@@ -316,6 +318,9 @@ def find(model: dict[str, Any]) -> Routes:
         if is_derail(a.get("given", {})) or s in entered_at_points \
                 or not dispatcher_controlled(s.partition(":")[2], model["interlockings"][b].get("appliances", {})):
             continue
+        regime = t.regime(t.net(f"{s}.C"))
+        if regime and regime != CTC_REGIME:                   # the owner, 2026-11-13: only signal-indication track
+            continue                                          # expects an entering signal (Yard Limits, GCOR 6.13)
         add("route.entering", f"switch {s} is dispatcher-controlled and passed by routes, but no route enters it at its "
             "points: no signal governs a movement facing it", _path(s))
     return Routes(out, report)
