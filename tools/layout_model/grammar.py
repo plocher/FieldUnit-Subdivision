@@ -6,12 +6,15 @@ neither the reference derivation nor any consumer reads it). A gang id is a swit
 name less its trailing letter, and the switch named by the id alone leads the gang (D8). ADR 0013 §4: "powered" is the
 seam word, a switch or derail whose position the field unit knows and may move, never "has a motor"; a CP Name makes
 nothing powered. The owner, 2026-11-09: a derail is a switch with the word ``derail`` in its Style, and the switch
-vocabulary names its regime; a dependent derail (D8: its gang id names a switch gang) takes its switch's regime.
+vocabulary names its regime; a dependent derail (D8: its gang id names a switch gang) takes its switch's regime. The
+owner, 2026-11-13: which switch a derail follows is stated, ``relations.switch``, which the KiCad importer reads once
+from the drawn gang id (``derail_switch``); the derivation and every consumer read the stated relation (``depends_on``)
+and never a derail's Name.
 """
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, Iterable
 
 POWERED = frozenset({"powered", "dual", "local"})   # the field unit knows and may move the points (ADR 0013 §4)
 LOCKED = frozenset({"lock"})                       # an electric lock on a hand-throw switch: WLK/WLQK, not NWK/RWK
@@ -56,22 +59,27 @@ def regime_word(given: dict[str, str]) -> str | None:
     return next(iter(words)) if len(words) == 1 else None
 
 
-def gang_switches(name: str, appliances: dict[str, dict[str, Any]]) -> list[str]:
-    """The switches and locks (no derails) whose gang id is ``name``'s, by name (ADR 0003 D8)."""
+def derail_switch(name: str, switches: Iterable[str]) -> str | None:
+    """The switch a drawn derail Name says it follows (ADR 0003 D8: its gang id names a switch or lock gang of the
+    interlocking): among ``switches``, the names of the interlocking's switches and locks, the one named by the id alone,
+    else the gang's first member by name. None for an independent derail (``5``, ``5D`` with no switch 5). For the KiCad
+    importer, which states it as ``relations.switch``; nothing else reads a derail's Name (the owner, 2026-11-13)."""
     lead = GANG.sub("", name)
-    return sorted(n for n, a in appliances.items() if is_switch(a.get("given", {})) and not is_derail(a.get("given", {}))
-                  and GANG.sub("", n) == lead)
+    gang = sorted(s for s in switches if GANG.sub("", s) == lead)
+    return None if not gang else lead if lead in gang else gang[0]
 
 
 def depends_on(name: str, appliances: dict[str, dict[str, Any]]) -> str | None:
-    """The switch a dependent derail follows (ADR 0003 D8: its gang id names a switch or lock gang in the interlocking):
-    the switch named by the id alone, else the gang's first member by name. None for an independent derail and for
-    anything that is no derail."""
-    if not is_derail(_given(name, appliances)):
+    """The switch a dependent derail follows, as stated: its ``relations.switch``, by bare name (the owner, 2026-11-13;
+    ADR 0003 D8 is the importer's reading). None for an independent derail (none stated), for a derail whose stated
+    switch is no switch or lock of the interlocking (``derail.switch`` reports it; the derail is then read as drawn, on
+    its own) and for anything that is no derail."""
+    a = appliances.get(name, {})
+    if not is_derail(a.get("given", {})):
         return None
-    lead = GANG.sub("", name)
-    gang = gang_switches(name, appliances)
-    return None if not gang else lead if lead in gang else gang[0]
+    lead = (a.get("relations", {}).get("switch") or "").rpartition(":")[2]
+    g = _given(lead, appliances)
+    return lead if lead and is_switch(g) and not is_derail(g) else None
 
 
 def regime(name: str, appliances: dict[str, dict[str, Any]]) -> str | None:

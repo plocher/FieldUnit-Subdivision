@@ -46,6 +46,11 @@ signal number, ``784``), ``relations.facing`` (the side letter's direction, D1: 
 that is not the grammar states none of them, ``mast.name`` at missing. ``emit.facts`` checks the glyph's turn against the
 stated facing (``geometry.facing``) and states it from the glyph only where the Name does not.
 
+A derail's Name carries ADR 0003 D8 the same way (the owner, 2026-11-13): its gang id names the switch or lock gang it
+follows, read once here by ``grammar.derail_switch`` over the interlocking's switch names and stated as
+``relations.switch`` (``X:795`` on ``795D``); a derail whose gang id names no switch states none and is independent.
+The derivation reads the stated relation and never the Name (``grammar.depends_on``).
+
 A train order board is ``Appliance train_order`` (the owner, 2026-11-03, 2026-11-08): an operator-controlled, non-vital
 indicator, never a signal in the interlocking sense, never in a route and never in a control point, so it has its own
 appliance word and no code path that reads masts sees it. Its Style, ``single`` or ``double``, is the symbol drawn, as a
@@ -83,7 +88,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
-from tools.layout_model.grammar import mast_atoms
+from tools.layout_model.grammar import derail_switch, mast_atoms
 from tools.layout_model.reference import indication_tokens
 
 from .seams import Seams, check_milepost, given_of, key_of, loc, qualify, styles_of, token_field
@@ -292,6 +297,7 @@ def _plan(sm: Seams, ix, syms: list[Symbol], track_nets: frozenset[str] = frozen
         return sorted({r for o, op in others(s, pin) if (r := pin_ref(unit(o), o, op))})
 
     consumers: list[dict[str, Any]] = []
+    switch_names = {key_of(x) for x in syms if x.role == "APPLIANCE" and x.get("Appliance") == "switch" and "derail" not in styles_of(x)}
     _shorted(syms, src, report, ix.name)
 
     # ------------------------------------------------------------------ appliances
@@ -338,6 +344,8 @@ def _plan(sm: Seams, ix, syms: list[Symbol], track_nets: frozenset[str] = frozen
         elif is_switch(s):
             for p in ports_of(s):
                 relations[p] = pin_refs(s, p)
+            if "derail" in styles_of(s) and (lead := derail_switch(name, switch_names)):   # a dependent derail states its switch (ADR 0003 D8; the owner, 2026-11-13)
+                relations["switch"] = qualify(lead, ix.name)
         elif appliance == "track_circuit":
             for p in circuit_pins(s):                                   # a marker's TC; a boundary's A and B (ADR 0013 §10)
                 relations[p] = pin_refs(s, p)

@@ -233,8 +233,9 @@ dc   | D1.C J1.A
         self.assertEqual(ix["track"]["joints"][0]["derived"]["circuits"], {"governed": "X:795T1"})
         self.assertEqual(ix["appliances"]["795D"], {
             "given": {"Appliance": "switch", "Style": "derail,powered", "IndicationCeiling": "STOP/RESTRICTING", "CP Name": "Gilroy"},
-            "relations": {"C": [at(sm, "J1", "governed")], "R": ["X:795.R"]},
+            "relations": {"C": [at(sm, "J1", "governed")], "R": ["X:795.R"], "switch": "X:795"},     # its switch, stated from the gang id (ADR 0003 D8; the owner, 2026-11-13)
             "derived": {"track": "X:795T1", "circuits": {"track": "X:795T1"}, "controlPoint": "X:Gilroy"}})   # no OS circuit of its own: it lies in its switch's (the owner, 2026-11-09)
+        self.assertEqual(ix["appliances"]["795"]["derived"]["derails"], ["X:795D"])
 
     def test_a_marker_named_for_another_interlockings_circuit_is_a_consumer_row_its_neighbours_name_by_id(self):
         """The owner, 2026-10-27: Sargent's Corporal:2NAT consumes Corporal's indication 2NATK; the K is added at ingest

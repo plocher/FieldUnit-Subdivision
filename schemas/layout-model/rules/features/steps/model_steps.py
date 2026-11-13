@@ -535,6 +535,14 @@ def follows_none(context, name):
     assert got is None, f"{name} follows {got!r}"
 
 
+@then('"{name}" has dependent derails "{derails}"')
+def dependent_derails(context, name, derails):
+    """A switch's derived derails: those of its interlocking whose stated switch it is (the owner, 2026-11-13)."""
+    got = _named(context, name).get("derived", {}).get("derails")
+    want = [d.strip() for d in derails.split(",")]
+    assert got == want, f"{name}: derived derails are {got!r}, not {want!r}"
+
+
 @then('nothing is reported on "{name}"')
 def nothing_on(context, name):
     hits = [d for d in context.report.diags if any(e.rsplit("/", 1)[-1] == name for e in (d.where, *d.entities))]

@@ -150,6 +150,12 @@ def relation(context, name, key, value):
     assert got == value, f"{name}: relations.{key} is {got!r}, not {value!r}"
 
 
+@then('"{name}" states no relation {key}')
+def no_relation(context, name, key):
+    got = _appliance(context, name).get("relations", {})
+    assert key not in got, f"{name}: relations.{key} is {got[key]!r}"
+
+
 @then('"{name}" is written with {field} "{value}"')
 def appliance_given(context, name, field, value):
     got = _appliance(context, name).get("given", {}).get(field)

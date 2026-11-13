@@ -107,6 +107,13 @@
       "feature": "logical/trackplan/appliance_derail.feature#a dependent derail drawn as if worked on its own",
       "replacedBy": null
     },
+    "derail.switch": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/appliance_derail.feature#a derail that states a switch its interlocking does not have",
+      "replacedBy": null
+    },
     "desk.expression": {
       "level": "error",
       "lifecycle": "active",
