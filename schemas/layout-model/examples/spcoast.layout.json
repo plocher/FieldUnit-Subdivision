@@ -9789,362 +9789,6 @@
       "devices": [
         {
           "derived": {
-            "choices": [
-              {
-                "alignment": [
-                  {
-                    "appliance": "Watsonville:3",
-                    "position": "NORMAL"
-                  }
-                ],
-                "detent": 1,
-                "leg": "Watsonville:3.N"
-              },
-              {
-                "alignment": [
-                  {
-                    "appliance": "Watsonville:3",
-                    "position": "REVERSE"
-                  },
-                  {
-                    "appliance": "Watsonville:5",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:7",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:9",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:11",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:13",
-                    "position": "NORMAL"
-                  }
-                ],
-                "detent": 7,
-                "leg": "Watsonville:13.N"
-              },
-              {
-                "alignment": [
-                  {
-                    "appliance": "Watsonville:3",
-                    "position": "REVERSE"
-                  },
-                  {
-                    "appliance": "Watsonville:5",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:7",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:9",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:11",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:13",
-                    "position": "REVERSE"
-                  }
-                ],
-                "detent": 6,
-                "leg": "Watsonville:13.R"
-              },
-              {
-                "alignment": [
-                  {
-                    "appliance": "Watsonville:3",
-                    "position": "REVERSE"
-                  },
-                  {
-                    "appliance": "Watsonville:5",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:7",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:9",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:11",
-                    "position": "REVERSE"
-                  }
-                ],
-                "detent": 5,
-                "leg": "Watsonville:11.R"
-              },
-              {
-                "alignment": [
-                  {
-                    "appliance": "Watsonville:3",
-                    "position": "REVERSE"
-                  },
-                  {
-                    "appliance": "Watsonville:5",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:7",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:9",
-                    "position": "REVERSE"
-                  }
-                ],
-                "detent": 4,
-                "leg": "Watsonville:9.R"
-              },
-              {
-                "alignment": [
-                  {
-                    "appliance": "Watsonville:3",
-                    "position": "REVERSE"
-                  },
-                  {
-                    "appliance": "Watsonville:5",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:7",
-                    "position": "REVERSE"
-                  }
-                ],
-                "detent": 3,
-                "leg": "Watsonville:7.R"
-              },
-              {
-                "alignment": [
-                  {
-                    "appliance": "Watsonville:3",
-                    "position": "REVERSE"
-                  },
-                  {
-                    "appliance": "Watsonville:5",
-                    "position": "REVERSE"
-                  }
-                ],
-                "detent": 2,
-                "leg": "Watsonville:5.R"
-              }
-            ],
-            "code": "SouthCTC:14",
-            "inputs": {
-              "lock": "SouthCTC/0x51/BUTTON",
-              "send": "SouthCTC/0x2D/B5",
-              "value": "SouthCTC/0x51/VALUE"
-            },
-            "range": {
-              "max": 7,
-              "min": 1
-            },
-            "serves": "Watsonville:Departure",
-            "station": "Watsonville"
-          },
-          "given": {
-            "Appliance": "selector",
-            "Name": "Departure"
-          },
-          "relations": {
-            "bindings": {
-              "BUTTON": "SouthCTC/0x51/BUTTON",
-              "VALUE": "SouthCTC/0x51/VALUE"
-            }
-          }
-        },
-        {
-          "derived": {
-            "choices": [
-              {
-                "alignment": [
-                  {
-                    "appliance": "Watsonville:15",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:17",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:19",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:21",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:23",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:25",
-                    "position": "NORMAL"
-                  }
-                ],
-                "detent": 7,
-                "leg": "Watsonville:25.N"
-              },
-              {
-                "alignment": [
-                  {
-                    "appliance": "Watsonville:15",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:17",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:19",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:21",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:23",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:25",
-                    "position": "REVERSE"
-                  }
-                ],
-                "detent": 6,
-                "leg": "Watsonville:25.R"
-              },
-              {
-                "alignment": [
-                  {
-                    "appliance": "Watsonville:15",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:17",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:19",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:21",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:23",
-                    "position": "REVERSE"
-                  }
-                ],
-                "detent": 5,
-                "leg": "Watsonville:23.R"
-              },
-              {
-                "alignment": [
-                  {
-                    "appliance": "Watsonville:15",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:17",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:19",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:21",
-                    "position": "REVERSE"
-                  }
-                ],
-                "detent": 4,
-                "leg": "Watsonville:21.R"
-              },
-              {
-                "alignment": [
-                  {
-                    "appliance": "Watsonville:15",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:17",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:19",
-                    "position": "REVERSE"
-                  }
-                ],
-                "detent": 3,
-                "leg": "Watsonville:19.R"
-              },
-              {
-                "alignment": [
-                  {
-                    "appliance": "Watsonville:15",
-                    "position": "NORMAL"
-                  },
-                  {
-                    "appliance": "Watsonville:17",
-                    "position": "REVERSE"
-                  }
-                ],
-                "detent": 2,
-                "leg": "Watsonville:17.R"
-              },
-              {
-                "alignment": [
-                  {
-                    "appliance": "Watsonville:15",
-                    "position": "REVERSE"
-                  }
-                ],
-                "detent": 1,
-                "leg": "Watsonville:15.R"
-              }
-            ],
-            "code": "SouthCTC:14",
-            "inputs": {
-              "lock": "SouthCTC/0x50/BUTTON",
-              "send": "SouthCTC/0x2D/B5",
-              "value": "SouthCTC/0x50/VALUE"
-            },
-            "range": {
-              "max": 7,
-              "min": 1
-            },
-            "serves": "Watsonville:Arrival",
-            "station": "Watsonville"
-          },
-          "given": {
-            "Appliance": "selector",
-            "Name": "Arrival"
-          },
-          "relations": {
-            "bindings": {
-              "BUTTON": "SouthCTC/0x50/BUTTON",
-              "VALUE": "SouthCTC/0x50/VALUE"
-            }
-          }
-        },
-        {
-          "derived": {
             "letter": "A",
             "presents": [
               "ADVANCE_APPROACH",
@@ -17689,6 +17333,364 @@
         }
       },
       "devices": [
+        {
+          "derived": {
+            "choices": [
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:3",
+                    "position": "NORMAL"
+                  }
+                ],
+                "detent": 1,
+                "leg": "Watsonville:3.N"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:3",
+                    "position": "REVERSE"
+                  },
+                  {
+                    "appliance": "Watsonville:5",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:7",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:9",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:11",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:13",
+                    "position": "NORMAL"
+                  }
+                ],
+                "detent": 7,
+                "leg": "Watsonville:13.N"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:3",
+                    "position": "REVERSE"
+                  },
+                  {
+                    "appliance": "Watsonville:5",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:7",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:9",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:11",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:13",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 6,
+                "leg": "Watsonville:13.R"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:3",
+                    "position": "REVERSE"
+                  },
+                  {
+                    "appliance": "Watsonville:5",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:7",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:9",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:11",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 5,
+                "leg": "Watsonville:11.R"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:3",
+                    "position": "REVERSE"
+                  },
+                  {
+                    "appliance": "Watsonville:5",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:7",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:9",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 4,
+                "leg": "Watsonville:9.R"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:3",
+                    "position": "REVERSE"
+                  },
+                  {
+                    "appliance": "Watsonville:5",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:7",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 3,
+                "leg": "Watsonville:7.R"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:3",
+                    "position": "REVERSE"
+                  },
+                  {
+                    "appliance": "Watsonville:5",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 2,
+                "leg": "Watsonville:5.R"
+              }
+            ],
+            "code": "SouthCTC:14",
+            "inputs": {
+              "lock": "SouthCTC/0x51/BUTTON",
+              "send": "SouthCTC/0x2D/B5",
+              "value": "SouthCTC/0x51/VALUE"
+            },
+            "range": {
+              "max": 7,
+              "min": 1
+            },
+            "serves": "Watsonville:Departure",
+            "station": "Watsonville"
+          },
+          "given": {
+            "Appliance": "selector",
+            "Name": "Departure"
+          },
+          "relations": {
+            "bindings": {
+              "BUTTON": "SouthCTC/0x51/BUTTON",
+              "VALUE": "SouthCTC/0x51/VALUE"
+            },
+            "interlocking": "Watsonville"
+          }
+        },
+        {
+          "derived": {
+            "choices": [
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:15",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:17",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:19",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:21",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:23",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:25",
+                    "position": "NORMAL"
+                  }
+                ],
+                "detent": 7,
+                "leg": "Watsonville:25.N"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:15",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:17",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:19",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:21",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:23",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:25",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 6,
+                "leg": "Watsonville:25.R"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:15",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:17",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:19",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:21",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:23",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 5,
+                "leg": "Watsonville:23.R"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:15",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:17",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:19",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:21",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 4,
+                "leg": "Watsonville:21.R"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:15",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:17",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:19",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 3,
+                "leg": "Watsonville:19.R"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:15",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:17",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 2,
+                "leg": "Watsonville:17.R"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:15",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 1,
+                "leg": "Watsonville:15.R"
+              }
+            ],
+            "code": "SouthCTC:14",
+            "inputs": {
+              "lock": "SouthCTC/0x50/BUTTON",
+              "send": "SouthCTC/0x2D/B5",
+              "value": "SouthCTC/0x50/VALUE"
+            },
+            "range": {
+              "max": 7,
+              "min": 1
+            },
+            "serves": "Watsonville:Arrival",
+            "station": "Watsonville"
+          },
+          "given": {
+            "Appliance": "selector",
+            "Name": "Arrival"
+          },
+          "relations": {
+            "bindings": {
+              "BUTTON": "SouthCTC/0x50/BUTTON",
+              "VALUE": "SouthCTC/0x50/VALUE"
+            },
+            "interlocking": "Watsonville"
+          }
+        },
         {
           "derived": {
             "controls": [
