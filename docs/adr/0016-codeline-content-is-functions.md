@@ -7,8 +7,6 @@
   consumes"); ADR 0008 §4.7 (the token-field exception). §5 lists the text.
 - Builds on: FieldUnit `docs/GLOSSARY.md` §5 and §10.3; ADR 0001 D2, D3 and D6; ADR 0002 P3; ADR 0012 §2 and §4;
   ADR 0015; issue #145 (ladder and selector). FieldUnit `src/` is cited at `92ebfe4`.
-- Name: the file name says "demands", as the drafting request did. GLOSSARY §11 retires "demand (for a control)"
-  and "Controls-as-Demands"; this ADR uses the live term, **function**.
 
 ## Decisions requested (all ratified 2026-11-14)
 
