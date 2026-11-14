@@ -1,0 +1,7 @@
+{
+  "repository": "~/Dropbox/KiCad/Railroad",
+  "commit": "9905c8e",
+  "paths": ["SPCoast", "symbols"],
+  "project": "SPCoast/SPCoast.kicad_sch",
+  "symbols": "symbols"
+}

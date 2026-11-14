@@ -69,6 +69,7 @@ class Source:
     sheets: list[str] = field(default_factory=list)
     project: Optional[Path] = None                                    # the KiCad project the drawing is: the one source
     sheet_files: dict[str, str] = field(default_factory=dict)         # sheet path -> .kicad_sch file name, from the export
+    libraries: Optional[dict[str, Path]] = None                       # library name -> file when not KiCad's tables (a pinned corpus)
     _by_pin: dict[tuple[str, str], Net] = field(default_factory=dict, repr=False)
     _by_unit: dict[tuple[str, str, str], Net] = field(default_factory=dict, repr=False)
 
@@ -156,7 +157,7 @@ def from_netlist(path: Path, libraries: Optional[dict[str, Path]] = None) -> Sou
     units = _UnitNames(project.parent if project else None, libraries, {ref: c.lib_id for ref, c in model.components.items()})
     nets = [Net(n.name, tuple(PinRef(p.reference, pin_name(p.pinfunction, p.pin), p.pintype, units.of(p.reference, p.pin)) for p in n.nodes))
             for n in model.nets]
-    return Source(Path(path), symbols, nets, list(model.sheets), project, dict(model.sheet_files))
+    return Source(Path(path), symbols, nets, list(model.sheets), project, dict(model.sheet_files), libraries)
 
 
 class _UnitNames:
@@ -208,20 +209,21 @@ def from_snapshot(netlist: Path, repo: Path, paths: Sequence[str]) -> Source:
     return from_netlist(snapshot.require_fresh(Path(netlist), Path(repo), paths))
 
 
-def from_project(schematic: Path) -> Source:
-    """The drawing read through a netlist exported now and deleted at once (the netlist rule; needs kicad-cli)."""
+def from_project(schematic: Path, libraries: Optional[dict[str, Path]] = None) -> Source:
+    """The drawing read through a netlist exported now and deleted at once (the netlist rule; needs kicad-cli).
+    ``libraries`` as for ``from_netlist``; the geometry reads them too."""
     with _services().exported_netlist(Path(schematic)) as net:
-        return from_netlist(net)
+        return from_netlist(net, libraries)
 
 
 def kicad_cli_available() -> bool:
     return _services().KicadCliNetlistExporter().available()
 
 
-def from_path(path: Path) -> Source:
+def from_path(path: Path, libraries: Optional[dict[str, Path]] = None) -> Source:
     """``from_project`` for a ``.kicad_sch``, ``from_netlist`` for anything else."""
     path = Path(path)
-    return from_project(path) if path.suffix == ".kicad_sch" else from_netlist(path)
+    return from_project(path, libraries) if path.suffix == ".kicad_sch" else from_netlist(path, libraries)
 
 
 def from_symbols(symbols: Iterable[Symbol], nets: Iterable[Net], path: Path = Path("<memory>")) -> Source:

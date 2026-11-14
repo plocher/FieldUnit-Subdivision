@@ -2,43 +2,20 @@
 
 Two kinds. The rules are tested on small sources built in memory: a relation by its wire alone (the fallbacks of
 ADR 0012 §4 retired), the three maps, the macro. What the reference derivation computes is tested in
-``test_derive``. The relation table is tested on the SPCoast
-project when it is present (``SPCOAST_PROJECT``, default ``~/Dropbox/KiCad/Railroad/SPCoast/SPCoast.kicad_sch``)
-and kicad-cli can export its netlist fresh (the netlist rule, ``AGENTS.md``). ``SPCOAST_NETLIST`` names a saved netlist
-instead, on a machine where kicad-cli cannot run; it is read only when it is still a snapshot of the Railroad
-repository (``RAILROAD_REPO``, default ``~/Dropbox/KiCad/Railroad``: no uncommitted change under ``SPCoast/`` and
-``symbols/``, no commit there newer than the file), and a stale one fails the gates loudly with what is stale. The
-gates are skipped, never faked, when neither is at hand.
+``test_derive``. The relation table is tested on the SPCoast test corpus, the drawing at the pinned commit
+(``tests.spcoast_corpus``), exported fresh by kicad-cli (the netlist rule, ``AGENTS.md``); the gates are skipped, never
+faked, without kicad-cli or the Railroad repository.
 """
 from __future__ import annotations
 
-import os
 import unittest
-from pathlib import Path
 
 from tools import layout_model
 from tools.layout_compiler import emit, seams
 from tools.layout_compiler.geometry import Geometry
 from tools.railroad import codeline
-from tools.layout_compiler.source import Net, PinRef, Symbol, from_project, from_snapshot, from_symbols, kicad_cli_available
-
-PROJECT = Path(os.environ.get("SPCOAST_PROJECT", Path.home() / "Dropbox/KiCad/Railroad/SPCoast/SPCoast.kicad_sch"))
-NETLIST = Path(os.environ["SPCOAST_NETLIST"]) if os.environ.get("SPCOAST_NETLIST") else None
-RAILROAD = Path(os.environ.get("RAILROAD_REPO", Path.home() / "Dropbox/KiCad/Railroad"))
-SNAPSHOT_PATHS = ("SPCoast", "symbols")                    # what the SPCoast drawing is made of, in the Railroad repository
-
-
-def spcoast_source():
-    """The SPCoast drawing, exported fresh; a saved netlist only when the caller named one and it is still a snapshot
-    (a stale one raises ``StaleNetlist``, so the gate fails loudly); None when neither is at hand."""
-    if NETLIST is not None:
-        return from_snapshot(NETLIST, RAILROAD, SNAPSHOT_PATHS) if NETLIST.is_file() else None
-    if PROJECT.is_file() and kicad_cli_available():
-        return from_project(PROJECT)
-    return None
-
-
-SPCOAST_AVAILABLE = (NETLIST is not None and NETLIST.is_file()) or (PROJECT.is_file() and kicad_cli_available())
+from tools.layout_compiler.source import Net, PinRef, Symbol, from_symbols
+from tests.spcoast_corpus import AVAILABLE as SPCOAST_AVAILABLE, WHY_SKIPPED, spcoast_source
 
 
 def sym(ref, lib, sheet, value="", **fields):
@@ -364,7 +341,7 @@ class RuleTests(unittest.TestCase):
         self.assertEqual(layout_model.errors(model), [])
 
 
-@unittest.skipUnless(SPCOAST_AVAILABLE, f"SPCoast project not present or kicad-cli missing: {NETLIST or PROJECT}")
+@unittest.skipUnless(SPCOAST_AVAILABLE, WHY_SKIPPED)
 class SPCoastRelationTable(unittest.TestCase):
     """ADR 0009 §3.12 under ADR 0012 §4: every relation of the table is stated by its wire; no fallback remains."""
 

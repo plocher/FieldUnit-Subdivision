@@ -263,8 +263,8 @@ class _Project:
 
 def read(sm: Seams, project_dir: Optional[Path] = None, libraries: Optional[dict[str, Path]] = None) -> Geometry:
     """Every interlocking's geometry and the glyphs they name. ``project_dir`` is where the sheets are (the project's
-    own directory unless a test points at a copy); ``libraries`` maps library names to files (KiCad's tables unless
-    given). Errors go to ``sm.report`` and an interlocking with one writes no geometry."""
+    own directory unless a test points at a copy); ``libraries`` maps library names to files (the source's own map
+    when not given, else KiCad's tables). Errors go to ``sm.report`` and an interlocking with one writes no geometry."""
     out = Geometry()
     src = sm.source
     if project_dir is None:
@@ -272,7 +272,7 @@ def read(sm: Seams, project_dir: Optional[Path] = None, libraries: Optional[dict
             sm.report.error("geometry.project", "the export names no project, so its sheets cannot be read")
             return out
         project_dir = Path(src.project).parent
-    project = _Project(Path(project_dir), libraries)
+    project = _Project(Path(project_dir), libraries if libraries is not None else src.libraries)
 
     for ix in sm.interlockings.values():
         # The frame is the interlocking's own sheet (ADR 0010 C5): a row placed from another sheet, by CP Name or by its
@@ -443,7 +443,7 @@ def check_transform(geometry: Geometry, sm: Seams, project_dir: Optional[Path] =
     """The file's transform over the written glyphs lands every pin of every placement where KiCad's transform over
     the library put it (§4.3). Returns the disagreements; the gate wants none."""
     src = sm.source
-    project = _Project(Path(project_dir) if project_dir else Path(src.project).parent, libraries)
+    project = _Project(Path(project_dir) if project_dir else Path(src.project).parent, libraries if libraries is not None else src.libraries)
     bad: list[str] = []
     for ix in sm.interlockings.values():
         g = geometry.interlockings.get(ix.name)
