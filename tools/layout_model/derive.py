@@ -914,6 +914,7 @@ class _Derivation:
         self.train_orders()
         self.reach()
         self.jmri_masts()
+        self.outputs()
         if "provenance" in self.m:
             self.m["provenance"]["rules"] = RULES
 
@@ -1872,8 +1873,60 @@ class _Derivation:
                     derived["aspectNames"] = self.rd.aspect_names(system, kind)     # indication -> the name it publishes
                 _set_derived(d, derived)
 
+    # ------------------------------------------------------------------------------------------- outputs
+
+    def outputs(self) -> None:
+        """Only the vital logic of the interlocking that owns an appliance drives it (ADR 0017 decision 3): an
+        appliance's output bound to a processor that does not run its interlocking (``relations.processor``) is
+        ``device.output`` at error. The outputs are ``OUTPUTS``: a switch device's machine and lock, every bound pin of
+        a head or a mast device. A demand (a lever, a selector, a key, any sensor) bound anywhere is never this error,
+        and neither is an input of an appliance device (its point detection, its occupancy). A device's interlocking
+        is the one it is filed under; a desk device's, the scope of what it serves, else its ``relations.interlocking``.
+        A binding through a CMRInet Node reaches the one processor that anchors its line (ADR 0017 §4)."""
+        layout = self.m.get("layout", {})
+        anchors = {t: tr.get("relations", {}).get("anchors") or [] for t, tr in layout.get("transports", {}).items()}
+
+        def processor_of(route: str) -> Optional[str]:
+            owner = route.split("/", 1)[0]
+            if owner in anchors and owner not in layout.get("processors", {}):
+                return anchors[owner][0] if len(anchors[owner]) == 1 else None
+            return owner
+
+        for where, dev in self._devices():
+            g, rel = dev.get("given", {}), dev.get("relations", {})
+            bindings = rel.get("bindings", {})
+            pins = OUTPUTS.get(g.get("Appliance"))
+            bound = sorted(bindings) if pins == ALL_PINS else sorted(set(bindings) & (pins or frozenset()))
+            if not bound:
+                continue
+            if where.startswith("interlockings/"):
+                b = where.split("/")[1]
+            else:
+                b = (dev.get("derived", {}).get("serves") or "").partition(":")[0] or rel.get("interlocking")
+            runs = self.m.get("interlockings", {}).get(b or "", {}).get("relations", {}).get("processor")
+            if not runs:
+                continue
+            wrong: dict[str, list[str]] = defaultdict(list)
+            for pin in bound:
+                routes = bindings[pin] if isinstance(bindings[pin], list) else [bindings[pin]]
+                for route in routes:
+                    p = processor_of(route)
+                    if p and p != runs:
+                        wrong[p].append(pin)
+            for p, ps in sorted(wrong.items()):
+                self.r.add("device.output", f"{g.get('Appliance')} device {g.get('Name') or rel.get('mast') or ''}: its output "
+                           f"{', '.join(ps)} is driven by processor {p}, but {b}'s vital logic runs on {runs}; only the logic of the "
+                           "interlocking that owns an appliance drives it", where, (f"interlockings/{b}", f"layout/processors/{p}"))
+
 
 PINS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"                   # the field mast device's position pins, top down (#80)
+
+# An appliance's outputs (ADR 0017 decision 3), by the device's Appliance: what the field unit drives. A switch device's
+# M is its machine and a lock device's UNLOCK its lock (Railroad-Field Device-Switch and Device-Lock Descriptions; the
+# lock is Appliance switch, Style lock); a head or a mast device is driven on every bound pin. The model states no pin
+# direction, so this table stands in for one.
+ALL_PINS = frozenset({"*"})
+OUTPUTS = {"switch": frozenset({"M", "UNLOCK"}), "head": ALL_PINS, "mast": ALL_PINS}
 
 
 def head_letters(appliance: dict[str, Any]) -> list[str]:

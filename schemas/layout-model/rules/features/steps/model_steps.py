@@ -1103,3 +1103,18 @@ def selector_inputs(context, name, value, lock, send):
     got = _selector(context, name).get("derived", {}).get("inputs")
     want = {"value": value, "lock": lock, "send": send}
     assert got == want, f"{name}: inputs {got!r}, not {want!r}"
+
+
+# ------------------------------------------------------------------- an appliance's outputs (ADR 0017 decision 3)
+
+@given('interlocking "{name}" runs on processor "{processor}"')
+def runs_on(context, name, processor):
+    _interlocking(context, name).setdefault("relations", {})["processor"] = processor
+    _model(context)["layout"].setdefault("processors", {}).setdefault(processor, {"given": {"Board": "cpNode"}})
+
+
+@given('device "{device}" of interlocking "{ixn}" binds "{pin}" to "{route}"')
+def device_binds(context, device, ixn, pin, route):
+    """A device's pin on the net of a driver pin, as the importer writes the binding: the route names the processor."""
+    dev = next(d for d in _interlocking(context, ixn).get("devices", []) if d["given"].get("Name") == device)
+    dev.setdefault("relations", {}).setdefault("bindings", {})[pin] = route
