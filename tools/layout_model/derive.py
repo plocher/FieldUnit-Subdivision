@@ -152,7 +152,9 @@ names every other track pin its wire reaches, so the relation is symmetric):
   the ordered choices, is the domain library ``tools/railroad/ladders.py``'s, and its results are written here
   (ADR 0015). A selector device serves the ladder its Name names and derives ``choices`` and ``range``; each ladder
   switch derives ``ladder`` and ``selector``, a control source as a switch lever is, so a powered ladder switch a
-  selector serves is no ``switch.lever`` (``ladders``).
+  selector serves is no ``switch.lever`` (``ladders``). A selector is in no column: its choice goes to the station
+  that owns its ladder's switches, and that station's CODE button sends it (``station``, ``code``, ``inputs``;
+  ``_selector_sends``).
 - An unknown POLICY Kind is ``policy.kind`` at warning and holds its piece to no regime (``regimes``).
 - An OfficeUnit's columns (``house``, ``interlocking``), every device's ``serves``, a desk lamp's ``indications`` and
   ``expression`` (its ``Indication``, ``tools/layout_model/expression.py``), a lever's ``controls`` and ``indications``
@@ -1409,7 +1411,8 @@ class _Derivation:
                 continue
             served.add(lad.name)
             _set_derived(dev, {**dev["derived"], "choices": [c.as_dict(i) for i, c in enumerate(lad.choices, 1)],
-                               "range": {"min": 1, "max": len(lad.choices)} if lad.choices else None})
+                               "range": {"min": 1, "max": len(lad.choices)} if lad.choices else None,
+                               **self._selector_sends(dev, lad, where)})
         for lad in found.ladders.values():
             b = lad.name.partition(":")[0]
             row = next((r for r in self.m["interlockings"][b].get("track", {}).get("policies", []) if r.get("name") == lad.name), None)
@@ -1426,6 +1429,68 @@ class _Derivation:
                 _set_derived(a, {**a.get("derived", {}), "ladder": lad.name, "selector": lad.name if lad.name in served else None})
                 if lad.name in served:
                     self.selected[s] = lad.name
+
+    def _selector_sends(self, dev: dict[str, Any], lad: "ladders.Ladder", where: str) -> dict[str, Any]:
+        """Who sends a selector's choice (the owner, 2026-11-13): a selector is in no column. Its choice goes to the
+        station that owns its ladder's switches (on a US&S 506 line the house that is their control point, else their
+        interlocking), and that station's CODE button sends it, with the levers of its column, as ordinary controls. The
+        CODE button is the code lever on the one desk column whose station that is. The selector derives ``station``,
+        ``code`` (that column, qualified by its OfficeUnit) and ``inputs``: ``value`` the route bound to its VAL pin
+        (the choice shown), ``lock`` the route bound to PRESS (which locks the choice in) and ``send`` the CODE button's
+        (which sends the locked choice). Reported: the switches in two stations, ``selector.station`` at error; no CODE
+        button for the station, ``selector.code`` at missing; more than one, ``selector.codes`` at warning (which one
+        sends is not stated; none is chosen); VAL or PRESS bound to nothing, ``selector.input`` at missing."""
+        b = lad.name.partition(":")[0]
+        name = lad.name.partition(":")[2]
+        out: dict[str, Any] = {}
+        bindings = dev.get("relations", {}).get("bindings", {})
+        inputs = {"value": bindings.get("VAL"), "lock": bindings.get("PRESS")}
+        for pin, key in (("VAL", "value"), ("PRESS", "lock")):
+            if not inputs[key]:
+                self.r.add("selector.input", f"selector {name}: its {pin} pin is bound to no driver pin; what "
+                           f"{'shows the choice' if pin == 'VAL' else 'locks the choice in'} is not drawn yet", where)
+        sc = codeline.scope(self.m, b)
+        house: Optional[str] = None
+        if sc == "house":
+            apps = self.m["interlockings"][b].get("appliances", {})
+            houses = sorted({cp.partition(":")[2] for s in lad.switches
+                             if (cp := apps.get(s.partition(":")[2], {}).get("derived", {}).get("controlPoint"))})
+            if len(houses) != 1:
+                if len(houses) > 1:
+                    self.r.add("selector.station", f"selector {name}: the switches of ladder {lad.name} belong to houses "
+                               f"{', '.join(houses)}, and {b}'s code line makes each house a station; one station receives a "
+                               "choice", where, (lad.where,))
+                return {**out, "inputs": _clean(inputs)}
+            house = houses[0]
+        station = f"{b}:{house}" if house else b
+        out["station"] = station
+        codes: list[tuple[str, dict[str, Any]]] = []
+        for ou_name, ou in self.m.get("officeUnits", {}).items():
+            for c in ou.get("devices", []):
+                if not self._code_lever(c.get("given", {})):
+                    continue
+                ou_of, _, number = c.get("relations", {}).get("column", "").partition(":")
+                col = self.m.get("officeUnits", {}).get(ou_of, {}).get("columns", {}).get(number)
+                if col is None:
+                    continue
+                cd = col.get("derived", {})
+                mine = (cd.get("house") == station) if house else ((cd.get("interlocking") or col.get("relations", {}).get("interlocking")) == b)
+                if mine:
+                    codes.append((f"{ou_of}:{number}", c))
+        if not codes:
+            self.r.add("selector.code", f"selector {name}: no desk column of station {station} has a CODE button; what sends "
+                       "the choice is not drawn yet", where)
+        elif len(codes) > 1:
+            self.r.add("selector.codes", f"selector {name}: station {station} has CODE buttons on columns "
+                       f"{', '.join(sorted(k for k, _ in codes))}; which one sends the choice is not stated", where,
+                       tuple(sorted(f"officeUnits/{k.partition(':')[0]}/columns/{k.partition(':')[2]}" for k, _ in codes)))
+        else:
+            column, c = codes[0]
+            out["code"] = column
+            cb = c.get("relations", {}).get("bindings", {})
+            inputs["send"] = cb.get("CODE") or (next(iter(cb.values())) if len(cb) == 1 else None)
+        out["inputs"] = _clean(inputs)
+        return out
 
     def _devices(self):
         """Every device in the file with its model path: each interlocking's, then each OfficeUnit's."""

@@ -248,18 +248,30 @@ ladder marker (`POLICY`, Kind `LADDER`, with a `Name`) stands on the ladder's st
    switch (N or R: Watsonville's switch 3 reaches 5 through R); the other leg is the next choice; the last switch gives
    R, then N. Where both legs lead to ladder switches, N's sub-ladder comes before R's. Each choice is its leg with its
    alignment (`17R: 15N 17R`). Detent 1 is nearest the start.
-3. **The selector serves the ladder of its Name,** qualified like a lever (`Watsonville:Arrival`).
-4. **Derived, written at save (ADR 0015):** on the selector, `choices` and `range` (1 to the number of choices); on
-   the marker's row, `switches` and `start`; on each ladder switch, `ladder` and its control source, `selector`, which
-   the reference derivation reads as it reads a switch lever, so a powered ladder switch a selector serves is no
-   `switch.lever`. `wrap` stays stated.
-5. **Vital boundary (§5.2):** the desk turns a choice into ordinary `NWS`/`RWS` controls for the alignment; the field
+3. **The selector serves the ladder of its Name,** qualified like a lever (`Watsonville:Arrival`). A selector is a
+   device (Role `DEVICE`, Appliance `selector`; the symbol `Railroad-Office:Panel-Selector`, keyed by its fields,
+   never by its name) with two pins: `VAL` (kind `value`) shows the choice and `PRESS` (kind `binary`) locks it in.
+   Which encoder driver pins feed them comes from the netlist, as for any device's bindings.[^selector-code]
+4. **A selector is in no column.**[^selector-code] Its choice goes to the station that owns its ladder's switches: on
+   a US&S 506 line the house that is their control point, else their interlocking. That station's CODE button (the
+   code lever on the one desk column whose station it is) sends the locked choice, with the levers of its column, as
+   ordinary controls. Watsonville: both selectors go to station Watsonville and are sent by column 14's CODE button.
+5. **Derived, written at save (ADR 0015):** on the selector, `choices` and `range` (1 to the number of choices),
+   `station`, `code` (the column of the CODE button that sends it, qualified by its OfficeUnit) and `inputs` (`value`
+   the route bound to `VAL`, `lock` the route bound to `PRESS`, `send` the CODE button's route), which a desk
+   generator reads; on the marker's row, `switches` and `start`; on each ladder switch, `ladder` and its control
+   source, `selector`, which the reference derivation reads as it reads a switch lever, so a powered ladder switch a
+   selector serves is no `switch.lever`. `wrap` stays stated.
+6. **Vital boundary (§5.2):** the desk turns a choice into ordinary `NWS`/`RWS` controls for the alignment; the field
    unit lines and locks as for any lever.
 
 The walk is the `ladders` library's (`tools/railroad/ladders.py`, over the routes library's track graph); the
 reference derivation calls it and writes its results, since a switch's control source is a derived fact its own
 `switch.lever` check reads. Findings: `ladder.name`, `ladder.start` and `ladder.leg` at missing; `ladder.direction`
-and `ladder.shared` at error; `ladder.selector` at info; `selector.ladder` at error
+and `ladder.shared` at error; `ladder.selector` at info; `selector.ladder` at error; `selector.station` at error (the
+ladder's switches are in two stations); `selector.code` at missing (the station has no CODE button);
+`selector.codes` at warning (it has more than one, so which one sends is not stated and none is chosen);
+`selector.input` at missing (`VAL` or `PRESS` is bound to nothing)
 (`schemas/layout-model/rules/features/logical/trackplan/ladder.feature`).
 
 ## 6. Reference data[^refdata]
@@ -415,3 +427,9 @@ All move to FieldUnit with the schema (view O15).
 
 [^ladders]: Added in place on 2026-11-13 (issue #145, the owner's rules of that date): §5.1 gains the ladders library,
     §5.6 is new and §10 names `ladders.py`. The earlier text is at commit `1a733ef`.
+
+[^selector-code]: Amended in place on 2026-11-13 (issue #145, the owner's rulings after the Watsonville office was
+    redrawn): rule 3 gains the selector's symbol and its `VAL` and `PRESS` pins, rule 4 (a selector is in no column;
+    its station's CODE button sends its choice) is new, rule 5 gains `station`, `code` and `inputs`, and the findings
+    gain `selector.station`, `selector.code`, `selector.codes` and `selector.input`. The earlier text is at commit
+    `785b056` (`e7c38e3` on the branch of PR #147).

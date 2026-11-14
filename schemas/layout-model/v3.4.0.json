@@ -772,6 +772,24 @@
                     "min": {"type": "integer"},
                     "max": {"type": "integer"}
                   }
+                },
+                "station": {
+                  "type": "string",
+                  "description": "A selector's station (the owner, 2026-11-13): the station that owns its ladder's switches, which receives the choice. The interlocking on a line whose station is the interlocking (Watsonville), interlocking:house on a US&S 506 line. A selector is in no column. Absent when the switches are in two stations (selector.station)."
+                },
+                "code": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "The desk column, qualified by its OfficeUnit (SouthCTC:14), whose CODE button sends a selector's choice with the levers of that column (the owner, 2026-11-13). Absent when the station has no CODE button (selector.code) or more than one (selector.codes)."
+                },
+                "inputs": {
+                  "type": "object",
+                  "description": "What a desk generator reads to work a selector (the owner, 2026-11-13): value, the route bound to its VAL pin (the choice shown); lock, the route bound to PRESS (locks the choice in); send, the route of the CODE button that sends the locked choice. A key is absent when that pin is bound to nothing (selector.input) or no one CODE button is found.",
+                  "additionalProperties": false,
+                  "properties": {
+                    "value": {"$ref": "#/$defs/route"},
+                    "lock": {"$ref": "#/$defs/route"},
+                    "send": {"$ref": "#/$defs/route"}
+                  }
                 }
               }
             }

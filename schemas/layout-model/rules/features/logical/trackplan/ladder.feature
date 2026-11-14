@@ -233,3 +233,139 @@ Feature: A ladder and the selector that serves it
     When the layout is derived
     Then it is reported as an error on "0"
     And selector "Nowhere" offers no choices
+
+  # Who sends a selector's choice (the owner, 2026-11-13). A selector is in no column. Its choice goes to the station
+  # that owns its ladder's switches; that station's CODE button sends it, with the levers of its column, as ordinary
+  # controls. VAL shows the choice, PRESS locks it in, CODE sends the locked choice.
+
+  @selector.code
+  Scenario: the station's CODE button sends the choice the selector's PRESS locks in
+    Given interlocking "X" is on an AAR token code line
+    And interlocking "X" has these appliances:
+      | Name | Appliance | Style   | TC  | CP Name |
+      | 9    | switch    | powered | 9T1 | East    |
+      | 1    | switch    | powered | 1T1 | East    |
+    And interlocking "X" has these policies:
+      | Id | Name | Kind   |
+      | M  | Yard | LADDER |
+    And interlocking "X" has these wires:
+      | Pins               |
+      | 9.R Yard.track 1.C |
+      | 1.R E1.EoT         |
+      | 1.N E2.EoT         |
+    And interlocking "X" has these devices:
+      | Name | Appliance |
+      | Yard | selector  |
+    And selector "Yard" binds VAL to "Desk/0x50/ENC" and PRESS to "Desk/0x50/Press"
+    And the desk has these columns:
+      | Column | CP Name | Interlocking |
+      | 13     | East    | X            |
+    And the desk has a CODE button on column "13" bound to "Desk/0x2D/B5"
+    When the layout is derived
+    Then selector "Yard" goes to station "X"
+    And selector "Yard" is sent by the CODE button of column "Desk:13"
+    And selector "Yard" shows its choice on "Desk/0x50/ENC", locks it in on "Desk/0x50/Press" and sends it on "Desk/0x2D/B5"
+    And it is not reported
+
+  @selector.code
+  Scenario: a station with no CODE button
+    Given interlocking "X" is on an AAR token code line
+    And interlocking "X" has these appliances:
+      | Name | Appliance | Style   | TC  |
+      | 9    | switch    | powered | 9T1 |
+      | 1    | switch    | powered | 1T1 |
+    And interlocking "X" has these policies:
+      | Id | Name | Kind   |
+      | M  | Yard | LADDER |
+    And interlocking "X" has these wires:
+      | Pins               |
+      | 9.R Yard.track 1.C |
+      | 1.R E1.EoT         |
+      | 1.N E2.EoT         |
+    And interlocking "X" has these devices:
+      | Name | Appliance |
+      | Yard | selector  |
+    And selector "Yard" binds VAL to "Desk/0x50/ENC" and PRESS to "Desk/0x50/Press"
+    When the layout is derived
+    Then it is reported as missing on "0"
+    And selector "Yard" goes to station "X"
+    And selector "Yard" is sent by no CODE button
+
+  @selector.codes
+  Scenario: a station with two CODE buttons
+    Which button sends the choice is not stated, so none is chosen.
+    Given interlocking "X" is on an AAR token code line
+    And interlocking "X" has these appliances:
+      | Name | Appliance | Style   | TC  |
+      | 9    | switch    | powered | 9T1 |
+      | 1    | switch    | powered | 1T1 |
+    And interlocking "X" has these policies:
+      | Id | Name | Kind   |
+      | M  | Yard | LADDER |
+    And interlocking "X" has these wires:
+      | Pins               |
+      | 9.R Yard.track 1.C |
+      | 1.R E1.EoT         |
+      | 1.N E2.EoT         |
+    And interlocking "X" has these devices:
+      | Name | Appliance |
+      | Yard | selector  |
+    And selector "Yard" binds VAL to "Desk/0x50/ENC" and PRESS to "Desk/0x50/Press"
+    And the desk has these columns:
+      | Column | CP Name | Interlocking |
+      | 13     | X       | X            |
+      | 14     | X       | X            |
+    And the desk has a CODE button on column "13" bound to "Desk/0x2C/B5"
+    And the desk has a CODE button on column "14" bound to "Desk/0x2D/B5"
+    When the layout is derived
+    Then it is reported as a warning on "0"
+    And selector "Yard" is sent by no CODE button
+
+  @selector.input
+  Scenario: a selector whose PRESS is wired to nothing
+    Given interlocking "X" has these appliances:
+      | Name | Appliance | Style   | TC  |
+      | 9    | switch    | powered | 9T1 |
+      | 1    | switch    | powered | 1T1 |
+    And interlocking "X" has these policies:
+      | Id | Name | Kind   |
+      | M  | Yard | LADDER |
+    And interlocking "X" has these wires:
+      | Pins               |
+      | 9.R Yard.track 1.C |
+      | 1.R E1.EoT         |
+      | 1.N E2.EoT         |
+    And interlocking "X" has these devices:
+      | Name | Appliance |
+      | Yard | selector  |
+    And selector "Yard" binds VAL to "Desk/0x50/ENC"
+    When the layout is derived
+    Then it is reported as missing on "0"
+
+  @selector.station
+  Scenario: a ladder whose switches are in two stations
+    On a US&S 506 line each house is a station; one station receives a choice.
+    Given interlocking "X" has houses "East, West"
+    And interlocking "X" is on a US&S 506 code line
+    And interlocking "X" has these appliances:
+      | Name | Appliance | Style   | TC  | CP Name |
+      | 9    | switch    | powered | 9T1 | East    |
+      | 1    | switch    | powered | 1T1 | East    |
+      | 3    | switch    | powered | 3T1 | West    |
+    And interlocking "X" has these policies:
+      | Id | Name | Kind   |
+      | M  | Yard | LADDER |
+    And interlocking "X" has these wires:
+      | Pins               |
+      | 9.R Yard.track 1.C |
+      | 1.R E1.EoT         |
+      | 1.N 3.C            |
+      | 3.N E2.EoT         |
+      | 3.R E3.EoT         |
+    And interlocking "X" has these devices:
+      | Name | Appliance |
+      | Yard | selector  |
+    And selector "Yard" binds VAL to "Desk/0x50/ENC" and PRESS to "Desk/0x50/Press"
+    When the layout is derived
+    Then it is reported as an error on "0"
+    And selector "Yard" goes to no station
