@@ -7,6 +7,7 @@ One list of what is decided and what waits for the owner. Each proposed ADR open
 
 | ADR | Subject | Asked of the owner |
 |---|---|---|
+| [0017](0017-seam-symbols-do-not-know-where-they-are-used.md) | Seam symbols do not know where they are used: desk or field from the processor a device's bindings reach (fixes the Watsonville selectors filed under the field unit), column from a wired `Column` pin, a field device serves only its own interlocking, one symbol per function (switch lever, lamp; the lock plates stay two), Role `PANEL` retires, migration after the MVP with no bridges | Rule on eight decisions, each with a default. |
 | [0002](0002-symbol-contract.md) | What each KiCad symbol records | Frozen 2026-10-03: too complicated to approve as-is. Rewritten to rules after the cleanup pass (#30), then approved. |
 | [0003](0003-name-grammar.md) | One grammar for the names of appliances, signals and track circuits | Frozen 2026-10-03, same reason; the owner's in-progress edits are committed as they stood. Rewritten to rules after #30. |
 
