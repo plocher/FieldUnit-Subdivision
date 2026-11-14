@@ -42,10 +42,10 @@
    over libraries, embedded copies and placed instances, with a field diff before the owner commits.
    *Ratified 2026-11-14.*
 
-[^demand]: Vocabulary note, pending; not a decision of this ADR. FieldUnit `docs/GLOSSARY.md` §11 retires "demand
-    (for a control)" as a synonym of control (line 757; also "Controls-as-Demands", line 750). The owner's ruling
-    uses demand as the parent term: a control is a demand over a code line, and a local demand is one the field unit
-    reads. The glossary needs an entry for demand in that sense. That is a FieldUnit glossary change, for the owner.
+[^demand]: Vocabulary, agreed by the owner 2026-11-14 ("the earlier change lost the nuance"): demand is the parent
+    term. A control is a demand over a code line; a local demand is one the field unit reads at the location. FieldUnit
+    `docs/GLOSSARY.md` §11 retired "demand (for a control)" as a synonym of control (line 757); the glossary gains
+    entries for demand and local demand and drops that row, a FieldUnit change (branch `docs/glossary-demand`).
 
 ## 1. Problem
 
