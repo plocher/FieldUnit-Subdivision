@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 350" font-family="Helvetica, Arial, sans-serif" font-size="13">
+  <title>Functions in the model, tokens only where an encoding spells them</title>
+  <rect width="900" height="350" fill="#ffffff"/>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#333"/>
+    </marker>
+  </defs>
+
+  <text x="110" y="28" text-anchor="middle" font-weight="bold" fill="#222">Drawing</text>
+  <text x="110" y="44" text-anchor="middle" fill="#555">(KiCad now, Studio later)</text>
+  <text x="400" y="28" text-anchor="middle" font-weight="bold" fill="#222">Model (the file)</text>
+  <text x="400" y="44" text-anchor="middle" fill="#555">functions: (appliance, function word)</text>
+  <text x="725" y="28" text-anchor="middle" font-weight="bold" fill="#222">Code line encoding</text>
+  <text x="725" y="44" text-anchor="middle" fill="#555">one spelling per encoding</text>
+
+  <g fill="#f3f0e8" stroke="#8a7a55">
+    <rect x="20" y="64" width="180" height="56" rx="4"/>
+    <rect x="20" y="136" width="180" height="56" rx="4"/>
+    <rect x="20" y="208" width="180" height="56" rx="4"/>
+  </g>
+  <g fill="#222">
+    <text x="30" y="86">PanelSwitch 783, bound pin</text>
+    <text x="30" y="104" font-family="monospace" font-size="12">Control.RWS = REVERSE</text>
+    <text x="30" y="158">Switch 15 (Watsonville):</text>
+    <text x="30" y="176">no lever, a selector (#145)</text>
+    <text x="30" y="230">Lamp, Indication</text>
+    <text x="30" y="248" font-family="monospace" font-size="12">795T1K | 01TK</text>
+  </g>
+
+  <g fill="#e8f0f8" stroke="#4a6d8c">
+    <rect x="290" y="64" width="220" height="56" rx="4"/>
+    <rect x="290" y="136" width="220" height="56" rx="4"/>
+    <rect x="290" y="208" width="220" height="56" rx="4"/>
+  </g>
+  <g fill="#222" font-family="monospace" font-size="12">
+    <text x="300" y="86">control    (783, REVERSE)</text>
+    <text x="300" y="104">indication (783, REVERSE)</text>
+    <text x="300" y="158">control    (15, NORMAL)</text>
+    <text x="300" y="176">control    (15, REVERSE)</text>
+    <text x="300" y="230">indication (795T1, OCCUPIED)</text>
+    <text x="300" y="248">indication (01T, OCCUPIED)</text>
+  </g>
+
+  <g fill="#eef6ec" stroke="#4f7d45">
+    <rect x="600" y="64" width="250" height="56" rx="4"/>
+    <rect x="600" y="136" width="250" height="56" rx="4"/>
+  </g>
+  <g fill="#222">
+    <text x="610" y="86">AAR tokens: spell(appliance, function)</text>
+    <text x="610" y="104" font-family="monospace" font-size="12">783RWS 783RWK 15NWS 795T1K</text>
+    <text x="610" y="158">US&amp;S 506: function to step</text>
+    <text x="610" y="176">(the code chart, ADR 0001 D2)</text>
+  </g>
+
+  <g stroke="#333" stroke-width="1.4" fill="none" marker-end="url(#a)">
+    <line x1="200" y1="92" x2="288" y2="92"/>
+    <line x1="200" y1="164" x2="288" y2="164"/>
+    <line x1="200" y1="236" x2="288" y2="236"/>
+    <line x1="510" y1="112" x2="598" y2="96"/>
+    <line x1="510" y1="152" x2="598" y2="160"/>
+  </g>
+  <text x="244" y="228" text-anchor="middle" fill="#555" font-size="11">decode</text>
+  <text x="244" y="156" text-anchor="middle" fill="#555" font-size="11">control source</text>
+
+  <rect x="600" y="236" width="250" height="56" rx="4" fill="#fbeeee" stroke="#9a4a4a"/>
+  <text x="610" y="258" fill="#222">FieldUnit AarTextCodec (the source)</text>
+  <text x="610" y="276" fill="#222" font-family="monospace" font-size="12">WireCodec.h writeToken(name, ...)</text>
+  <line x1="725" y1="234" x2="725" y2="122" stroke="#9a4a4a" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#a)"/>
+  <text x="732" y="214" fill="#9a4a4a" font-size="11">gate: the same tokens</text>
+
+  <text x="20" y="325" fill="#555" font-size="12">The file holds functions. A token exists only where an encoding spells one: on the wire, in a gate, in a message.</text>
+</svg>
