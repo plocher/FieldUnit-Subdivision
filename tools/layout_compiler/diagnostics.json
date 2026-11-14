@@ -30,6 +30,13 @@
       "feature": "trackplan/appliance_lamp_contact.feature#a lamp wired to a net that is not track",
       "replacedBy": null
     },
+    "binding.direction": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": "io/device_binding.feature#a mast's passive position pin bound to a driver",
+      "replacedBy": null
+    },
     "bit.direction": {
       "level": "error",
       "lifecycle": "retired",

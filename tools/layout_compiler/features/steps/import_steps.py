@@ -69,9 +69,17 @@ def more_symbols(context):
 
 
 def _pin(text: str) -> PinRef:
-    """``REF.pin``, or ``REF.UNIT.pin`` for a pin of a named unit (a train order device's face)."""
+    """``REF.pin``, or ``REF.UNIT.pin`` for a pin of a named unit (a train order device's face). A pin may carry its
+    library facts as the netlist export does: ``[type]`` its electrical type, ``#n`` its number (``DS.M[input]``,
+    ``X1.A1#1``)."""
+    text, _, number = text.partition("#")
+    pintype = ""
+    if text.endswith("]") and "[" in text:
+        text, _, pintype = text[:-1].rpartition("[")
     parts = text.split(".")
-    return PinRef(parts[0], parts[2], unit=parts[1]) if len(parts) == 3 else PinRef(parts[0], parts[1])
+    if len(parts) == 3:
+        return PinRef(parts[0], parts[2], pintype, parts[1], number)
+    return PinRef(parts[0], parts[1], pintype, number=number)
 
 
 @given("these nets:")
@@ -349,3 +357,15 @@ def in_column(context, ref, column):
 def in_no_column(context, ref):
     got = _desk_device(context, ref).column
     assert got is None, f"{ref}: its column is {got!r}"
+
+
+# ----------------------------------------------------------------------- what a binding states (schema 3.5.0)
+
+@then('the device "{ref}" binds "{pin}" to "{route}" on driver pin {number}, {direction}, asserted {sense}')
+def binding_facts(context, ref, pin, route, number, direction, sense):
+    """A binding as the file states it: the route, the driver pin's number, the logic's side and the asserted level."""
+    devs = [d for u in (*context.seams.interlockings.values(), *context.seams.office_units.values()) for d in u.devices if d.sym.ref == ref]
+    assert len(devs) == 1, f"{ref}: {len(devs)} devices"
+    got = emit._device(devs[0])["relations"]["bindings"][pin]
+    want = {"route": route, "pinNumber": int(number), "sense": sense, **({} if direction == "no direction" else {"direction": direction})}
+    assert got == want, f"{ref}.{pin}: {got!r}, not {want!r}"

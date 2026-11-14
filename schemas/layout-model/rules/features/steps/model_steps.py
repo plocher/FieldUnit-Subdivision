@@ -50,6 +50,12 @@ def _entity(row, key: str = "Name") -> tuple[str, dict]:
     return row[key].strip(), {k: v for k, v in (("given", given_), ("relations", relations)) if v}
 
 
+def _binding(route: str, direction: str = "") -> dict:
+    """A binding as the importer writes it (schema 3.5.0): its route, its direction when the device pin states one,
+    and its sense, asserted low (ADR 0004 D9)."""
+    return {"route": route, **({"direction": direction} if direction else {}), "sense": "low"}
+
+
 def code_of(context) -> str:
     """The scenario's diagnostic code: its one tag that is a registered rule check."""
     codes = [t for t in context.scenario.tags if t in derive.registry()]
@@ -477,7 +483,7 @@ def face_lever(context, name, face, inputs):
     ixn = _holder(context, name)
     _interlocking(context, ixn)["devices"].append({"given": {"Appliance": "lever", "Style": "train_order"},
                                                    "relations": {"mast": f"{ixn}:{name}", "face": face,
-                                                                 "bindings": {w: f"Field/0x20/A{i}" for i, w in enumerate(_inputs(inputs))}}})
+                                                                 "bindings": {w: _binding(f"Field/0x20/A{i}", "input") for i, w in enumerate(_inputs(inputs))}}})
 
 
 @given('field mast device "{name}" exists')
@@ -603,7 +609,7 @@ def desk_levers_on_columns(context):
             for token in (t.strip() for t in row.get(column, "").split(",") if t.strip()):
                 pin = f"P{len(bindings) + 1}"
                 given_[f"{field}.{pin}"] = token
-                bindings[pin] = f"Desk/0x20/A{len(bindings)}"
+                bindings[pin] = _binding(f"Desk/0x20/A{len(bindings)}", "input" if field == "Control" else "output")
         _desk(context)["devices"].append({"given": given_, "relations": {"column": f"Desk:{row['Column'].strip()}", "bindings": bindings}})
 
 
@@ -697,7 +703,7 @@ def mast_binds(context, name, ixn, pins, route):
     if dev is None:
         dev = {"given": {"Appliance": "mast", "Name": name}}
         devices.append(dev)
-    dev.setdefault("relations", {}).setdefault("bindings", {}).update({p.strip(): route for p in pins.split(",")})
+    dev.setdefault("relations", {}).setdefault("bindings", {}).update({p.strip(): _binding(route) for p in pins.split(",")})
 
 
 @given('the head on face "{face}" of "{name}" binds "{pin}" to "{route}"')
@@ -706,7 +712,7 @@ def head_binds(context, face, name, pin, route):
     heads = [d for d in _interlocking(context, ixn).get("devices", [])
              if d["given"].get("Appliance") == "head" and d.get("relations", {}).get("mast") == f"{ixn}:{name}" and d["relations"].get("face") == face]
     assert len(heads) == 1, f"{name} face {face}: {len(heads)} heads"
-    heads[0]["relations"].setdefault("bindings", {})[pin] = route
+    heads[0]["relations"].setdefault("bindings", {})[pin] = _binding(route, "output")
 
 
 def _driver(context, key: str, proc: str) -> dict:
@@ -1059,19 +1065,19 @@ def _given_selector(context, name: str) -> dict:
 
 @given('selector "{name}" binds VALUE to "{value}" and BUTTON to "{lock}"')
 def selector_binds(context, name, value, lock):
-    _given_selector(context, name).setdefault("relations", {})["bindings"] = {"VALUE": value, "BUTTON": lock}
+    _given_selector(context, name).setdefault("relations", {})["bindings"] = {"VALUE": _binding(value, "input"), "BUTTON": _binding(lock, "input")}
 
 
 @given('selector "{name}" binds VALUE to "{value}"')
 def selector_binds_value(context, name, value):
-    _given_selector(context, name).setdefault("relations", {})["bindings"] = {"VALUE": value}
+    _given_selector(context, name).setdefault("relations", {})["bindings"] = {"VALUE": _binding(value, "input")}
 
 
 @given('the desk has a CODE button on column "{column}" bound to "{route}"')
 def code_button(context, column, route):
     """A desk code lever (Appliance lever, Style code) in a column, its CODE pin bound to ``route``."""
     _desk(context)["devices"].append({"given": {"Appliance": "lever", "Name": "CODE", "Style": "code", "Control.CODE": ""},
-                                      "relations": {"column": f"Desk:{column}", "bindings": {"CODE": route}}})
+                                      "relations": {"column": f"Desk:{column}", "bindings": {"CODE": _binding(route, "input")}}})
 
 
 @then('selector "{name}" goes to station "{station}"')
@@ -1113,8 +1119,10 @@ def runs_on(context, name, processor):
     _model(context)["layout"].setdefault("processors", {}).setdefault(processor, {"given": {"Board": "cpNode"}})
 
 
-@given('device "{device}" of interlocking "{ixn}" binds "{pin}" to "{route}"')
-def device_binds(context, device, ixn, pin, route):
-    """A device's pin on the net of a driver pin, as the importer writes the binding: the route names the processor."""
+@given('device "{device}" of interlocking "{ixn}" {verb} "{pin}" through "{route}"')
+def device_binds(context, device, ixn, verb, pin, route):
+    """A device's pin on the net of a driver pin, as the importer writes the binding: the route names the processor,
+    and the direction is the logic's side, ``drives`` an output and ``reads`` an input."""
+    direction = {"drives": "output", "reads": "input"}[verb]
     dev = next(d for d in _interlocking(context, ixn).get("devices", []) if d["given"].get("Name") == device)
-    dev.setdefault("relations", {}).setdefault("bindings", {})[pin] = route
+    dev.setdefault("relations", {}).setdefault("bindings", {})[pin] = _binding(route, direction)

@@ -46,8 +46,9 @@ class Symbol:
 class PinRef:
     ref: str
     pin: str
-    pintype: str = ""
+    pintype: str = ""                                                 # KiCad's electrical type of the library pin, as the export states it
     unit: str = ""                                                    # the name of the unit the pin is drawn in; "" when it has none
+    number: str = ""                                                  # the pin's number on its symbol, as drawn; "" when not known
 
 
 @dataclass(frozen=True)
@@ -155,7 +156,7 @@ def from_netlist(path: Path, libraries: Optional[dict[str, Path]] = None) -> Sou
     root = Path(model.source) if model.source else None               # the export names the root schematic
     project = root.with_suffix(".kicad_pro") if root and root.with_suffix(".kicad_pro").is_file() else root
     units = _UnitNames(project.parent if project else None, libraries, {ref: c.lib_id for ref, c in model.components.items()})
-    nets = [Net(n.name, tuple(PinRef(p.reference, pin_name(p.pinfunction, p.pin), p.pintype, units.of(p.reference, p.pin)) for p in n.nodes))
+    nets = [Net(n.name, tuple(PinRef(p.reference, pin_name(p.pinfunction, p.pin), p.pintype, units.of(p.reference, p.pin), p.pin) for p in n.nodes))
             for n in model.nets]
     return Source(Path(path), symbols, nets, list(model.sheets), project, dict(model.sheet_files), libraries)
 

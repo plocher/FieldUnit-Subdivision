@@ -1,7 +1,8 @@
 Feature: Only the interlocking that owns an appliance drives it
   Every demand is an input to the vital logic of the interlocking that owns the appliance, and only that logic drives the appliance (ADR 0017 decision 3).
-  An appliance's output is a switch machine, a lock, a head or a mast. Driven by a processor that does not run the appliance's interlocking, it is an error: something goes behind the code line's back.
-  A demand bound anywhere is never this error: a crew's lever may be read by another interlocking's hardware. An appliance's own inputs, its point detection and its occupancy, are not outputs.
+  A binding states its direction: the logic drives an output (a switch machine, a lock, a head, a lamp) and reads an input (a lever, a key, a sensor, point detection, occupancy).
+  An interlocking's device output driven by a processor that does not run that interlocking is an error: something goes behind the code line's back.
+  A demand bound anywhere is never this error: a crew's lever may be read by another interlocking's hardware.
 
   Background:
     Given interlocking "X" runs on processor "Alpha"
@@ -13,36 +14,42 @@ Feature: Only the interlocking that owns an appliance drives it
     And interlocking "X" has these devices:
       | Name   | Appliance | Style  |
       | 3      | switch    |        |
-      | 778NAB | mast      |        |
+      | 1L     | lamp      |        |
       | 3L     | lever     | switch |
 
   @device.output
   Scenario: a switch machine driven by its own interlocking's processor
-    Given device "3" of interlocking "X" binds "M" to "Alpha/0x20/A0"
+    Given device "3" of interlocking "X" drives "M" through "Alpha/0x20/A0"
     When the layout is derived
     Then it is not reported
 
   @device.output
   Scenario: a switch machine driven by another interlocking's processor
-    Given device "3" of interlocking "X" binds "M" to "Beta/0x20/A0"
+    Given device "3" of interlocking "X" drives "M" through "Beta/0x20/A0"
     When the layout is derived
     Then it is reported as an error on "Beta"
 
   @device.output
-  Scenario: a mast driven by another interlocking's processor
-    Given device "778NAB" of interlocking "X" binds "A" to "Beta/0x21/A0"
+  Scenario: a lamp driven by another interlocking's processor
+    Given device "1L" of interlocking "X" drives "LAMP" through "Beta/0x21/A0"
     When the layout is derived
     Then it is reported as an error on "Beta"
 
   @device.output
   Scenario: a switch's point detection read by another interlocking's processor
-    Given device "3" of interlocking "X" binds "M" to "Alpha/0x20/A0"
-    And device "3" of interlocking "X" binds "N" to "Beta/0x20/A1"
+    Given device "3" of interlocking "X" drives "M" through "Alpha/0x20/A0"
+    And device "3" of interlocking "X" reads "N" through "Beta/0x20/A1"
     When the layout is derived
     Then it is not reported
 
   @device.output
   Scenario: a crew's lever read by another interlocking's processor
-    Given device "3L" of interlocking "X" binds "NWS" to "Beta/0x20/A2"
+    Given device "3L" of interlocking "X" reads "NWS" through "Beta/0x20/A2"
+    When the layout is derived
+    Then it is not reported
+
+  @device.output
+  Scenario: a binding that states no direction is not judged
+    Given field mast device "778NAB" of interlocking "X" binds "A" to "Beta/SIGNALMAST.778NAB/IND"
     When the layout is derived
     Then it is not reported

@@ -71,7 +71,7 @@ class Files(unittest.TestCase):
 
 
 def model(**layout_given: str) -> dict:
-    return {"schema": "layout-model/v3.4.0", "layout": {"name": "T", "given": {"Kind": "RAILROAD", **layout_given},
+    return {"schema": "layout-model/v3.5.0", "layout": {"name": "T", "given": {"Kind": "RAILROAD", **layout_given},
                                                         "codelines": {"L": {"given": {"Kind": "USS506"}}, "M": {"given": {"Kind": "AAR"}}}},
             "interlockings": {}, "provenance": {"sourceType": "test", "writer": {"name": "t", "version": "0"}}}
 

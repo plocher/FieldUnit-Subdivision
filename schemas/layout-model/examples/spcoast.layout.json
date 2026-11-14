@@ -598,7 +598,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "Christopher/0x23/A5"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "Christopher/0x23/A5",
+                "sense": "low"
+              }
             }
           }
         },
@@ -613,7 +618,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Christopher/0x23/A8"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "Christopher/0x23/A8",
+                "sense": "low"
+              }
             }
           }
         },
@@ -628,7 +638,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Christopher/0x23/A7"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "Christopher/0x23/A7",
+                "sense": "low"
+              }
             }
           }
         },
@@ -642,7 +657,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "Christopher/0x23/A6"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 6,
+                "route": "Christopher/0x23/A6",
+                "sense": "low"
+              }
             }
           }
         },
@@ -657,7 +677,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Christopher/0x23/B1"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 9,
+                "route": "Christopher/0x23/B1",
+                "sense": "low"
+              }
             }
           }
         },
@@ -673,9 +698,24 @@
           },
           "relations": {
             "bindings": {
-              "WLK": "Christopher/0x21/A5",
-              "WLQ": "Christopher/0x21/A7",
-              "WLQK": "Christopher/0x21/A6"
+              "WLK": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "Christopher/0x21/A5",
+                "sense": "high"
+              },
+              "WLQ": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "Christopher/0x21/A7",
+                "sense": "low"
+              },
+              "WLQK": {
+                "direction": "output",
+                "pinNumber": 6,
+                "route": "Christopher/0x21/A6",
+                "sense": "low"
+              }
             }
           }
         },
@@ -690,10 +730,30 @@
           },
           "relations": {
             "bindings": {
-              "NWK": "Christopher/0x21/B1",
-              "NWS": "Christopher/0x21/B4",
-              "RWK": "Christopher/0x21/B2",
-              "RWS": "Christopher/0x21/B3"
+              "NWK": {
+                "direction": "output",
+                "pinNumber": 9,
+                "route": "Christopher/0x21/B1",
+                "sense": "low"
+              },
+              "NWS": {
+                "direction": "input",
+                "pinNumber": 12,
+                "route": "Christopher/0x21/B4",
+                "sense": "low"
+              },
+              "RWK": {
+                "direction": "output",
+                "pinNumber": 10,
+                "route": "Christopher/0x21/B2",
+                "sense": "low"
+              },
+              "RWS": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "Christopher/0x21/B3",
+                "sense": "low"
+              }
             }
           }
         },
@@ -708,10 +768,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Christopher/0x22/A5",
-              "N": "Christopher/0x22/A6",
-              "OCC": "Christopher/0x22/A8",
-              "R": "Christopher/0x22/A7"
+              "M": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "Christopher/0x22/A5",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 6,
+                "route": "Christopher/0x22/A6",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "Christopher/0x22/A8",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "Christopher/0x22/A7",
+                "sense": "low"
+              }
             }
           }
         },
@@ -744,10 +824,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Christopher/0x22/B1",
-              "N": "Christopher/0x22/B2",
-              "OCC": "Christopher/0x22/B4",
-              "R": "Christopher/0x22/B3"
+              "M": {
+                "direction": "output",
+                "pinNumber": 9,
+                "route": "Christopher/0x22/B1",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 10,
+                "route": "Christopher/0x22/B2",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 12,
+                "route": "Christopher/0x22/B4",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "Christopher/0x22/B3",
+                "sense": "low"
+              }
             }
           }
         },
@@ -762,10 +862,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Christopher/0x22/B5",
-              "N": "Christopher/0x22/B6",
-              "OCC": "Christopher/0x22/B8",
-              "R": "Christopher/0x22/B7"
+              "M": {
+                "direction": "output",
+                "pinNumber": 13,
+                "route": "Christopher/0x22/B5",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 14,
+                "route": "Christopher/0x22/B6",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 16,
+                "route": "Christopher/0x22/B8",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 15,
+                "route": "Christopher/0x22/B7",
+                "sense": "low"
+              }
             }
           }
         },
@@ -799,9 +919,24 @@
           },
           "relations": {
             "bindings": {
-              "WLK": "Christopher/0x21/B5",
-              "WLQ": "Christopher/0x21/B7",
-              "WLQK": "Christopher/0x21/B6"
+              "WLK": {
+                "direction": "output",
+                "pinNumber": 13,
+                "route": "Christopher/0x21/B5",
+                "sense": "high"
+              },
+              "WLQ": {
+                "direction": "input",
+                "pinNumber": 15,
+                "route": "Christopher/0x21/B7",
+                "sense": "low"
+              },
+              "WLQK": {
+                "direction": "output",
+                "pinNumber": 14,
+                "route": "Christopher/0x21/B6",
+                "sense": "low"
+              }
             }
           }
         },
@@ -816,10 +951,30 @@
           },
           "relations": {
             "bindings": {
-              "NWK": "Christopher/0x22/A1",
-              "NWS": "Christopher/0x22/A4",
-              "RWK": "Christopher/0x22/A2",
-              "RWS": "Christopher/0x22/A3"
+              "NWK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Christopher/0x22/A1",
+                "sense": "low"
+              },
+              "NWS": {
+                "direction": "input",
+                "pinNumber": 4,
+                "route": "Christopher/0x22/A4",
+                "sense": "low"
+              },
+              "RWK": {
+                "direction": "output",
+                "pinNumber": 2,
+                "route": "Christopher/0x22/A2",
+                "sense": "low"
+              },
+              "RWS": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "Christopher/0x22/A3",
+                "sense": "low"
+              }
             }
           }
         },
@@ -834,10 +989,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Christopher/0x23/A1",
-              "N": "Christopher/0x23/A2",
-              "OCC": "Christopher/0x23/A4",
-              "R": "Christopher/0x23/A3"
+              "M": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Christopher/0x23/A1",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 2,
+                "route": "Christopher/0x23/A2",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 4,
+                "route": "Christopher/0x23/A4",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "Christopher/0x23/A3",
+                "sense": "low"
+              }
             }
           }
         },
@@ -2158,10 +2333,30 @@
           },
           "relations": {
             "bindings": {
-              "NWK": "Corporal/0x22/B1",
-              "NWS": "Corporal/0x22/B4",
-              "RWK": "Corporal/0x22/B2",
-              "RWS": "Corporal/0x22/B3"
+              "NWK": {
+                "direction": "output",
+                "pinNumber": 9,
+                "route": "Corporal/0x22/B1",
+                "sense": "low"
+              },
+              "NWS": {
+                "direction": "input",
+                "pinNumber": 12,
+                "route": "Corporal/0x22/B4",
+                "sense": "low"
+              },
+              "RWK": {
+                "direction": "output",
+                "pinNumber": 10,
+                "route": "Corporal/0x22/B2",
+                "sense": "low"
+              },
+              "RWS": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "Corporal/0x22/B3",
+                "sense": "low"
+              }
             }
           }
         },
@@ -2176,9 +2371,24 @@
           },
           "relations": {
             "bindings": {
-              "M": "Corporal/0x22/B6",
-              "N": "Corporal/0x22/B7",
-              "R": "Corporal/0x22/B8"
+              "M": {
+                "direction": "output",
+                "pinNumber": 14,
+                "route": "Corporal/0x22/B6",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 15,
+                "route": "Corporal/0x22/B7",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 16,
+                "route": "Corporal/0x22/B8",
+                "sense": "low"
+              }
             }
           }
         },
@@ -2192,7 +2402,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "Corporal/0x22/A4"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 4,
+                "route": "Corporal/0x22/A4",
+                "sense": "low"
+              }
             }
           }
         },
@@ -2206,7 +2421,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "Corporal/0x22/B5"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 13,
+                "route": "Corporal/0x22/B5",
+                "sense": "low"
+              }
             }
           }
         },
@@ -2221,7 +2441,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Corporal/0x22/A1"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Corporal/0x22/A1",
+                "sense": "low"
+              }
             }
           }
         },
@@ -2237,9 +2462,24 @@
           },
           "relations": {
             "bindings": {
-              "WLK": "Corporal/0x21/A1",
-              "WLQ": "Corporal/0x21/A3",
-              "WLQK": "Corporal/0x21/A2"
+              "WLK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Corporal/0x21/A1",
+                "sense": "high"
+              },
+              "WLQ": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "Corporal/0x21/A3",
+                "sense": "low"
+              },
+              "WLQK": {
+                "direction": "output",
+                "pinNumber": 2,
+                "route": "Corporal/0x21/A2",
+                "sense": "low"
+              }
             }
           }
         },
@@ -2254,10 +2494,30 @@
           },
           "relations": {
             "bindings": {
-              "NWK": "Corporal/0x21/A4",
-              "NWS": "Corporal/0x21/A7",
-              "RWK": "Corporal/0x21/A5",
-              "RWS": "Corporal/0x21/A6"
+              "NWK": {
+                "direction": "output",
+                "pinNumber": 4,
+                "route": "Corporal/0x21/A4",
+                "sense": "low"
+              },
+              "NWS": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "Corporal/0x21/A7",
+                "sense": "low"
+              },
+              "RWK": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "Corporal/0x21/A5",
+                "sense": "low"
+              },
+              "RWS": {
+                "direction": "input",
+                "pinNumber": 6,
+                "route": "Corporal/0x21/A6",
+                "sense": "low"
+              }
             }
           }
         },
@@ -2272,10 +2532,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Corporal/0x21/B1",
-              "N": "Corporal/0x21/B2",
-              "OCC": "Corporal/0x21/B4",
-              "R": "Corporal/0x21/B3"
+              "M": {
+                "direction": "output",
+                "pinNumber": 9,
+                "route": "Corporal/0x21/B1",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 10,
+                "route": "Corporal/0x21/B2",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 12,
+                "route": "Corporal/0x21/B4",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "Corporal/0x21/B3",
+                "sense": "low"
+              }
             }
           }
         },
@@ -2308,10 +2588,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Corporal/0x21/B5",
-              "N": "Corporal/0x21/B6",
-              "OCC": "Corporal/0x21/B8",
-              "R": "Corporal/0x21/B7"
+              "M": {
+                "direction": "output",
+                "pinNumber": 13,
+                "route": "Corporal/0x21/B5",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 14,
+                "route": "Corporal/0x21/B6",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 16,
+                "route": "Corporal/0x21/B8",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 15,
+                "route": "Corporal/0x21/B7",
+                "sense": "low"
+              }
             }
           }
         },
@@ -2362,7 +2662,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Corporal/0x22/A2"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 2,
+                "route": "Corporal/0x22/A2",
+                "sense": "low"
+              }
             }
           }
         },
@@ -2377,7 +2682,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Corporal/0x21/A8"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "Corporal/0x21/A8",
+                "sense": "low"
+              }
             }
           }
         },
@@ -2392,7 +2702,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Corporal/0x22/A3"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "Corporal/0x22/A3",
+                "sense": "low"
+              }
             }
           }
         }
@@ -3610,7 +3925,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "CMRInet/30/IB.11/D"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "CMRInet/30/IB.11/D",
+                "sense": "low"
+              }
             }
           }
         },
@@ -3625,7 +3945,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "CMRInet/30/IB.10/D"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "CMRInet/30/IB.10/D",
+                "sense": "low"
+              }
             }
           }
         },
@@ -3640,7 +3965,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "CMRInet/30/IB.12/D"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "CMRInet/30/IB.12/D",
+                "sense": "low"
+              }
             }
           }
         },
@@ -3655,7 +3985,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "CMRInet/30/IB.13/D"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "CMRInet/30/IB.13/D",
+                "sense": "low"
+              }
             }
           }
         },
@@ -3670,7 +4005,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "CMRInet/30/IB.14/D"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "CMRInet/30/IB.14/D",
+                "sense": "low"
+              }
             }
           }
         },
@@ -3685,10 +4025,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "CMRInet/30/OB.1/D",
-              "N": "CMRInet/30/IB.1/D",
-              "OCC": "CMRInet/30/IB.3/D",
-              "R": "CMRInet/30/IB.2/D"
+              "M": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "CMRInet/30/OB.1/D",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "CMRInet/30/IB.1/D",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "CMRInet/30/IB.3/D",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "CMRInet/30/IB.2/D",
+                "sense": "low"
+              }
             }
           }
         },
@@ -3703,10 +4063,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "CMRInet/30/OB.2/D",
-              "N": "CMRInet/30/IB.4/D",
-              "OCC": "CMRInet/30/IB.6/D",
-              "R": "CMRInet/30/IB.5/D"
+              "M": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "CMRInet/30/OB.2/D",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "CMRInet/30/IB.4/D",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "CMRInet/30/IB.6/D",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "CMRInet/30/IB.5/D",
+                "sense": "low"
+              }
             }
           }
         },
@@ -3766,10 +4146,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "CMRInet/30/OB.3/D",
-              "N": "CMRInet/30/IB.7/D",
-              "OCC": "CMRInet/30/IB.9/D",
-              "R": "CMRInet/30/IB.8/D"
+              "M": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "CMRInet/30/OB.3/D",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "CMRInet/30/IB.7/D",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "CMRInet/30/IB.9/D",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "CMRInet/30/IB.8/D",
+                "sense": "low"
+              }
             }
           }
         }
@@ -5007,7 +5407,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "Gilroy/LIGHT.1MC.LAMP/ON"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Gilroy/LIGHT.1MC.LAMP/ON",
+                "sense": "low"
+              }
             }
           }
         },
@@ -5021,7 +5426,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Gilroy/SENSOR.1NAT.OCC/S"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.1NAT.OCC/S",
+                "sense": "low"
+              }
             }
           }
         },
@@ -5035,7 +5445,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Gilroy/SENSOR.01T.OCC/S"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.01T.OCC/S",
+                "sense": "low"
+              }
             }
           }
         },
@@ -5049,7 +5464,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "Gilroy/LIGHT.2MC.LAMP/ON"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Gilroy/LIGHT.2MC.LAMP/ON",
+                "sense": "low"
+              }
             }
           }
         },
@@ -5063,7 +5483,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Gilroy/SENSOR.02T.OCC/S"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.02T.OCC/S",
+                "sense": "low"
+              }
             }
           }
         },
@@ -5079,9 +5504,24 @@
           },
           "relations": {
             "bindings": {
-              "WLK": "Gilroy/SENSOR.777.WLK/S",
-              "WLQ": "Gilroy/SENSOR.777.WLQ/S",
-              "WLQK": "Gilroy/SENSOR.777.WLQK/S"
+              "WLK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.777.WLK/S",
+                "sense": "high"
+              },
+              "WLQ": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.777.WLQ/S",
+                "sense": "low"
+              },
+              "WLQK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.777.WLQK/S",
+                "sense": "low"
+              }
             }
           }
         },
@@ -5096,10 +5536,30 @@
           },
           "relations": {
             "bindings": {
-              "NWK": "Gilroy/SENSOR.777.NWK/S",
-              "NWS": "Gilroy/SENSOR.777.NWS/S",
-              "RWK": "Gilroy/SENSOR.777.RWK/S",
-              "RWS": "Gilroy/SENSOR.777.RWS/S"
+              "NWK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.777.NWK/S",
+                "sense": "low"
+              },
+              "NWS": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.777.NWS/S",
+                "sense": "low"
+              },
+              "RWK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.777.RWK/S",
+                "sense": "low"
+              },
+              "RWS": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.777.RWS/S",
+                "sense": "low"
+              }
             }
           }
         },
@@ -5114,10 +5574,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Gilroy/TURNOUT.777/M",
-              "N": "Gilroy/TURNOUT.777/N",
-              "OCC": "Gilroy/SENSOR.777.OCC/S",
-              "R": "Gilroy/TURNOUT.777/R"
+              "M": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Gilroy/TURNOUT.777/M",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Gilroy/TURNOUT.777/N",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.777.OCC/S",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 2,
+                "route": "Gilroy/TURNOUT.777/R",
+                "sense": "low"
+              }
             }
           }
         },
@@ -5131,8 +5611,16 @@
           },
           "relations": {
             "bindings": {
-              "A": "Gilroy/SIGNALMAST.778NAB/IND",
-              "B": "Gilroy/SIGNALMAST.778NAB/IND"
+              "A": {
+                "pinNumber": 1,
+                "route": "Gilroy/SIGNALMAST.778NAB/IND",
+                "sense": "high"
+              },
+              "B": {
+                "pinNumber": 1,
+                "route": "Gilroy/SIGNALMAST.778NAB/IND",
+                "sense": "high"
+              }
             }
           }
         },
@@ -5155,7 +5643,11 @@
           },
           "relations": {
             "bindings": {
-              "A": "Gilroy/SIGNALMAST.778NC/IND"
+              "A": {
+                "pinNumber": 1,
+                "route": "Gilroy/SIGNALMAST.778NC/IND",
+                "sense": "high"
+              }
             }
           }
         },
@@ -5178,8 +5670,16 @@
           },
           "relations": {
             "bindings": {
-              "A": "Gilroy/SIGNALMAST.778SAB/IND",
-              "B": "Gilroy/SIGNALMAST.778SAB/IND"
+              "A": {
+                "pinNumber": 1,
+                "route": "Gilroy/SIGNALMAST.778SAB/IND",
+                "sense": "high"
+              },
+              "B": {
+                "pinNumber": 1,
+                "route": "Gilroy/SIGNALMAST.778SAB/IND",
+                "sense": "high"
+              }
             }
           }
         },
@@ -5202,7 +5702,11 @@
           },
           "relations": {
             "bindings": {
-              "A": "Gilroy/SIGNALMAST.778SC/IND"
+              "A": {
+                "pinNumber": 1,
+                "route": "Gilroy/SIGNALMAST.778SC/IND",
+                "sense": "high"
+              }
             }
           }
         },
@@ -5227,9 +5731,24 @@
           },
           "relations": {
             "bindings": {
-              "WLK": "Gilroy/SENSOR.781.WLK/S",
-              "WLQ": "Gilroy/SENSOR.781.WLQ/S",
-              "WLQK": "Gilroy/SENSOR.781.WLQK/S"
+              "WLK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.781.WLK/S",
+                "sense": "high"
+              },
+              "WLQ": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.781.WLQ/S",
+                "sense": "low"
+              },
+              "WLQK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.781.WLQK/S",
+                "sense": "low"
+              }
             }
           }
         },
@@ -5244,10 +5763,30 @@
           },
           "relations": {
             "bindings": {
-              "NWK": "Gilroy/SENSOR.781.NWK/S",
-              "NWS": "Gilroy/SENSOR.781.NWS/S",
-              "RWK": "Gilroy/SENSOR.781.RWK/S",
-              "RWS": "Gilroy/SENSOR.781.RWS/S"
+              "NWK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.781.NWK/S",
+                "sense": "low"
+              },
+              "NWS": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.781.NWS/S",
+                "sense": "low"
+              },
+              "RWK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.781.RWK/S",
+                "sense": "low"
+              },
+              "RWS": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.781.RWS/S",
+                "sense": "low"
+              }
             }
           }
         },
@@ -5262,10 +5801,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Gilroy/TURNOUT.781/M",
-              "N": "Gilroy/TURNOUT.781/N",
-              "OCC": "Gilroy/SENSOR.781.OCC/S",
-              "R": "Gilroy/TURNOUT.781/R"
+              "M": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Gilroy/TURNOUT.781/M",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Gilroy/TURNOUT.781/N",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.781.OCC/S",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 2,
+                "route": "Gilroy/TURNOUT.781/R",
+                "sense": "low"
+              }
             }
           }
         },
@@ -5279,7 +5838,12 @@
           },
           "relations": {
             "bindings": {
-              "APP": "Gilroy/SIGNALMAST.Gilroy.E/IND"
+              "APP": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Gilroy/SIGNALMAST.Gilroy.E/IND",
+                "sense": "high"
+              }
             },
             "face": "E",
             "mast": "Gilroy:Gilroy"
@@ -5295,7 +5859,12 @@
           },
           "relations": {
             "bindings": {
-              "APP": "Gilroy/SIGNALMAST.Gilroy.W/IND"
+              "APP": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Gilroy/SIGNALMAST.Gilroy.W/IND",
+                "sense": "high"
+              }
             },
             "face": "W",
             "mast": "Gilroy:Gilroy"
@@ -5311,8 +5880,18 @@
           },
           "relations": {
             "bindings": {
-              "SLOW": "Gilroy/SENSOR.Gilroy.E.SLOW/S",
-              "STOP": "Gilroy/SENSOR.Gilroy.E.STOP/S"
+              "SLOW": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.Gilroy.E.SLOW/S",
+                "sense": "low"
+              },
+              "STOP": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.Gilroy.E.STOP/S",
+                "sense": "low"
+              }
             },
             "face": "E",
             "mast": "Gilroy:Gilroy"
@@ -5328,8 +5907,18 @@
           },
           "relations": {
             "bindings": {
-              "SLOW": "Gilroy/SENSOR.Gilroy.W.SLOW/S",
-              "STOP": "Gilroy/SENSOR.Gilroy.W.STOP/S"
+              "SLOW": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.Gilroy.W.SLOW/S",
+                "sense": "low"
+              },
+              "STOP": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Gilroy/SENSOR.Gilroy.W.STOP/S",
+                "sense": "low"
+              }
             },
             "face": "W",
             "mast": "Gilroy:Gilroy"
@@ -6312,7 +6901,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "Luchessa/D2/D"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Luchessa/D2/D",
+                "sense": "low"
+              }
             }
           }
         },
@@ -6327,7 +6921,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Luchessa/0x22/A7"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "Luchessa/0x22/A7",
+                "sense": "low"
+              }
             }
           }
         },
@@ -6342,7 +6941,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Luchessa/0x22/A5"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 5,
+                "route": "Luchessa/0x22/A5",
+                "sense": "low"
+              }
             }
           }
         },
@@ -6357,7 +6961,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Luchessa/0x22/A8"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "Luchessa/0x22/A8",
+                "sense": "low"
+              }
             }
           }
         },
@@ -6372,7 +6981,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Luchessa/0x22/A6"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 6,
+                "route": "Luchessa/0x22/A6",
+                "sense": "low"
+              }
             }
           }
         },
@@ -6387,7 +7001,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Luchessa/0x22/B1"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 9,
+                "route": "Luchessa/0x22/B1",
+                "sense": "low"
+              }
             }
           }
         },
@@ -6402,10 +7021,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Luchessa/0x21/A1",
-              "N": "Luchessa/0x21/A2",
-              "OCC": "Luchessa/0x21/A4",
-              "R": "Luchessa/0x21/A3"
+              "M": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Luchessa/0x21/A1",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 2,
+                "route": "Luchessa/0x21/A2",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 4,
+                "route": "Luchessa/0x21/A4",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "Luchessa/0x21/A3",
+                "sense": "low"
+              }
             }
           }
         },
@@ -6466,9 +7105,24 @@
           },
           "relations": {
             "bindings": {
-              "WLK": "Luchessa/0x21/A5",
-              "WLQ": "Luchessa/0x21/A7",
-              "WLQK": "Luchessa/0x21/A6"
+              "WLK": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "Luchessa/0x21/A5",
+                "sense": "high"
+              },
+              "WLQ": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "Luchessa/0x21/A7",
+                "sense": "low"
+              },
+              "WLQK": {
+                "direction": "output",
+                "pinNumber": 6,
+                "route": "Luchessa/0x21/A6",
+                "sense": "low"
+              }
             }
           }
         },
@@ -6483,10 +7137,30 @@
           },
           "relations": {
             "bindings": {
-              "NWK": "Luchessa/0x21/A8",
-              "NWS": "Luchessa/0x21/B3",
-              "RWK": "Luchessa/0x21/B1",
-              "RWS": "Luchessa/0x21/B2"
+              "NWK": {
+                "direction": "output",
+                "pinNumber": 8,
+                "route": "Luchessa/0x21/A8",
+                "sense": "low"
+              },
+              "NWS": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "Luchessa/0x21/B3",
+                "sense": "low"
+              },
+              "RWK": {
+                "direction": "output",
+                "pinNumber": 9,
+                "route": "Luchessa/0x21/B1",
+                "sense": "low"
+              },
+              "RWS": {
+                "direction": "input",
+                "pinNumber": 10,
+                "route": "Luchessa/0x21/B2",
+                "sense": "low"
+              }
             }
           }
         },
@@ -6501,10 +7175,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Luchessa/0x21/B4",
-              "N": "Luchessa/0x21/B5",
-              "OCC": "Luchessa/0x21/B7",
-              "R": "Luchessa/0x21/B6"
+              "M": {
+                "direction": "output",
+                "pinNumber": 12,
+                "route": "Luchessa/0x21/B4",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 13,
+                "route": "Luchessa/0x21/B5",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 15,
+                "route": "Luchessa/0x21/B7",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 14,
+                "route": "Luchessa/0x21/B6",
+                "sense": "low"
+              }
             }
           }
         },
@@ -6519,10 +7213,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Luchessa/0x22/A1",
-              "N": "Luchessa/0x22/A2",
-              "OCC": "Luchessa/0x22/A4",
-              "R": "Luchessa/0x22/A3"
+              "M": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Luchessa/0x22/A1",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 2,
+                "route": "Luchessa/0x22/A2",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 4,
+                "route": "Luchessa/0x22/A4",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "Luchessa/0x22/A3",
+                "sense": "low"
+              }
             }
           }
         }
@@ -7773,10 +8487,30 @@
           },
           "relations": {
             "bindings": {
-              "NWK": "Sargent/0x21/A5",
-              "NWS": "Sargent/0x21/A8",
-              "RWK": "Sargent/0x21/A6",
-              "RWS": "Sargent/0x21/A7"
+              "NWK": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "Sargent/0x21/A5",
+                "sense": "low"
+              },
+              "NWS": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "Sargent/0x21/A8",
+                "sense": "low"
+              },
+              "RWK": {
+                "direction": "output",
+                "pinNumber": 6,
+                "route": "Sargent/0x21/A6",
+                "sense": "low"
+              },
+              "RWS": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "Sargent/0x21/A7",
+                "sense": "low"
+              }
             }
           }
         },
@@ -7791,9 +8525,24 @@
           },
           "relations": {
             "bindings": {
-              "M": "Sargent/0x27/A1",
-              "N": "Sargent/0x20/B4",
-              "R": "Sargent/0x20/B5"
+              "M": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Sargent/0x27/A1",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 12,
+                "route": "Sargent/0x20/B4",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 13,
+                "route": "Sargent/0x20/B5",
+                "sense": "low"
+              }
             }
           }
         },
@@ -7808,7 +8557,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "Sargent/D2/D"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Sargent/D2/D",
+                "sense": "low"
+              }
             }
           }
         },
@@ -7823,7 +8577,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Sargent/0x21/A1"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Sargent/0x21/A1",
+                "sense": "low"
+              }
             }
           }
         },
@@ -7837,7 +8596,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "Sargent/0x21/A4"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 4,
+                "route": "Sargent/0x21/A4",
+                "sense": "low"
+              }
             }
           }
         },
@@ -7852,7 +8616,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Sargent/0x21/A3"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "Sargent/0x21/A3",
+                "sense": "low"
+              }
             }
           }
         },
@@ -7886,9 +8655,24 @@
           },
           "relations": {
             "bindings": {
-              "WLK": "Sargent/0x20/A1",
-              "WLQ": "Sargent/0x20/A3",
-              "WLQK": "Sargent/0x20/A2"
+              "WLK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Sargent/0x20/A1",
+                "sense": "high"
+              },
+              "WLQ": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "Sargent/0x20/A3",
+                "sense": "low"
+              },
+              "WLQK": {
+                "direction": "output",
+                "pinNumber": 2,
+                "route": "Sargent/0x20/A2",
+                "sense": "low"
+              }
             }
           }
         },
@@ -7903,10 +8687,30 @@
           },
           "relations": {
             "bindings": {
-              "NWK": "Sargent/0x20/A4",
-              "NWS": "Sargent/0x20/A7",
-              "RWK": "Sargent/0x20/A5",
-              "RWS": "Sargent/0x20/A6"
+              "NWK": {
+                "direction": "output",
+                "pinNumber": 4,
+                "route": "Sargent/0x20/A4",
+                "sense": "low"
+              },
+              "NWS": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "Sargent/0x20/A7",
+                "sense": "low"
+              },
+              "RWK": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "Sargent/0x20/A5",
+                "sense": "low"
+              },
+              "RWS": {
+                "direction": "input",
+                "pinNumber": 6,
+                "route": "Sargent/0x20/A6",
+                "sense": "low"
+              }
             }
           }
         },
@@ -7921,10 +8725,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Sargent/0x20/A8",
-              "N": "Sargent/0x20/B1",
-              "OCC": "Sargent/0x20/B3",
-              "R": "Sargent/0x20/B2"
+              "M": {
+                "direction": "output",
+                "pinNumber": 8,
+                "route": "Sargent/0x20/A8",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 9,
+                "route": "Sargent/0x20/B1",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "Sargent/0x20/B3",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 10,
+                "route": "Sargent/0x20/B2",
+                "sense": "low"
+              }
             }
           }
         },
@@ -7966,7 +8790,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Sargent/0x21/A2"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 2,
+                "route": "Sargent/0x21/A2",
+                "sense": "low"
+              }
             }
           }
         },
@@ -7980,7 +8809,12 @@
           },
           "relations": {
             "bindings": {
-              "IN": "Sargent/D3/D"
+              "IN": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Sargent/D3/D",
+                "sense": "low"
+              }
             }
           }
         }
@@ -10092,7 +10926,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x24/A4"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 4,
+                "route": "Watsonville/0x24/A4",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10107,7 +10946,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x24/A5"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 5,
+                "route": "Watsonville/0x24/A5",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10122,7 +10966,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x24/A6"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 6,
+                "route": "Watsonville/0x24/A6",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10137,7 +10986,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x24/A7"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "Watsonville/0x24/A7",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10152,7 +11006,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x24/A1"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Watsonville/0x24/A1",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10167,7 +11026,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x24/A8"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "Watsonville/0x24/A8",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10182,7 +11046,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x25/A1"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 1,
+                "route": "Watsonville/0x25/A1",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10197,7 +11066,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x25/A2"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 2,
+                "route": "Watsonville/0x25/A2",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10212,7 +11086,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x25/A3"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "Watsonville/0x25/A3",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10227,7 +11106,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x25/A4"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 4,
+                "route": "Watsonville/0x25/A4",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10242,7 +11126,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x24/A2"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 2,
+                "route": "Watsonville/0x24/A2",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10257,10 +11146,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Watsonville/0x26/B5",
-              "N": "Watsonville/0x26/B6",
-              "OCC": "Watsonville/0x26/B8",
-              "R": "Watsonville/0x26/B7"
+              "M": {
+                "direction": "output",
+                "pinNumber": 13,
+                "route": "Watsonville/0x26/B5",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 14,
+                "route": "Watsonville/0x26/B6",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 16,
+                "route": "Watsonville/0x26/B8",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 15,
+                "route": "Watsonville/0x26/B7",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10275,7 +11184,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x25/A5"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 5,
+                "route": "Watsonville/0x25/A5",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10290,7 +11204,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x25/A6"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 6,
+                "route": "Watsonville/0x25/A6",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10305,7 +11224,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x25/A7"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "Watsonville/0x25/A7",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10320,7 +11244,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x25/A8"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "Watsonville/0x25/A8",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10335,7 +11264,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x24/A3"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "Watsonville/0x24/A3",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10350,7 +11284,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x25/B1"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 9,
+                "route": "Watsonville/0x25/B1",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10365,7 +11304,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x25/B2"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 10,
+                "route": "Watsonville/0x25/B2",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10380,7 +11324,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x25/B3"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "Watsonville/0x25/B3",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10395,7 +11344,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x25/B4"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 12,
+                "route": "Watsonville/0x25/B4",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10410,10 +11364,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Watsonville/0x21/A1",
-              "N": "Watsonville/0x21/A2",
-              "OCC": "Watsonville/0x21/A4",
-              "R": "Watsonville/0x21/A3"
+              "M": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Watsonville/0x21/A1",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 2,
+                "route": "Watsonville/0x21/A2",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 4,
+                "route": "Watsonville/0x21/A4",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "Watsonville/0x21/A3",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10428,7 +11402,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x25/B5"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 13,
+                "route": "Watsonville/0x25/B5",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10443,7 +11422,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x25/B6"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 14,
+                "route": "Watsonville/0x25/B6",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10458,7 +11442,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x25/B7"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 15,
+                "route": "Watsonville/0x25/B7",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10473,7 +11462,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x25/B8"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 16,
+                "route": "Watsonville/0x25/B8",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10488,7 +11482,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x24/B1"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 9,
+                "route": "Watsonville/0x24/B1",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10503,7 +11502,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x24/B2"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 10,
+                "route": "Watsonville/0x24/B2",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10518,7 +11522,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x24/B3"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "Watsonville/0x24/B3",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10533,7 +11542,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x24/B4"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 12,
+                "route": "Watsonville/0x24/B4",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10548,10 +11562,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Watsonville/0x21/A5",
-              "N": "Watsonville/0x21/A6",
-              "OCC": "Watsonville/0x21/A8",
-              "R": "Watsonville/0x21/A7"
+              "M": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "Watsonville/0x21/A5",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 6,
+                "route": "Watsonville/0x21/A6",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "Watsonville/0x21/A8",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "Watsonville/0x21/A7",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10566,7 +11600,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x24/B5"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 13,
+                "route": "Watsonville/0x24/B5",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10581,7 +11620,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x24/B6"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 14,
+                "route": "Watsonville/0x24/B6",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10596,7 +11640,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x24/B7"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 15,
+                "route": "Watsonville/0x24/B7",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10611,7 +11660,12 @@
           },
           "relations": {
             "bindings": {
-              "OCC": "Watsonville/0x24/B8"
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 16,
+                "route": "Watsonville/0x24/B8",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10626,10 +11680,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Watsonville/0x21/B1",
-              "N": "Watsonville/0x21/B2",
-              "OCC": "Watsonville/0x21/B4",
-              "R": "Watsonville/0x21/B3"
+              "M": {
+                "direction": "output",
+                "pinNumber": 9,
+                "route": "Watsonville/0x21/B1",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 10,
+                "route": "Watsonville/0x21/B2",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 12,
+                "route": "Watsonville/0x21/B4",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "Watsonville/0x21/B3",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10644,10 +11718,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Watsonville/0x21/B5",
-              "N": "Watsonville/0x21/B6",
-              "OCC": "Watsonville/0x21/B8",
-              "R": "Watsonville/0x21/B7"
+              "M": {
+                "direction": "output",
+                "pinNumber": 13,
+                "route": "Watsonville/0x21/B5",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 14,
+                "route": "Watsonville/0x21/B6",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 16,
+                "route": "Watsonville/0x21/B8",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 15,
+                "route": "Watsonville/0x21/B7",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10662,10 +11756,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Watsonville/0x22/A1",
-              "N": "Watsonville/0x22/A2",
-              "OCC": "Watsonville/0x22/A4",
-              "R": "Watsonville/0x22/A3"
+              "M": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Watsonville/0x22/A1",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 2,
+                "route": "Watsonville/0x22/A2",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 4,
+                "route": "Watsonville/0x22/A4",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "Watsonville/0x22/A3",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10680,10 +11794,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Watsonville/0x22/A5",
-              "N": "Watsonville/0x22/A6",
-              "OCC": "Watsonville/0x22/A8",
-              "R": "Watsonville/0x22/A7"
+              "M": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "Watsonville/0x22/A5",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 6,
+                "route": "Watsonville/0x22/A6",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "Watsonville/0x22/A8",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "Watsonville/0x22/A7",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10698,10 +11832,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Watsonville/0x22/B1",
-              "N": "Watsonville/0x22/B2",
-              "OCC": "Watsonville/0x22/B4",
-              "R": "Watsonville/0x22/B3"
+              "M": {
+                "direction": "output",
+                "pinNumber": 9,
+                "route": "Watsonville/0x22/B1",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 10,
+                "route": "Watsonville/0x22/B2",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 12,
+                "route": "Watsonville/0x22/B4",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "Watsonville/0x22/B3",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10716,10 +11870,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Watsonville/0x22/B5",
-              "N": "Watsonville/0x22/B6",
-              "OCC": "Watsonville/0x22/B8",
-              "R": "Watsonville/0x22/B7"
+              "M": {
+                "direction": "output",
+                "pinNumber": 13,
+                "route": "Watsonville/0x22/B5",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 14,
+                "route": "Watsonville/0x22/B6",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 16,
+                "route": "Watsonville/0x22/B8",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 15,
+                "route": "Watsonville/0x22/B7",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10734,10 +11908,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Watsonville/0x23/A1",
-              "N": "Watsonville/0x23/A2",
-              "OCC": "Watsonville/0x23/A4",
-              "R": "Watsonville/0x23/A3"
+              "M": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "Watsonville/0x23/A1",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 2,
+                "route": "Watsonville/0x23/A2",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 4,
+                "route": "Watsonville/0x23/A4",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "Watsonville/0x23/A3",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10752,10 +11946,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Watsonville/0x23/A5",
-              "N": "Watsonville/0x23/A6",
-              "OCC": "Watsonville/0x23/A8",
-              "R": "Watsonville/0x23/A7"
+              "M": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "Watsonville/0x23/A5",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 6,
+                "route": "Watsonville/0x23/A6",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "Watsonville/0x23/A8",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "Watsonville/0x23/A7",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10770,10 +11984,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Watsonville/0x23/B1",
-              "N": "Watsonville/0x23/B2",
-              "OCC": "Watsonville/0x23/B4",
-              "R": "Watsonville/0x23/B3"
+              "M": {
+                "direction": "output",
+                "pinNumber": 9,
+                "route": "Watsonville/0x23/B1",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 10,
+                "route": "Watsonville/0x23/B2",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 12,
+                "route": "Watsonville/0x23/B4",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "Watsonville/0x23/B3",
+                "sense": "low"
+              }
             }
           }
         },
@@ -10788,10 +12022,30 @@
           },
           "relations": {
             "bindings": {
-              "M": "Watsonville/0x23/B5",
-              "N": "Watsonville/0x23/B6",
-              "OCC": "Watsonville/0x23/B8",
-              "R": "Watsonville/0x23/B7"
+              "M": {
+                "direction": "output",
+                "pinNumber": 13,
+                "route": "Watsonville/0x23/B5",
+                "sense": "high"
+              },
+              "N": {
+                "direction": "input",
+                "pinNumber": 14,
+                "route": "Watsonville/0x23/B6",
+                "sense": "low"
+              },
+              "OCC": {
+                "direction": "input",
+                "pinNumber": 16,
+                "route": "Watsonville/0x23/B8",
+                "sense": "low"
+              },
+              "R": {
+                "direction": "input",
+                "pinNumber": 15,
+                "route": "Watsonville/0x23/B7",
+                "sense": "low"
+              }
             }
           }
         },
@@ -17506,8 +18760,18 @@
           },
           "relations": {
             "bindings": {
-              "BUTTON": "SouthCTC/0x51/BUTTON",
-              "VALUE": "SouthCTC/0x51/VALUE"
+              "BUTTON": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "SouthCTC/0x51/BUTTON",
+                "sense": "high"
+              },
+              "VALUE": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "SouthCTC/0x51/VALUE",
+                "sense": "high"
+              }
             },
             "interlocking": "Watsonville"
           }
@@ -17685,8 +18949,18 @@
           },
           "relations": {
             "bindings": {
-              "BUTTON": "SouthCTC/0x50/BUTTON",
-              "VALUE": "SouthCTC/0x50/VALUE"
+              "BUTTON": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "SouthCTC/0x50/BUTTON",
+                "sense": "high"
+              },
+              "VALUE": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "SouthCTC/0x50/VALUE",
+                "sense": "high"
+              }
             },
             "interlocking": "Watsonville"
           }
@@ -17710,8 +18984,18 @@
           },
           "relations": {
             "bindings": {
-              "MCK": "SouthCTC/0x27/B1",
-              "MCS": "SouthCTC/0x27/A3"
+              "MCK": {
+                "direction": "output",
+                "pinNumber": 9,
+                "route": "SouthCTC/0x27/B1",
+                "sense": "low"
+              },
+              "MCS": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "SouthCTC/0x27/A3",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:8"
           }
@@ -17735,8 +19019,18 @@
           },
           "relations": {
             "bindings": {
-              "MCK": "SouthCTC/0x29/B1",
-              "MCS": "SouthCTC/0x29/A3"
+              "MCK": {
+                "direction": "output",
+                "pinNumber": 9,
+                "route": "SouthCTC/0x29/B1",
+                "sense": "low"
+              },
+              "MCS": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "SouthCTC/0x29/A3",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:10"
           }
@@ -17763,10 +19057,30 @@
           },
           "relations": {
             "bindings": {
-              "UNUSED": "SouthCTC/0x27/A8",
-              "WLK": "SouthCTC/0x27/A1",
-              "WLQK": "SouthCTC/0x27/A2",
-              "WLS": "SouthCTC/0x27/A7"
+              "UNUSED": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "SouthCTC/0x27/A8",
+                "sense": "low"
+              },
+              "WLK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "SouthCTC/0x27/A1",
+                "sense": "low"
+              },
+              "WLQK": {
+                "direction": "output",
+                "pinNumber": 2,
+                "route": "SouthCTC/0x27/A2",
+                "sense": "low"
+              },
+              "WLS": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "SouthCTC/0x27/A7",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:8"
           }
@@ -17802,12 +19116,42 @@
           },
           "relations": {
             "bindings": {
-              "HS": "SouthCTC/0x27/B3",
-              "NGK": "SouthCTC/0x27/B6",
-              "NGS": "SouthCTC/0x27/B2",
-              "SGK": "SouthCTC/0x27/B7",
-              "SGS": "SouthCTC/0x27/B4",
-              "TEK": "SouthCTC/0x27/B8"
+              "HS": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "SouthCTC/0x27/B3",
+                "sense": "low"
+              },
+              "NGK": {
+                "direction": "output",
+                "pinNumber": 14,
+                "route": "SouthCTC/0x27/B6",
+                "sense": "low"
+              },
+              "NGS": {
+                "direction": "input",
+                "pinNumber": 10,
+                "route": "SouthCTC/0x27/B2",
+                "sense": "low"
+              },
+              "SGK": {
+                "direction": "output",
+                "pinNumber": 15,
+                "route": "SouthCTC/0x27/B7",
+                "sense": "low"
+              },
+              "SGS": {
+                "direction": "input",
+                "pinNumber": 12,
+                "route": "SouthCTC/0x27/B4",
+                "sense": "low"
+              },
+              "TEK": {
+                "direction": "output",
+                "pinNumber": 16,
+                "route": "SouthCTC/0x27/B8",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:8"
           }
@@ -17835,10 +19179,30 @@
           },
           "relations": {
             "bindings": {
-              "NWK": "SouthCTC/0x28/A1",
-              "NWS": "SouthCTC/0x28/A8",
-              "RWK": "SouthCTC/0x28/A2",
-              "RWS": "SouthCTC/0x28/A7"
+              "NWK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "SouthCTC/0x28/A1",
+                "sense": "low"
+              },
+              "NWS": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "SouthCTC/0x28/A8",
+                "sense": "low"
+              },
+              "RWK": {
+                "direction": "output",
+                "pinNumber": 2,
+                "route": "SouthCTC/0x28/A2",
+                "sense": "low"
+              },
+              "RWS": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "SouthCTC/0x28/A7",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:9"
           }
@@ -17874,12 +19238,42 @@
           },
           "relations": {
             "bindings": {
-              "HS": "SouthCTC/0x28/B3",
-              "NGK": "SouthCTC/0x28/B6",
-              "NGS": "SouthCTC/0x28/B2",
-              "SGK": "SouthCTC/0x28/B7",
-              "SGS": "SouthCTC/0x28/B4",
-              "TEK": "SouthCTC/0x28/B8"
+              "HS": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "SouthCTC/0x28/B3",
+                "sense": "low"
+              },
+              "NGK": {
+                "direction": "output",
+                "pinNumber": 14,
+                "route": "SouthCTC/0x28/B6",
+                "sense": "low"
+              },
+              "NGS": {
+                "direction": "input",
+                "pinNumber": 10,
+                "route": "SouthCTC/0x28/B2",
+                "sense": "low"
+              },
+              "SGK": {
+                "direction": "output",
+                "pinNumber": 15,
+                "route": "SouthCTC/0x28/B7",
+                "sense": "low"
+              },
+              "SGS": {
+                "direction": "input",
+                "pinNumber": 12,
+                "route": "SouthCTC/0x28/B4",
+                "sense": "low"
+              },
+              "TEK": {
+                "direction": "output",
+                "pinNumber": 16,
+                "route": "SouthCTC/0x28/B8",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:9"
           }
@@ -17906,10 +19300,30 @@
           },
           "relations": {
             "bindings": {
-              "UNUSED": "SouthCTC/0x29/A8",
-              "WLK": "SouthCTC/0x29/A1",
-              "WLQK": "SouthCTC/0x29/A2",
-              "WLS": "SouthCTC/0x29/A7"
+              "UNUSED": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "SouthCTC/0x29/A8",
+                "sense": "low"
+              },
+              "WLK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "SouthCTC/0x29/A1",
+                "sense": "low"
+              },
+              "WLQK": {
+                "direction": "output",
+                "pinNumber": 2,
+                "route": "SouthCTC/0x29/A2",
+                "sense": "low"
+              },
+              "WLS": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "SouthCTC/0x29/A7",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:10"
           }
@@ -17945,12 +19359,42 @@
           },
           "relations": {
             "bindings": {
-              "HS": "SouthCTC/0x29/B3",
-              "NGK": "SouthCTC/0x29/B6",
-              "NGS": "SouthCTC/0x29/B2",
-              "SGK": "SouthCTC/0x29/B7",
-              "SGS": "SouthCTC/0x29/B4",
-              "TEK": "SouthCTC/0x29/B8"
+              "HS": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "SouthCTC/0x29/B3",
+                "sense": "low"
+              },
+              "NGK": {
+                "direction": "output",
+                "pinNumber": 14,
+                "route": "SouthCTC/0x29/B6",
+                "sense": "low"
+              },
+              "NGS": {
+                "direction": "input",
+                "pinNumber": 10,
+                "route": "SouthCTC/0x29/B2",
+                "sense": "low"
+              },
+              "SGK": {
+                "direction": "output",
+                "pinNumber": 15,
+                "route": "SouthCTC/0x29/B7",
+                "sense": "low"
+              },
+              "SGS": {
+                "direction": "input",
+                "pinNumber": 12,
+                "route": "SouthCTC/0x29/B4",
+                "sense": "low"
+              },
+              "TEK": {
+                "direction": "output",
+                "pinNumber": 16,
+                "route": "SouthCTC/0x29/B8",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:10"
           }
@@ -17974,8 +19418,18 @@
           },
           "relations": {
             "bindings": {
-              "MCK": "SouthCTC/0x2A/B1",
-              "MCS": "SouthCTC/0x2A/A3"
+              "MCK": {
+                "direction": "output",
+                "pinNumber": 9,
+                "route": "SouthCTC/0x2A/B1",
+                "sense": "low"
+              },
+              "MCS": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "SouthCTC/0x2A/A3",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:11"
           }
@@ -18002,10 +19456,30 @@
           },
           "relations": {
             "bindings": {
-              "UNUSED": "SouthCTC/0x2A/A8",
-              "WLK": "SouthCTC/0x2A/A1",
-              "WLQK": "SouthCTC/0x2A/A2",
-              "WLS": "SouthCTC/0x2A/A7"
+              "UNUSED": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "SouthCTC/0x2A/A8",
+                "sense": "low"
+              },
+              "WLK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "SouthCTC/0x2A/A1",
+                "sense": "low"
+              },
+              "WLQK": {
+                "direction": "output",
+                "pinNumber": 2,
+                "route": "SouthCTC/0x2A/A2",
+                "sense": "low"
+              },
+              "WLS": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "SouthCTC/0x2A/A7",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:11"
           }
@@ -18041,12 +19515,42 @@
           },
           "relations": {
             "bindings": {
-              "HS": "SouthCTC/0x2A/B3",
-              "NGK": "SouthCTC/0x2A/B6",
-              "NGS": "SouthCTC/0x2A/B2",
-              "SGK": "SouthCTC/0x2A/B7",
-              "SGS": "SouthCTC/0x2A/B4",
-              "TEK": "SouthCTC/0x2A/B8"
+              "HS": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "SouthCTC/0x2A/B3",
+                "sense": "low"
+              },
+              "NGK": {
+                "direction": "output",
+                "pinNumber": 14,
+                "route": "SouthCTC/0x2A/B6",
+                "sense": "low"
+              },
+              "NGS": {
+                "direction": "input",
+                "pinNumber": 10,
+                "route": "SouthCTC/0x2A/B2",
+                "sense": "low"
+              },
+              "SGK": {
+                "direction": "output",
+                "pinNumber": 15,
+                "route": "SouthCTC/0x2A/B7",
+                "sense": "low"
+              },
+              "SGS": {
+                "direction": "input",
+                "pinNumber": 12,
+                "route": "SouthCTC/0x2A/B4",
+                "sense": "low"
+              },
+              "TEK": {
+                "direction": "output",
+                "pinNumber": 16,
+                "route": "SouthCTC/0x2A/B8",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:11"
           }
@@ -18074,10 +19578,30 @@
           },
           "relations": {
             "bindings": {
-              "NWK": "SouthCTC/0x2B/A1",
-              "NWS": "SouthCTC/0x2B/A8",
-              "RWK": "SouthCTC/0x2B/A2",
-              "RWS": "SouthCTC/0x2B/A7"
+              "NWK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "SouthCTC/0x2B/A1",
+                "sense": "low"
+              },
+              "NWS": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "SouthCTC/0x2B/A8",
+                "sense": "low"
+              },
+              "RWK": {
+                "direction": "output",
+                "pinNumber": 2,
+                "route": "SouthCTC/0x2B/A2",
+                "sense": "low"
+              },
+              "RWS": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "SouthCTC/0x2B/A7",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:12"
           }
@@ -18113,12 +19637,42 @@
           },
           "relations": {
             "bindings": {
-              "HS": "SouthCTC/0x2B/B3",
-              "NGK": "SouthCTC/0x2B/B6",
-              "NGS": "SouthCTC/0x2B/B2",
-              "SGK": "SouthCTC/0x2B/B7",
-              "SGS": "SouthCTC/0x2B/B4",
-              "TEK": "SouthCTC/0x2B/B8"
+              "HS": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "SouthCTC/0x2B/B3",
+                "sense": "low"
+              },
+              "NGK": {
+                "direction": "output",
+                "pinNumber": 14,
+                "route": "SouthCTC/0x2B/B6",
+                "sense": "low"
+              },
+              "NGS": {
+                "direction": "input",
+                "pinNumber": 10,
+                "route": "SouthCTC/0x2B/B2",
+                "sense": "low"
+              },
+              "SGK": {
+                "direction": "output",
+                "pinNumber": 15,
+                "route": "SouthCTC/0x2B/B7",
+                "sense": "low"
+              },
+              "SGS": {
+                "direction": "input",
+                "pinNumber": 12,
+                "route": "SouthCTC/0x2B/B4",
+                "sense": "low"
+              },
+              "TEK": {
+                "direction": "output",
+                "pinNumber": 16,
+                "route": "SouthCTC/0x2B/B8",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:12"
           }
@@ -18146,10 +19700,30 @@
           },
           "relations": {
             "bindings": {
-              "NWK": "SouthCTC/0x2F/A1",
-              "NWS": "SouthCTC/0x2F/A8",
-              "RWK": "SouthCTC/0x2F/A2",
-              "RWS": "SouthCTC/0x2F/A7"
+              "NWK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "SouthCTC/0x2F/A1",
+                "sense": "low"
+              },
+              "NWS": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "SouthCTC/0x2F/A8",
+                "sense": "low"
+              },
+              "RWK": {
+                "direction": "output",
+                "pinNumber": 2,
+                "route": "SouthCTC/0x2F/A2",
+                "sense": "low"
+              },
+              "RWS": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "SouthCTC/0x2F/A7",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:0"
           }
@@ -18177,10 +19751,30 @@
           },
           "relations": {
             "bindings": {
-              "NWK": "SouthCTC/0x20/A1",
-              "NWS": "SouthCTC/0x20/A8",
-              "RWK": "SouthCTC/0x20/A2",
-              "RWS": "SouthCTC/0x20/A7"
+              "NWK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "SouthCTC/0x20/A1",
+                "sense": "low"
+              },
+              "NWS": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "SouthCTC/0x20/A8",
+                "sense": "low"
+              },
+              "RWK": {
+                "direction": "output",
+                "pinNumber": 2,
+                "route": "SouthCTC/0x20/A2",
+                "sense": "low"
+              },
+              "RWS": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "SouthCTC/0x20/A7",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:1"
           }
@@ -18219,12 +19813,42 @@
           },
           "relations": {
             "bindings": {
-              "HS": "SouthCTC/0x20/B3",
-              "NGK": "SouthCTC/0x20/B6",
-              "NGS": "SouthCTC/0x20/B2",
-              "SGK": "SouthCTC/0x20/B7",
-              "SGS": "SouthCTC/0x20/B4",
-              "TEK": "SouthCTC/0x20/B8"
+              "HS": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "SouthCTC/0x20/B3",
+                "sense": "low"
+              },
+              "NGK": {
+                "direction": "output",
+                "pinNumber": 14,
+                "route": "SouthCTC/0x20/B6",
+                "sense": "low"
+              },
+              "NGS": {
+                "direction": "input",
+                "pinNumber": 10,
+                "route": "SouthCTC/0x20/B2",
+                "sense": "low"
+              },
+              "SGK": {
+                "direction": "output",
+                "pinNumber": 15,
+                "route": "SouthCTC/0x20/B7",
+                "sense": "low"
+              },
+              "SGS": {
+                "direction": "input",
+                "pinNumber": 12,
+                "route": "SouthCTC/0x20/B4",
+                "sense": "low"
+              },
+              "TEK": {
+                "direction": "output",
+                "pinNumber": 16,
+                "route": "SouthCTC/0x20/B8",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:1"
           }
@@ -18252,10 +19876,30 @@
           },
           "relations": {
             "bindings": {
-              "NWK": "SouthCTC/0x21/A1",
-              "NWS": "SouthCTC/0x21/A8",
-              "RWK": "SouthCTC/0x21/A2",
-              "RWS": "SouthCTC/0x21/A7"
+              "NWK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "SouthCTC/0x21/A1",
+                "sense": "low"
+              },
+              "NWS": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "SouthCTC/0x21/A8",
+                "sense": "low"
+              },
+              "RWK": {
+                "direction": "output",
+                "pinNumber": 2,
+                "route": "SouthCTC/0x21/A2",
+                "sense": "low"
+              },
+              "RWS": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "SouthCTC/0x21/A7",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:2"
           }
@@ -18279,8 +19923,18 @@
           },
           "relations": {
             "bindings": {
-              "MCK": "SouthCTC/0x22/B1",
-              "MCS": "SouthCTC/0x22/A3"
+              "MCK": {
+                "direction": "output",
+                "pinNumber": 9,
+                "route": "SouthCTC/0x22/B1",
+                "sense": "low"
+              },
+              "MCS": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "SouthCTC/0x22/A3",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:3"
           }
@@ -18304,8 +19958,18 @@
           },
           "relations": {
             "bindings": {
-              "MCK": "SouthCTC/0x23/B1",
-              "MCS": "SouthCTC/0x23/A3"
+              "MCK": {
+                "direction": "output",
+                "pinNumber": 9,
+                "route": "SouthCTC/0x23/B1",
+                "sense": "low"
+              },
+              "MCS": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "SouthCTC/0x23/A3",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:4"
           }
@@ -18332,10 +19996,30 @@
           },
           "relations": {
             "bindings": {
-              "UNUSED": "SouthCTC/0x22/A8",
-              "WLK": "SouthCTC/0x22/A1",
-              "WLQK": "SouthCTC/0x22/A2",
-              "WLS": "SouthCTC/0x22/A7"
+              "UNUSED": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "SouthCTC/0x22/A8",
+                "sense": "low"
+              },
+              "WLK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "SouthCTC/0x22/A1",
+                "sense": "low"
+              },
+              "WLQK": {
+                "direction": "output",
+                "pinNumber": 2,
+                "route": "SouthCTC/0x22/A2",
+                "sense": "low"
+              },
+              "WLS": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "SouthCTC/0x22/A7",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:3"
           }
@@ -18362,10 +20046,30 @@
           },
           "relations": {
             "bindings": {
-              "UNUSED": "SouthCTC/0x23/A8",
-              "WLK": "SouthCTC/0x23/A1",
-              "WLQK": "SouthCTC/0x23/A2",
-              "WLS": "SouthCTC/0x23/A7"
+              "UNUSED": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "SouthCTC/0x23/A8",
+                "sense": "low"
+              },
+              "WLK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "SouthCTC/0x23/A1",
+                "sense": "low"
+              },
+              "WLQK": {
+                "direction": "output",
+                "pinNumber": 2,
+                "route": "SouthCTC/0x23/A2",
+                "sense": "low"
+              },
+              "WLS": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "SouthCTC/0x23/A7",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:4"
           }
@@ -18389,8 +20093,18 @@
           },
           "relations": {
             "bindings": {
-              "MCK": "SouthCTC/0x25/B1",
-              "MCS": "SouthCTC/0x25/A3"
+              "MCK": {
+                "direction": "output",
+                "pinNumber": 9,
+                "route": "SouthCTC/0x25/B1",
+                "sense": "low"
+              },
+              "MCS": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "SouthCTC/0x25/A3",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:6"
           }
@@ -18418,10 +20132,30 @@
           },
           "relations": {
             "bindings": {
-              "NWK": "SouthCTC/0x24/A1",
-              "NWS": "SouthCTC/0x24/A8",
-              "RWK": "SouthCTC/0x24/A2",
-              "RWS": "SouthCTC/0x24/A7"
+              "NWK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "SouthCTC/0x24/A1",
+                "sense": "low"
+              },
+              "NWS": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "SouthCTC/0x24/A8",
+                "sense": "low"
+              },
+              "RWK": {
+                "direction": "output",
+                "pinNumber": 2,
+                "route": "SouthCTC/0x24/A2",
+                "sense": "low"
+              },
+              "RWS": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "SouthCTC/0x24/A7",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:5"
           }
@@ -18460,12 +20194,42 @@
           },
           "relations": {
             "bindings": {
-              "HS": "SouthCTC/0x24/B3",
-              "NGK": "SouthCTC/0x24/B6",
-              "NGS": "SouthCTC/0x24/B2",
-              "SGK": "SouthCTC/0x24/B7",
-              "SGS": "SouthCTC/0x24/B4",
-              "TEK": "SouthCTC/0x24/B8"
+              "HS": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "SouthCTC/0x24/B3",
+                "sense": "low"
+              },
+              "NGK": {
+                "direction": "output",
+                "pinNumber": 14,
+                "route": "SouthCTC/0x24/B6",
+                "sense": "low"
+              },
+              "NGS": {
+                "direction": "input",
+                "pinNumber": 10,
+                "route": "SouthCTC/0x24/B2",
+                "sense": "low"
+              },
+              "SGK": {
+                "direction": "output",
+                "pinNumber": 15,
+                "route": "SouthCTC/0x24/B7",
+                "sense": "low"
+              },
+              "SGS": {
+                "direction": "input",
+                "pinNumber": 12,
+                "route": "SouthCTC/0x24/B4",
+                "sense": "low"
+              },
+              "TEK": {
+                "direction": "output",
+                "pinNumber": 16,
+                "route": "SouthCTC/0x24/B8",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:5"
           }
@@ -18492,10 +20256,30 @@
           },
           "relations": {
             "bindings": {
-              "UNUSED": "SouthCTC/0x25/A8",
-              "WLK": "SouthCTC/0x25/A1",
-              "WLQK": "SouthCTC/0x25/A2",
-              "WLS": "SouthCTC/0x25/A7"
+              "UNUSED": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "SouthCTC/0x25/A8",
+                "sense": "low"
+              },
+              "WLK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "SouthCTC/0x25/A1",
+                "sense": "low"
+              },
+              "WLQK": {
+                "direction": "output",
+                "pinNumber": 2,
+                "route": "SouthCTC/0x25/A2",
+                "sense": "low"
+              },
+              "WLS": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "SouthCTC/0x25/A7",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:6"
           }
@@ -18523,10 +20307,30 @@
           },
           "relations": {
             "bindings": {
-              "NWK": "SouthCTC/0x26/A1",
-              "NWS": "SouthCTC/0x26/A8",
-              "RWK": "SouthCTC/0x26/A2",
-              "RWS": "SouthCTC/0x26/A7"
+              "NWK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "SouthCTC/0x26/A1",
+                "sense": "low"
+              },
+              "NWS": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "SouthCTC/0x26/A8",
+                "sense": "low"
+              },
+              "RWK": {
+                "direction": "output",
+                "pinNumber": 2,
+                "route": "SouthCTC/0x26/A2",
+                "sense": "low"
+              },
+              "RWS": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "SouthCTC/0x26/A7",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:7"
           }
@@ -18550,8 +20354,18 @@
           },
           "relations": {
             "bindings": {
-              "MCK": "SouthCTC/0x2C/B1",
-              "MCS": "SouthCTC/0x2C/A3"
+              "MCK": {
+                "direction": "output",
+                "pinNumber": 9,
+                "route": "SouthCTC/0x2C/B1",
+                "sense": "low"
+              },
+              "MCS": {
+                "direction": "input",
+                "pinNumber": 3,
+                "route": "SouthCTC/0x2C/A3",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:13"
           }
@@ -18578,10 +20392,30 @@
           },
           "relations": {
             "bindings": {
-              "UNUSED": "SouthCTC/0x2C/A8",
-              "WLK": "SouthCTC/0x2C/A1",
-              "WLQK": "SouthCTC/0x2C/A2",
-              "WLS": "SouthCTC/0x2C/A7"
+              "UNUSED": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "SouthCTC/0x2C/A8",
+                "sense": "low"
+              },
+              "WLK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "SouthCTC/0x2C/A1",
+                "sense": "low"
+              },
+              "WLQK": {
+                "direction": "output",
+                "pinNumber": 2,
+                "route": "SouthCTC/0x2C/A2",
+                "sense": "low"
+              },
+              "WLS": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "SouthCTC/0x2C/A7",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:13"
           }
@@ -18618,12 +20452,42 @@
           },
           "relations": {
             "bindings": {
-              "HS": "SouthCTC/0x2C/B3",
-              "NGK": "SouthCTC/0x2C/B6",
-              "NGS": "SouthCTC/0x2C/B2",
-              "SGK": "SouthCTC/0x2C/B7",
-              "SGS": "SouthCTC/0x2C/B4",
-              "TEK": "SouthCTC/0x2C/B8"
+              "HS": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "SouthCTC/0x2C/B3",
+                "sense": "low"
+              },
+              "NGK": {
+                "direction": "output",
+                "pinNumber": 14,
+                "route": "SouthCTC/0x2C/B6",
+                "sense": "low"
+              },
+              "NGS": {
+                "direction": "input",
+                "pinNumber": 10,
+                "route": "SouthCTC/0x2C/B2",
+                "sense": "low"
+              },
+              "SGK": {
+                "direction": "output",
+                "pinNumber": 15,
+                "route": "SouthCTC/0x2C/B7",
+                "sense": "low"
+              },
+              "SGS": {
+                "direction": "input",
+                "pinNumber": 12,
+                "route": "SouthCTC/0x2C/B4",
+                "sense": "low"
+              },
+              "TEK": {
+                "direction": "output",
+                "pinNumber": 16,
+                "route": "SouthCTC/0x2C/B8",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:13"
           }
@@ -18651,10 +20515,30 @@
           },
           "relations": {
             "bindings": {
-              "NWK": "SouthCTC/0x2D/A1",
-              "NWS": "SouthCTC/0x2D/A8",
-              "RWK": "SouthCTC/0x2D/A2",
-              "RWS": "SouthCTC/0x2D/A7"
+              "NWK": {
+                "direction": "output",
+                "pinNumber": 1,
+                "route": "SouthCTC/0x2D/A1",
+                "sense": "low"
+              },
+              "NWS": {
+                "direction": "input",
+                "pinNumber": 8,
+                "route": "SouthCTC/0x2D/A8",
+                "sense": "low"
+              },
+              "RWK": {
+                "direction": "output",
+                "pinNumber": 2,
+                "route": "SouthCTC/0x2D/A2",
+                "sense": "low"
+              },
+              "RWS": {
+                "direction": "input",
+                "pinNumber": 7,
+                "route": "SouthCTC/0x2D/A7",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:14"
           }
@@ -18691,12 +20575,42 @@
           },
           "relations": {
             "bindings": {
-              "HS": "SouthCTC/0x2D/B3",
-              "NGK": "SouthCTC/0x2D/B6",
-              "NGS": "SouthCTC/0x2D/B2",
-              "SGK": "SouthCTC/0x2D/B7",
-              "SGS": "SouthCTC/0x2D/B4",
-              "TEK": "SouthCTC/0x2D/B8"
+              "HS": {
+                "direction": "input",
+                "pinNumber": 11,
+                "route": "SouthCTC/0x2D/B3",
+                "sense": "low"
+              },
+              "NGK": {
+                "direction": "output",
+                "pinNumber": 14,
+                "route": "SouthCTC/0x2D/B6",
+                "sense": "low"
+              },
+              "NGS": {
+                "direction": "input",
+                "pinNumber": 10,
+                "route": "SouthCTC/0x2D/B2",
+                "sense": "low"
+              },
+              "SGK": {
+                "direction": "output",
+                "pinNumber": 15,
+                "route": "SouthCTC/0x2D/B7",
+                "sense": "low"
+              },
+              "SGS": {
+                "direction": "input",
+                "pinNumber": 12,
+                "route": "SouthCTC/0x2D/B4",
+                "sense": "low"
+              },
+              "TEK": {
+                "direction": "output",
+                "pinNumber": 16,
+                "route": "SouthCTC/0x2D/B8",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:14"
           }
@@ -18717,7 +20631,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x29/A4"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 4,
+                "route": "SouthCTC/0x29/A4",
+                "sense": "low"
+              }
             },
             "interlocking": "Christopher"
           }
@@ -18738,7 +20657,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x2A/A6"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 6,
+                "route": "SouthCTC/0x2A/A6",
+                "sense": "low"
+              }
             },
             "interlocking": "Corporal"
           }
@@ -18759,7 +20683,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x29/A5"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "SouthCTC/0x29/A5",
+                "sense": "low"
+              }
             },
             "interlocking": "Christopher"
           }
@@ -18780,7 +20709,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x27/A5"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "SouthCTC/0x27/A5",
+                "sense": "low"
+              }
             },
             "interlocking": "Christopher"
           }
@@ -18801,7 +20735,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x28/A5"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "SouthCTC/0x28/A5",
+                "sense": "low"
+              }
             },
             "interlocking": "Christopher"
           }
@@ -18822,7 +20761,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x28/A4"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 4,
+                "route": "SouthCTC/0x28/A4",
+                "sense": "low"
+              }
             },
             "interlocking": "Christopher"
           }
@@ -18843,7 +20787,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x29/A6"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 6,
+                "route": "SouthCTC/0x29/A6",
+                "sense": "low"
+              }
             },
             "interlocking": "Christopher"
           }
@@ -18864,7 +20813,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x2A/A4"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 4,
+                "route": "SouthCTC/0x2A/A4",
+                "sense": "low"
+              }
             },
             "interlocking": "Corporal"
           }
@@ -18885,7 +20839,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x2A/A5"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "SouthCTC/0x2A/A5",
+                "sense": "low"
+              }
             },
             "interlocking": "Corporal"
           }
@@ -18906,7 +20865,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x22/A6"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 6,
+                "route": "SouthCTC/0x22/A6",
+                "sense": "low"
+              }
             },
             "interlocking": "Gilroy"
           }
@@ -18927,7 +20891,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x20/A5"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "SouthCTC/0x20/A5",
+                "sense": "low"
+              }
             },
             "interlocking": "GCaltrain"
           }
@@ -18948,7 +20917,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x21/A4"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 4,
+                "route": "SouthCTC/0x21/A4",
+                "sense": "low"
+              }
             },
             "interlocking": "GCaltrain"
           }
@@ -18969,7 +20943,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x21/A5"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "SouthCTC/0x21/A5",
+                "sense": "low"
+              }
             },
             "interlocking": "GCaltrain"
           }
@@ -18990,7 +20969,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x21/A6"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 6,
+                "route": "SouthCTC/0x21/A6",
+                "sense": "low"
+              }
             },
             "interlocking": "GCaltrain"
           }
@@ -19012,7 +20996,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x20/A4"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 4,
+                "route": "SouthCTC/0x20/A4",
+                "sense": "low"
+              }
             },
             "interlocking": "GCaltrain"
           }
@@ -19033,7 +21022,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x23/A6"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 6,
+                "route": "SouthCTC/0x23/A6",
+                "sense": "low"
+              }
             },
             "interlocking": "Gilroy"
           }
@@ -19054,7 +21048,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x23/A5"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "SouthCTC/0x23/A5",
+                "sense": "low"
+              }
             },
             "interlocking": "Gilroy"
           }
@@ -19075,7 +21074,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x23/A4"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 4,
+                "route": "SouthCTC/0x23/A4",
+                "sense": "low"
+              }
             },
             "interlocking": "Gilroy"
           }
@@ -19096,7 +21100,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x25/A4"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 4,
+                "route": "SouthCTC/0x25/A4",
+                "sense": "low"
+              }
             },
             "interlocking": "Luchessa"
           }
@@ -19117,7 +21126,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x27/A4"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 4,
+                "route": "SouthCTC/0x27/A4",
+                "sense": "low"
+              }
             },
             "interlocking": "Christopher"
           }
@@ -19138,7 +21152,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x27/A6"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 6,
+                "route": "SouthCTC/0x27/A6",
+                "sense": "low"
+              }
             },
             "interlocking": "Christopher"
           }
@@ -19159,7 +21178,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x24/A4"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 4,
+                "route": "SouthCTC/0x24/A4",
+                "sense": "low"
+              }
             },
             "interlocking": "Luchessa"
           }
@@ -19182,7 +21206,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x25/A5"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "SouthCTC/0x25/A5",
+                "sense": "low"
+              }
             },
             "interlocking": "Luchessa"
           }
@@ -19203,7 +21232,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x22/A4"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 4,
+                "route": "SouthCTC/0x22/A4",
+                "sense": "low"
+              }
             },
             "interlocking": "Gilroy"
           }
@@ -19224,7 +21258,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x22/A5"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "SouthCTC/0x22/A5",
+                "sense": "low"
+              }
             },
             "interlocking": "Gilroy"
           }
@@ -19245,7 +21284,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x2C/A5"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "SouthCTC/0x2C/A5",
+                "sense": "low"
+              }
             },
             "interlocking": "Sargent"
           }
@@ -19266,7 +21310,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x2C/A4"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 4,
+                "route": "SouthCTC/0x2C/A4",
+                "sense": "low"
+              }
             },
             "interlocking": "Sargent"
           }
@@ -19287,7 +21336,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x2D/A6"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 6,
+                "route": "SouthCTC/0x2D/A6",
+                "sense": "low"
+              }
             },
             "interlocking": "Watsonville"
           }
@@ -19308,7 +21362,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x2B/A6"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 6,
+                "route": "SouthCTC/0x2B/A6",
+                "sense": "low"
+              }
             },
             "interlocking": "Corporal"
           }
@@ -19329,7 +21388,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x2D/A5"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "SouthCTC/0x2D/A5",
+                "sense": "low"
+              }
             },
             "interlocking": "Watsonville"
           }
@@ -19350,7 +21414,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x2D/A4"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 4,
+                "route": "SouthCTC/0x2D/A4",
+                "sense": "low"
+              }
             },
             "interlocking": "Watsonville"
           }
@@ -19371,7 +21440,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x2C/A6"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 6,
+                "route": "SouthCTC/0x2C/A6",
+                "sense": "low"
+              }
             },
             "interlocking": "Sargent"
           }
@@ -19392,7 +21466,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x2B/A4"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 4,
+                "route": "SouthCTC/0x2B/A4",
+                "sense": "low"
+              }
             },
             "interlocking": "Corporal"
           }
@@ -19413,7 +21492,12 @@
           },
           "relations": {
             "bindings": {
-              "LAMP": "SouthCTC/0x2B/A5"
+              "LAMP": {
+                "direction": "output",
+                "pinNumber": 5,
+                "route": "SouthCTC/0x2B/A5",
+                "sense": "low"
+              }
             },
             "interlocking": "Corporal"
           }
@@ -19427,7 +21511,12 @@
           },
           "relations": {
             "bindings": {
-              "CODE": "SouthCTC/0x2B/B5"
+              "CODE": {
+                "direction": "input",
+                "pinNumber": 13,
+                "route": "SouthCTC/0x2B/B5",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:12"
           }
@@ -19441,7 +21530,12 @@
           },
           "relations": {
             "bindings": {
-              "CODE": "SouthCTC/0x2C/B5"
+              "CODE": {
+                "direction": "input",
+                "pinNumber": 13,
+                "route": "SouthCTC/0x2C/B5",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:13"
           }
@@ -19455,7 +21549,12 @@
           },
           "relations": {
             "bindings": {
-              "CODE": "SouthCTC/0x2D/B5"
+              "CODE": {
+                "direction": "input",
+                "pinNumber": 13,
+                "route": "SouthCTC/0x2D/B5",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:14"
           }
@@ -19469,7 +21568,12 @@
           },
           "relations": {
             "bindings": {
-              "CODE": "SouthCTC/0x21/B5"
+              "CODE": {
+                "direction": "input",
+                "pinNumber": 13,
+                "route": "SouthCTC/0x21/B5",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:2"
           }
@@ -19483,7 +21587,12 @@
           },
           "relations": {
             "bindings": {
-              "CODE": "SouthCTC/0x23/B5"
+              "CODE": {
+                "direction": "input",
+                "pinNumber": 13,
+                "route": "SouthCTC/0x23/B5",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:4"
           }
@@ -19497,7 +21606,12 @@
           },
           "relations": {
             "bindings": {
-              "CODE": "SouthCTC/0x26/B5"
+              "CODE": {
+                "direction": "input",
+                "pinNumber": 13,
+                "route": "SouthCTC/0x26/B5",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:7"
           }
@@ -19511,7 +21625,12 @@
           },
           "relations": {
             "bindings": {
-              "CODE": "SouthCTC/0x29/B5"
+              "CODE": {
+                "direction": "input",
+                "pinNumber": 13,
+                "route": "SouthCTC/0x29/B5",
+                "sense": "low"
+              }
             },
             "column": "SouthCTC:10"
           }
@@ -19602,5 +21721,5 @@
       "version": "0.4.0"
     }
   },
-  "schema": "layout-model/v3.4.0"
+  "schema": "layout-model/v3.5.0"
 }

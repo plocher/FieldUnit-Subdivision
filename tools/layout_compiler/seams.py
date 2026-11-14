@@ -153,8 +153,19 @@ class OfficeUnit:
 
 @dataclass
 class Binding:
+    """A device pin's wire to a driver pin, with the facts the drawing states about it: the driver pin's number on its
+    symbol, the direction from the device pin's electrical type, and the sense, asserted low or high."""
     function: str
     route: str
+    number: str = ""                                                  # the driver pin's number, as its symbol states it
+    direction: Optional[str] = None                                   # "output": the logic drives the device pin; "input": it reads it
+    sense: str = "low"                                                # the asserted level: the pin's drawn mark, flipped by Invert
+
+
+# A device pin's KiCad electrical type, as the direction of its binding from the logic's side (ADR 0017 decision 3):
+# a pin the device takes in is driven by the logic; a pin it puts out is read. Drivers have no direction of their own
+# (the owner, 2026-10-07): only the device pin's type is read. Any other type states none.
+DIRECTION_OF_PINTYPE = {"input": "output", "output": "input", "open_collector": "input", "open_emitter": "input"}
 
 
 @dataclass
@@ -938,10 +949,18 @@ def _devices(sm: Seams) -> None:
         for pin, net in sorted(sm.source.pins_of(s.ref).items()):
             if pin == "Column" or (pin == "IND" and appliance != "mast"):   # a head's or a train order lever's IND wire reaches its mast device, whose own IND is its binding
                 continue
+            own = next((q for q in net.pins if q.ref == s.ref and q.pin == pin), None)
+            pintype = (own.pintype if own else "").split("+")[0]
+            low = pin != base(pin)                                     # ~{X}: asserted low (ADR 0004 D9); a plain name asserted high
+            sense = "low" if low != (base(pin) in inverted) else "high"   # Invert names a pin whose sense is the other one (ADR 0008 §2)
             for p in net.others(s.ref):
                 hit = _driver_route(sm, p)
                 if hit:
-                    dev.bindings.append(Binding(base(pin), hit[1]))
+                    direction = DIRECTION_OF_PINTYPE.get(pintype)
+                    if direction is None:
+                        sm.report.missing("binding.direction", f"device {appliance} {name or s.value!r}: pin {base(pin)} is typed "
+                                          f"{pintype or 'nothing'}, so its binding to {hit[1]} states no direction", source=loc(s, base(pin)))
+                    dev.bindings.append(Binding(base(pin), hit[1], p.number, direction, sense))
         for n in sorted(inverted - {base(pin) for pin in sm.source.pins_of(s.ref)}):
             sm.report.error("device.invert", f"Invert names {n}, not a wired pin of this device", source=at)
         dev.bindings.sort(key=lambda b: (b.function, b.route))
