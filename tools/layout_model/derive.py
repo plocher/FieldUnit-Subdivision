@@ -1393,7 +1393,8 @@ class _Derivation:
         written here, at save (ADR 0015). A selector (a device, Appliance ``selector``, on the desk or in the field)
         serves the ladder its Name names, qualified like a lever (``Watsonville:Arrival``), and derives ``choices``, each
         with its ``detent`` (1 nearest the start), its ``leg`` and its ``alignment``, and ``range``, 1 to the number of
-        choices; its ``wrap`` stays stated; the tokens each choice sends are ``_choice_controls``'s. The marker's row derives ``switches``, in walk order, and ``start``, the
+        choices; its ``wrap`` stays stated. A choice's alignment is what it demands of the field, switch by switch, a
+        position each (the owner, 2026-11-14): no control token is spelled here (``codeline.stations``). The marker's row derives ``switches``, in walk order, and ``start``, the
         start switch's port its leg meets. Each ladder switch derives ``ladder``, and ``selector`` where one serves the
         ladder: its control source, which ``control_sources`` reads as it reads a switch lever. A selector whose Name
         names no ladder is ``selector.ladder`` at error; a ladder no selector serves is ``ladder.selector`` at info. A
@@ -1411,10 +1412,9 @@ class _Derivation:
                 continue
             served.add(lad.name)
             choices = [c.as_dict(i) for i, c in enumerate(lad.choices, 1)]
-            controls = self._choice_controls(dev, choices, where)
             _set_derived(dev, {**dev["derived"], "choices": choices,
                                "range": {"min": 1, "max": len(lad.choices)} if lad.choices else None,
-                               "controls": controls, **self._selector_sends(dev, lad, where)})
+                               **self._selector_sends(dev, lad, where)})
         for lad in found.ladders.values():
             b = lad.name.partition(":")[0]
             row = next((r for r in self.m["interlockings"][b].get("track", {}).get("policies", []) if r.get("name") == lad.name), None)
@@ -1431,31 +1431,6 @@ class _Derivation:
                 _set_derived(a, {**a.get("derived", {}), "ladder": lad.name, "selector": lad.name if lad.name in served else None})
                 if lad.name in served:
                     self.selected[s] = lad.name
-
-    CHOICE_FIELDS = {"NORMAL": "Control.NORMAL", "REVERSE": "Control.REVERSE"}
-
-    def _choice_controls(self, dev: dict[str, Any], choices: list[dict[str, Any]], where: str) -> Optional[list[str]]:
-        """The control tokens a selector's choices send, stated as a lever's are, in the draft kind table (the owner,
-        2026-11-14): the selector's ``Control.NORMAL`` and ``Control.REVERSE`` fields (``NWS``, ``RWS``) give each switch of
-        a chosen alignment the token of its position, qualified (``15`` REVERSE: ``Watsonville:15RWS``). Each choice
-        derives its ``controls``, in alignment order; the selector derives ``controls``, every token of its choices,
-        sorted: what its station receives (``codeline.stations``). Nothing is filled in from a template: a selector that does
-        not state both fields leaves every token unresolved, ``selector.controls`` at missing."""
-        g = dev.get("given", {})
-        stated = {p: g.get(f, "").strip() for p, f in self.CHOICE_FIELDS.items()}
-        absent = [f for p, f in self.CHOICE_FIELDS.items() if not stated[p]]
-        if absent:
-            self.r.add("selector.controls", f"selector {g.get('Name', '')}: states no {' or '.join(absent)}; the control tokens "
-                       "its choices send are unresolved", where)
-            return None
-        tokens: set[str] = set()
-        for c in choices:
-            c["controls"] = []
-            for a in c["alignment"]:
-                b, _, n = a["appliance"].partition(":")
-                c["controls"].append(f"{b}:{n}{stated[a['position']]}")
-            tokens.update(c["controls"])
-        return sorted(tokens, key=sort_key)
 
     def _selector_sends(self, dev: dict[str, Any], lad: "ladders.Ladder", where: str) -> dict[str, Any]:
         """Who sends a selector's choice (the owner, 2026-11-13): a selector is in no column. Its choice goes to the

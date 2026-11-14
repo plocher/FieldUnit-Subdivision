@@ -635,6 +635,13 @@ def receives(context, name, controls):
     assert got == _tokens(controls.strip('"')), f"station {name} receives {got!r}"
 
 
+@then('the demands station "{name}" receives are "{demands}"')
+def receives_demands(context, name, demands):
+    got = sorted((d.appliance, d.position) for d in _station(context, name).demands)
+    want = sorted(tuple(d.split()) for d in _tokens(demands))
+    assert got == want, f"station {name} receives the demands {got!r}"
+
+
 @then('station "{name}" must send {indications}')
 def must_send(context, name, indications):
     got = sorted(_station(context, name).indications)
@@ -1089,19 +1096,6 @@ def selector_code(context, name, column):
 def selector_no_code(context, name):
     d = _selector(context, name).get("derived", {})
     assert d.get("code") is None and "send" not in d.get("inputs", {}), f"{name}: code {d.get('code')!r}, inputs {d.get('inputs')!r}"
-
-
-@then('choice {detent:d} of selector "{name}" sends "{tokens}"')
-def choice_sends(context, detent, name, tokens):
-    got = _selector(context, name)["derived"]["choices"][detent - 1].get("controls", [])
-    want = [] if tokens == "nothing" else [t.strip() for t in tokens.split(",")]
-    assert got == want, f"{name} choice {detent} sends {got!r}, not {want!r}"
-
-
-@then('choice {detent:d} of selector "{name}" sends nothing')
-def choice_sends_nothing(context, detent, name):
-    got = _selector(context, name)["derived"]["choices"][detent - 1].get("controls")
-    assert got is None, f"{name} choice {detent} sends {got!r}"
 
 
 @then('selector "{name}" shows its choice on "{value}", locks it in on "{lock}" and sends it on "{send}"')

@@ -12,10 +12,9 @@ Feature: A ladder and the selector that serves it
   N's sub-ladder comes before R's. Each choice is its leg with its alignment, written here `17R: 15N 17R`. Detent 1
   is nearest the start.
   A selector serves the ladder of its Name, qualified like a lever, and derives its choices and its range, 1 to the
-  number of choices. Each ladder switch derives its ladder and its control source, the selector. The selector states
-  the control tokens of its choices as a lever does, in Control.NORMAL and Control.REVERSE (NWS, RWS): each switch of
-  a chosen alignment gets the token of its position, and the station receives them. The field unit lines and locks as
-  for any lever. Nothing here implements locking (ADR 0012 §5.2).
+  number of choices. Each ladder switch derives its ladder and its control source, the selector. A selector's controls
+  are switch-position demands, not tokens (the owner, 2026-11-14): each switch of a choice's alignment with the
+  position the choice asks of it, and the station receives them. The field unit lines and locks as for any lever. Nothing here implements locking (ADR 0012 §5.2).
 
   Background:
     Given interlocking "X" has house "East"
@@ -481,10 +480,10 @@ Feature: A ladder and the selector that serves it
     Then selector "Yard" offers "1R: 1R; 1N: 1N"
     And ladder "M" starts at "X:9.R" with switches "X:1"
 
-  # The choice's control tokens (the owner, 2026-11-14): stated on the selector as a lever states its own.
+  # The choice's controls (the owner, 2026-11-14): switch-position demands, not tokens.
 
-  @selector.controls
-  Scenario: the selector states its choice tokens, and its station receives them
+  Scenario: the station receives each choice's switch-position demands
+    A selector spells no token; the station's lever controls are unchanged.
     Given interlocking "X" is on an AAR token code line
     And interlocking "X" has these appliances:
       | Name | Appliance | Style   | TC  | CP Name |
@@ -502,42 +501,16 @@ Feature: A ladder and the selector that serves it
       | 3.N E2.EoT         |
       | 3.R E3.EoT         |
     And interlocking "X" has these devices:
-      | Name | Appliance | Control.NORMAL | Control.REVERSE |
-      | Yard | selector  | NWS            | RWS             |
+      | Name | Appliance |
+      | Yard | selector  |
     And selector "Yard" binds VAL to "Desk/0x50/ENC" and PRESS to "Desk/0x50/Press"
     And the desk has these columns:
       | Column | CP Name | Interlocking |
       | 13     | X       | X            |
     And the desk has a CODE button on column "13" bound to "Desk/0x2D/B5"
     When the layout is derived
-    Then choice 1 of selector "Yard" sends "X:1RWS"
-    And choice 2 of selector "Yard" sends "X:1NWS, X:3RWS"
-    And choice 3 of selector "Yard" sends "X:1NWS, X:3NWS"
-    And station "X" receives "1NWS, 1RWS, 3NWS, 3RWS"
-    And it is not reported
-
-  @selector.controls
-  Scenario: a selector that states no choice tokens
-    Nothing is filled in from a template the drawing does not state.
-    Given interlocking "X" is on an AAR token code line
-    And interlocking "X" has these appliances:
-      | Name | Appliance | Style   | TC  |
-      | 9    | switch    | powered | 9T1 |
-      | 1    | switch    | powered | 1T1 |
-    And interlocking "X" has these policies:
-      | Id | Name | Kind   |
-      | M  | Yard | LADDER |
-    And interlocking "X" has these wires:
-      | Pins               |
-      | 9.R Yard.track 1.C |
-      | 1.R E1.EoT         |
-      | 1.N E2.EoT         |
-    And interlocking "X" has these devices:
-      | Name | Appliance | Control.REVERSE |
-      | Yard | selector  | RWS             |
-    When the layout is derived
-    Then it is reported as missing on "0"
-    And choice 1 of selector "Yard" sends nothing
+    Then selector "Yard" offers "1R: 1R; 3R: 1N 3R; 3N: 1N 3N"
+    And the demands station "X" receives are "1 NORMAL, 1 REVERSE, 3 NORMAL, 3 REVERSE"
     And station "X" receives nothing
 
   @switch.lever.selector

@@ -1066,12 +1066,13 @@ class SPCoastTrackplan(unittest.TestCase):
         # The owner's live drawing of 2026-11-13 (issue #145, uncommitted in Railroad): Watsonville has one CODE button,
         # on column 14, and the Panel-Selectors are in no column (Role DEVICE), so no device.column is left. Both
         # selectors' choices go to station Watsonville, sent by column 14's CODE button.
-        # The owner, 2026-11-14: a selector states its choice tokens in Control.NORMAL and Control.REVERSE; the library's
-        # Panel-Selector has neither yet, so both selectors' tokens are unresolved (selector.controls).
-        self.assertEqual(set(missing), {"mast.lever", "selector.controls"})
-        self.assertEqual(sorted(d.where for d in self.sm.report.by_code("selector.controls")),
-                         sorted(f"interlockings/Watsonville/devices/{i}" for i, d in enumerate(self.ix("Watsonville")["devices"])
-                                if d["given"].get("Appliance") == "selector"))
+        self.assertEqual(set(missing), {"mast.lever"})
+        # The owner, 2026-11-14: a selector's controls are switch-position demands, not tokens. Station Watsonville
+        # receives both positions of each ladder switch, 3 to 25; its lever controls are its levers' alone.
+        watsonville = codeline.stations(self.model).stations[("Watsonville", None)]
+        self.assertEqual(sorted(watsonville.demands, key=lambda d: (int(d.appliance), d.position)),
+                         [codeline.Demand(str(n), p) for n in range(3, 26, 2) for p in ("NORMAL", "REVERSE")])
+        self.assertEqual(sorted(watsonville.controls), ["837NWS", "837RWS", "838HS", "838NGS", "838SGS"])
         self.assertEqual(self.sm.report.by_code("device.column"), [])
         selectors = {d["given"]["Name"]: d["derived"] for d in self.ix("Watsonville")["devices"] if d["given"].get("Appliance") == "selector"}
         self.assertEqual({n: (d["station"], d["code"], d["inputs"]["send"]) for n, d in selectors.items()},
@@ -1085,7 +1086,7 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(self.model["layout"]["ioEncodings"]["JMRI"]["given"]["JMRI.SignalSystem"], "SPTCO-1969")
         jmri_masts = {k: v["derived"]["jmriSignalSystem"] for k, v in self.model["layout"]["processors"]["Gilroy"]["drivers"].items() if v["given"].get("Kind") == "SIGNALMAST"}
         self.assertEqual(jmri_masts, {f"SIGNALMAST.{m}": "SPTCO-1969" for m in ["778NAB", "778NC", "778SAB", "778SC", "Gilroy.E", "Gilroy.W"]})
-        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 7, "missing": 14})   # 130 before #80; 12 missing before mast.lever; 29 before the Corporal renumber; 26 before #145's ladders and the live drawing's one CODE; 12 before selector.controls
+        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 7, "missing": 12})   # 130 before #80; 12 missing before mast.lever; 29 before the Corporal renumber; 26 before #145's ladders and the live drawing's one CODE
         self.assertEqual(sorted(d.entities[0] for d in self.sm.report.by_code("regime.limits")), [f"interlockings/{n}" for n in sorted(self.model["interlockings"])])
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):

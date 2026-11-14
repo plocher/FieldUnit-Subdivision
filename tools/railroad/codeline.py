@@ -11,9 +11,12 @@ line each house is a station, on an AAR token line the interlocking is one.
   interlocking (the owner, 2026-10-28). That station does all the code line work for the lever; its field unit drives
   masts in other houses internally, unseen by the office. A lever's tokens need no reporter, only an appliance it
   serves (the derivation's ``lever.serves``).
-- **Selectors.** A selector is in no column (the owner, 2026-11-13): its ``derived.controls``, the tokens its choices
-  send from its ``Control.NORMAL`` and ``Control.REVERSE`` (2026-11-14), go to its ``derived.station``, the station of
-  its ladder's switches, whose CODE button sends them. A selector whose tokens are unresolved adds none.
+- **Selectors.** A selector is in no column (the owner, 2026-11-13): its choices go to its ``derived.station``, the
+  station of its ladder's switches, whose CODE button sends them. A selector's controls are switch-position demands,
+  not tokens (the owner, 2026-11-14): each entry of a choice's ``alignment`` is a ``Demand``, the switch and the
+  position the choice asks of it (``Demand("15", "REVERSE")``), and the station receives every demand of every
+  choice in ``demands``. Nothing here spells a token for them; how a demand is coded on the line is the encoding's.
+  Levers and lamps still report tokens; a separate ADR is to move them to the same shape.
 - **Lamps and consumer rows.** Panels define token content (the owner, 2026-10-28): what a station must send is the
   union of the indication tokens its consumers state. A lamp's or a consumer row's token belongs to the station of the
   appliance that reports it (``reporters``): on a per-house line the house that is its ``derived.controlPoint``. A lamp
@@ -23,12 +26,18 @@ line each house is a station, on an AAR token line the interlocking is one.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, NamedTuple, Optional
 
 from tools.layout_model import expression, reference
 from tools.layout_model.grammar import lever_class, styles
 
 StationKey = tuple[str, Optional[str]]                 # (interlocking, house); house None: the interlocking is the station
+
+
+class Demand(NamedTuple):
+    """What the office asks of one appliance of a station: its bare name and the position wanted (15, REVERSE)."""
+    appliance: str
+    position: str                                      # NORMAL or REVERSE
 
 
 @dataclass
@@ -37,6 +46,7 @@ class Station:
     house: Optional[str]                               # None on a line whose station is the interlocking
     controls: set[str] = field(default_factory=set)    # bare tokens (783NWS)
     indications: set[str] = field(default_factory=set)  # bare tokens it must send (783NWK)
+    demands: set[Demand] = field(default_factory=set)  # switch-position demands it receives from selectors (15, REVERSE)
 
     @property
     def key(self) -> StationKey:
@@ -241,7 +251,7 @@ def stations(model: dict[str, Any]) -> Codeline:
         b, _, h = dev["derived"]["station"].partition(":")
         key = (b, h or None)
         if key in out:
-            out[key].controls.update(t.partition(":")[2] for t in dev["derived"].get("controls", []) if t.partition(":")[0] == b)
+            out[key].demands.update(_demands(dev, b))
     for a, ix in ixs.items():
         for row in ix.get("track", {}).get("consumers", []):
             token = row.get("relations", {}).get("indication")
@@ -256,6 +266,15 @@ def _selectors(model: dict[str, Any]):
         for dev in unit.get("devices", []):
             if dev.get("given", {}).get("Appliance") == "selector" and dev.get("derived", {}).get("station"):
                 yield dev
+
+
+def _demands(dev: dict[str, Any], b: str):
+    """The switch-position demands of every choice of a selector, for the appliances of interlocking ``b``."""
+    for choice in dev["derived"].get("choices") or []:
+        for entry in choice.get("alignment", []):
+            ab, _, name = entry["appliance"].partition(":")
+            if ab == b:
+                yield Demand(name, entry["position"])
 
 
 def _column_station(model: dict[str, Any], ou_name: str, dev: dict[str, Any], b: str) -> Optional[StationKey]:
