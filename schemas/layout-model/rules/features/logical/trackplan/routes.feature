@@ -298,6 +298,38 @@ Feature: The routes of a mast
     And the route of "2NA" aligned "nothing" passes no circuit
     And the route of "2NA" aligned "nothing" has ceiling "RESTRICTING"
 
+  Scenario: a route over a sign of a Kind no rule reads is held to RESTRICTING
+    The owner, 2026-11-13: a sign of a Kind no rule reads leaves its piece with no regime and passes none on, so
+    the CTC beyond it does not reach the piece. A route over the piece takes the regimes table's default for track
+    with no stated regime (regimes.defaults.none), RESTRICTING. Nothing here is special to routes.
+    Given interlocking "W" has these appliances:
+      | Name | Appliance     | Kind       | CP Name | signal | heads | relations.facing |
+      | 2NA  | mast          | CONTROLLED | W       | 2      | A     | LEFT             |
+      | 3T   | track_circuit |            | W       |        |       |                  |
+      | 5T   | track_circuit |            | W       |        |       |                  |
+    And interlocking "W" has these joints:
+      | Id | Kind       | CP Name | relations.mast |
+      | K2 | IRJ_SIGNAL | W       | W:2NA          |
+      | J1 | IRJ        |         |                |
+    And interlocking "W" has these ends:
+      | Id | Kind   |
+      | H1 | BUMPER |
+    And interlocking "W" has these policies:
+      | Id | Kind         |
+      | Q1 | RULE_999     |
+      | R1 | GCOR_RULE_10 |
+    And interlocking "W" has these wires:
+      | Wire | Pins                         |
+      | a    | K2.governed 3T.TC Q1.track J1.A |
+      | b    | J1.B 5T.TC R1.track H1.EoT   |
+    And the desk has these levers for interlocking "W":
+      | Name | Style  |
+      | 2    | signal |
+    When the routes are found
+    Then the route of "2NA" aligned "nothing" ends at the limit "BUMPER"
+    And the route of "2NA" aligned "nothing" passes "3T, 5T"
+    And the route of "2NA" aligned "nothing" has ceiling "RESTRICTING"
+
   @route.end
   Scenario: track that ends with nothing stated leaves the route without an end
     Given interlocking "W" has these appliances:

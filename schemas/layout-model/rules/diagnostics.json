@@ -401,6 +401,13 @@
       "feature": "logical/trackplan/policy_sign.feature#a 9.14 sign that states no current of traffic",
       "replacedBy": null
     },
+    "policy.kind": {
+      "level": "warning",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/policy_sign.feature#a sign of a Kind no rule reads holds its piece to no regime",
+      "replacedBy": null
+    },
     "policy.track": {
       "level": "missing",
       "lifecycle": "active",

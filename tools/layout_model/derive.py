@@ -153,6 +153,7 @@ names every other track pin its wire reaches, so the relation is symmetric):
   (ADR 0015). A selector device serves the ladder its Name names and derives ``choices`` and ``range``; each ladder
   switch derives ``ladder`` and ``selector``, a control source as a switch lever is, so a powered ladder switch a
   selector serves is no ``switch.lever`` (``ladders``).
+- An unknown POLICY Kind is ``policy.kind`` at warning and holds its piece to no regime (``regimes``).
 - An OfficeUnit's columns (``house``, ``interlocking``), every device's ``serves``, a desk lamp's ``indications`` and
   ``expression`` (its ``Indication``, ``tools/layout_model/expression.py``), a lever's ``controls`` and ``indications``
   from its per-pin ``Control.X`` and ``Indication.X``.
@@ -173,7 +174,7 @@ from tools.railroad import codeline, ladders
 
 from . import expression, reference
 from . import reference_data as refdata
-from .grammar import GANG, HAND, POWERED, SELECTOR, depends_on, direction_of, dispatcher_controlled, is_derail, is_powered, regime, regime_word, styles
+from .grammar import GANG, HAND, LADDER, POWERED, SELECTOR, depends_on, direction_of, dispatcher_controlled, is_derail, is_powered, regime, regime_word, styles
 from . import sort_key
 from .report import Report
 
@@ -191,6 +192,7 @@ MAST_KINDS = frozenset({"CONTROLLED", "ABSOLUTE", "PERMISSIVE"})   # what a mast
 CURRENTS = frozenset({"LEFT", "RIGHT"})                            # a GCOR_RULE_9_14 sign's current of traffic (ADR 0013 §8)
 REGIME_BY = ("marker", "inherited")                # how a piece's regime was found (ADR 0013 §7.1)
 PLATES = frozenset({"RULE_290_G", "RULE_290_R"})                   # a plate on a mast's SIGNAL net (ADR 0013 §5)
+POLICY_KINDS = frozenset(reference.REGIMES) | {reference.CURRENT_OF_TRAFFIC, LADDER} | PLATES   # every POLICY Kind a rule reads; another is policy.kind
 
 
 @lru_cache(maxsize=1)
@@ -1042,7 +1044,10 @@ class _Derivation:
         inherits across it, and each side states its own regime or inherits from elsewhere. A joint with a marker
         pinned on one face passes no regime either (the owner, 2026-11-13): a marker whose track pin's net holds one
         joint face and no other stands at that face, and its regime flows out that side only; a marker on a net that
-        holds two joints' faces stands at neither and passes its regime across both. A piece with no regime is
+        holds two joints' faces stands at neither and passes its regime across both. A POLICY of a Kind no rule reads
+        is ``policy.kind`` at warning and is contained (the owner, 2026-11-13): its piece gets no regime, a marker on it
+        included, and passes none on, so no regime crosses it; a route over it takes the regimes table's
+        ``defaults.none``, RESTRICTING, as over any track with no stated regime. A piece with no regime is
         ``regime.none`` at missing. A CTC piece whose head-block signals (the masts that govern into it) are all
         ``ABSOLUTE`` is ``regime.absolute`` at warning: an automatic signal gives no authority and Chapter 10 gives
         signal-indication authority (§4). Interlocking limits are a derived fact independent of regime (GCOR glossary:
@@ -1072,9 +1077,18 @@ class _Derivation:
                 for s in ("governed", "approach") if kind == "IRJ_SIGNAL" else ("A", "B"):
                     faces[f"{p}.{s}"].update(row.get("relations", {}).get(s) or [])
         pinned: set[str] = set()                                                # joint faces a regime marker is pinned on
+        contained: set[str] = set()                                             # pieces an unknown POLICY Kind stands on
         for a, plan in self.plans.items():
             for row in plan.track.get("policies", []):
                 kind, node = row.get("given", {}).get("Kind"), f"{plan.row_prefix(row)}.track"
+                if kind not in POLICY_KINDS:
+                    self.r.add("policy.kind", f"{a}: POLICY Kind {kind!r} is no sign the rules read (a GCOR Rule regime, "
+                               f"{reference.CURRENT_OF_TRAFFIC}, a plate or {LADDER}); the reference data may be older than the "
+                               "symbol library, or the Kind is misspelt. Its piece gets no regime and passes none on",
+                               plan.where("track", "policies", row.get("id", "")))
+                    if node in union:
+                        contained.add(union.find(node))
+                    continue
                 if kind in reference.REGIMES and node in union:
                     stated[union.find(node)][kind].append(plan.where("track", "policies", row.get("id", "")))
                     on = {f for f in faces if f in (row.get("relations", {}).get("track") or []) or node in faces[f]}
@@ -1109,8 +1123,10 @@ class _Derivation:
             return self.plans[a].piece(node)[0] or node, a
 
         regime: dict[str, tuple[str, str]] = {}                                 # piece -> (Kind, how)
-        broken: set[str] = set()                                                # pieces whose regime is an error: none, and none passed on
+        broken: set[str] = set(contained)                                       # pieces whose regime is an error: none, and none passed on
         for root in sorted(stated, key=name_of):
+            if root in contained:                                               # an unknown sign holds its piece: no regime, even a stated one
+                continue
             kinds, (name, a) = stated[root], name_of(root)
             paths = tuple(p for k in sorted(kinds) for p in kinds[k])
             if len(kinds) > 1:

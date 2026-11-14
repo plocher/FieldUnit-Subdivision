@@ -44,8 +44,8 @@ Feature: A policy sign, as drawn
     And the row "L1" is written with Kind "LADDER"
     And "1NAT" names "X:Yard.track" on side TC
 
-  @policy.kind
-  Scenario: a sign of a Kind no rule reads
+  Scenario: a sign of a Kind no rule reads is written as drawn
+    That no rule reads its Kind is the model's finding (policy.kind), not the importer's.
     Given these symbols too:
       | Ref | Symbol                      | Role   | Kind     |
       | Q1  | Railroad-Trackplan:Mystery  | POLICY | RULE_999 |
@@ -53,5 +53,4 @@ Feature: A policy sign, as drawn
       | Net | Pins         |
       | t   | TC1.TC Q1.To |
     When the drawing is imported
-    Then it is reported as a warning on "Q1"
-    And the row "Q1" is written with Kind "RULE_999"
+    Then the row "Q1" is written with Kind "RULE_999"
