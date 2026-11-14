@@ -3,8 +3,8 @@
 The rules are tested on symbols and placements built in memory: the anchor, the style rule, the glyph frame, the
 transform for every orientation KiCad can write (the direction of a 90-degree turn was asked of kicad-cli by
 ``tests/fixtures/kicad/rotation_probe.py``, 2026-10-25: counter-clockwise as seen on the page), the chaining of
-wires into runs. The project gates run on the SPCoast drawing as ``tests.test_layout_compiler.spcoast_source`` reads
-it (a fresh export, or a saved ``SPCOAST_NETLIST`` checked as a snapshot first), never faked when absent. Geometry
+wires into runs. The project gates run on the SPCoast test corpus as ``tests.spcoast_corpus.spcoast_source`` reads it (the
+drawing at the pinned commit, a fresh export), never faked when absent. Geometry
 joins the rest of the file by identity only (three-maps D10): markers name their track row by id, runs name what
 their ends meet.
 """
@@ -28,7 +28,7 @@ from tools import layout_model
 from tools.kicad_services import sch_text
 from tools.kicad_services.types import LibrarySymbol, SchematicPlacement, SymbolGraphic, SymbolPin
 from tools.layout_compiler import emit, geometry, seams
-from tests.test_layout_compiler import NETLIST, PROJECT, SPCOAST_AVAILABLE, spcoast_source
+from tests.spcoast_corpus import AVAILABLE as SPCOAST_AVAILABLE, WHY_SKIPPED, spcoast_source
 
 
 def pin(name, x, y, rotation=0.0, length=0.0, hidden=False, number=None):
@@ -174,7 +174,7 @@ def _minimal_file(run: dict) -> dict:
             "provenance": {"sourceType": "test", "writer": {"name": "tests", "version": "0"}}}
 
 
-@unittest.skipUnless(SPCOAST_AVAILABLE, f"SPCoast project not present or kicad-cli missing: {NETLIST or PROJECT}")
+@unittest.skipUnless(SPCOAST_AVAILABLE, WHY_SKIPPED)
 class SPCoastGeometry(unittest.TestCase):
     """The piece on the drawing: no error, the frame's facts as ADR 0010 §5 reads them, DoD2, DoD3, the pin check."""
 

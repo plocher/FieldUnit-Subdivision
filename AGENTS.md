@@ -33,7 +33,7 @@ The symbol libraries are registered globally in
 
 ```zsh
 uv sync                                        # once per checkout: .venv with Python 3.14, jbom (the PyPI release) and sexpdata
-uv run python -m unittest discover -s tests -q # 346 tests; the SPCoast gates export a fresh netlist with kicad-cli and skip without it
+uv run python -m unittest discover -s tests -q # the SPCoast gates read the test corpus (below) and skip without kicad-cli or the Railroad repo
 uv run tools/run_plant_graph_smoke.sh          # Luchessa end-to-end; needs kicad-cli. Fails today: the old compiler reports 5 known diagnostics on the archived drawing (#15)
 cd schemas/layout-model/rules/features && uv run behave --tags='not @pending'   # the model rules as features; tools/layout_compiler/features is the importer's root; tests/test_rule_features.py runs both
 uv run python tools/doc_debt.py --write          # ADR 0014 decision 2: the trigger/blast-radius and debt report into docs/doc-debt-report.md (reported, not enforced; --range A..B, default the last 15 merged PRs)
@@ -52,6 +52,13 @@ uv run python tools/doc_debt.py --write          # ADR 0014 decision 2: the trig
   generated netlists as volatile artifacts, created in a temp location and deleted when their immediate
   use is complete (`KicadCliNetlistExporter` exports one; the old rule, prefer the `.net` and refresh it
   with `make netlist`, had agents reading a stale copy for several turns before noticing).
+- **The SPCoast test corpus** is the drawing at the Railroad commit pinned in
+  `schemas/layout-model/examples/spcoast.corpus.json`, the commit the frozen example `spcoast.layout.json` was built
+  from. The gates never read the live drawing: `tests/spcoast_corpus.py` checks the commit out once per run into a
+  temporary directory (`tools/kicad_services/pinned.py`, a shared sparse clone, so the Railroad repo is only read),
+  exports each netlist there, reads the sheets and that checkout's own symbol libraries in place of the global
+  `sym-lib-table`'s, and deletes it at exit. `make_spcoast_layout.py` rebuilds the example from the same commit
+  (`--live` for the live drawing). To refreeze, change the commit there, rebuild, and update the gates in their own commit.
 - Environment overrides: `KICAD_RAILROAD_LIB`, `KICAD_LUCHESSA_SCH`.
 - `render_plant_picture.py` needs Graphviz `dot`.
 - Virtual plant host. The build command is not scripted yet; this is the known-good form:

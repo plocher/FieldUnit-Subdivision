@@ -19,7 +19,7 @@ from tools import layout_model
 from tools.layout_compiler import emit, seams
 from tools.layout_compiler.source import Net, PinRef, Symbol, from_symbols
 from tools.railroad import codeline
-from tests.test_layout_compiler import NETLIST, PROJECT, SPCOAST_AVAILABLE, spcoast_source
+from tests.spcoast_corpus import AVAILABLE as SPCOAST_AVAILABLE, WHY_SKIPPED, spcoast_source
 
 SHEET = "/X/"
 # The interlocking every scenario stands in: its declaration, its processor and its houses are scaffolding.
@@ -857,7 +857,6 @@ class Locations(unittest.TestCase):
                                         "/X/Railroad-Trackplan:Mast_Single(836SA)"))
 
 
-@unittest.skipUnless(SPCOAST_AVAILABLE, f"SPCoast project not present or kicad-cli missing: {NETLIST or PROJECT}")
 def trackplan_ref(sm, interlocking: str) -> str:
     """The reference of the one NextCP whose Interlocking field names ``interlocking``."""
     refs = [s.ref for s in sm.source.symbols.values() if s.kind == "NEXT_CP" and s.get("Interlocking") == interlocking]
@@ -865,8 +864,9 @@ def trackplan_ref(sm, interlocking: str) -> str:
     return refs[0]
 
 
+@unittest.skipUnless(SPCOAST_AVAILABLE, WHY_SKIPPED)
 class SPCoastTrackplan(unittest.TestCase):
-    """The integration gate: the trackplan of the live project, as the relation table's trackplan rows read it."""
+    """The integration gate: the trackplan of the corpus project, as the relation table's trackplan rows read it."""
 
     @classmethod
     def setUpClass(cls):

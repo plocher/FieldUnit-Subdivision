@@ -3,6 +3,7 @@
 
     uv run python tools/compile_layout.py PROJECT.kicad_sch -o layout.json [--log LOG] [--quiet]
     uv run python tools/compile_layout.py NETLIST.net      -o layout.json [--log LOG] [--quiet]
+    ... [--symbols DIR]    the symbol libraries in DIR stand in for KiCad's tables' libraries of the same name
 
 Given the project's root sheet, the KiCad importer exports a netlist with kicad-cli into a temporary location, reads
 it and deletes it (the netlist rule, ``AGENTS.md``: a netlist is a cache of the project's state, never used stale).
@@ -21,6 +22,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from kicad_services import pinned  # noqa: E402
 from layout_compiler import emit, geometry, seams, source  # noqa: E402
 from tools import layout_model  # noqa: E402
 
@@ -33,11 +35,13 @@ def main(argv=None) -> int:
     ap.add_argument("-o", "--output", type=Path, required=True)
     ap.add_argument("--log", type=Path, help="write diagnostics here instead of stderr")
     ap.add_argument("--quiet", action="store_true", help="errors only on stderr")
+    ap.add_argument("--symbols", type=Path, help="a directory of .kicad_sym files read in place of the tables' libraries of the same name")
     a = ap.parse_args(argv)
     if not a.project.is_file():
         print(f"no such project or netlist: {a.project}", file=sys.stderr)
         return 2
-    sm = seams.resolve(source.from_path(a.project))
+    libraries = pinned.libraries(a.symbols, a.project.parent if a.project.suffix == ".kicad_sch" else None) if a.symbols else None
+    sm = seams.resolve(source.from_path(a.project, libraries))
     geo = geometry.read(sm)
     model = emit.emit(sm, geometry=geo)                               # the drawing's facts, then the reference derivation
     diags = sorted(sm.report.diags, key=lambda d: (ORDER.get(d.severity, 9), d.code, d.where, d.source))
