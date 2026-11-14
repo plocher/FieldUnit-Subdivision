@@ -1,6 +1,6 @@
 # 0016. Code line content is functions; a token is one encoding's spelling of a function
 
-- Status: **proposed** (drafting approved by the owner 2026-11-14). The ask: ratify decisions 1 to 6 and decide 7.
+- Status: **proposed** (drafting approved by the owner 2026-11-14). The ask: ratify decisions 1 to 6; decision 7 was ruled by the owner 2026-11-14.
 - Amends (when accepted, in place with a footnote; not edited in this PR): the owner's ruling of 2026-10-28 that
   PANEL symbols state tokens per pin, and its clarification of 2026-10-29 that rejected "Name plus K by rule";
   ADR 0012 §5.1 (the codeline row); ADR 0011's amendment of 2026-10-27, revised 2026-10-28 (cross-interlocking references: "every token an OfficeUnit
@@ -27,8 +27,10 @@
 6. **The gate runs the codec.** A test builds a small C++ harness against FieldUnit `src/` (the plant host's
    `clang++` form), spells every function of the SPCoast example with `AarTextCodec`, and compares the result with
    the Python spelling. It skips without `clang++` or FieldUnit. *Default: yes.*
-7. **Pin kind `indication` (pending, vocabulary).** Keep it, or rename it to `signal_indication`. *Default: keep
-   until decided* (§4).
+7. **Pin kinds come in two classes** (ruled by the owner 2026-11-14, §4). A driver pin states an electrical
+   capability: `binary`, `level`, `value`, `position`, `pixel`. A device or encoder seam pin states the word set it
+   carries: `indication`, `head`, `color`. The head word pin is `head`, no longer `indication`. A seam pin's word set
+   must fit the capability of the driver pin it lands on. *Ruled.*
 
 ## 1. Problem
 
@@ -151,22 +153,50 @@ A lamp's `Indication` (`795T1K | 01TK`) and a remote consumer's `Indication` (`C
 designer. The importer decodes each term (§3.3). Both directions use one function, so the reverse lookup that
 `codeline.py` does today with templates becomes `decode`.
 
-## 4. Pending: the pin kind `indication`
+## 4. Pin kinds: two classes (ruled by the owner 2026-11-14)
 
-On the code line, "indication" means an office indication, a field-to-office function (GLOSSARY §5). On a signal head
-symbol, pin kind `indication` carries a signal indication word, CLEAR, APPROACH or STOP (GLOSSARY §8, "signal
-indication"): `Pin.APP = indication` on `Device-Head-H2` and `Device-Lamp-RGB`, and on `Encoder-RGB`
-(Railroad-Field). The lint lists it in `VOCABULARY` and as the one `SOURCE_KINDS` word (lines 91 to 92).
+The question was a collision. On the code line, "indication" means an office indication, a field-to-office function
+(GLOSSARY §5). On the library's seam pins, pin kind `indication` carried two different word sets: a signal indication
+word (CLEAR, APPROACH, STOP; GLOSSARY §8) on mast pins and a head's `IND`, and the head word on a head's `APP` output
+and an encoder's `APP` input. Beside them, `color` was used for a driver's data line. The ruling separates what a pin
+is electrically from what it carries.
 
-| Option | For | Against |
-|---|---|---|
-| **Keep `indication`** (default until decided) | no library or lint change; the glossary already qualifies the two senses | a bare "indication" in prose or code is ambiguous |
-| Rename to `signal_indication` | the term is the glossary's own | edits on every head and encoder symbol, the lint, the importer and the contract features |
+| Class | Where | The pin kind states | Kinds |
+|---|---|---|---|
+| (a) driver pin | IODRIVER symbols (Railroad-HardwareIO) | an electrical capability | `binary`, `level`, `value`, `position`, `pixel` |
+| (b) seam pin | DEVICE and ENCODER symbols | the word set it carries | `indication` (mast pins `A`, `B`, `C`; a head's `IND`), `head` (the head word: a head's `APP` output and an encoder's `APP` input; was `indication`), `color` (a lamp's colour input that feeds a Kind `RGB` encoder) |
 
-Related, for the same decision: pin kind `color` exists (`Railroad-HardwareIO:Driver-GPIO-Pixel`, `Pin.D = color`).
-The knob of #145 has an RGB lamp (`Driver-I2C-KnobEncoderRGB`, pins `R`, `G`, `B` of kind `level`); `PanelSelector`
-itself has pins `VALUE` and `BUTTON` only. What that lamp shows is not decided: a signal indication word, a colour, or
-an office indication function. Its pin kind follows that answer.
+- `color` is the parallel of the head chain: head word to encoder to `R`, `Y`, `G`; colour to an RGB encoder to
+  `R`, `G`, `B`.
+- `Driver-GPIO-Pixel` `Pin.D` is `pixel`: a chain data line. A colour is the payload of one pixel, not the capability
+  of the pin.
+- A seam pin's word set must fit the capability of the driver pin it lands on. The lint checks this (§4.1).
+- Not `aspect`: in GCOR an aspect is the appearance of the whole signal, and the library already rules that the aspect
+  is derived and never a pin.
+- On the code line, "indication" keeps its GLOSSARY §5 sense (office indication). Prose says "signal indication" for
+  the seam word set.
+
+### 4.1 Follow-ups (not done in this PR)
+
+The library edits are the owner's (Railroad `symbols/`, read 2026-11-14):
+
+- `Pin.APP` from `indication` to `head` on the heads `Device-Head-H2`, `-SA`, `-Semaphore-LQ2`, `-Semaphore-LQ3`,
+  `-Semaphore-UQ3`, `-TypeD` and `Device-Lamp-RGB`, and on the encoders `Encoder-3MUX2A`, `-Lamp`, `-Pixel-RGB`,
+  `-Pixel-RYG`, `-RGB`, `-RYG`, `-Servo` (Railroad-Field). Mast pins and head `IND` pins stay `indication`.
+- `Driver-GPIO-Pixel` `Pin.D` from `color` to `pixel` (Railroad-HardwareIO).
+- `PanelSelector` (Railroad-Office): `Pin.VAL` becomes `Pin.VALUE`, to match its pin `VALUE`. `Pin.BUTTON` already
+  matches its pin `BUTTON`.
+
+The lint (`tools/contract/lint_symbol_fields.py`, lines 91 to 92):
+
+- `VOCABULARY` gains `value`, `pixel` and `head`, and keeps `color` as a seam word set. It is split into the two
+  classes, so a driver pin with a word-set kind, or a seam pin with a capability kind, is an error.
+- `SOURCE_KINDS` (an encoder's one input) becomes `head` and `color`.
+- A new check: each seam pin's word set fits the capability of the driver pin it lands on. The fit table is to be
+  stated with the check.
+
+Open for the owner: `Driver-JMRI-SignalMast` is an IODRIVER whose `Pin.IND` is `indication`, a word set, not a
+capability from class (a).
 
 ## 5. Text this amends (record; not edited here)
 
