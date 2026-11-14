@@ -1063,10 +1063,16 @@ class SPCoastTrackplan(unittest.TestCase):
         # selectors work, so no switch.lever is left.
         missing = Counter(d.code for d in self.sm.report.diags if d.severity == "missing")
         self.assertEqual({k: v for k, v in missing.items() if k.startswith("switch.")}, {})
-        # Railroad 0ab8dd8: the CODE buttons beside Watsonville's Arrival and Departure selectors are on no Column net
-        # (device.column); which column a selector's code button belongs to is open with #145.
-        self.assertEqual(set(missing), {"mast.lever", "device.column"})
-        self.assertEqual([str(d.source) for d in self.sm.report.by_code("device.column")], ["/South-cTc/Watsonville/Panel/Railroad-Office:PanelCode(CODE)"] * 2)
+        # The owner's live drawing of 2026-11-13 (issue #145, uncommitted in Railroad): Watsonville has one CODE button,
+        # on column 14, and the Panel-Selectors are in no column (Role DEVICE), so no device.column is left. Both
+        # selectors' choices go to station Watsonville, sent by column 14's CODE button.
+        self.assertEqual(set(missing), {"mast.lever"})
+        self.assertEqual(self.sm.report.by_code("device.column"), [])
+        selectors = {d["given"]["Name"]: d["derived"] for d in self.ix("Watsonville")["devices"] if d["given"].get("Appliance") == "selector"}
+        self.assertEqual({n: (d["station"], d["code"], d["inputs"]["send"]) for n, d in selectors.items()},
+                         {n: ("Watsonville", "SouthCTC:14", "SouthCTC/0x2D/B5") for n in ("Arrival", "Departure")})
+        self.assertEqual({n: (d["inputs"]["value"], d["inputs"]["lock"]) for n, d in selectors.items()},
+                         {"Arrival": ("SouthCTC/0x50/ENC", "SouthCTC/0x50/Press"), "Departure": ("SouthCTC/0x51/ENC", "SouthCTC/0x51/Press")})
         self.assertEqual(sorted(d.where.rsplit("/", 1)[-1] for d in self.sm.report.by_code("mast.lever")),
                          sorted(["778NAB", "778NC", "778SAB", "778SC"] + [f"840N{c}" for c in "ABCDEFG"] + ["840SA"]))
         self.assertEqual(self.sm.report.by_code("lever.masts"), [])
@@ -1074,7 +1080,7 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(self.model["layout"]["ioEncodings"]["JMRI"]["given"]["JMRI.SignalSystem"], "SPTCO-1969")
         jmri_masts = {k: v["derived"]["jmriSignalSystem"] for k, v in self.model["layout"]["processors"]["Gilroy"]["drivers"].items() if v["given"].get("Kind") == "SIGNALMAST"}
         self.assertEqual(jmri_masts, {f"SIGNALMAST.{m}": "SPTCO-1969" for m in ["778NAB", "778NC", "778SAB", "778SC", "Gilroy.E", "Gilroy.W"]})
-        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 7, "missing": 26})   # 130 before #80; 12 missing before mast.lever; 29 before the Corporal renumber
+        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 7, "missing": 12})   # 130 before #80; 12 missing before mast.lever; 29 before the Corporal renumber; 26 before #145's ladders and the live drawing's one CODE
         self.assertEqual(sorted(d.entities[0] for d in self.sm.report.by_code("regime.limits")), [f"interlockings/{n}" for n in sorted(self.model["interlockings"])])
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):
