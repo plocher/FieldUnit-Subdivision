@@ -93,7 +93,7 @@ def indication_tokens(encoding: Optional[str], user: Optional[dict[str, dict[str
 
 def indication_of(name: str, template: str = "{name}K") -> str:
     """The token a desk lamp's or a drawn reference's circuit names: the template applied, unless the name is a token
-    already (it ends in K, as ``MC1K`` does; FieldUnit's AarTextCodec adds K only when it is absent)."""
+    already (it ends in K, as ``1MCK`` does; FieldUnit's AarTextCodec adds K only when it is absent)."""
     return name if name[-1:].upper() == "K" else template.format(name=name)
 
 

@@ -209,20 +209,18 @@ public:
             codec_.addEncodeEntry(encodeSignal(sc));
         }
 
-        // Maintainer Calls matching the physical desk columns
-        if (sameName(name_, "CP_GilroyInterchange")) {
-            codec_.addDecodeEntry(decodeMaintainer(0, "MC1"));
-            codec_.addDecodeEntry(decodeMaintainer(1, "MC2"));
-            codec_.addEncodeEntry(encodeMaintainer(0, "MC1"));
-            codec_.addEncodeEntry(encodeMaintainer(1, "MC2"));
+        // Maintainer calls matching the physical desk columns. FieldUnit names
+        // call i as <i+1>MC (1MC: 1MCS, 1MCK), so no name is copied here. The
+        // per-station counts are debt: no profile states them yet.
+        uint8_t maintainerCalls = 0;
+        if (sameName(name_, "CP_GilroyInterchange") || sameName(name_, "CP_Christopher")) {
+            maintainerCalls = 2;
         } else if (sameName(name_, "Luchessa") || sameName(name_, "CP_Corporal") || sameName(name_, "CP_Sargent")) {
-            codec_.addDecodeEntry(decodeMaintainer(0, "MC1"));
-            codec_.addEncodeEntry(encodeMaintainer(0, "MC1"));
-        } else if (sameName(name_, "CP_Christopher")) {
-            codec_.addDecodeEntry(decodeMaintainer(0, "MC1"));
-            codec_.addDecodeEntry(decodeMaintainer(1, "MC2"));
-            codec_.addEncodeEntry(encodeMaintainer(0, "MC1"));
-            codec_.addEncodeEntry(encodeMaintainer(1, "MC2"));
+            maintainerCalls = 1;
+        }
+        for (uint8_t i = 0; i < maintainerCalls; ++i) {
+            codec_.addDecodeEntry(decodeMaintainer(i));
+            codec_.addEncodeEntry(encodeMaintainer(i));
         }
 
         codec_.preallocateBuffers();

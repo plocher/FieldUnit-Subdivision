@@ -77,8 +77,10 @@ others follow the RESPONSE text.
 - D12. Maintainer call (Q13, V1). `MC` is the AAR abbreviation for the maintainer call, per the owner:
   AAR Signal Manual Part 33 (circuit nomenclature) and Part 91 (lamp abbreviations), with control token
   `MCS` and indication `MCK`; a Conrail CS-4000 (1981) lamp list also has `MC` (Maintainer's call). The
-  1946 document in `docs/reference` is likely Part 33 itself; to verify there (V1). FieldUnit
-  `MC<n>S`/`MC<n>K` adds an instance number, so one interlocking can have several calls. Keep `MC<n>`.
+  1946 document in `docs/reference` is likely Part 33 itself; to verify there (V1). A call's name is
+  an instance number followed by `MC`, `<n>MC`, so one interlocking can have several calls; its
+  functions are `<n>MCS` and `<n>MCK` (`1MC`: `1MCS`, `1MCK`), as FieldUnit `docs/GLOSSARY.md` §10.2
+  states.[^xmc]
 - D13. Watsonville staging yards (Q12). Withdrawn by the owner; model-layout yards are supported by the
   tooling later. The Watsonville schematic was updated on 2026-10-02 and can be re-checked.
 - D14. Prefixes and normalization. ADR 0001 D12 (amended) decides them: a KiCad name has no `CP_` or
@@ -134,13 +136,13 @@ drawn_tc     = { letter | digit } , "T" , [ digit ] ;   (* as drawn: 1SAT, 2NAAT
 os_tc        = ( switch | derail ) , "T1" ;      (* generated: 783T1, 815AT1 (D3) *)
 local_tc     = [ "0" ] , number , [ letter ] , "T" ;    (* 01T; 1T; cut sections 01AT, 01BT (D5, D11) *)
 
-maintainer_call = "MC" , number ;                (* MC1 (D12) *)
+maintainer_call = number , "MC" ;                (* 1MC (D12) *)
 reference    = interlocking , ":" , name ;       (* Corporal:1NAT; cross-plant reference only *)
 
 token        = lever , ( "NWS" | "RWS" | "NWK" | "RWK" | "WLS" | "WLK" )   (* switch lever *)
              | lever , ( "NGS" | "SGS" | "HS" | "NGK" | "SGK" | "TEK" )   (* signal lever; letters in the local style (D2) *)
              | track_circuit , "K"                                        (* 783T1K *)
-             | maintainer_call , ( "S" | "K" ) ;                          (* MC1S, MC1K *)
+             | maintainer_call , ( "S" | "K" ) ;                          (* 1MCS, 1MCK *)
 ```
 
 Regular expressions (compared case-insensitively; case preserved when produced):
@@ -152,7 +154,7 @@ Regular expressions (compared case-insensitively; case preserved when produced):
 | mast | `^(0?[1-9]\d{0,3})([LRNSEW])([A-Z]+)$`, letters ascending | `784LBC`, `784EAB`, `774NE` |
 | head (KiCad Value) | `^[A-Z]$` | `B` |
 | track circuit | `^[0-9A-Z]*T[0-9]?$` | `783T1`, `1SAT`, `01T`, `01AT` |
-| maintainer call | `^MC[1-9]\d{0,3}$` | `MC1` |
+| maintainer call | `^[1-9]\d{0,3}MC$` | `1MC` |
 
 Rules:
 
@@ -205,7 +207,7 @@ Meaning of each letter:
 | T | last letter of a track circuit, or before a final digit | track section | AAR56 p. 34; D4 |
 | T1 | after a switch or derail name | generated OS track circuit | project (D3); no source |
 | 0 | first digit of a track circuit | arbitrary section, no switch, no signal | D5; AAR56 p. 31 prints `O1T` (letter or digit unverified) |
-| MC | prefix | maintainer call | AAR Signal Manual Parts 33 and 91 per the owner; to verify in AAR46 (D12, V1) |
+| MC | after the call's number | maintainer call | AAR Signal Manual Parts 33 and 91 per the owner; to verify in AAR46 (D12, V1) |
 | F | traffic, in `EFLK`, `WFLK`, `NFLK`, `SFLK` | traffic direction; `FLK` traffic indicator | owner (D5); unverified (V3) |
 | NW, RW | token | normal, reverse of the switch | AAR56 p. 35 |
 | WL | token | electric switch lock | AAR56 p. 35 |
@@ -325,7 +327,7 @@ Order of authority: the relay model and AAR practice first, then FieldUnit `src/
 | Switch, lock and derail Values | compiler.py:907 `(\d+)(D)?`; `_check_dependent_derail_allocations` (compiler.py:1461) keys on `endswith("D")`; `_derail_models` (model.py:516, 528, 533) sets dependence and `controllingSwitch` from a trailing D; the crossover group (model.py:540-555) keys on a trailing `B` | `^(0?[1-9]\d{0,3})([A-Z]?)$` (D8). Error on a Value used twice across switches, locks and derails. Gang = switches and locks with one gang id. A derail is dependent when its gang id matches a gang; `controllingSwitch` names that gang. Nothing keys on the letter D or B. |
 | Head Value | `^[A-E]$` | `^[A-Z]$` (D9). Empty `~` heads already fail (D10). |
 | Track Circuit Value | any non-empty string | Ends in `T` or `T<digit>` (D4), a warning first. Accept `<Interlocking>:` references. The proposed side-letter check is dropped: drawn names are used as drawn. |
-| MaintainerCall Value | not checked | `^MC[1-9]\d{0,3}$` (D12). |
+| MaintainerCall Value | not checked | `^[1-9]\d{0,3}MC$` (D12). |
 | Lever parity | not checked | Optional warning: switch even or signal odd. Not an error (§6, F25). |
 | `_PART_KIND` | 25 parts | Goes (ADR 0002 D2). Observed in the netlists and missing from the map today: `Switch_HandThrow`, `Switch_Powered_NO_TC`, `Track Circuit_Yellow`, `Rule6.13-Yard Limits`. These raise `unknown_symbol` today. The kind for `HBA` and `[NSEW]FLK` is O3. |
 
@@ -1028,3 +1030,8 @@ always does; `other_tc` starts with O.
 | `_PART_KIND` | 25 parts | No change for the grammar. Observed in the netlists and missing from the map: `Switch_HandThrow`, `Switch_Powered_NO_TC`, `Track Circuit_Yellow`, `Rule6.13-Yard Limits`. These raise `unknown_symbol` today. A detector kind for `HBD` would add one part (Q9). |
 
 Outside the plant compiler: the desk `IndicationToken` fields and `configureDesk()` change with the plants. The desk linker pairs by normalized name.
+
+[^xmc]: Amended in place on 2026-11-13 (owner's ruling: the call is `<n>MC`, its functions `<n>MCS` and
+    `<n>MCK`). Until commit e5f0c62, D12, the grammar, the regex, the letter table and the compiler row
+    spelled the call `MC<n>` (`MC1`, `MC1S`, `MC1K`), FieldUnit's former spelling. Appendices A and B
+    keep the names as they were then.

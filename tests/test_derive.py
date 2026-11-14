@@ -525,14 +525,14 @@ class ControlPoints(unittest.TestCase):
         self.assertEqual(only(diags, "control_point"), [("control_point.house", "J1")])
 
     def test_a_maintainer_call_belongs_to_the_house_that_names_it(self):
-        things = "MC1 | appliance | Appliance=lamp Style=maintainer_call rel.house=X:West\n"
-        out, diags = run(layout(X=interlocking(things, "", "East\nWest rel.maintainerCall=X:MC1")))
-        self.assertEqual(control_points(out), {"MC1": "West"})
-        _, diags = run(layout(X=interlocking(things.replace("maintainer_call", "maintainer_call CP_Name=East"), "", "East\nWest rel.maintainerCall=X:MC1")))
-        self.assertEqual(only(diags, "control_point"), [("control_point.disagree", "MC1")])
+        things = "1MC | appliance | Appliance=lamp Style=maintainer_call rel.house=X:West\n"
+        out, diags = run(layout(X=interlocking(things, "", "East\nWest rel.maintainerCall=X:1MC")))
+        self.assertEqual(control_points(out), {"1MC": "West"})
+        _, diags = run(layout(X=interlocking(things.replace("maintainer_call", "maintainer_call CP_Name=East"), "", "East\nWest rel.maintainerCall=X:1MC")))
+        self.assertEqual(only(diags, "control_point"), [("control_point.disagree", "1MC")])
         (d,) = derive.derive(layout(X=interlocking(things.replace("maintainer_call", "maintainer_call CP_Name=East"), "",
-                                                   "East\nWest rel.maintainerCall=X:MC1")))[1].by_code("control_point.disagree")
-        self.assertEqual(d.entities, ("interlockings/X/appliances/MC1", "interlockings/X/houses/West", "interlockings/X/houses/East"))
+                                                   "East\nWest rel.maintainerCall=X:1MC")))[1].by_code("control_point.disagree")
+        self.assertEqual(d.entities, ("interlockings/X/appliances/1MC", "interlockings/X/houses/West", "interlockings/X/houses/East"))
 
     def test_a_virtual_circuit_lists_its_members_and_follows_them(self):
         things = TWO_HOUSES + "0100T | appliance | Appliance=track_circuit Style=virtual Members=1SAT,01T\n"
@@ -651,17 +651,17 @@ class Codeline(unittest.TestCase):
     controls are the levers' ``Control.X`` of the desk columns it is the station of; its indications are the union of
     the tokens its consumers state, each at the station of the appliance that reports it (``tools/railroad/codeline.py``)."""
 
-    THINGS = atoms(ONE_SWITCH) + "MC1 | appliance | Appliance=lamp Style=maintainer_call\n"
+    THINGS = atoms(ONE_SWITCH) + "1MC | appliance | Appliance=lamp Style=maintainer_call\n"
 
     def test_on_an_aar_line_the_interlocking_is_the_one_station_and_sends_what_its_consumers_state(self):
         m = desk(on_line(layout(X=interlocking(self.THINGS, ONE_SWITCH_WIRES, "East")), "X"), {"1": "East"}, [
             lever("835", "WLS", "WLK", "WLQK", "UNUSED", column="Desk:1"),
             lever("836", "NGS", "SGS", "HS", "NGK", "SGK", "TEK", column="Desk:1"),
-            lever("MC1", "S", "K", column="Desk:1"), lamp("1NATK | MC1K | 835T1K")])
+            lever("1MC", "S", "K", column="Desk:1"), lamp("1NATK | 1MCK | 835T1K")])
         got, diags, _ = stations(m)
         self.assertEqual(only(diags, "reference", "desk", "lever", "appliance"), [])
-        self.assertEqual(got, {("X", None): (["835WLS", "836HS", "836NGS", "836SGS", "MC1S"],
-                                             ["1NATK", "835T1K", "835WLK", "835WLQK", "836NGK", "836SGK", "836TEK", "MC1K"])})
+        self.assertEqual(got, {("X", None): (["1MCS", "835WLS", "836HS", "836NGS", "836SGS"],
+                                             ["1MCK", "1NATK", "835T1K", "835WLK", "835WLQK", "836NGK", "836SGK", "836TEK"])})
         out, _ = derive.derive(m)
         self.assertNotIn("derived", out["interlockings"]["X"])
         self.assertNotIn("derived", out["interlockings"]["X"]["houses"]["East"])
@@ -896,7 +896,7 @@ class Desk(unittest.TestCase):
     control, each ``Indication.X`` an expression whose tokens the desk consumes, as are a lamp's ``Indication``'s. An
     empty per-pin field binds none; a missing one is reported, never made up from the lever's name."""
 
-    THINGS = atoms(ONE_SWITCH) + "MC1 | appliance | Appliance=lamp Style=maintainer_call\n"
+    THINGS = atoms(ONE_SWITCH) + "1MC | appliance | Appliance=lamp Style=maintainer_call\n"
 
     def model(self, devices: list[dict]) -> dict:
         m = on_line(layout(X=interlocking(self.THINGS, ONE_SWITCH_WIRES, "East")), "X")
@@ -905,10 +905,10 @@ class Desk(unittest.TestCase):
 
     def test_a_levers_tokens_are_its_per_pin_fields_never_its_name(self):
         lv = lever("835", "WLS", "WLK", "WLQK", "UNUSED", Control_WLS="X:835WLS", Indication_WLK="!835WLK",
-                   Indication_WLQK="835WLQK & (1NATK | X:MC1K)")
+                   Indication_WLQK="835WLQK & (1NATK | X:1MCK)")
         out, diags = run(self.model([lv]))
         self.assertEqual(out["officeUnits"]["Desk"]["devices"][0]["derived"],
-                         {"serves": "X:835", "controls": ["X:835WLS"], "indications": ["X:835WLK", "X:835WLQK", "X:1NATK", "X:MC1K"]})
+                         {"serves": "X:835", "controls": ["X:835WLS"], "indications": ["X:835WLK", "X:835WLQK", "X:1NATK", "X:1MCK"]})
         self.assertEqual(only(diags, "desk"), [])
 
     def test_a_bound_pin_with_no_token_field_is_missing_and_binds_nothing(self):
@@ -923,15 +923,15 @@ class Desk(unittest.TestCase):
         self.assertEqual(only(diags, "desk"), [("desk.expression", "0"), ("desk.expression", "1")])
 
     def test_a_lamp_reads_its_indication_expression(self):
-        out, diags = run(self.model([lamp("1NATK|!X:MC1K, 835T1K"), lever("MC1", "S", "K")]))
+        out, diags = run(self.model([lamp("1NATK|!X:1MCK, 835T1K"), lever("1MC", "S", "K")]))
         self.assertEqual(out["officeUnits"]["Desk"]["devices"][0]["derived"],
-                         {"indications": ["X:1NATK", "X:MC1K", "X:835T1K"], "expression": "X:1NATK | !X:MC1K | X:835T1K"})
+                         {"indications": ["X:1NATK", "X:1MCK", "X:835T1K"], "expression": "X:1NATK | !X:1MCK | X:835T1K"})
         self.assertEqual(only(diags, "desk", "lamp", "reference"), [])
 
     def test_a_lamp_without_indication_falls_back_to_its_legacy_token_at_info(self):
-        out, diags = run(self.model([lamp("", IndicationToken="1NAT, MC1K"), lamp("1NATK", IndicationToken="9T"), lever("MC1", "S", "K")]))
+        out, diags = run(self.model([lamp("", IndicationToken="1NAT, 1MCK"), lamp("1NATK", IndicationToken="9T"), lever("1MC", "S", "K")]))
         devs = out["officeUnits"]["Desk"]["devices"]
-        self.assertEqual(devs[0]["derived"], {"indications": ["X:1NATK", "X:MC1K"], "expression": "X:1NATK | X:MC1K"})
+        self.assertEqual(devs[0]["derived"], {"indications": ["X:1NATK", "X:1MCK"], "expression": "X:1NATK | X:1MCK"})
         self.assertEqual(devs[1]["derived"]["indications"], ["X:1NATK"])           # Indication wins; no fallback
         self.assertEqual(only(diags, "desk", "reference"), [("desk.legacy_token", "0")])
         _, report = derive.derive(self.model([lamp("", IndicationToken="1NAT")]))
@@ -945,7 +945,7 @@ class Desk(unittest.TestCase):
     def test_a_lever_serves_a_switch_a_maintainer_call_or_its_masts(self):
         """A signal lever works the masts that state its number (the owner, 2026-11-12): derived.masts, from the stated
         atom; a number no mast states and no appliance carries is lever.serves."""
-        out, diags = run(self.model([lever("835", "WLS"), lever("836", "HS", Style="signal"), lever("MC1", "S"), lever("999", "HS", Style="signal")]))
+        out, diags = run(self.model([lever("835", "WLS"), lever("836", "HS", Style="signal"), lever("1MC", "S"), lever("999", "HS", Style="signal")]))
         self.assertEqual(only(diags, "lever"), [("lever.serves", "3")])
         self.assertEqual([d["derived"].get("masts") for d in out["officeUnits"]["Desk"]["devices"]], [None, ["X:836NAB", "X:836SA", "X:836SB"], None, None])
 
