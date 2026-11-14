@@ -635,6 +635,13 @@ def receives(context, name, controls):
     assert got == _tokens(controls.strip('"')), f"station {name} receives {got!r}"
 
 
+@then('the control functions station "{name}" receives are "{functions}"')
+def receives_functions(context, name, functions):
+    got = sorted((f.appliance, f.word) for f in _station(context, name).functions if f.direction == "control")
+    want = sorted(tuple(f.split()) for f in _tokens(functions))
+    assert got == want, f"station {name} receives the control functions {got!r}"
+
+
 @then('station "{name}" must send {indications}')
 def must_send(context, name, indications):
     got = sorted(_station(context, name).indications)
@@ -1000,3 +1007,99 @@ def passes_no_circuit(context, mast, alignment):
 def route_ceiling(context, mast, alignment, word):
     got = _route(context, mast, alignment).ceiling
     assert got == word, f"ceiling {got!r}, not {word!r}"
+
+
+# ------------------------------------------------------------------- ladders and selectors (issue #145; the owner, 2026-11-13)
+
+def _selector(context, name: str) -> dict:
+    found = [d for ix in context.derived["interlockings"].values() for d in ix.get("devices", [])
+             if d.get("given", {}).get("Appliance") == "selector" and d["given"].get("Name") == name]
+    assert len(found) == 1, f"{name}: {len(found)} selectors of that name"
+    return found[0]
+
+
+def _label(choice: dict) -> str:
+    """A choice in the owner's notation, ``17R: 15N 17R``: the leg, then the alignment, each switch unqualified."""
+    switch, _, port = choice["leg"].rpartition(".")
+    return f"{switch.partition(':')[2]}{port}: " + " ".join(
+        f"{a['appliance'].partition(':')[2]}{a['position'][0]}" for a in choice["alignment"])
+
+
+@then('selector "{name}" offers "{choices}"')
+def selector_offers(context, name, choices):
+    got = _selector(context, name).get("derived", {}).get("choices", [])
+    assert [c["detent"] for c in got] == list(range(1, len(got) + 1)), f"{name}: detents {[c['detent'] for c in got]}"
+    labels = "; ".join(_label(c) for c in got)
+    assert labels == choices, f"{name} offers {labels!r}, not {choices!r}"
+
+
+@then('selector "{name}" offers no choices')
+def selector_offers_none(context, name):
+    got = _selector(context, name).get("derived", {}).get("choices")
+    assert got is None, f"{name} offers {got!r}"
+
+
+@then('selector "{name}" ranges from {low:d} to {high:d}')
+def selector_range(context, name, low, high):
+    got = _selector(context, name).get("derived", {}).get("range")
+    assert got == {"min": low, "max": high}, f"{name}: range {got!r}"
+
+
+@then('ladder "{rid}" starts at "{start}" with switches "{switches}"')
+def ladder_switches(context, rid, start, switches):
+    d = _row_named(context, rid).get("derived", {})
+    assert d.get("start") == start, f"{rid}: start {d.get('start')!r}"
+    assert d.get("switches") == [s.strip() for s in switches.split(",")], f"{rid}: switches {d.get('switches')!r}"
+
+
+def _given_selector(context, name: str) -> dict:
+    return next(d for ix in _model(context)["interlockings"].values() for d in ix.get("devices", [])
+                if d.get("given", {}).get("Appliance") == "selector" and d["given"].get("Name") == name)
+
+
+@given('selector "{name}" binds VALUE to "{value}" and BUTTON to "{lock}"')
+def selector_binds(context, name, value, lock):
+    _given_selector(context, name).setdefault("relations", {})["bindings"] = {"VALUE": value, "BUTTON": lock}
+
+
+@given('selector "{name}" binds VALUE to "{value}"')
+def selector_binds_value(context, name, value):
+    _given_selector(context, name).setdefault("relations", {})["bindings"] = {"VALUE": value}
+
+
+@given('the desk has a CODE button on column "{column}" bound to "{route}"')
+def code_button(context, column, route):
+    """A desk code lever (Appliance lever, Style code) in a column, its CODE pin bound to ``route``."""
+    _desk(context)["devices"].append({"given": {"Appliance": "lever", "Name": "CODE", "Style": "code", "Control.CODE": ""},
+                                      "relations": {"column": f"Desk:{column}", "bindings": {"CODE": route}}})
+
+
+@then('selector "{name}" goes to station "{station}"')
+def selector_station(context, name, station):
+    got = _selector(context, name).get("derived", {}).get("station")
+    assert got == station, f"{name}: station {got!r}, not {station!r}"
+
+
+@then('selector "{name}" goes to no station')
+def selector_no_station(context, name):
+    got = _selector(context, name).get("derived", {}).get("station")
+    assert got is None, f"{name}: station {got!r}"
+
+
+@then('selector "{name}" is sent by the CODE button of column "{column}"')
+def selector_code(context, name, column):
+    got = _selector(context, name).get("derived", {}).get("code")
+    assert got == column, f"{name}: code {got!r}, not {column!r}"
+
+
+@then('selector "{name}" is sent by no CODE button')
+def selector_no_code(context, name):
+    d = _selector(context, name).get("derived", {})
+    assert d.get("code") is None and "send" not in d.get("inputs", {}), f"{name}: code {d.get('code')!r}, inputs {d.get('inputs')!r}"
+
+
+@then('selector "{name}" shows its choice on "{value}", locks it in on "{lock}" and sends it on "{send}"')
+def selector_inputs(context, name, value, lock, send):
+    got = _selector(context, name).get("derived", {}).get("inputs")
+    want = {"value": value, "lock": lock, "send": send}
+    assert got == want, f"{name}: inputs {got!r}, not {want!r}"

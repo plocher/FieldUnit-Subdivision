@@ -50,7 +50,9 @@ Per symbol, by Role:
   contract defect, caught here, never a model finding).
 - DEVICE, PANEL: Appliance present; no Kind; one `Pin.<base>` per function pin (Column excepted) and
   no `Pin.*` without a pin; the capability is one primary word from the vocabulary (binary, level,
-  position, color, pixel, message); direction is the KiCad electrical type, which must be input,
+  position, color, pixel, message, value: binary two states, level a magnitude, value a whole number
+  within a range the driver may be given as min, max and wrap, whose meaning the device decides; issue
+  #145); direction is the KiCad electrical type, which must be input,
   output or bidirectional on a function pin (E66); no retired field (a pin's base name as a field,
   ControlToken, Vital, NormalIs, Chain, Index); every other field, the settings, is
   lower_snake_case; `Invert` names only this symbol's pins; one capability per unit, capability
@@ -88,7 +90,7 @@ from tools.layout_model.grammar import REGIMES  # noqa: E402  (the switch words:
 
 LIBDIR = Path.home() / "Dropbox/KiCad/Railroad/symbols"
 LIBRARIES = ("Railroad-Trackplan", "Railroad-Office", "Railroad-Field", "Railroad-HardwareIO")
-VOCABULARY = {"binary", "level", "position", "color", "indication", "message"}
+VOCABULARY = {"binary", "level", "value", "position", "color", "indication", "message"}
 SOURCE_KINDS = {"indication"}  # a cast's one input
 FUNCTION_ETYPES = {"input", "output", "bidirectional"}
 STRUCTURAL = {"TRACK", "POLICY", "STRUCTURE", "COLUMN", "OFFICE_UNIT", "TRANSPORT", "CODELINE_ENCODING", "IO_ENCODING"}

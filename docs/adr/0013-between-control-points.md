@@ -254,6 +254,13 @@ A joint is therefore one of three cases, with two results (owner, 2026-11-13):
 A net that holds a marker does not by itself pin a face: the 6.13 marker on 1BT pins neither J1 nor J2. A marker on
 a stub with one joint covers that stub only.
 
+A `POLICY` of a Kind no rule reads is `policy.kind` at warning, and it is contained (owner, 2026-11-13):[^policykind]
+its piece gets no regime, a regime marker on the same piece included, and passes none on, so no regime crosses it.
+The file is still written. A route over such a piece takes the regimes reference table's `defaults.none`,
+RESTRICTING, as over any track with no stated regime; nothing in the route rules is special to it. Within one major
+version an unknown Kind can only be a compatible addition, so the likely causes are reference data older than the
+symbol library, or a misspelling.
+
 ![A regime marker pinned on a joint face (Watsonville staging track 1)](0013/regime-pinned-face.svg)
 
 `IRJ-END_CTC` and the Kind `END_CTC` are retired. The prototype's signs are rendered from the two adjacent regimes: a face reads END of the regime
@@ -774,6 +781,10 @@ Each consumer input, the Part 1 section that states it, and its form:
 [^pinned]: Until commit `4f3660f` a marker on a joint's net passed its regime across that joint like any other, and
     a boundary was only a marker on each side or a declared `RegimeBoundary`. Watsonville's staging tracks 1 to 7,
     with yard limits at one end and CTC pinned on the ladder face at the other, were 21 `regime.ambiguous`.
+
+[^policykind]: Added in place on 2026-11-13 (issue #145, the owner). Until then an unknown `POLICY` Kind was the
+    KiCad importer's `policy.kind` and was read as no sign at all, so the regime beside it flowed across its piece;
+    the earlier text is at commit `785b056`.
 
 [^membership]: Until commit `521cb90` the second source read "else from membership in an interlocking (CTC)", with the
     error "a regime other than CTC on interlocking track" and "interlocking limits lie inside the CTC regime". The

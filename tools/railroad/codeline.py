@@ -11,6 +11,13 @@ line each house is a station, on an AAR token line the interlocking is one.
   interlocking (the owner, 2026-10-28). That station does all the code line work for the lever; its field unit drives
   masts in other houses internally, unseen by the office. A lever's tokens need no reporter, only an appliance it
   serves (the derivation's ``lever.serves``).
+- **Selectors.** A selector is in no column (the owner, 2026-11-13): its choices go to its ``derived.station``, the
+  station of its ladder's switches, whose CODE button sends them. A selector's controls are functions, not tokens
+  (the owner, 2026-11-14; GLOSSARY §5 "function"): each entry of a choice's ``alignment`` is a control ``Function``,
+  the switch and the function word the choice sends it (``Function("15", "REVERSE", "control")``), and the station
+  receives every function of every choice in ``functions``. Nothing here spells a token for them; a token is one
+  encoding's spelling of a function. Levers and lamps still report tokens; ADR 0016 (proposed) moves them to the
+  same shape.
 - **Lamps and consumer rows.** Panels define token content (the owner, 2026-10-28): what a station must send is the
   union of the indication tokens its consumers state. A lamp's or a consumer row's token belongs to the station of the
   appliance that reports it (``reporters``): on a per-house line the house that is its ``derived.controlPoint``. A lamp
@@ -20,12 +27,20 @@ line each house is a station, on an AAR token line the interlocking is one.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, NamedTuple, Optional
 
 from tools.layout_model import expression, reference
 from tools.layout_model.grammar import lever_class, styles
 
 StationKey = tuple[str, Optional[str]]                 # (interlocking, house); house None: the interlocking is the station
+
+
+class Function(NamedTuple):
+    """One named control or office indication of a station (GLOSSARY §5; ADR 0016 §3.1): the appliance's bare name,
+    the function word and the direction (``Function("15", "REVERSE", "control")``)."""
+    appliance: str
+    word: str                                          # a switch's NORMAL or REVERSE
+    direction: str                                     # control or indication
 
 
 @dataclass
@@ -34,6 +49,7 @@ class Station:
     house: Optional[str]                               # None on a line whose station is the interlocking
     controls: set[str] = field(default_factory=set)    # bare tokens (783NWS)
     indications: set[str] = field(default_factory=set)  # bare tokens it must send (783NWK)
+    functions: set[Function] = field(default_factory=set)  # functions it receives from selectors (15, REVERSE, control)
 
     @property
     def key(self) -> StationKey:
@@ -234,12 +250,35 @@ def stations(model: dict[str, Any]) -> Codeline:
                 continue
             for token in d.get("indications", []):
                 indication(token, what, where)
+    for dev in _selectors(model):                       # a selector's choice goes to its station, sent by its CODE button
+        b, _, h = dev["derived"]["station"].partition(":")
+        key = (b, h or None)
+        if key in out:
+            out[key].functions.update(_functions(dev, b))
     for a, ix in ixs.items():
         for row in ix.get("track", {}).get("consumers", []):
             token = row.get("relations", {}).get("indication")
             if token:
                 indication(token, f"{a}: the consumer of {token}", f"interlockings/{a}/track/consumers/{row.get('id', '')}")
     return Codeline(out, problems)
+
+
+def _selectors(model: dict[str, Any]):
+    """Every selector device, in the field or on the desk, that derives a station."""
+    for unit in (*model.get("interlockings", {}).values(), *model.get("officeUnits", {}).values()):
+        for dev in unit.get("devices", []):
+            if dev.get("given", {}).get("Appliance") == "selector" and dev.get("derived", {}).get("station"):
+                yield dev
+
+
+def _functions(dev: dict[str, Any], b: str):
+    """The control functions of every choice of a selector, a switch and its position word each, for the appliances
+    of interlocking ``b``."""
+    for choice in dev["derived"].get("choices") or []:
+        for entry in choice.get("alignment", []):
+            ab, _, name = entry["appliance"].partition(":")
+            if ab == b:
+                yield Function(name, entry["position"], "control")
 
 
 def _column_station(model: dict[str, Any], ou_name: str, dev: dict[str, Any], b: str) -> Optional[StationKey]:

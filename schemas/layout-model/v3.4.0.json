@@ -737,6 +737,59 @@
                     "$ref": "#/$defs/qualifiedName"
                   },
                   "description": "A desk signal lever's masts: every mast of the interlocking it serves whose given.signal is the lever's number, sorted (ADR 0003 rule 5; the owner, 2026-11-12). From the stated atom, never from a Name. Absent on every other lever; a signal lever with none is lever.serves."
+                },
+                "choices": {
+                  "type": "array",
+                  "description": "A selector's choices (Appliance selector; issue #145, the owner, 2026-11-13): the ladder it serves (serves, the LADDER marker its Name names), one per leg, in detent order, from the facing walk of tools/railroad/ladders.py. detent 1 is nearest the start; leg is the switch port; alignment is every ladder switch from the start, in walk order, with its position, a derail the dispatcher controls at REVERSE, its clear position (the owner, 2026-11-14). A choice's controls are its alignment: control functions its station receives, not tokens (the owner, 2026-11-14; codeline.stations). Absent when the selector serves no ladder (selector.ladder).",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["detent", "leg", "alignment"],
+                    "properties": {
+                      "detent": {"type": "integer", "minimum": 1},
+                      "leg": {"$ref": "#/$defs/portRef"},
+                      "alignment": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["appliance", "position"],
+                          "properties": {
+                            "appliance": {"$ref": "#/$defs/qualifiedName"},
+                            "position": {"type": "string", "enum": ["NORMAL", "REVERSE"]}
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "range": {
+                  "type": "object",
+                  "description": "A selector's value range: 1 to the number of its choices (pin kind value; issue #145). Its wrap stays stated.",
+                  "additionalProperties": false,
+                  "required": ["min", "max"],
+                  "properties": {
+                    "min": {"type": "integer"},
+                    "max": {"type": "integer"}
+                  }
+                },
+                "station": {
+                  "type": "string",
+                  "description": "A selector's station (the owner, 2026-11-13): the station that owns its ladder's switches, which receives the choice. The interlocking on a line whose station is the interlocking (Watsonville), interlocking:house on a US&S 506 line. A selector is in no column. Absent when the switches are in two stations (selector.station)."
+                },
+                "code": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "The desk column, qualified by its OfficeUnit (SouthCTC:14), whose CODE button sends a selector's choice with the levers of that column (the owner, 2026-11-13). Absent when the station has no CODE button (selector.code) or more than one (selector.codes)."
+                },
+                "inputs": {
+                  "type": "object",
+                  "description": "What a desk generator reads to work a selector (the owner, 2026-11-13): value, the route bound to its VALUE pin (the choice shown); lock, the route bound to BUTTON (locks the choice in); send, the route of the CODE button that sends the locked choice. A key is absent when that pin is bound to nothing (selector.input) or no one CODE button is found.",
+                  "additionalProperties": false,
+                  "properties": {
+                    "value": {"$ref": "#/$defs/route"},
+                    "lock": {"$ref": "#/$defs/route"},
+                    "send": {"$ref": "#/$defs/route"}
+                  }
                 }
               }
             }
@@ -1548,6 +1601,14 @@
                     "$ref": "#/$defs/qualifiedName"
                   },
                   "description": "A switch's or lock's dependent derails (ADR 0003 D8): every derail of its interlocking whose relations.switch names it, qualified and sorted. Absent when none does."
+                },
+                "ladder": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "The ladder a switch is on (issue #145): the name of the LADDER marker whose facing walk reaches it at C. Absent on a switch of no ladder, or of two (ladder.shared)."
+                },
+                "selector": {
+                  "$ref": "#/$defs/qualifiedName",
+                  "description": "A ladder switch's control source, the selector that serves its ladder, by the selector's Name in its scope (issue #145): what works the switch, as a switch lever would. Absent while no selector serves the ladder (ladder.selector)."
                 }
               }
             }
@@ -1600,7 +1661,7 @@
         },
         "name": {
           "$ref": "#/$defs/qualifiedName",
-          "description": "The row's name where it has one (an industry)."
+          "description": "The row's name where it has one (an industry; a ladder marker, Kind LADDER, which names its ladder: issue #145). A named row's pins are named by it (Watsonville:Arrival.track)."
         },
         "relations": {
           "allOf": [
@@ -1659,6 +1720,17 @@
                 "controlPoint": {
                   "$ref": "#/$defs/qualifiedName",
                   "description": "A signal joint's control point: its given.CP, or its mast's, or the interlocking's one house."
+                },
+                "switches": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/qualifiedName"
+                  },
+                  "description": "A ladder marker's ladder switches (Kind LADDER; issue #145): every facing-point switch its facing walk enters at C, in walk order (tools/railroad/ladders.py)."
+                },
+                "start": {
+                  "$ref": "#/$defs/portRef",
+                  "description": "A ladder marker's start: the start switch's port (N or R) that the start leg meets trailing (Watsonville:837.R). Absent when the walk meets no switch trailing."
                 }
               }
             }

@@ -31,6 +31,11 @@ A plate is a POLICY of Kind ``RULE_290_G`` or ``RULE_290_R`` (ADR 0013 §5, 2026
 mast's SIGNAL net: its row's relation is ``mast``, the mast on that net, and it has no track side; that the mast is
 ``PERMISSIVE`` is the reference derivation's check.
 
+A policy sign that states a Name is a named row, as an industry end is: a ladder marker (Kind ``LADDER``, issue #145)
+names its ladder, so its row carries ``name`` and its pin is named ``Watsonville:Arrival.track``. A POLICY whose Kind no
+rule reads (not a GCOR Rule regime, the current-of-traffic sign, a plate or a ladder marker) is written as drawn; that
+no rule reads it is the reference derivation's ``policy.kind``, a fact of the model, not of the drawing.
+
 A track net is read across sheets (ADR 0013 §7.1, 2026-11-02): block track is drawn from one control point to the next,
 a hierarchical label continues the run, and pairing comes from netlist connectivity, so a track pin's wire names every
 other track pin on its net whatever sheet that pin is drawn on, each by its own sheet's interlocking (Sargent's 834
@@ -178,7 +183,7 @@ def pin_ref(interlocking: str, s: Symbol, pin: str) -> Optional[str]:
         return None
     if is_consumer(interlocking, s):
         return f"{s.uuid}.TC" if s.uuid else None
-    name = key_of(s) if s.role != "POLICY" else ""
+    name = key_of(s)
     if name:
         return port_ref(interlocking, name, side_of(s, pin))
     if s.role in ("TRACK", "POLICY"):
@@ -366,7 +371,7 @@ def _plan(sm: Seams, ix, syms: list[Symbol], track_nets: frozenset[str] = frozen
         row: dict[str, Any] = {"id": s.uuid or None, "given": given_of(s), "relations": relations}
         if not s.uuid:
             report.missing("track.id", f"{ix.name}: a {s.kind} has no KiCad UUID in the export, so its row has no id", source=loc(s))
-        name = key_of(s) if s.role == "TRACK" else ""
+        name = key_of(s)                                                 # an industry end, a ladder marker (issue #145)
         if name:
             if name in named_track or name in plan.appliances:
                 report.error("track.duplicate", f"{ix.name}: two symbols named {name!r} (ADR 0003 D8: names are unique in an interlocking)", source=loc(s))

@@ -147,6 +147,15 @@ names every other track pin its wire reaches, so the relation is symmetric):
   switch that is no switch or lock of the interlocking is ``derail.switch`` at error, and the derail is read as drawn,
   on its own. What works a switch or derail is read from the lever devices named for it (``control_sources``):
   ``switch.lever``, ``switch.lever.desk``, ``switch.lock.local``, ``switch.lever.hand`` and ``derail.regime``.
+- **A ladder and its selector** (issue #145, a POC; the owner, 2026-11-13): a ``LADDER`` marker, a policy sign with a
+  Name on the ladder's start leg, names the ladder; the facing walk from it, which finds the ladder's switches and
+  the ordered choices, is the domain library ``tools/railroad/ladders.py``'s, and its results are written here
+  (ADR 0015). A selector device serves the ladder its Name names and derives ``choices`` and ``range``; each ladder
+  switch derives ``ladder`` and ``selector``, a control source as a switch lever is, so a powered ladder switch a
+  selector serves is no ``switch.lever`` (``ladders``). A selector is in no column: its choice goes to the station
+  that owns its ladder's switches, and that station's CODE button sends it (``station``, ``code``, ``inputs``;
+  ``_selector_sends``).
+- An unknown POLICY Kind is ``policy.kind`` at warning and holds its piece to no regime (``regimes``).
 - An OfficeUnit's columns (``house``, ``interlocking``), every device's ``serves``, a desk lamp's ``indications`` and
   ``expression`` (its ``Indication``, ``tools/layout_model/expression.py``), a lever's ``controls`` and ``indications``
   from its per-pin ``Control.X`` and ``Indication.X``.
@@ -163,11 +172,11 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Optional
 
-from tools.railroad import codeline
+from tools.railroad import codeline, ladders
 
 from . import expression, reference
 from . import reference_data as refdata
-from .grammar import GANG, HAND, POWERED, depends_on, direction_of, dispatcher_controlled, is_derail, is_powered, regime, regime_word, styles
+from .grammar import GANG, HAND, LADDER, POWERED, SELECTOR, depends_on, direction_of, dispatcher_controlled, is_derail, is_powered, regime, regime_word, styles
 from . import sort_key
 from .report import Report
 
@@ -185,6 +194,7 @@ MAST_KINDS = frozenset({"CONTROLLED", "ABSOLUTE", "PERMISSIVE"})   # what a mast
 CURRENTS = frozenset({"LEFT", "RIGHT"})                            # a GCOR_RULE_9_14 sign's current of traffic (ADR 0013 §8)
 REGIME_BY = ("marker", "inherited")                # how a piece's regime was found (ADR 0013 §7.1)
 PLATES = frozenset({"RULE_290_G", "RULE_290_R"})                   # a plate on a mast's SIGNAL net (ADR 0013 §5)
+POLICY_KINDS = frozenset(reference.REGIMES) | {reference.CURRENT_OF_TRAFFIC, LADDER} | PLATES   # every POLICY Kind a rule reads; another is policy.kind
 
 
 @lru_cache(maxsize=1)
@@ -842,6 +852,7 @@ class _Derivation:
         self.r = _Reporter()
         self.report = self.r.report
         self.plans: dict[str, _Plan] = {}
+        self.selected: dict[str, str] = {}                  # a ladder switch -> the ladder a selector serves it through
 
     # ------------------------------------------------------------------------------------------- consumers
 
@@ -897,6 +908,7 @@ class _Derivation:
         self.codeline()
         self.derails()
         self.rd.resolve_layout()
+        self.ladders()
         self.control_sources()
         self.positions()
         self.train_orders()
@@ -1034,7 +1046,10 @@ class _Derivation:
         inherits across it, and each side states its own regime or inherits from elsewhere. A joint with a marker
         pinned on one face passes no regime either (the owner, 2026-11-13): a marker whose track pin's net holds one
         joint face and no other stands at that face, and its regime flows out that side only; a marker on a net that
-        holds two joints' faces stands at neither and passes its regime across both. A piece with no regime is
+        holds two joints' faces stands at neither and passes its regime across both. A POLICY of a Kind no rule reads
+        is ``policy.kind`` at warning and is contained (the owner, 2026-11-13): its piece gets no regime, a marker on it
+        included, and passes none on, so no regime crosses it; a route over it takes the regimes table's
+        ``defaults.none``, RESTRICTING, as over any track with no stated regime. A piece with no regime is
         ``regime.none`` at missing. A CTC piece whose head-block signals (the masts that govern into it) are all
         ``ABSOLUTE`` is ``regime.absolute`` at warning: an automatic signal gives no authority and Chapter 10 gives
         signal-indication authority (§4). Interlocking limits are a derived fact independent of regime (GCOR glossary:
@@ -1064,9 +1079,18 @@ class _Derivation:
                 for s in ("governed", "approach") if kind == "IRJ_SIGNAL" else ("A", "B"):
                     faces[f"{p}.{s}"].update(row.get("relations", {}).get(s) or [])
         pinned: set[str] = set()                                                # joint faces a regime marker is pinned on
+        contained: set[str] = set()                                             # pieces an unknown POLICY Kind stands on
         for a, plan in self.plans.items():
             for row in plan.track.get("policies", []):
                 kind, node = row.get("given", {}).get("Kind"), f"{plan.row_prefix(row)}.track"
+                if kind not in POLICY_KINDS:
+                    self.r.add("policy.kind", f"{a}: POLICY Kind {kind!r} is no sign the rules read (a GCOR Rule regime, "
+                               f"{reference.CURRENT_OF_TRAFFIC}, a plate or {LADDER}); the reference data may be older than the "
+                               "symbol library, or the Kind is misspelt. Its piece gets no regime and passes none on",
+                               plan.where("track", "policies", row.get("id", "")))
+                    if node in union:
+                        contained.add(union.find(node))
+                    continue
                 if kind in reference.REGIMES and node in union:
                     stated[union.find(node)][kind].append(plan.where("track", "policies", row.get("id", "")))
                     on = {f for f in faces if f in (row.get("relations", {}).get("track") or []) or node in faces[f]}
@@ -1101,8 +1125,10 @@ class _Derivation:
             return self.plans[a].piece(node)[0] or node, a
 
         regime: dict[str, tuple[str, str]] = {}                                 # piece -> (Kind, how)
-        broken: set[str] = set()                                                # pieces whose regime is an error: none, and none passed on
+        broken: set[str] = set(contained)                                       # pieces whose regime is an error: none, and none passed on
         for root in sorted(stated, key=name_of):
+            if root in contained:                                               # an unknown sign holds its piece: no regime, even a stated one
+                continue
             kinds, (name, a) = stated[root], name_of(root)
             paths = tuple(p for k in sorted(kinds) for p in kinds[k])
             if len(kinds) > 1:
@@ -1361,6 +1387,122 @@ class _Derivation:
                 a = plan.appliances[sn]
                 _set_derived(a, {**a.get("derived", {}), "derails": sorted(names, key=sort_key)})
 
+    def ladders(self) -> None:
+        """A selector gives a knob the ordered choices of the ladder it serves (issue #145; the owner, 2026-11-13). The
+        facing walk from each ``LADDER`` marker is the domain library's (``tools/railroad/ladders.py``); its results are
+        written here, at save (ADR 0015). A selector (a device, Appliance ``selector``, on the desk or in the field)
+        serves the ladder its Name names, qualified like a lever (``Watsonville:Arrival``), and derives ``choices``, each
+        with its ``detent`` (1 nearest the start), its ``leg`` and its ``alignment``, and ``range``, 1 to the number of
+        choices; its ``wrap`` stays stated. A choice's alignment is its control functions, a switch and its position
+        word each (the owner, 2026-11-14): no control token is spelled here (``codeline.stations``). The marker's row derives ``switches``, in walk order, and ``start``, the
+        start switch's port its leg meets. Each ladder switch derives ``ladder``, and ``selector`` where one serves the
+        ladder: its control source, which ``control_sources`` reads as it reads a switch lever. A selector whose Name
+        names no ladder is ``selector.ladder`` at error; a ladder no selector serves is ``ladder.selector`` at info. A
+        switch on two ladders is the library's ``ladder.shared`` and derives neither."""
+        found = ladders.find(self.m)
+        self.report.diags.extend(found.report.diags)
+        served: set[str] = set()
+        for where, dev in self._devices():
+            if dev.get("given", {}).get("Appliance") != SELECTOR or not dev.get("derived", {}).get("serves"):
+                continue
+            lad = found.ladders.get(dev["derived"]["serves"])
+            if lad is None:
+                self.r.add("selector.ladder", f"selector {dev['derived']['serves']}: its Name names no ladder of its interlocking; a "
+                           "selector serves the ladder its Name names", where)
+                continue
+            served.add(lad.name)
+            choices = [c.as_dict(i) for i, c in enumerate(lad.choices, 1)]
+            _set_derived(dev, {**dev["derived"], "choices": choices,
+                               "range": {"min": 1, "max": len(lad.choices)} if lad.choices else None,
+                               **self._selector_sends(dev, lad, where)})
+        for lad in found.ladders.values():
+            b = lad.name.partition(":")[0]
+            row = next((r for r in self.m["interlockings"][b].get("track", {}).get("policies", []) if r.get("name") == lad.name), None)
+            if row is not None:
+                _set_derived(row, {**row.get("derived", {}), "switches": list(lad.switches), "start": lad.start})
+            if lad.name not in served:
+                self.r.add("ladder.selector", f"ladder {lad.name}: no selector serves it; what works its switches is not drawn yet",
+                           lad.where)
+            for s in lad.switches:
+                sb, _, sn = s.partition(":")
+                a = self.m["interlockings"].get(sb, {}).get("appliances", {}).get(sn)
+                if a is None or len(found.of(s)) != 1:
+                    continue
+                _set_derived(a, {**a.get("derived", {}), "ladder": lad.name, "selector": lad.name if lad.name in served else None})
+                if lad.name in served:
+                    self.selected[s] = lad.name
+
+    def _selector_sends(self, dev: dict[str, Any], lad: "ladders.Ladder", where: str) -> dict[str, Any]:
+        """Who sends a selector's choice (the owner, 2026-11-13): a selector is in no column. Its choice goes to the
+        station that owns its ladder's switches (on a US&S 506 line the house that is their control point, else their
+        interlocking), and that station's CODE button sends it, with the levers of its column, as ordinary controls. The
+        CODE button is the code lever on the one desk column whose station that is. The selector derives ``station``,
+        ``code`` (that column, qualified by its OfficeUnit) and ``inputs``: ``value`` the route bound to its VALUE pin
+        (the choice shown), ``lock`` the route bound to BUTTON (which locks the choice in) and ``send`` the CODE button's
+        (which sends the locked choice). Reported: the switches in two stations, ``selector.station`` at error; no CODE
+        button for the station, ``selector.code`` at missing; more than one, ``selector.codes`` at warning (which one
+        sends is not stated; none is chosen); VALUE or BUTTON bound to nothing, ``selector.input`` at missing."""
+        b = lad.name.partition(":")[0]
+        name = lad.name.partition(":")[2]
+        out: dict[str, Any] = {}
+        bindings = dev.get("relations", {}).get("bindings", {})
+        inputs = {"value": bindings.get("VALUE"), "lock": bindings.get("BUTTON")}
+        for pin, key in (("VALUE", "value"), ("BUTTON", "lock")):
+            if not inputs[key]:
+                self.r.add("selector.input", f"selector {name}: its {pin} pin is bound to no driver pin; what "
+                           f"{'shows the choice' if pin == 'VALUE' else 'locks the choice in'} is not drawn yet", where)
+        sc = codeline.scope(self.m, b)
+        house: Optional[str] = None
+        if sc == "house":
+            apps = self.m["interlockings"][b].get("appliances", {})
+            houses = sorted({cp.partition(":")[2] for s in lad.switches
+                             if (cp := apps.get(s.partition(":")[2], {}).get("derived", {}).get("controlPoint"))})
+            if len(houses) != 1:
+                if len(houses) > 1:
+                    self.r.add("selector.station", f"selector {name}: the switches of ladder {lad.name} belong to houses "
+                               f"{', '.join(houses)}, and {b}'s code line makes each house a station; one station receives a "
+                               "choice", where, (lad.where,))
+                return {**out, "inputs": _clean(inputs)}
+            house = houses[0]
+        station = f"{b}:{house}" if house else b
+        out["station"] = station
+        codes: list[tuple[str, dict[str, Any]]] = []
+        for ou_name, ou in self.m.get("officeUnits", {}).items():
+            for c in ou.get("devices", []):
+                if not self._code_lever(c.get("given", {})):
+                    continue
+                ou_of, _, number = c.get("relations", {}).get("column", "").partition(":")
+                col = self.m.get("officeUnits", {}).get(ou_of, {}).get("columns", {}).get(number)
+                if col is None:
+                    continue
+                cd = col.get("derived", {})
+                mine = (cd.get("house") == station) if house else ((cd.get("interlocking") or col.get("relations", {}).get("interlocking")) == b)
+                if mine:
+                    codes.append((f"{ou_of}:{number}", c))
+        if not codes:
+            self.r.add("selector.code", f"selector {name}: no desk column of station {station} has a CODE button; what sends "
+                       "the choice is not drawn yet", where)
+        elif len(codes) > 1:
+            self.r.add("selector.codes", f"selector {name}: station {station} has CODE buttons on columns "
+                       f"{', '.join(sorted(k for k, _ in codes))}; which one sends the choice is not stated", where,
+                       tuple(sorted(f"officeUnits/{k.partition(':')[0]}/columns/{k.partition(':')[2]}" for k, _ in codes)))
+        else:
+            column, c = codes[0]
+            out["code"] = column
+            cb = c.get("relations", {}).get("bindings", {})
+            inputs["send"] = cb.get("CODE") or (next(iter(cb.values())) if len(cb) == 1 else None)
+        out["inputs"] = _clean(inputs)
+        return out
+
+    def _devices(self):
+        """Every device in the file with its model path: each interlocking's, then each OfficeUnit's."""
+        for name, ix in self.m.get("interlockings", {}).items():
+            for i, dev in enumerate(ix.get("devices", [])):
+                yield f"interlockings/{name}/devices/{i}", dev
+        for name, ou in self.m.get("officeUnits", {}).items():
+            for i, dev in enumerate(ou.get("devices", [])):
+                yield f"officeUnits/{name}/devices/{i}", dev
+
     def control_sources(self) -> None:
         """What works each switch or derail, read from the lever devices named for it (the owner, 2026-11-09): a desk
         lever (an OfficeUnit device) or a field lever (an interlocking device: Local-Switch, Local-Lock, Local-Derail),
@@ -1369,7 +1511,9 @@ class _Derivation:
         crew's release and throw; ``local`` a Local-Switch alone; ``lock`` the dispatcher's lock lever and the same
         field pair, a Local-Lock asking the release and a Local-Switch throwing the model's points, the switch device
         reporting NWK/RWK (the owner, 2026-11-09: Christopher 813 and 817 are the reference); a hand-throw one nothing. A gang follower and a dependent derail are worked through their lead and are not
-        read. Reported: a powered, dual or local one that no switch lever of either kind serves, ``switch.lever`` at
+        read. A ladder switch a selector serves (``ladders``) has that selector for its control source, as a switch
+        lever would be; one a desk switch lever also works is ``switch.lever.selector`` at error, two control sources
+        (the owner, 2026-11-14). Reported: a powered, dual or local one that no switch lever of either kind and no selector serves, ``switch.lever`` at
         missing (no control source yet), and so is a ``lock`` one with no Local-Switch; a ``local`` one a desk lever
         serves, ``switch.lever.desk`` at error; a ``dual`` or ``lock`` one with no Local-Lock, ``switch.lock.local`` at
         missing; a hand-throw one (``manual``,
@@ -1401,9 +1545,13 @@ class _Derivation:
                     continue
                 r, levers = regime(n, plan.appliances), desk[q] + local[q]
                 words = sorted(set().union(*levers)) if levers else []
-                if r in POWERED and not any("lock" not in st for st in levers):
+                if r in POWERED and not any("lock" not in st for st in levers) and q not in self.selected:
                     self.r.add("switch.lever", f"{b}: {what} is {r} but no switch lever is named for it, on the desk or in the field; "
                                "what works it is not drawn yet", where)
+                if q in self.selected and any("lock" not in st for st in desk[q]):            # two dispatcher control sources (the owner, 2026-11-14)
+                    self.r.add("switch.lever.selector", f"{b}: {what} is worked by the selector of ladder {self.selected[q]} and by a "
+                               f"desk switch lever ({', '.join(sorted(set().union(*desk[q])))}); one control source works a switch",
+                               where)
                 if r == "lock" and not any("lock" not in st for st in local[q]):
                     self.r.add("switch.lever", f"{b}: {what} is an electric lock but no Local-Switch is named for it; the crew's throw "
                                "of the points after the release is not drawn yet", where)

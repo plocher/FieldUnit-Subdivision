@@ -397,3 +397,45 @@ Feature: A sign states its rule for the track it stands on
     When the layout is derived
     Then it is reported as a warning on "R1"
     And the piece "X:1NAT" is under regime "GCOR_RULE_10" by a marker
+
+  @policy.kind
+  Scenario: a sign of a Kind no rule reads holds its piece to no regime
+    The owner, 2026-11-13: a POLICY of a Kind no rule reads is a warning, and it is contained. Its piece gets
+    no regime and passes none on, as a marker pinned on a face would hold it: no regime crosses it, and the file is
+    still written. Within one major version an unknown Kind can only be a compatible addition, so the likely causes
+    are reference data older than the symbol library, or a misspelling.
+    Given interlocking "X" has these appliances:
+      | Name | Appliance     |
+      | 2NAT | track_circuit |
+      | 3NAT | track_circuit |
+    And interlocking "X" has these joints:
+      | Id | Kind |
+      | J1 | IRJ  |
+      | J2 | IRJ  |
+    And interlocking "X" has these policies:
+      | Id | Kind         |
+      | R1 | GCOR_RULE_10 |
+      | Q1 | RULE_999     |
+    And interlocking "X" has these wires:
+      | Wire | Pins                  |
+      | a    | 1NAT.TC R1.track J1.A |
+      | b    | J1.B 2NAT.TC Q1.track J2.A |
+      | c    | J2.B 3NAT.TC          |
+    When the layout is derived
+    Then it is reported as a warning on "Q1"
+    And the piece "X:1NAT" is under regime "GCOR_RULE_10" by a marker
+    And the piece "X:2NAT" is under no regime
+    And the piece "X:3NAT" is under no regime
+
+  @policy.kind
+  Scenario: a sign of a Kind no rule reads overrides a regime marker on its piece
+    Given interlocking "X" has these policies:
+      | Id | Kind         |
+      | R1 | GCOR_RULE_10 |
+      | Q1 | GCOR_RULE_1O |
+    And interlocking "X" has these wires:
+      | Wire | Pins                      |
+      | a    | 1NAT.TC R1.track Q1.track |
+    When the layout is derived
+    Then it is reported as a warning on "Q1"
+    And the piece "X:1NAT" is under no regime

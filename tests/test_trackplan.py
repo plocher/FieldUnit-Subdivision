@@ -951,8 +951,9 @@ class SPCoastTrackplan(unittest.TestCase):
     def test_the_beet_loader_and_gcaltrains_yard_carry_their_regimes(self):
         """Railroad 0ddd395: TWC beyond Corporal's and Sargent's boundaries, where the Beet Loader tracks rejoin the two
         sheets. Railroad 0ab8dd8: GCaltrain's yard limits are marked on the three bumper tracks 01T to 03T alone; its
-        switches' circuits 773T1 and 775T1 carry CTC markers, and 771T1 and the mains inherit CTC (ADR 0013 §7.1). The
-        RegimeBoundary joint stays drawn between 771T1 and 773T1."""
+        switches' circuits 773T1 and 775T1 carry CTC markers, and 771T1 and the mains inherit CTC (ADR 0013 §7.1). Railroad
+        c3309a5: the joint between 771T1 and 773T1 is a plain IRJ, RegimeBoundary "no" (both sides are CTC), and no
+        joint of GCaltrain states a regime boundary."""
         for name in ("Corporal", "Sargent"):
             pieces = {p["derived"]["name"]: p["derived"] for p in self.ix(name)["track"]["pieces"]}
             self.assertEqual(pieces[f"{name}:1T1"], {"name": f"{name}:1T1", "circuit": f"{name}:1T1", "regime": "GCOR_RULE_14", "by": "marker"}, name)
@@ -960,8 +961,9 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual({p["derived"]["name"][10:]: (p["derived"]["regime"][10:], p["derived"]["by"]) for p in gc["track"]["pieces"]},
                          {"773T1": ("10", "marker"), "775T1": ("10", "marker"), "01T": ("6_13", "marker"), "02T": ("6_13", "marker"), "03T": ("6_13", "marker"),
                           "771T1": ("10", "inherited"), "1NAT": ("10", "inherited"), "1SAT": ("10", "inherited")})
-        boundary = [j for j in gc["track"]["joints"] if j["given"].get("RegimeBoundary") == "yes"]
-        self.assertEqual([(j["given"]["Kind"], j["derived"]["circuits"]) for j in boundary], [("IRJ", {"A": "GCaltrain:771T1", "B": "GCaltrain:773T1"})])
+        self.assertEqual([j for j in gc["track"]["joints"] if j["given"].get("RegimeBoundary") == "yes"], [])
+        irj = [j for j in gc["track"]["joints"] if j["derived"].get("circuits") == {"A": "GCaltrain:771T1", "B": "GCaltrain:773T1"}]
+        self.assertEqual([(j["given"]["Kind"], j["given"].get("RegimeBoundary")) for j in irj], [("IRJ", "no")])
 
     def test_sargents_hot_box_alarm_states_its_milepost(self):
         self.assertEqual(self.ix("Sargent")["appliances"]["HBA"]["given"]["Milepost"], "83.5")      # moved in Railroad 0ddd395
@@ -1059,13 +1061,30 @@ class SPCoastTrackplan(unittest.TestCase):
         # number has no desk lever (Gilroy's 778, Sargent's 836, Watsonville's 840; Corporal's 828 has its lever on
         # column 11 since the renumber); no lever.masts; no warning (reference.switches retired 2026-11-13). Railroad
         # 0ab8dd8: Sargent's 836 has its lever on column 13, so twelve are left (Gilroy's 778, Watsonville's 840).
+        # Issue #145: Watsonville's twelve switches are those of its Arrival and Departure ladders, which their
+        # selectors work, so no switch.lever is left.
         missing = Counter(d.code for d in self.sm.report.diags if d.severity == "missing")
-        self.assertEqual({k: v for k, v in missing.items() if k.startswith("switch.")}, {"switch.lever": 12})
-        self.assertEqual(sorted(d.where for d in self.sm.report.by_code("switch.lever")), sorted(f"interlockings/Watsonville/appliances/{n}" for n in range(3, 27, 2)))
-        # Railroad 0ab8dd8: the CODE buttons beside Watsonville's Arrival and Departure selectors are on no Column net
-        # (device.column); which column a selector's code button belongs to is open with #145.
-        self.assertEqual(set(missing), {"switch.lever", "mast.lever", "device.column"})
-        self.assertEqual([str(d.source) for d in self.sm.report.by_code("device.column")], ["/South-cTc/Watsonville/Panel/Railroad-Office:PanelCode(CODE)"] * 2)
+        self.assertEqual({k: v for k, v in missing.items() if k.startswith("switch.")}, {})
+        # Railroad c3309a5 (issue #145): Watsonville has one CODE button,
+        # on column 14, and the PanelSelectors are in no column (Role DEVICE), so no device.column is left. Both
+        # selectors' choices go to station Watsonville, sent by column 14's CODE button.
+        self.assertEqual(set(missing), {"mast.lever"})
+        # The owner, 2026-11-14: a selector's controls are functions, not tokens. Station Watsonville
+        # receives the control functions NORMAL and REVERSE of each ladder switch, 3 to 25; its lever controls are its levers' alone.
+        watsonville = codeline.stations(self.model).stations[("Watsonville", None)]
+        self.assertEqual(sorted(watsonville.functions, key=lambda f: (int(f.appliance), f.word)),
+                         [codeline.Function(str(n), p, "control") for n in range(3, 26, 2) for p in ("NORMAL", "REVERSE")])
+        self.assertEqual(sorted(watsonville.controls), ["837NWS", "837RWS", "838HS", "838NGS", "838SGS"])
+        self.assertEqual(self.sm.report.by_code("device.column"), [])
+        selectors = {d["given"]["Name"]: d["derived"] for d in self.ix("Watsonville")["devices"] if d["given"].get("Appliance") == "selector"}
+        self.assertEqual({n: (d["station"], d["code"], d["inputs"]["send"]) for n, d in selectors.items()},
+                         {n: ("Watsonville", "SouthCTC:14", "SouthCTC/0x2D/B5") for n in ("Arrival", "Departure")})
+        self.assertEqual({n: (d["inputs"]["value"], d["inputs"]["lock"]) for n, d in selectors.items()},
+                         {n: (f"SouthCTC/{a}/VALUE", f"SouthCTC/{a}/BUTTON") for n, a in (("Arrival", "0x50"), ("Departure", "0x51"))})
+        # Deferred past MVP (the owner, 2026-11-14): the knob lamps, each PanelSelector's COLOR pin and its Encoder-RGB,
+        # are drawn unbound. Railroad c3309a5 binds only VALUE and BUTTON, and the unbound lamps raise no finding.
+        self.assertEqual({d["given"]["Name"]: sorted(d["relations"]["bindings"]) for d in self.ix("Watsonville")["devices"]
+                          if d["given"].get("Appliance") == "selector"}, {n: ["BUTTON", "VALUE"] for n in ("Arrival", "Departure")})
         self.assertEqual(sorted(d.where.rsplit("/", 1)[-1] for d in self.sm.report.by_code("mast.lever")),
                          sorted(["778NAB", "778NC", "778SAB", "778SC"] + [f"840N{c}" for c in "ABCDEFG"] + ["840SA"]))
         self.assertEqual(self.sm.report.by_code("lever.masts"), [])
@@ -1073,7 +1092,7 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(self.model["layout"]["ioEncodings"]["JMRI"]["given"]["JMRI.SignalSystem"], "SPTCO-1969")
         jmri_masts = {k: v["derived"]["jmriSignalSystem"] for k, v in self.model["layout"]["processors"]["Gilroy"]["drivers"].items() if v["given"].get("Kind") == "SIGNALMAST"}
         self.assertEqual(jmri_masts, {f"SIGNALMAST.{m}": "SPTCO-1969" for m in ["778NAB", "778NC", "778SAB", "778SC", "Gilroy.E", "Gilroy.W"]})
-        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 7, "missing": 26})   # 130 before #80; 12 missing before mast.lever; 29 before the Corporal renumber
+        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 7, "missing": 12})   # 130 before #80; 12 missing before mast.lever; 29 before the Corporal renumber; 26 before #145's ladders and the live drawing's one CODE
         self.assertEqual(sorted(d.entities[0] for d in self.sm.report.by_code("regime.limits")), [f"interlockings/{n}" for n in sorted(self.model["interlockings"])])
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):
