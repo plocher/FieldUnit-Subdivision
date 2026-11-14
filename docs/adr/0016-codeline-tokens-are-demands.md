@@ -1,8 +1,7 @@
 # 0016. Code line content is functions; a token is one encoding's spelling of a function
 
-- Status: **proposed**. Decisions 1 to 5 and 7 ruled by the owner 2026-11-14 (in decision 2, three words stay
-  proposed). The ask: decision 6.
-- Amends (in place with a footnote when the ADR is accepted; not edited in this PR): the owner's ruling of 2026-10-28 that
+- Status: **accepted by the owner 2026-11-14**. The ask was: ratify the seven decisions below.
+- Amends (in place with a footnote, as follow-up changes; not edited in this ADR's PR): the owner's ruling of 2026-10-28 that
   PANEL symbols state tokens per pin, and its clarification of 2026-10-29 that rejected "Name plus K by rule";
   ADR 0012 §5.1 (the codeline row); ADR 0011's amendment of 2026-10-27, revised 2026-10-28 (cross-interlocking references: "every token an OfficeUnit
   consumes"); ADR 0008 §4.7 (the token-field exception). §5 lists the text.
@@ -11,26 +10,24 @@
 - Name: the file name says "demands", as the drafting request did. GLOSSARY §11 retires "demand (for a control)"
   and "Controls-as-Demands"; this ADR uses the live term, **function**.
 
-## Decisions
+## Decisions requested (all ratified 2026-11-14)
 
 1. **The model states functions, not tokens.** Code line content in the model and in `tools/railroad/codeline.py` is a
    set of functions: (appliance, function word, control or office indication). *Ratified 2026-11-14.*
 2. **The function words are FieldUnit's**, per appliance class, as GLOSSARY §10.3 tabulates them and `WireCodec.h`
-   takes them (§3.2). *Ratified 2026-11-14 for the words a source states; `TIME`, `REQUEST` and `CALL` are stated by
-   neither source and stay proposed (§3.2).*
+   takes them (§3.2). *Ratified 2026-11-14, with `TIME`, `REQUEST` and `CALL`, which the owner added (§3.2).*
 3. **One spelling function per encoding; for AAR tokens it is FieldUnit's `AarTextCodec`.** We check against the
    codec and never restate it: `indicationTokens.json` retires, and a different spelling is a different encoding,
    not a reference row. No token is written into the file. *Ratified 2026-11-14.*
 4. **`Control.<pin>` and `Indication.<pin>` bind a pin to a function word** (`Control.RWS = REVERSE`), not to a
-   token. An empty field is still a deliberate none; a missing field is still not done. The owner's automated script
-   makes the change in one pass: the symbol libraries, the library copies embedded in the schematics and the placed
-   instances. *Ratified 2026-11-14.*
+   token. An empty field is still a deliberate none; a missing field is still not done. Our edit tooling makes the
+   change in one pass (§3.4). *Ratified 2026-11-14.*
 5. **Token notation in the drawing is decoded, not trusted.** A lamp's `Indication` expression and a remote
    consumer's `Indication` keep token notation; the importer decodes each term with the same spelling function
    into a function; a term that decodes to no function the model states is unresolved. *Ratified 2026-11-14.*
-6. **FieldUnit publishes the conformance vector** (pending). FieldUnit is the authority on spelling. It publishes
+6. **FieldUnit publishes the conformance vector.** FieldUnit is the authority on spelling. It publishes
    (function, token) pairs made by its own codec, and a test in FieldUnit keeps the vector current. Subdivision
-   builds no C++: it tests its decoder (decision 5) against the published vector. *Default: yes.*
+   builds no C++: it tests its decoder (decision 5) against the published vector. *Ratified 2026-11-14.*
 7. **Pin kinds come in two classes** (ruled by the owner 2026-11-14, §4). A driver pin states an electrical
    capability: `binary`, `level`, `value`, `position`, `pixel`. A device or encoder seam pin states the word set it
    carries: `indication`, `head`, `color`. The head word pin is `head`, no longer `indication`. A seam pin's word set
@@ -124,7 +121,7 @@ that receives or sends it follows the existing rules of `codeline.py` (levers by
 ### 3.2 Function words
 
 Each word is checked against GLOSSARY §10.3 ("FieldUnit tokens by appliance" and the token-part table) and
-`WireCodec.h` at `92ebfe4`. A word that neither source states is **proposed**, not ratified.
+`WireCodec.h` at `92ebfe4`. Every word is ratified (2026-11-14). Three words neither source states; the owner added them.
 
 | Appliance class | Direction | Word | GLOSSARY §10.3 | `WireCodec.h` | Status |
 |---|---|---|---|---|---|
@@ -132,12 +129,12 @@ Each word is checked against GLOSSARY §10.3 ("FieldUnit tokens by appliance" an
 | switch | indication | `NORMAL`, `REVERSE` | same | `SwitchPosition::NORMAL`, `REVERSE` | ratified |
 | signal | control | `LEFT`, `RIGHT`, `STOP` | `NGS` (LEFT), `SGS` (RIGHT), `HS` (stop) | `SignalDemand::LEFT`, `RIGHT`, `STOP` | ratified |
 | signal | indication | `LEFT`, `RIGHT` | `NGK` (LEFT), `SGK` (RIGHT) | `DirectionAuthority::LEFT`, `RIGHT` | ratified |
-| signal | indication | `TIME` | `TEK`: "time locking runs" (a phrase, no word) | `timeLocked` (a field, no word) | **proposed** |
+| signal | indication | `TIME` | `TEK`: "time locking runs" (a phrase, no word) | `timeLocked` (a field, no word) | ratified; added by the owner |
 | track circuit | indication | `OCCUPIED` | `<name>K`: "asserted = occupied" | `Occupancy::OCCUPIED` | ratified |
 | electric lock | control | `RELEASE` | `WLS` (release) | `ElectricLockDemand::UNLOCK` | ratified (the glossary word) |
 | electric lock | indication | `RELEASED` | `WLK`: "asserted = released" | `electricLockUnlocked` | ratified (the glossary word) |
-| electric lock | indication | `REQUEST` | `WLQK`: "crew requests release" (a phrase) | none: no `WLQK` (§6.2) | **proposed** |
-| maintainer call | control, indication | `CALL` | `<n>MCS`, `<n>MCK` (no word) | `maintainerCall` (a field, no word) | **proposed** |
+| electric lock | indication | `REQUEST` | `WLQK`: "crew requests release" (a phrase) | none: no `WLQK` (§6.2) | ratified; added by the owner |
+| maintainer call | control, indication | `CALL` | `<n>MCS`, `<n>MCK` (no word) | `maintainerCall` (a field, no word) | ratified; added by the owner |
 
 For the electric lock the glossary says release and the codec says unlock; the glossary's word is used, since the
 glossary is the vocabulary source. Under the owner's MVP ruling (§6.2) the signal's office indications are `LEFT`,
@@ -159,9 +156,7 @@ codec".
 `Control.<pin>` and `Indication.<pin>` stay as contract fields on PANEL symbols, with a function word as value:
 `PanelSwitch` `Control.NWS = NORMAL`, `Control.RWS = REVERSE`, `Indication.NWK = NORMAL`, `Indication.RWK = REVERSE`.
 The appliance is the one the lever serves. An inverted pin keeps the expression form (`Indication.WLK = !RELEASED`).
-The lint (`tools/contract/lint_symbol_fields.py`) checks the word against §3.2 for the lever's Style. The owner's
-automated script makes the change in one pass: the symbol libraries, the library copies embedded in the schematics,
-and the placed instances. Nothing in this repo edits a symbol.
+The lint (`tools/contract/lint_symbol_fields.py`) checks the word against §3.2 for the lever's Style. Our edit tooling makes the change in one pass: an agent-run, lock-gated edit script in Railroad `edits/` on `tools/kicad_services`, as before (`edits/2026-11-10-retire-rule-signs.py`, `edits/add_mast_kind.py`). It edits the symbol libraries, the library copies embedded in the schematics and the placed instances, and diffs the fields against a fresh netlist before the owner commits.
 
 ### 3.5 Token notation in the drawing
 
@@ -194,11 +189,9 @@ is electrically from what it carries.
 
 ### 4.1 Follow-ups (not done in this PR)
 
-Decision 4: the owner's automated script changes every `Control.<pin>` and `Indication.<pin>` value from a token
-macro to a function word (§3.4), in the symbol libraries, the library copies embedded in the schematics and the placed
-instances, in one pass.
+Decision 4: our edit tooling changes every `Control.<pin>` and `Indication.<pin>` value from a token macro to a function word (§3.4). It is an agent-run, lock-gated script in Railroad `edits/` on `tools/kicad_services`, like `edits/2026-11-10-retire-rule-signs.py` and `edits/add_mast_kind.py`. In one pass it edits the symbol libraries, the library copies embedded in the schematics and the placed instances; the fields are diffed against a fresh netlist before the owner commits.
 
-Decision 6, if ratified: a FieldUnit ticket for the published (function, token) vector and the FieldUnit test that
+Decision 6: a FieldUnit ticket for the published (function, token) vector and the FieldUnit test that
 keeps it current; a Subdivision test of `decode` against it.
 
 The pin kind edits are the owner's (Railroad `symbols/`, read 2026-11-14):
@@ -223,7 +216,7 @@ capability from class (a).
 
 ## 5. Text this amends (record; not edited here)
 
-| Where | Text now | Change when accepted |
+| Where | Text now | Change (follow-up) |
 |---|---|---|
 | Owner's ruling 2026-10-28, as in `docs/review/handoff-step3-2026-10-28.md` "Tokens" | "PANEL symbols state them per pin, as in `Control.NWS=${Value}NWS`" | per pin, a function word (§3.4) |
 | Owner's clarification 2026-10-29 (session record) | "Name+K by rule (no field)" proposed and rejected; per-pin macros so "code never guesses" | reversed: the codec spells from the name; nothing guesses, because the function is stated |
@@ -251,7 +244,7 @@ For decision 6:
 
 | Option | For | Against |
 |---|---|---|
-| **FieldUnit publishes a (function, token) vector** (default) | the authority checks itself; Subdivision builds no C++; the vector is plain data any writer can test against | a FieldUnit ticket; the vector must name the FieldUnit commit it came from |
+| **FieldUnit publishes a (function, token) vector** (chosen) | the authority checks itself; Subdivision builds no C++; the vector is plain data any writer can test against | a FieldUnit ticket; the vector must name the FieldUnit commit it came from |
 | Subdivision compiles a C++ harness against FieldUnit `src/` | no FieldUnit change | Subdivision tests FieldUnit's code; the test needs `clang++` and skips without it |
 
 ### 6.2 Differences found between the model and the codec (for FieldUnit or the owner)
