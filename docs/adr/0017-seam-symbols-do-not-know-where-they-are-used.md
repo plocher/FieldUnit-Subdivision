@@ -1,7 +1,7 @@
 # 0017. Seam symbols do not know where they are used
 
-- Status: **decisions 1 to 8 ruled by the owner 2026-11-14**; one question is open (the aggregate symbols, under
-  decision 5). The PR stays draft until it is answered.
+- Status: **accepted by the owner 2026-11-14**. The ask was: rule on the eight decisions below and on the aggregate
+  question under decision 5.
 - Amends (as follow-up changes; not edited in this ADR's PR): ADR 0009 §3.10 (Role `PANEL` on the office side) and
   the paragraph after the relation table (a lamp's scope); ADR 0008 C11 and its 2026-10-23 ruling (model board
   lamps as PANEL devices); the symbol lint's E72 and its PANEL rules. §5 lists the text.
@@ -9,7 +9,7 @@
   where they are used; the `Local-*` and `Panel*` pairs are a DRY failure); FieldUnit `docs/GLOSSARY.md` "seam";
   ADR 0004 D5 and its lock table; ADR 0009 §3; ADR 0013 §4; ADR 0016 decision 4; `AGENTS.md`, Design rules.
 
-## Decisions requested (ruled 2026-11-14, except the open question)
+## Decisions requested (all ruled 2026-11-14)
 
 1. **A seam symbol states what it is, never where it is used.** Its function (`Appliance`, `Style`), its pins and
    its settings. Not office or field, not desk or fascia. *Ratified 2026-11-14.*
@@ -26,12 +26,12 @@
 5. **A device symbol can be used with office and field hardware, unchanged.** Where two symbols today state one
    function only to mark desk or field, they become one: `PanelSwitch`, `Local-Switch` and `Local-Derail`;
    `ModelLamp-*` and `Device-Lamp` (the colour a setting). *Ratified 2026-11-14 in this wording.*
-   - **Open question (not decided): aggregates.** `PanelSignal` is an aggregate: unit 1 has the `Column` pin and
-     three contacts (`NGS`, `HS`, `SGS`), unit 2 three lamps (pins 5 to 7; Railroad `9905c8e`: `SGK`, `NGK`, `TEK`;
-     the owner's working copy renames pin 7 to `STOP`, uncommitted). `PanelSwitch`, `PanelLock` and `PanelMCall`
-     are aggregates of contacts and lamps in one unit. Do aggregates stay single symbols, or are they composed of
-     primitive device symbols (a contact, a lamp)? *Default: they stay single symbols, location-independent like the
-     rest.*
+   - **Aggregates stay one symbol, and are desirable.** `PanelSignal` is an aggregate: unit 1 has the `Column` pin
+     and three contacts (`NGS`, `HS`, `SGS`), unit 2 three lamps (pins 5 to 7; Railroad `9905c8e`: `SGK`, `NGK`,
+     `TEK`; the owner's working copy renames pin 7 to `STOP`, uncommitted). `PanelSwitch`, `PanelLock` and
+     `PanelMCall` are aggregates of contacts and lamps in one unit. An aggregate is not composed of primitive device
+     symbols; it is location-independent like every device symbol. *Ruled 2026-11-14 (the owner: aggregated symbols
+     "are not only OK, they are desirable").*
 6. **The lock plates are not a pair and stay two symbols.** The desk plate sends the release (`WLS`); the fascia
    plate sends the crew's request (`WLQ`). These are two functions. Each is named for its function.
    *Ratified 2026-11-14.*
