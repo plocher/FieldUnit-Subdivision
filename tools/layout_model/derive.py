@@ -1830,6 +1830,8 @@ class _Derivation:
                 if g.get("Appliance") not in ("mast", "train_order_mast", "head"):
                     continue
                 for pin, value in rel.get("bindings", {}).items():
+                    if pin == "IOBus":                                      # a JMRI mast proxy's own bus: a consumer, not a position tap
+                        continue
                     for route in (b["route"] for b in bound(value)):
                         parts = route.split("/")
                         if len(parts) != 3:

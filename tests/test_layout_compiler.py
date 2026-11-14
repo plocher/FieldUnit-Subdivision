@@ -446,7 +446,7 @@ class SPCoastRelationTable(unittest.TestCase):
         masts = [d for ix in self.model["interlockings"].values() for d in ix["devices"] if d["given"]["Appliance"] == "mast"]
         self.assertEqual(len(masts), 46)                              # Railroad eef8217: Christopher's siding dwarfs 814NA and 818SA (44 at 9fcf779, 38 at 5715653)
         self.assertEqual([r for d in masts if d["derived"]["serves"] == "Gilroy:778NC" for r in d.get("relations", {}).get("bindings", {}).items()],
-                         [("A", {"route": "Gilroy/SIGNALMAST.778NC/IND", "pinNumber": 1, "sense": "high"})])   # the mast device's pin is its head letter since the anonymous-head step (#80); the pin is passive, so no direction (schema 3.5.0)
+                         [("A", {"route": "Gilroy/SIGNALMAST.778NC/IND", "pinNumber": 1})])   # the mast device's pin is its head letter since the anonymous-head step (#80); passive, so no direction, and of kind indication, so no sense (schema 3.5.0)
 
     def test_a_head_device_states_its_mast_and_its_position_and_serves_it(self):
         """#80: every head states the mast device and the position pin (A, B, C) its IND reaches, no Name and no Head

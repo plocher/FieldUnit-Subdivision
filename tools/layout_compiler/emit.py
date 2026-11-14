@@ -60,7 +60,7 @@ def _source(project: Optional[Path]) -> dict[str, Any]:
 
 def _binding(b) -> dict[str, Any]:
     """One wire to a driver pin (schema 3.5.0): its route, the driver pin's number (an integer when it is one), the
-    direction when the device pin's type states one, and the sense."""
+    direction when the device pin's type states one, and the sense of a boolean pin."""
     number = int(b.number) if b.number.isdigit() else b.number
     return {k: v for k, v in (("route", b.route), ("pinNumber", number), ("direction", b.direction), ("sense", b.sense)) if v not in (None, "")}
 

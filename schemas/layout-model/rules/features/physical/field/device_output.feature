@@ -11,10 +11,12 @@ Feature: Only the interlocking that owns an appliance drives it
       | Name   | Appliance | Style   | Kind       |
       | 3      | switch    | powered |            |
       | 778NAB | mast      | double  | CONTROLLED |
+      | 778NA  | mast      | single  | CONTROLLED |
     And interlocking "X" has these devices:
       | Name   | Appliance | Style  |
       | 3      | switch    |        |
       | 1L     | lamp      |        |
+      | 778NA  | mast      |        |
       | 3L     | lever     | switch |
 
   @device.output
@@ -53,3 +55,9 @@ Feature: Only the interlocking that owns an appliance drives it
     Given field mast device "778NAB" of interlocking "X" binds "A" to "Beta/SIGNALMAST.778NAB/IND"
     When the layout is derived
     Then it is not reported
+
+  @device.output
+  Scenario: a JMRI mast proxy driven by another interlocking's processor
+    Given device "778NA" of interlocking "X" drives "IOBus" through "Beta/SIGNALMAST.778NA/IOBus"
+    When the layout is derived
+    Then it is reported as an error on "Beta"

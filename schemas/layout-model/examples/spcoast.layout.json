@@ -5613,13 +5613,11 @@
             "bindings": {
               "A": {
                 "pinNumber": 1,
-                "route": "Gilroy/SIGNALMAST.778NAB/IND",
-                "sense": "high"
+                "route": "Gilroy/SIGNALMAST.778NAB/IND"
               },
               "B": {
                 "pinNumber": 1,
-                "route": "Gilroy/SIGNALMAST.778NAB/IND",
-                "sense": "high"
+                "route": "Gilroy/SIGNALMAST.778NAB/IND"
               }
             }
           }
@@ -5645,8 +5643,7 @@
             "bindings": {
               "A": {
                 "pinNumber": 1,
-                "route": "Gilroy/SIGNALMAST.778NC/IND",
-                "sense": "high"
+                "route": "Gilroy/SIGNALMAST.778NC/IND"
               }
             }
           }
@@ -5672,13 +5669,11 @@
             "bindings": {
               "A": {
                 "pinNumber": 1,
-                "route": "Gilroy/SIGNALMAST.778SAB/IND",
-                "sense": "high"
+                "route": "Gilroy/SIGNALMAST.778SAB/IND"
               },
               "B": {
                 "pinNumber": 1,
-                "route": "Gilroy/SIGNALMAST.778SAB/IND",
-                "sense": "high"
+                "route": "Gilroy/SIGNALMAST.778SAB/IND"
               }
             }
           }
@@ -5704,8 +5699,7 @@
             "bindings": {
               "A": {
                 "pinNumber": 1,
-                "route": "Gilroy/SIGNALMAST.778SC/IND",
-                "sense": "high"
+                "route": "Gilroy/SIGNALMAST.778SC/IND"
               }
             }
           }
@@ -5841,8 +5835,7 @@
               "APP": {
                 "direction": "input",
                 "pinNumber": 1,
-                "route": "Gilroy/SIGNALMAST.Gilroy.E/IND",
-                "sense": "high"
+                "route": "Gilroy/SIGNALMAST.Gilroy.E/IND"
               }
             },
             "face": "E",
@@ -5862,8 +5855,7 @@
               "APP": {
                 "direction": "input",
                 "pinNumber": 1,
-                "route": "Gilroy/SIGNALMAST.Gilroy.W/IND",
-                "sense": "high"
+                "route": "Gilroy/SIGNALMAST.Gilroy.W/IND"
               }
             },
             "face": "W",
@@ -18769,8 +18761,7 @@
               "VALUE": {
                 "direction": "input",
                 "pinNumber": 7,
-                "route": "SouthCTC/0x51/VALUE",
-                "sense": "high"
+                "route": "SouthCTC/0x51/VALUE"
               }
             },
             "interlocking": "Watsonville"
@@ -18958,8 +18949,7 @@
               "VALUE": {
                 "direction": "input",
                 "pinNumber": 7,
-                "route": "SouthCTC/0x50/VALUE",
-                "sense": "high"
+                "route": "SouthCTC/0x50/VALUE"
               }
             },
             "interlocking": "Watsonville"

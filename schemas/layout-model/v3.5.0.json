@@ -2000,12 +2000,11 @@
       }
     },
     "binding": {
-      "description": "A device pin's wire to a driver pin, with what the drawing states about it (ADR 0017 decision 3; FieldUnit finding M6). route names the bus owner, the address and the driver pin. pinNumber is that driver pin's number on its symbol, as drawn; what the number means on a chip is the driver's knowledge, not the file's. direction is the logic's side of the wire, from the device pin's electrical type: output, the logic drives the device pin (a switch machine, a head, a lamp); input, the logic reads it (a contact, a lever, an occupancy). Absent when the device pin's type states none (passive, bidirectional, unspecified). sense is the asserted level: low for a pin drawn ~{X} (ADR 0004 D9, ADR 0013 R14), high for a plain name, the other one when the device's Invert names the pin.",
+      "description": "A device pin's wire to a driver pin, with what the drawing states about it (ADR 0017 decision 3; FieldUnit finding M6). route names the bus owner, the address and the driver pin. pinNumber is that driver pin's number on its symbol, as drawn; what the number means on a chip is the driver's knowledge, not the file's. direction is the logic's side of the wire, from the device pin's electrical type (at the device-to-driver boundary the types are opposite by design): output, the logic drives the device pin (a switch machine, a head, a lamp); input, the logic reads it (a contact, a lever, an occupancy). Absent when the device pin's type states none (a passive pin is a junction). sense is a boolean pin's asserted level, only where the device pin's kind is binary: low for a pin drawn ~{X} (ADR 0004 D9, ADR 0013 R14), high for a plain name, the other one when the device's Invert names the pin. A JMRI mast proxy (a mast device on a processor's bus) binds its IOBus, route processor/SIGNALMAST.<mast>/IOBus, direction output, no sense.",
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "route",
-        "sense"
+        "route"
       ],
       "properties": {
         "route": {

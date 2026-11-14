@@ -159,13 +159,43 @@ class Binding:
     route: str
     number: str = ""                                                  # the driver pin's number, as its symbol states it
     direction: Optional[str] = None                                   # "output": the logic drives the device pin; "input": it reads it
-    sense: str = "low"                                                # the asserted level: the pin's drawn mark, flipped by Invert
+    sense: Optional[str] = None                                       # a boolean pin's asserted level: its drawn mark, flipped by Invert
 
 
-# A device pin's KiCad electrical type, as the direction of its binding from the logic's side (ADR 0017 decision 3):
-# a pin the device takes in is driven by the logic; a pin it puts out is read. Drivers have no direction of their own
-# (the owner, 2026-10-07): only the device pin's type is read. Any other type states none.
+# A device pin's KiCad electrical type, as the direction of its binding from the logic's side (ADR 0017 decision 3). At
+# the device-to-driver boundary the types are opposite by design, energy flow (the owner, 2026-11-14): a pin the device
+# takes in is driven by the logic; a pin it puts out is read. Drivers have no direction of their own (the owner,
+# 2026-10-07): only the device pin's type is read. A passive pin is a junction, not a boundary, and states none without
+# a finding; any other type states none and is ``binding.direction``.
 DIRECTION_OF_PINTYPE = {"input": "output", "output": "input", "open_collector": "input", "open_emitter": "input"}
+JUNCTION = "passive"
+
+
+def _sense(s: Symbol, pin: str, inverted: set[str]) -> Optional[str]:
+    """A boolean pin's asserted level (the owner, 2026-11-14): low for ``~{X}`` (ADR 0004 D9), high for a plain name,
+    the other one when Invert names the pin. Boolean is the library's ``Pin.<X>`` kind ``binary``; a pin of another kind
+    (value, level, position, pixel, a seam word set) has no sense. A pin with no ``Pin.<X>`` field keeps the drawn mark."""
+    kind = s.fields.get(f"Pin.{base(pin)}")
+    if kind is not None and kind.strip() != "binary":
+        return None
+    return "low" if (pin != base(pin)) != (base(pin) in inverted) else "high"
+
+
+def _jmri_mast(sm: Seams, s: Symbol, name: Optional[str]) -> Optional[Binding]:
+    """A JMRI mast proxy (the owner, 2026-11-14): a mast device whose own IOBus pin sits on a processor's bus is a
+    whole-mast consumer of the trackplan mast it names, standing in for a remote JMRI mast. Its binding is that IOBus,
+    keyed like a JMRI signal mast driver by its object class and the mast it serves (``SIGNALMAST.<mast>``), driven by
+    the logic. Its Address is a foreign identifier, kept in ``given``, never its key."""
+    if s.get("Appliance") != "mast" or not name:
+        return None
+    net = sm.source.net_of(s.ref, "IOBus")
+    if net is None:
+        return None
+    owner = _bus_owner(sm, s)
+    if owner is None or "/" in owner:
+        return None
+    own = next((q for q in net.pins if q.ref == s.ref and q.pin == "IOBus"), None)
+    return Binding("IOBus", f"{owner}/SIGNALMAST.{name}/IOBus", own.number if own else "", "output", None)
 
 
 @dataclass
@@ -947,22 +977,27 @@ def _devices(sm: Seams) -> None:
         at = loc(s)
         inverted = {x.strip() for x in s.get("Invert").split(",") if x.strip()}
         for pin, net in sorted(sm.source.pins_of(s.ref).items()):
-            if pin == "Column" or (pin == "IND" and appliance != "mast"):   # a head's or a train order lever's IND wire reaches its mast device, whose own IND is its binding
+            if pin in ("Column", "IOBus") or (pin == "IND" and appliance != "mast"):   # a head's or a train order lever's IND wire reaches its mast device, whose own IND is its binding; a proxy's IOBus is its bus (_jmri_mast)
                 continue
             own = next((q for q in net.pins if q.ref == s.ref and q.pin == pin), None)
             pintype = (own.pintype if own else "").split("+")[0]
-            low = pin != base(pin)                                     # ~{X}: asserted low (ADR 0004 D9); a plain name asserted high
-            sense = "low" if low != (base(pin) in inverted) else "high"   # Invert names a pin whose sense is the other one (ADR 0008 §2)
+            sense = _sense(s, pin, inverted)
             for p in net.others(s.ref):
                 hit = _driver_route(sm, p)
                 if hit:
                     direction = DIRECTION_OF_PINTYPE.get(pintype)
-                    if direction is None:
+                    if direction is None and pintype != JUNCTION:
                         sm.report.missing("binding.direction", f"device {appliance} {name or s.value!r}: pin {base(pin)} is typed "
                                           f"{pintype or 'nothing'}, so its binding to {hit[1]} states no direction", source=loc(s, base(pin)))
                     dev.bindings.append(Binding(base(pin), hit[1], p.number, direction, sense))
+        if (proxy := _jmri_mast(sm, s, name)) is not None:
+            dev.bindings.append(proxy)
         for n in sorted(inverted - {base(pin) for pin in sm.source.pins_of(s.ref)}):
             sm.report.error("device.invert", f"Invert names {n}, not a wired pin of this device", source=at)
+        for n in sorted(inverted):
+            kind = s.fields.get(f"Pin.{n}")
+            if kind is not None and kind.strip() != "binary":
+                sm.report.error("device.invert.kind", f"Invert names {n}, a {kind.strip()} pin; only a binary pin has a sense to invert", source=loc(s, n))
         dev.bindings.sort(key=lambda b: (b.function, b.route))
         what = f"device {appliance} {name or s.value!r}"
         ous, ixs = _sides_reached(sm, dev.bindings)

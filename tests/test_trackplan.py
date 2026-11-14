@@ -1071,12 +1071,11 @@ class SPCoastTrackplan(unittest.TestCase):
         # selectors' choices go to station Watsonville, sent by column 14's CODE button. ADR 0017 decision 2: they are
         # bound to SouthCTC/0x50 and 0x51, the office unit's processor, so they are SouthCTC's devices, drawn on
         # Watsonville's panel sheet (relations.interlocking), and nothing says the sheet disagrees.
-        self.assertEqual(set(missing), {"mast.lever", "binding.direction"})
+        self.assertEqual(set(missing), {"mast.lever"})
         # Schema 3.5.0: a binding states its direction from the device pin's type. A signal mast device's position pins are
-        # passive (the owner, 2026-11-10: whole-mast consumer), so the six bound to Gilroy's JMRI SIGNALMAST drivers
-        # state none.
-        self.assertEqual(sorted(d.source.rsplit("(", 1)[1] for d in self.sm.report.by_code("binding.direction")),
-                         ["778NAB).A", "778NAB).B", "778NC).A", "778SAB).A", "778SAB).B", "778SC).A"])
+        # passive, junctions and not boundaries (the owner, 2026-11-14), so the six bound to Gilroy's JMRI SIGNALMAST
+        # drivers state none, and that is no finding.
+        self.assertEqual(self.sm.report.by_code("binding.direction") + self.sm.report.by_code("device.invert.kind"), [])
         # The owner, 2026-11-14: a selector's controls are functions, not tokens. Station Watsonville
         # receives the control functions NORMAL and REVERSE of each ladder switch, 3 to 25; its lever controls are its levers' alone.
         watsonville = codeline.stations(self.model).stations[("Watsonville", None)]
@@ -1105,7 +1104,7 @@ class SPCoastTrackplan(unittest.TestCase):
         self.assertEqual(self.model["layout"]["ioEncodings"]["JMRI"]["given"]["JMRI.SignalSystem"], "SPTCO-1969")
         jmri_masts = {k: v["derived"]["jmriSignalSystem"] for k, v in self.model["layout"]["processors"]["Gilroy"]["drivers"].items() if v["given"].get("Kind") == "SIGNALMAST"}
         self.assertEqual(jmri_masts, {f"SIGNALMAST.{m}": "SPTCO-1969" for m in ["778NAB", "778NC", "778SAB", "778SC", "Gilroy.E", "Gilroy.W"]})
-        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 7, "missing": 18})   # 12 before binding.direction (schema 3.5.0); 130 before #80; 12 missing before mast.lever; 29 before the Corporal renumber; 26 before #145's ladders and the live drawing's one CODE
+        self.assertEqual(self.sm.report.counts(), {"error": 0, "warning": 0, "info": 7, "missing": 12})   # 130 before #80; 12 missing before mast.lever; 29 before the Corporal renumber; 26 before #145's ladders and the live drawing's one CODE
         self.assertEqual(sorted(d.entities[0] for d in self.sm.report.by_code("regime.limits")), [f"interlockings/{n}" for n in sorted(self.model["interlockings"])])
 
     def test_a_mast_states_its_kind_or_is_reported_missing(self):

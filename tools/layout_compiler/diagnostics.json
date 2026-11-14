@@ -34,7 +34,7 @@
       "level": "missing",
       "lifecycle": "active",
       "since": "0.4.0",
-      "feature": "io/device_binding.feature#a mast's passive position pin bound to a driver",
+      "feature": "io/device_binding.feature#a device pin typed unspecified bound to a driver",
       "replacedBy": null
     },
     "bit.direction": {
@@ -147,6 +147,13 @@
       "lifecycle": "active",
       "since": "0.4.0",
       "feature": null,
+      "replacedBy": null
+    },
+    "device.invert.kind": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": "io/device_binding.feature#an Invert that names a value pin",
       "replacedBy": null
     },
     "device.office": {

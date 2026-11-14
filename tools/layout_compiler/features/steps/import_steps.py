@@ -361,11 +361,34 @@ def in_no_column(context, ref):
 
 # ----------------------------------------------------------------------- what a binding states (schema 3.5.0)
 
-@then('the device "{ref}" binds "{pin}" to "{route}" on driver pin {number}, {direction}, asserted {sense}')
-def binding_facts(context, ref, pin, route, number, direction, sense):
-    """A binding as the file states it: the route, the driver pin's number, the logic's side and the asserted level."""
+def _device_row(context, ref: str) -> dict:
+    """The row the file states for the device symbol ``ref``, on whichever side it is filed."""
     devs = [d for u in (*context.seams.interlockings.values(), *context.seams.office_units.values()) for d in u.devices if d.sym.ref == ref]
     assert len(devs) == 1, f"{ref}: {len(devs)} devices"
-    got = emit._device(devs[0])["relations"]["bindings"][pin]
-    want = {"route": route, "pinNumber": int(number), "sense": sense, **({} if direction == "no direction" else {"direction": direction})}
+    return emit._device(devs[0])
+
+
+def _binding_is(context, ref, pin, route, number, direction, sense):
+    got = _device_row(context, ref)["relations"]["bindings"][pin]
+    want = {"route": route, "pinNumber": int(number), **({} if sense is None else {"sense": sense}),
+            **({} if direction == "no direction" else {"direction": direction})}
     assert got == want, f"{ref}.{pin}: {got!r}, not {want!r}"
+
+
+@then('the device "{ref}" binds "{pin}" to "{route}" on driver pin {number}, {direction}, asserted {sense}')
+def binding_facts(context, ref, pin, route, number, direction, sense):
+    """A binding as the file states it: the route, the driver pin's number, the logic's side and a boolean pin's
+    asserted level."""
+    _binding_is(context, ref, pin, route, number, direction, sense)
+
+
+@then('the device "{ref}" binds "{pin}" to "{route}" on driver pin {number}, {direction}, with no sense')
+def binding_facts_no_sense(context, ref, pin, route, number, direction):
+    """The same, for a pin that is not boolean: no sense is stated."""
+    _binding_is(context, ref, pin, route, number, direction, None)
+
+
+@then('the device "{ref}" is written with {field} "{value}"')
+def device_given(context, ref, field, value):
+    got = _device_row(context, ref).get("given", {}).get(field)
+    assert got == value, f"{ref}: {field} is {got!r}, not {value!r}"
