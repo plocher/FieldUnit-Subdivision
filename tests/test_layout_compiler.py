@@ -455,9 +455,10 @@ class SPCoastRelationTable(unittest.TestCase):
         gilroy = self.sm.processors["Gilroy"].drivers
         # The functions in a key come from the pin names (the owner, 2026-11-11): the Turnout's M, N, R match the switch's
         # and keep TURNOUT.777; a Sensor's S or a Light's input reads the device pin it is wired to (OCC, WLQK, LAMP).
+        # The maintainer calls are named <n>MC (Railroad 0ab8dd8; MC1, MC2 before).
         self.assertEqual({k for k in gilroy if "." in k},
                          {"TURNOUT.777", "TURNOUT.781", "SENSOR.01T.OCC", "SENSOR.02T.OCC", "SENSOR.1NAT.OCC",
-                          "SIGNALMAST.778NC", "SIGNALMAST.778SC", "SIGNALMAST.778NAB", "SIGNALMAST.778SAB", "LIGHT.MC1.LAMP", "LIGHT.MC2.LAMP",
+                          "SIGNALMAST.778NC", "SIGNALMAST.778SC", "SIGNALMAST.778NAB", "SIGNALMAST.778SAB", "LIGHT.1MC.LAMP", "LIGHT.2MC.LAMP",
                           "SENSOR.Gilroy.E.STOP", "SENSOR.Gilroy.E.SLOW", "SENSOR.Gilroy.W.STOP", "SENSOR.Gilroy.W.SLOW",   # the train order levers' and heads' keys (the owner, 2026-11-10)
                           "SIGNALMAST.Gilroy.E", "SIGNALMAST.Gilroy.W"}
                          | {f"SENSOR.{sw}.{pin}" for sw in ("777", "781") for pin in ("OCC", "NWS", "NWK", "RWS", "RWK", "WLK", "WLQ", "WLQK")})
