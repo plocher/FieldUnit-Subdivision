@@ -538,7 +538,7 @@
       "level": "missing",
       "lifecycle": "active",
       "since": "0.1.0",
-      "feature": "logical/trackplan/ladder.feature#a selector whose PRESS is wired to nothing",
+      "feature": "logical/trackplan/ladder.feature#a selector whose BUTTON is wired to nothing",
       "replacedBy": null
     },
     "selector.ladder": {

@@ -1393,8 +1393,8 @@ class _Derivation:
         written here, at save (ADR 0015). A selector (a device, Appliance ``selector``, on the desk or in the field)
         serves the ladder its Name names, qualified like a lever (``Watsonville:Arrival``), and derives ``choices``, each
         with its ``detent`` (1 nearest the start), its ``leg`` and its ``alignment``, and ``range``, 1 to the number of
-        choices; its ``wrap`` stays stated. A choice's alignment is what it demands of the field, switch by switch, a
-        position each (the owner, 2026-11-14): no control token is spelled here (``codeline.stations``). The marker's row derives ``switches``, in walk order, and ``start``, the
+        choices; its ``wrap`` stays stated. A choice's alignment is its control functions, a switch and its position
+        word each (the owner, 2026-11-14): no control token is spelled here (``codeline.stations``). The marker's row derives ``switches``, in walk order, and ``start``, the
         start switch's port its leg meets. Each ladder switch derives ``ladder``, and ``selector`` where one serves the
         ladder: its control source, which ``control_sources`` reads as it reads a switch lever. A selector whose Name
         names no ladder is ``selector.ladder`` at error; a ladder no selector serves is ``ladder.selector`` at info. A
@@ -1437,20 +1437,20 @@ class _Derivation:
         station that owns its ladder's switches (on a US&S 506 line the house that is their control point, else their
         interlocking), and that station's CODE button sends it, with the levers of its column, as ordinary controls. The
         CODE button is the code lever on the one desk column whose station that is. The selector derives ``station``,
-        ``code`` (that column, qualified by its OfficeUnit) and ``inputs``: ``value`` the route bound to its VAL pin
-        (the choice shown), ``lock`` the route bound to PRESS (which locks the choice in) and ``send`` the CODE button's
+        ``code`` (that column, qualified by its OfficeUnit) and ``inputs``: ``value`` the route bound to its VALUE pin
+        (the choice shown), ``lock`` the route bound to BUTTON (which locks the choice in) and ``send`` the CODE button's
         (which sends the locked choice). Reported: the switches in two stations, ``selector.station`` at error; no CODE
         button for the station, ``selector.code`` at missing; more than one, ``selector.codes`` at warning (which one
-        sends is not stated; none is chosen); VAL or PRESS bound to nothing, ``selector.input`` at missing."""
+        sends is not stated; none is chosen); VALUE or BUTTON bound to nothing, ``selector.input`` at missing."""
         b = lad.name.partition(":")[0]
         name = lad.name.partition(":")[2]
         out: dict[str, Any] = {}
         bindings = dev.get("relations", {}).get("bindings", {})
-        inputs = {"value": bindings.get("VAL"), "lock": bindings.get("PRESS")}
-        for pin, key in (("VAL", "value"), ("PRESS", "lock")):
+        inputs = {"value": bindings.get("VALUE"), "lock": bindings.get("BUTTON")}
+        for pin, key in (("VALUE", "value"), ("BUTTON", "lock")):
             if not inputs[key]:
                 self.r.add("selector.input", f"selector {name}: its {pin} pin is bound to no driver pin; what "
-                           f"{'shows the choice' if pin == 'VAL' else 'locks the choice in'} is not drawn yet", where)
+                           f"{'shows the choice' if pin == 'VALUE' else 'locks the choice in'} is not drawn yet", where)
         sc = codeline.scope(self.m, b)
         house: Optional[str] = None
         if sc == "house":

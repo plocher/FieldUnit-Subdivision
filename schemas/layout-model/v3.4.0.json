@@ -740,7 +740,7 @@
                 },
                 "choices": {
                   "type": "array",
-                  "description": "A selector's choices (Appliance selector; issue #145, the owner, 2026-11-13): the ladder it serves (serves, the LADDER marker its Name names), one per leg, in detent order, from the facing walk of tools/railroad/ladders.py. detent 1 is nearest the start; leg is the switch port; alignment is every ladder switch from the start, in walk order, with its position, a derail the dispatcher controls at REVERSE, its clear position (the owner, 2026-11-14). A choice's controls are its alignment: switch-position demands its station receives, not tokens (the owner, 2026-11-14; codeline.stations). Absent when the selector serves no ladder (selector.ladder).",
+                  "description": "A selector's choices (Appliance selector; issue #145, the owner, 2026-11-13): the ladder it serves (serves, the LADDER marker its Name names), one per leg, in detent order, from the facing walk of tools/railroad/ladders.py. detent 1 is nearest the start; leg is the switch port; alignment is every ladder switch from the start, in walk order, with its position, a derail the dispatcher controls at REVERSE, its clear position (the owner, 2026-11-14). A choice's controls are its alignment: control functions its station receives, not tokens (the owner, 2026-11-14; codeline.stations). Absent when the selector serves no ladder (selector.ladder).",
                   "items": {
                     "type": "object",
                     "additionalProperties": false,
@@ -783,7 +783,7 @@
                 },
                 "inputs": {
                   "type": "object",
-                  "description": "What a desk generator reads to work a selector (the owner, 2026-11-13): value, the route bound to its VAL pin (the choice shown); lock, the route bound to PRESS (locks the choice in); send, the route of the CODE button that sends the locked choice. A key is absent when that pin is bound to nothing (selector.input) or no one CODE button is found.",
+                  "description": "What a desk generator reads to work a selector (the owner, 2026-11-13): value, the route bound to its VALUE pin (the choice shown); lock, the route bound to BUTTON (locks the choice in); send, the route of the CODE button that sends the locked choice. A key is absent when that pin is bound to nothing (selector.input) or no one CODE button is found.",
                   "additionalProperties": false,
                   "properties": {
                     "value": {"$ref": "#/$defs/route"},

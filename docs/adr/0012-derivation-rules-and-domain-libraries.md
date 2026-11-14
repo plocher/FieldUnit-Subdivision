@@ -255,26 +255,26 @@ ladder marker (`POLICY`, Kind `LADDER`, with a `Name`) stands on the ladder's st
    R, then N. Where both legs lead to ladder switches, N's sub-ladder comes before R's. Each choice is its leg with its
    alignment (`17R: 15N 17R`). Detent 1 is nearest the start.
 4. **The selector serves the ladder of its Name,** qualified like a lever (`Watsonville:Arrival`). A selector is a
-   device (Role `DEVICE`, Appliance `selector`; the symbol `Railroad-Office:Panel-Selector`, keyed by its fields,
-   never by its name) with two pins: `VAL` (kind `value`) shows the choice and `PRESS` (kind `binary`) locks it in.
+   device (Role `DEVICE`, Appliance `selector`; the symbol `Railroad-Office:PanelSelector`, keyed by its fields,
+   never by its name) with two pins: `VALUE` (kind `value`) shows the choice and `BUTTON` (kind `binary`) locks it in.
    Which encoder driver pins feed them comes from the netlist, as for any device's bindings.[^selector-code]
 5. **A selector is in no column.**[^selector-code] Its choice goes to the station that owns its ladder's switches: on
    a US&S 506 line the house that is their control point, else their interlocking. That station's CODE button (the
    code lever on the one desk column whose station it is) sends the locked choice, with the levers of its column, as
    ordinary controls. Watsonville: both selectors go to station Watsonville and are sent by column 14's CODE button.
-6. **A selector's controls are switch-position demands, not tokens** (the owner, 2026-11-14):[^ladder-limit] each
-   entry of a choice's alignment is a switch and the position the choice asks of it (`15`, REVERSE), and the station
-   receives every demand of the selector's choices (the codeline library, `demands`). No token is spelled for a
-   selector; how a demand is coded on the line is the encoding's. Levers and lamps still report tokens; a separate
-   ADR is to move them to the same shape.
+6. **A selector's controls are functions, not tokens** (the owner, 2026-11-14):[^ladder-limit] each entry of a
+   choice's alignment is a control function, a switch and the function word the choice sends it (`15`, REVERSE),
+   and the station receives every function of the selector's choices (the codeline library, `functions`). No token
+   is spelled for a selector; a token is one encoding's spelling of a function (FieldUnit `docs/GLOSSARY.md` §5).
+   Levers and lamps still report tokens; ADR 0016 (proposed) moves them to the same shape.
 7. **One control source works a switch.** A ladder switch a selector serves that a desk switch lever also works is
    `switch.lever.selector` at error.[^ladder-limit]
 8. **Derived, written at save (ADR 0015):** on the selector, `choices` and `range` (1 to the number of choices), `station`, `code` (the column of the CODE button that sends it, qualified by its OfficeUnit) and `inputs` (`value`
-   the route bound to `VAL`, `lock` the route bound to `PRESS`, `send` the CODE button's route), which a desk
+   the route bound to `VALUE`, `lock` the route bound to `BUTTON`, `send` the CODE button's route), which a desk
    generator reads; on the marker's row, `switches` and `start`; on each ladder switch, `ladder` and its control
    source, `selector`, which the reference derivation reads as it reads a switch lever, so a powered ladder switch a
    selector serves is no `switch.lever`. `wrap` stays stated.
-9. **Vital boundary (§5.2):** a choice sends the switch-position demands of its alignment; the field unit lines and
+9. **Vital boundary (§5.2):** a choice sends the control functions of its alignment; the field unit lines and
    locks as for any lever.
 
 The walk is the `ladders` library's (`tools/railroad/ladders.py`, over the routes library's track graph); the
@@ -283,7 +283,7 @@ reference derivation calls it and writes its results, since a switch's control s
 and `ladder.shared` at error; `ladder.selector` at info; `selector.ladder` at error; `selector.station` at error (the
 ladder's switches are in two stations); `selector.code` at missing (the station has no CODE button);
 `selector.codes` at warning (it has more than one, so which one sends is not stated and none is chosen);
-`selector.input` at missing (`VAL` or `PRESS` is bound to nothing);
+`selector.input` at missing (`VALUE` or `BUTTON` is bound to nothing);
 `switch.lever.selector` at error (`schemas/layout-model/rules/features/logical/trackplan/ladder.feature`).
 
 ## 6. Reference data[^refdata]
@@ -441,7 +441,7 @@ All move to FieldUnit with the schema (view O15).
     §5.6 is new and §10 names `ladders.py`. The earlier text is at commit `1a733ef`.
 
 [^selector-code]: Amended in place on 2026-11-13 (issue #145, the owner's rulings after the Watsonville office was
-    redrawn): rule 3 gains the selector's symbol and its `VAL` and `PRESS` pins, rule 4 (a selector is in no column;
+    redrawn): rule 3 gains the selector's symbol and its two pins, rule 4 (a selector is in no column;
     its station's CODE button sends its choice) is new, rule 5 gains `station`, `code` and `inputs`, and the findings
     gain `selector.station`, `selector.code`, `selector.codes` and `selector.input`. The earlier text is at commit
     `785b056` (`e7c38e3` on the branch of PR #147).
@@ -449,5 +449,6 @@ All move to FieldUnit with the schema (view O15).
 [^ladder-limit]: Amended in place on 2026-11-14 (issue #145, the owner's rulings of that date): rule 2 (the ladder
     stops where the dispatcher's control ends; a derail the dispatcher controls is a member set to REVERSE) replaces
     "a derail on the way is passed and is no ladder switch"; rules 6 (a selector's controls are
-    switch-position demands, not tokens) and 7 (`switch.lever.selector`) are new; rule 9 no longer says the desk turns a choice into
-    controls. The earlier text is at commit `fc9d41b`.
+    functions, not tokens) and 7 (`switch.lever.selector`) are new; rule 9 no longer says the desk turns a choice into
+    controls; rule 4 names the symbol `PanelSelector` and its pins `VALUE` and `BUTTON` (were `Panel-Selector`, `VAL`
+    and `PRESS`). The earlier text is at commit `fc9d41b`.

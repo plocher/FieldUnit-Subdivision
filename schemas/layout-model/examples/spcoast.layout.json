@@ -3895,7 +3895,7 @@
               "x": 78.74,
               "y": 46.99
             },
-            "glyph": "Railroad-Trackplan:IRJ Authority Change Point",
+            "glyph": "Railroad-Trackplan:IRJ",
             "row": "cf49749f-23ad-4177-a884-0289ca315847"
           },
           {
@@ -4230,7 +4230,7 @@
             },
             "given": {
               "Kind": "IRJ",
-              "RegimeBoundary": "yes"
+              "RegimeBoundary": "no"
             },
             "id": "cf49749f-23ad-4177-a884-0289ca315847",
             "relations": {
@@ -8695,14 +8695,16 @@
               "4ff0a280-f62c-4928-afcb-b3114c00e7b5.A",
               "3478e3b9-eb36-424c-bb66-b3db1669812d.approach",
               "11824084-b6b5-4457-b631-d07fb6074fa9.track",
-              "b2ffcd0a-4c93-4651-b137-da7ac96b4c7d.track"
+              "Watsonville:Arrival.track"
             ]
           }
         },
         "3": {
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
-            "osCircuit": "Watsonville:3T1"
+            "ladder": "Watsonville:Departure",
+            "osCircuit": "Watsonville:3T1",
+            "selector": "Watsonville:Departure"
           },
           "given": {
             "Appliance": "switch",
@@ -8803,7 +8805,7 @@
               "5e7945d6-5aa8-43a3-ae4c-10805f5b6584.track",
               "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
               "293515f7-9155-4100-a639-23f6d051ab4e.approach",
-              "86316793-1b1c-41e2-850f-add834629692.track"
+              "Watsonville:Departure.track"
             ]
           }
         },
@@ -8875,7 +8877,9 @@
         "5": {
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
-            "osCircuit": "Watsonville:5T1"
+            "ladder": "Watsonville:Departure",
+            "osCircuit": "Watsonville:5T1",
+            "selector": "Watsonville:Departure"
           },
           "given": {
             "Appliance": "switch",
@@ -9030,7 +9034,9 @@
         "7": {
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
-            "osCircuit": "Watsonville:7T1"
+            "ladder": "Watsonville:Departure",
+            "osCircuit": "Watsonville:7T1",
+            "selector": "Watsonville:Departure"
           },
           "given": {
             "Appliance": "switch",
@@ -9120,7 +9126,9 @@
         "9": {
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
-            "osCircuit": "Watsonville:9T1"
+            "ladder": "Watsonville:Departure",
+            "osCircuit": "Watsonville:9T1",
+            "selector": "Watsonville:Departure"
           },
           "given": {
             "Appliance": "switch",
@@ -9145,7 +9153,9 @@
         "11": {
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
-            "osCircuit": "Watsonville:11T1"
+            "ladder": "Watsonville:Departure",
+            "osCircuit": "Watsonville:11T1",
+            "selector": "Watsonville:Departure"
           },
           "given": {
             "Appliance": "switch",
@@ -9170,7 +9180,9 @@
         "13": {
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
-            "osCircuit": "Watsonville:13T1"
+            "ladder": "Watsonville:Departure",
+            "osCircuit": "Watsonville:13T1",
+            "selector": "Watsonville:Departure"
           },
           "given": {
             "Appliance": "switch",
@@ -9196,7 +9208,9 @@
         "15": {
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
-            "osCircuit": "Watsonville:15T1"
+            "ladder": "Watsonville:Arrival",
+            "osCircuit": "Watsonville:15T1",
+            "selector": "Watsonville:Arrival"
           },
           "given": {
             "Appliance": "switch",
@@ -9221,7 +9235,9 @@
         "17": {
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
-            "osCircuit": "Watsonville:17T1"
+            "ladder": "Watsonville:Arrival",
+            "osCircuit": "Watsonville:17T1",
+            "selector": "Watsonville:Arrival"
           },
           "given": {
             "Appliance": "switch",
@@ -9246,7 +9262,9 @@
         "19": {
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
-            "osCircuit": "Watsonville:19T1"
+            "ladder": "Watsonville:Arrival",
+            "osCircuit": "Watsonville:19T1",
+            "selector": "Watsonville:Arrival"
           },
           "given": {
             "Appliance": "switch",
@@ -9271,7 +9289,9 @@
         "21": {
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
-            "osCircuit": "Watsonville:21T1"
+            "ladder": "Watsonville:Arrival",
+            "osCircuit": "Watsonville:21T1",
+            "selector": "Watsonville:Arrival"
           },
           "given": {
             "Appliance": "switch",
@@ -9296,7 +9316,9 @@
         "23": {
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
-            "osCircuit": "Watsonville:23T1"
+            "ladder": "Watsonville:Arrival",
+            "osCircuit": "Watsonville:23T1",
+            "selector": "Watsonville:Arrival"
           },
           "given": {
             "Appliance": "switch",
@@ -9321,7 +9343,9 @@
         "25": {
           "derived": {
             "controlPoint": "Watsonville:Watsonville",
-            "osCircuit": "Watsonville:25T1"
+            "ladder": "Watsonville:Arrival",
+            "osCircuit": "Watsonville:25T1",
+            "selector": "Watsonville:Arrival"
           },
           "given": {
             "Appliance": "switch",
@@ -9763,6 +9787,362 @@
         }
       },
       "devices": [
+        {
+          "derived": {
+            "choices": [
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:3",
+                    "position": "NORMAL"
+                  }
+                ],
+                "detent": 1,
+                "leg": "Watsonville:3.N"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:3",
+                    "position": "REVERSE"
+                  },
+                  {
+                    "appliance": "Watsonville:5",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:7",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:9",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:11",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:13",
+                    "position": "NORMAL"
+                  }
+                ],
+                "detent": 7,
+                "leg": "Watsonville:13.N"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:3",
+                    "position": "REVERSE"
+                  },
+                  {
+                    "appliance": "Watsonville:5",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:7",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:9",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:11",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:13",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 6,
+                "leg": "Watsonville:13.R"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:3",
+                    "position": "REVERSE"
+                  },
+                  {
+                    "appliance": "Watsonville:5",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:7",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:9",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:11",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 5,
+                "leg": "Watsonville:11.R"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:3",
+                    "position": "REVERSE"
+                  },
+                  {
+                    "appliance": "Watsonville:5",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:7",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:9",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 4,
+                "leg": "Watsonville:9.R"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:3",
+                    "position": "REVERSE"
+                  },
+                  {
+                    "appliance": "Watsonville:5",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:7",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 3,
+                "leg": "Watsonville:7.R"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:3",
+                    "position": "REVERSE"
+                  },
+                  {
+                    "appliance": "Watsonville:5",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 2,
+                "leg": "Watsonville:5.R"
+              }
+            ],
+            "code": "SouthCTC:14",
+            "inputs": {
+              "lock": "SouthCTC/0x51/BUTTON",
+              "send": "SouthCTC/0x2D/B5",
+              "value": "SouthCTC/0x51/VALUE"
+            },
+            "range": {
+              "max": 7,
+              "min": 1
+            },
+            "serves": "Watsonville:Departure",
+            "station": "Watsonville"
+          },
+          "given": {
+            "Appliance": "selector",
+            "Name": "Departure"
+          },
+          "relations": {
+            "bindings": {
+              "BUTTON": "SouthCTC/0x51/BUTTON",
+              "VALUE": "SouthCTC/0x51/VALUE"
+            }
+          }
+        },
+        {
+          "derived": {
+            "choices": [
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:15",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:17",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:19",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:21",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:23",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:25",
+                    "position": "NORMAL"
+                  }
+                ],
+                "detent": 7,
+                "leg": "Watsonville:25.N"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:15",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:17",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:19",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:21",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:23",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:25",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 6,
+                "leg": "Watsonville:25.R"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:15",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:17",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:19",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:21",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:23",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 5,
+                "leg": "Watsonville:23.R"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:15",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:17",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:19",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:21",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 4,
+                "leg": "Watsonville:21.R"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:15",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:17",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:19",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 3,
+                "leg": "Watsonville:19.R"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:15",
+                    "position": "NORMAL"
+                  },
+                  {
+                    "appliance": "Watsonville:17",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 2,
+                "leg": "Watsonville:17.R"
+              },
+              {
+                "alignment": [
+                  {
+                    "appliance": "Watsonville:15",
+                    "position": "REVERSE"
+                  }
+                ],
+                "detent": 1,
+                "leg": "Watsonville:15.R"
+              }
+            ],
+            "code": "SouthCTC:14",
+            "inputs": {
+              "lock": "SouthCTC/0x50/BUTTON",
+              "send": "SouthCTC/0x2D/B5",
+              "value": "SouthCTC/0x50/VALUE"
+            },
+            "range": {
+              "max": 7,
+              "min": 1
+            },
+            "serves": "Watsonville:Arrival",
+            "station": "Watsonville"
+          },
+          "given": {
+            "Appliance": "selector",
+            "Name": "Arrival"
+          },
+          "relations": {
+            "bindings": {
+              "BUTTON": "SouthCTC/0x50/BUTTON",
+              "VALUE": "SouthCTC/0x50/VALUE"
+            }
+          }
+        },
         {
           "derived": {
             "letter": "A",
@@ -10868,34 +11248,6 @@
           "given": {
             "Appliance": "mast",
             "Name": "840SA"
-          }
-        },
-        {
-          "derived": {
-            "serves": "Watsonville:Arrival"
-          },
-          "given": {
-            "Appliance": "selector",
-            "Name": "Arrival"
-          },
-          "relations": {
-            "bindings": {
-              "VAL": "SouthCTC/0x50/ENC"
-            }
-          }
-        },
-        {
-          "derived": {
-            "serves": "Watsonville:Departure"
-          },
-          "given": {
-            "Appliance": "selector",
-            "Name": "Departure"
-          },
-          "relations": {
-            "bindings": {
-              "VAL": "SouthCTC/0x51/ENC"
-            }
           }
         }
       ],
@@ -12102,7 +12454,7 @@
             "points": "30.48,24.13 33.02,24.13",
             "relations": {
               "from": "3478e3b9-eb36-424c-bb66-b3db1669812d.approach",
-              "to": "b2ffcd0a-4c93-4651-b137-da7ac96b4c7d.track"
+              "to": "Watsonville:Arrival.track"
             }
           },
           {
@@ -12743,8 +13095,8 @@
               "A": [
                 "3478e3b9-eb36-424c-bb66-b3db1669812d.approach",
                 "11824084-b6b5-4457-b631-d07fb6074fa9.track",
-                "b2ffcd0a-4c93-4651-b137-da7ac96b4c7d.track",
-                "Watsonville:02T.TC"
+                "Watsonville:02T.TC",
+                "Watsonville:Arrival.track"
               ],
               "B": [
                 "623dbaf7-6a99-4c76-9cd4-ed14f750b23d.approach",
@@ -12877,8 +13229,8 @@
               "A": [
                 "5e7945d6-5aa8-43a3-ae4c-10805f5b6584.track",
                 "293515f7-9155-4100-a639-23f6d051ab4e.approach",
-                "86316793-1b1c-41e2-850f-add834629692.track",
-                "Watsonville:03T.TC"
+                "Watsonville:03T.TC",
+                "Watsonville:Departure.track"
               ],
               "B": [
                 "Watsonville:3.C"
@@ -13541,8 +13893,8 @@
               "approach": [
                 "4ff0a280-f62c-4928-afcb-b3114c00e7b5.A",
                 "11824084-b6b5-4457-b631-d07fb6074fa9.track",
-                "b2ffcd0a-4c93-4651-b137-da7ac96b4c7d.track",
-                "Watsonville:02T.TC"
+                "Watsonville:02T.TC",
+                "Watsonville:Arrival.track"
               ],
               "governed": [
                 "f0816e4c-bb4d-4002-b1ed-6cd0949417c1.track",
@@ -13593,8 +13945,8 @@
               "approach": [
                 "5e7945d6-5aa8-43a3-ae4c-10805f5b6584.track",
                 "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
-                "86316793-1b1c-41e2-850f-add834629692.track",
-                "Watsonville:03T.TC"
+                "Watsonville:03T.TC",
+                "Watsonville:Departure.track"
               ],
               "governed": [
                 "Watsonville:837.N"
@@ -14114,18 +14466,27 @@
             "derived": {
               "circuits": {
                 "track": "Watsonville:02T"
-              }
+              },
+              "start": "Watsonville:837.R",
+              "switches": [
+                "Watsonville:15",
+                "Watsonville:17",
+                "Watsonville:19",
+                "Watsonville:21",
+                "Watsonville:23",
+                "Watsonville:25"
+              ]
             },
             "given": {
-              "Direction": "RIGHT",
-              "Kind": "GCOR_RULE_9_14"
+              "Kind": "LADDER"
             },
-            "id": "11824084-b6b5-4457-b631-d07fb6074fa9",
+            "id": "b2ffcd0a-4c93-4651-b137-da7ac96b4c7d",
+            "name": "Watsonville:Arrival",
             "relations": {
               "track": [
                 "4ff0a280-f62c-4928-afcb-b3114c00e7b5.A",
                 "3478e3b9-eb36-424c-bb66-b3db1669812d.approach",
-                "b2ffcd0a-4c93-4651-b137-da7ac96b4c7d.track",
+                "11824084-b6b5-4457-b631-d07fb6074fa9.track",
                 "Watsonville:02T.TC"
               ]
             }
@@ -14137,15 +14498,16 @@
               }
             },
             "given": {
-              "Kind": "LADDER"
+              "Direction": "RIGHT",
+              "Kind": "GCOR_RULE_9_14"
             },
-            "id": "b2ffcd0a-4c93-4651-b137-da7ac96b4c7d",
+            "id": "11824084-b6b5-4457-b631-d07fb6074fa9",
             "relations": {
               "track": [
                 "4ff0a280-f62c-4928-afcb-b3114c00e7b5.A",
                 "3478e3b9-eb36-424c-bb66-b3db1669812d.approach",
-                "11824084-b6b5-4457-b631-d07fb6074fa9.track",
-                "Watsonville:02T.TC"
+                "Watsonville:02T.TC",
+                "Watsonville:Arrival.track"
               ]
             }
           },
@@ -14188,18 +14550,27 @@
             "derived": {
               "circuits": {
                 "track": "Watsonville:03T"
-              }
+              },
+              "start": "Watsonville:837.N",
+              "switches": [
+                "Watsonville:3",
+                "Watsonville:5",
+                "Watsonville:7",
+                "Watsonville:9",
+                "Watsonville:11",
+                "Watsonville:13"
+              ]
             },
             "given": {
-              "Direction": "LEFT",
-              "Kind": "GCOR_RULE_9_14"
+              "Kind": "LADDER"
             },
-            "id": "5e7945d6-5aa8-43a3-ae4c-10805f5b6584",
+            "id": "86316793-1b1c-41e2-850f-add834629692",
+            "name": "Watsonville:Departure",
             "relations": {
               "track": [
+                "5e7945d6-5aa8-43a3-ae4c-10805f5b6584.track",
                 "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
                 "293515f7-9155-4100-a639-23f6d051ab4e.approach",
-                "86316793-1b1c-41e2-850f-add834629692.track",
                 "Watsonville:03T.TC"
               ]
             }
@@ -14211,15 +14582,16 @@
               }
             },
             "given": {
-              "Kind": "LADDER"
+              "Direction": "LEFT",
+              "Kind": "GCOR_RULE_9_14"
             },
-            "id": "86316793-1b1c-41e2-850f-add834629692",
+            "id": "5e7945d6-5aa8-43a3-ae4c-10805f5b6584",
             "relations": {
               "track": [
-                "5e7945d6-5aa8-43a3-ae4c-10805f5b6584.track",
                 "78d813b1-144a-4e54-8d3d-0a64f49eb2d6.A",
                 "293515f7-9155-4100-a639-23f6d051ab4e.approach",
-                "Watsonville:03T.TC"
+                "Watsonville:03T.TC",
+                "Watsonville:Departure.track"
               ]
             }
           },
@@ -15011,56 +15383,6 @@
           }
         },
         "shape": [
-          {
-            "points": "3.175,-1.27 1.905,-1.27 1.905,1.27 3.175,1.27",
-            "type": "polyline"
-          },
-          {
-            "points": "-0.635,-1.27 0.635,-1.27 0.635,1.27 -0.635,1.27",
-            "type": "polyline"
-          }
-        ]
-      },
-      "Railroad-Trackplan:IRJ Authority Change Point": {
-        "ports": {
-          "A": {
-            "x": 0.0,
-            "y": 0.0
-          },
-          "B": {
-            "x": 2.54,
-            "y": 0.0
-          }
-        },
-        "shape": [
-          {
-            "points": "1.27,0.0635 1.27,0.6985",
-            "type": "polyline"
-          },
-          {
-            "points": "1.27,1.016 1.27,1.651",
-            "type": "polyline"
-          },
-          {
-            "points": "1.27,2.286 1.27,2.921",
-            "type": "polyline"
-          },
-          {
-            "points": "1.27,3.556 1.27,4.191",
-            "type": "polyline"
-          },
-          {
-            "points": "1.27,-0.889 1.27,-0.254",
-            "type": "polyline"
-          },
-          {
-            "points": "1.27,-2.159 1.27,-1.524",
-            "type": "polyline"
-          },
-          {
-            "points": "1.27,-3.429 1.27,-2.794",
-            "type": "polyline"
-          },
           {
             "points": "3.175,-1.27 1.905,-1.27 1.905,1.27 3.175,1.27",
             "type": "polyline"
@@ -19191,34 +19513,6 @@
             },
             "column": "SouthCTC:10"
           }
-        },
-        {
-          "given": {
-            "Appliance": "lever",
-            "Control.CODE": "",
-            "Name": "CODE",
-            "Style": "code"
-          },
-          "relations": {
-            "bindings": {
-              "CODE": "SouthCTC/0x50/Press"
-            },
-            "interlocking": "Watsonville"
-          }
-        },
-        {
-          "given": {
-            "Appliance": "lever",
-            "Control.CODE": "",
-            "Name": "CODE",
-            "Style": "code"
-          },
-          "relations": {
-            "bindings": {
-              "CODE": "SouthCTC/0x51/Press"
-            },
-            "interlocking": "Watsonville"
-          }
         }
       ],
       "given": {
@@ -19231,7 +19525,7 @@
   },
   "provenance": {
     "libraries": {
-      "Railroad-Trackplan": "split-projects-final-165-g0ab8dd8"
+      "Railroad-Trackplan": "split-projects-final-166-gc3309a5-dirty"
     },
     "referenceData": {
       "aspectNames": {
@@ -19297,7 +19591,7 @@
     },
     "rules": "0.1.0",
     "source": {
-      "describe": "split-projects-final-165-g0ab8dd8",
+      "describe": "split-projects-final-166-gc3309a5-dirty",
       "path": "SPCoast/SPCoast.kicad_pro"
     },
     "sourceType": "KiCad",

@@ -635,11 +635,11 @@ def receives(context, name, controls):
     assert got == _tokens(controls.strip('"')), f"station {name} receives {got!r}"
 
 
-@then('the demands station "{name}" receives are "{demands}"')
-def receives_demands(context, name, demands):
-    got = sorted((d.appliance, d.position) for d in _station(context, name).demands)
-    want = sorted(tuple(d.split()) for d in _tokens(demands))
-    assert got == want, f"station {name} receives the demands {got!r}"
+@then('the control functions station "{name}" receives are "{functions}"')
+def receives_functions(context, name, functions):
+    got = sorted((f.appliance, f.word) for f in _station(context, name).functions if f.direction == "control")
+    want = sorted(tuple(f.split()) for f in _tokens(functions))
+    assert got == want, f"station {name} receives the control functions {got!r}"
 
 
 @then('station "{name}" must send {indications}')
@@ -1057,14 +1057,14 @@ def _given_selector(context, name: str) -> dict:
                 if d.get("given", {}).get("Appliance") == "selector" and d["given"].get("Name") == name)
 
 
-@given('selector "{name}" binds VAL to "{value}" and PRESS to "{lock}"')
+@given('selector "{name}" binds VALUE to "{value}" and BUTTON to "{lock}"')
 def selector_binds(context, name, value, lock):
-    _given_selector(context, name).setdefault("relations", {})["bindings"] = {"VAL": value, "PRESS": lock}
+    _given_selector(context, name).setdefault("relations", {})["bindings"] = {"VALUE": value, "BUTTON": lock}
 
 
-@given('selector "{name}" binds VAL to "{value}"')
+@given('selector "{name}" binds VALUE to "{value}"')
 def selector_binds_value(context, name, value):
-    _given_selector(context, name).setdefault("relations", {})["bindings"] = {"VAL": value}
+    _given_selector(context, name).setdefault("relations", {})["bindings"] = {"VALUE": value}
 
 
 @given('the desk has a CODE button on column "{column}" bound to "{route}"')

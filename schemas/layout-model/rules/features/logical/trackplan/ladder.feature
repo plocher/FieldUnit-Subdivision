@@ -13,8 +13,8 @@ Feature: A ladder and the selector that serves it
   is nearest the start.
   A selector serves the ladder of its Name, qualified like a lever, and derives its choices and its range, 1 to the
   number of choices. Each ladder switch derives its ladder and its control source, the selector. A selector's controls
-  are switch-position demands, not tokens (the owner, 2026-11-14): each switch of a choice's alignment with the
-  position the choice asks of it, and the station receives them. The field unit lines and locks as for any lever. Nothing here implements locking (ADR 0012 §5.2).
+  are functions, not tokens (the owner, 2026-11-14): each switch of a choice's alignment with the function word
+  the choice sends it, its position, and the station receives them. The field unit lines and locks as for any lever. Nothing here implements locking (ADR 0012 §5.2).
 
   Background:
     Given interlocking "X" has house "East"
@@ -238,10 +238,10 @@ Feature: A ladder and the selector that serves it
 
   # Who sends a selector's choice (the owner, 2026-11-13). A selector is in no column. Its choice goes to the station
   # that owns its ladder's switches; that station's CODE button sends it, with the levers of its column, as ordinary
-  # controls. VAL shows the choice, PRESS locks it in, CODE sends the locked choice.
+  # controls. VALUE shows the choice, BUTTON locks it in, CODE sends the locked choice.
 
   @selector.code
-  Scenario: the station's CODE button sends the choice the selector's PRESS locks in
+  Scenario: the station's CODE button sends the choice the selector's BUTTON locks in
     Given interlocking "X" is on an AAR token code line
     And interlocking "X" has these appliances:
       | Name | Appliance | Style   | TC  | CP Name |
@@ -258,7 +258,7 @@ Feature: A ladder and the selector that serves it
     And interlocking "X" has these devices:
       | Name | Appliance |
       | Yard | selector  |
-    And selector "Yard" binds VAL to "Desk/0x50/ENC" and PRESS to "Desk/0x50/Press"
+    And selector "Yard" binds VALUE to "Desk/0x50/ENC" and BUTTON to "Desk/0x50/Press"
     And the desk has these columns:
       | Column | CP Name | Interlocking |
       | 13     | East    | X            |
@@ -287,7 +287,7 @@ Feature: A ladder and the selector that serves it
     And interlocking "X" has these devices:
       | Name | Appliance |
       | Yard | selector  |
-    And selector "Yard" binds VAL to "Desk/0x50/ENC" and PRESS to "Desk/0x50/Press"
+    And selector "Yard" binds VALUE to "Desk/0x50/ENC" and BUTTON to "Desk/0x50/Press"
     When the layout is derived
     Then it is reported as missing on "0"
     And selector "Yard" goes to station "X"
@@ -312,7 +312,7 @@ Feature: A ladder and the selector that serves it
     And interlocking "X" has these devices:
       | Name | Appliance |
       | Yard | selector  |
-    And selector "Yard" binds VAL to "Desk/0x50/ENC" and PRESS to "Desk/0x50/Press"
+    And selector "Yard" binds VALUE to "Desk/0x50/ENC" and BUTTON to "Desk/0x50/Press"
     And the desk has these columns:
       | Column | CP Name | Interlocking |
       | 13     | X       | X            |
@@ -324,7 +324,7 @@ Feature: A ladder and the selector that serves it
     And selector "Yard" is sent by no CODE button
 
   @selector.input
-  Scenario: a selector whose PRESS is wired to nothing
+  Scenario: a selector whose BUTTON is wired to nothing
     Given interlocking "X" has these appliances:
       | Name | Appliance | Style   | TC  |
       | 9    | switch    | powered | 9T1 |
@@ -340,7 +340,7 @@ Feature: A ladder and the selector that serves it
     And interlocking "X" has these devices:
       | Name | Appliance |
       | Yard | selector  |
-    And selector "Yard" binds VAL to "Desk/0x50/ENC"
+    And selector "Yard" binds VALUE to "Desk/0x50/ENC"
     When the layout is derived
     Then it is reported as missing on "0"
 
@@ -367,7 +367,7 @@ Feature: A ladder and the selector that serves it
     And interlocking "X" has these devices:
       | Name | Appliance |
       | Yard | selector  |
-    And selector "Yard" binds VAL to "Desk/0x50/ENC" and PRESS to "Desk/0x50/Press"
+    And selector "Yard" binds VALUE to "Desk/0x50/ENC" and BUTTON to "Desk/0x50/Press"
     When the layout is derived
     Then it is reported as an error on "0"
     And selector "Yard" goes to no station
@@ -480,9 +480,9 @@ Feature: A ladder and the selector that serves it
     Then selector "Yard" offers "1R: 1R; 1N: 1N"
     And ladder "M" starts at "X:9.R" with switches "X:1"
 
-  # The choice's controls (the owner, 2026-11-14): switch-position demands, not tokens.
+  # The choice's controls (the owner, 2026-11-14): functions, not tokens.
 
-  Scenario: the station receives each choice's switch-position demands
+  Scenario: the station receives each choice's control functions
     A selector spells no token; the station's lever controls are unchanged.
     Given interlocking "X" is on an AAR token code line
     And interlocking "X" has these appliances:
@@ -503,14 +503,14 @@ Feature: A ladder and the selector that serves it
     And interlocking "X" has these devices:
       | Name | Appliance |
       | Yard | selector  |
-    And selector "Yard" binds VAL to "Desk/0x50/ENC" and PRESS to "Desk/0x50/Press"
+    And selector "Yard" binds VALUE to "Desk/0x50/ENC" and BUTTON to "Desk/0x50/Press"
     And the desk has these columns:
       | Column | CP Name | Interlocking |
       | 13     | X       | X            |
     And the desk has a CODE button on column "13" bound to "Desk/0x2D/B5"
     When the layout is derived
     Then selector "Yard" offers "1R: 1R; 3R: 1N 3R; 3N: 1N 3N"
-    And the demands station "X" receives are "1 NORMAL, 1 REVERSE, 3 NORMAL, 3 REVERSE"
+    And the control functions station "X" receives are "1 NORMAL, 1 REVERSE, 3 NORMAL, 3 REVERSE"
     And station "X" receives nothing
 
   @switch.lever.selector
