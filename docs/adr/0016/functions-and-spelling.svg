@@ -67,7 +67,7 @@
   <text x="610" y="258" fill="#222">FieldUnit AarTextCodec (the source)</text>
   <text x="610" y="276" fill="#222" font-family="monospace" font-size="12">WireCodec.h writeToken(name, ...)</text>
   <line x1="725" y1="234" x2="725" y2="122" stroke="#9a4a4a" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#a)"/>
-  <text x="732" y="214" fill="#9a4a4a" font-size="11">gate: the same tokens</text>
+  <text x="732" y="214" fill="#9a4a4a" font-size="11">published vector: the same tokens</text>
 
-  <text x="20" y="325" fill="#555" font-size="12">The file holds functions. A token exists only where an encoding spells one: on the wire, in a gate, in a message.</text>
+  <text x="20" y="325" fill="#555" font-size="12">The file holds functions. A token exists only where an encoding spells one: on the wire, in a published vector, in a message.</text>
 </svg>

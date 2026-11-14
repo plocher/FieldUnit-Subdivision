@@ -7,7 +7,7 @@ One list of what is decided and what waits for the owner. Each proposed ADR open
 
 | ADR | Subject | Asked of the owner |
 |---|---|---|
-| [0016](0016-codeline-tokens-are-demands.md) | Code line content is functions, (appliance, function word), not tokens; one spelling per encoding, for AAR tokens FieldUnit's `AarTextCodec`, checked by a gate that runs it; `Control.<pin>` and `Indication.<pin>` bind a pin to a function word; token notation in the drawing is decoded. Amends the 2026-10-28 per-pin token ruling, ADR 0012 §5.1, 0011, 0008 §4.7. | Proposed: ratify decisions 1 to 6. Decision 7 (pin kinds in two classes: driver capability, seam word set) ruled 2026-11-14. |
+| [0016](0016-codeline-tokens-are-demands.md) | Code line content is functions, (appliance, function word), not tokens; one spelling per encoding, for AAR tokens FieldUnit's `AarTextCodec`; `Control.<pin>` and `Indication.<pin>` bind a pin to a function word; token notation in the drawing is decoded. Amends the 2026-10-28 per-pin token ruling, ADR 0012 §5.1, 0011, 0008 §4.7. | Proposed: decide 6 (FieldUnit publishes a (function, token) conformance vector; default yes). Decisions 1 to 5 and 7 ruled 2026-11-14; the words `TIME`, `REQUEST`, `CALL` stay proposed. |
 | [0002](0002-symbol-contract.md) | What each KiCad symbol records | Frozen 2026-10-03: too complicated to approve as-is. Rewritten to rules after the cleanup pass (#30), then approved. |
 | [0003](0003-name-grammar.md) | One grammar for the names of appliances, signals and track circuits | Frozen 2026-10-03, same reason; the owner's in-progress edits are committed as they stood. Rewritten to rules after #30. |
 
