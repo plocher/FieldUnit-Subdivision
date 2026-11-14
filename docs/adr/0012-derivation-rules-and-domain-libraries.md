@@ -192,6 +192,7 @@ sufficient for them.
 | routes | the structural routes of each signal: entrance, end, switch alignment, circuits passed | switch legs and their neighbours, signal joints and the direction each governs, circuit adjacency, ends |
 | blocks | the track between two interlockings: the pair of NextCPs, its method of operation, the signals that protect it from each end | NextCP pairs, policies (Rule 251, Rule 261), routes |
 | ceilings | the indication ceiling of each route | routes, `IndicationCeiling` where stated, reference data (§6) |
+| ladders[^ladders] | per ladder marker, the ladder's switches and the ordered choices of the selector that serves it (§5.6) | the marker's track, switch legs and their neighbours, joints, ends |
 | codeline[^libs] | per station, the controls it receives, the indications it must send, and the appliance that reports each token | desk columns, the levers' `Control.X`, the consumers' `Indication`, the appliances; which appliance reports a token is an interim lookup that reads the reference templates backwards |
 
 What a processor needs (its transports and the encodings riding them there) is a query in the same family, a join of
@@ -232,6 +233,34 @@ Each library has a gate: it runs over every interlocking in SPCoast. A result it
 reported at `missing`, never at error (ADR 0011 §6). Example: Watsonville has no southbound signal into 837T1, an
 intentional TBD (the owner, 2026-10-26: on the single track from Corporal, Corporal's 830S and the automatic block
 between are the proxy). The routes library reports a facing switch at a limit with no entering signal at `missing`.
+
+### 5.6 Ladders and selectors[^ladders]
+
+A yard ladder is worked from a rotary knob, NX by track selection (the owner, 2026-11-13; issue #145, a POC). A
+ladder marker (`POLICY`, Kind `LADDER`, with a `Name`) stands on the ladder's start leg.
+
+1. **A ladder is every facing-point switch from its start leg up to a trailing point.** The walk goes from the
+   marker's piece both ways along the track, across every joint: one way meets the start switch trailing, the other
+   meets the first ladder switch at C, so the direction needs no orientation. It continues through each switch entered
+   at C and stops where the next switch on a path is met at N or R, or at an end of track. Watsonville: from 837.R,
+   switches 15 to 25; from 837.N, 3 to 13.
+2. **Choices, in a deterministic order.** At each ladder switch the spine is the leg that leads to the next ladder
+   switch (N or R: Watsonville's switch 3 reaches 5 through R); the other leg is the next choice; the last switch gives
+   R, then N. Where both legs lead to ladder switches, N's sub-ladder comes before R's. Each choice is its leg with its
+   alignment (`17R: 15N 17R`). Detent 1 is nearest the start.
+3. **The selector serves the ladder of its Name,** qualified like a lever (`Watsonville:Arrival`).
+4. **Derived, written at save (ADR 0015):** on the selector, `choices` and `range` (1 to the number of choices); on
+   the marker's row, `switches` and `start`; on each ladder switch, `ladder` and its control source, `selector`, which
+   the reference derivation reads as it reads a switch lever, so a powered ladder switch a selector serves is no
+   `switch.lever`. `wrap` stays stated.
+5. **Vital boundary (§5.2):** the desk turns a choice into ordinary `NWS`/`RWS` controls for the alignment; the field
+   unit lines and locks as for any lever.
+
+The walk is the `ladders` library's (`tools/railroad/ladders.py`, over the routes library's track graph); the
+reference derivation calls it and writes its results, since a switch's control source is a derived fact its own
+`switch.lever` check reads. Findings: `ladder.name`, `ladder.start` and `ladder.leg` at missing; `ladder.direction`
+and `ladder.shared` at error; `ladder.selector` at info; `selector.ladder` at error
+(`schemas/layout-model/rules/features/logical/trackplan/ladder.feature`).
 
 ## 6. Reference data[^refdata]
 
@@ -340,7 +369,7 @@ has changed since `96c6b4e`.
 | Rule-check registry and changelog | `schemas/layout-model/rules/diagnostics.json`, `schemas/layout-model/rules/CHANGELOG.md` |
 | Import diagnostic registry | `tools/layout_compiler/`, retired with the importer |
 | Reference derivation | `tools/layout_model/derive.py` (ADR 0011 §5) |
-| Domain libraries | `tools/railroad/` (`routes.py`, `blocks.py`, `ceilings.py`, `codeline.py`), each with its version and its features |
+| Domain libraries | `tools/railroad/` (`routes.py`, `blocks.py`, `ceilings.py`, `codeline.py`, `ladders.py`[^ladders]), each with its version and its features |
 | Naming grammar and Style classes, shared by the reference derivation and the domain libraries | `tools/layout_model/grammar.py`[^libs] |
 | Reference data | `schemas/layout-model/reference/`, one JSON file per table with its schema; loaded by `tools/layout_model/reference.py`, resolved by `reference_data.py`[^refdata] |
 
@@ -383,3 +412,6 @@ All move to FieldUnit with the schema (view O15).
     limits read "a NextCP, END_CTC or bumper", and the direction of a route was not said to be the movement along the
     track. Amended again on 2026-11-13 (the owner): at commit 7d578e7 a regime boundary was a limit where the track
     beyond it was not interlocking track, and a regime boundary inside an interlocking was passed.
+
+[^ladders]: Added in place on 2026-11-13 (issue #145, the owner's rules of that date): §5.1 gains the ladders library,
+    §5.6 is new and §10 names `ladders.py`. The earlier text is at commit `1a733ef`.

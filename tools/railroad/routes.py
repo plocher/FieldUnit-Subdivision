@@ -126,7 +126,7 @@ class _Pin:
     interlocking: str
 
 
-class _Track:
+class Track:
     """Every interlocking's track pins, joined into nets by their stated adjacency (ADR 0011: a pin's relation names
     every pin its wire reaches), with what each pin is."""
 
@@ -293,7 +293,7 @@ def _path(q: str) -> str:
 def find(model: dict[str, Any]) -> Routes:
     """Every controlled mast's routes in a derived model, with the findings about what stops a route from finishing.
     Every finding is at ``missing``: an unfinished route is incomplete, never in error (ADR 0012 §5.5)."""
-    t = _Track(model)
+    t = Track(model)
     report = Report()
 
     def add(code: str, text: str, where: str, entities: tuple[str, ...] = ()) -> None:
@@ -336,7 +336,7 @@ def find(model: dict[str, Any]) -> Routes:
     return Routes(out, report)
 
 
-def _walk(t: _Track, scope: str, r: Route, pin: str, seen: frozenset[str], out: list[Route],
+def _walk(t: Track, scope: str, r: Route, pin: str, seen: frozenset[str], out: list[Route],
           entered_at_points: set[str], add) -> None:
     """Continue ``r`` into the net of ``pin``, entered through ``pin``; every finished or stopped route goes to ``out``."""
     net = t.net(pin)

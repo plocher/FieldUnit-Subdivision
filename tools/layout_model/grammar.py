@@ -22,6 +22,8 @@ UNPOWERED = frozenset({"manual", "manual_sensed", "spring"}) | LOCKED   # by han
 REGIMES = POWERED | UNPOWERED                      # the switch words; one of them states how a switch or derail is worked
 HAND = UNPOWERED - LOCKED                          # worked by hand with no lever device at all
 DERAIL = "derail"
+LADDER = "LADDER"                                  # a ladder marker's Kind, a POLICY on its start leg (issue #145)
+SELECTOR = "selector"                              # the device that serves a ladder by its Name, a knob's ordered choices (issue #145)
 LEVER = re.compile(r"^\d+")
 MAST_NAME = re.compile(r"^(0?[1-9]\d{0,3}[LRNSEW])([A-Z]+)$")
 GANG = re.compile(r"(?<=\d)[A-Z]$")
