@@ -620,7 +620,7 @@ def lever(name: str, *functions: str, column: str | None = None, **fields: str) 
             given.pop(key, None)
         else:
             given[key] = v
-    rel = {"bindings": {f: f"P/0x20/A{i}" for i, f in enumerate(functions)}}
+    rel = {"bindings": {f: {"route": f"P/0x20/A{i}", "sense": "low"} for i, f in enumerate(functions)}}
     if column:
         rel["column"] = column
     return {"given": given, "relations": rel}
@@ -1031,7 +1031,7 @@ class TrainOrders(unittest.TestCase):
     @staticmethod
     def lever(face: str, *inputs: str, board: str = "Gilroy") -> dict:
         return {"given": {"Appliance": "lever", "Style": "train_order"},
-                "relations": {"mast": f"X:{board}", "face": face, **({"bindings": {w: f"Field/0x20/A{i}" for i, w in enumerate(inputs)}} if inputs else {})}}
+                "relations": {"mast": f"X:{board}", "face": face, **({"bindings": {w: {"route": f"Field/0x20/A{i}", "direction": "input", "sense": "low"} for i, w in enumerate(inputs)}} if inputs else {})}}
 
     DEVICES = (MAST, head("N"), lever("N", "STOP", "SLOW"), head("S"), lever("S", "STOP"))
 

@@ -177,7 +177,7 @@ from tools.railroad import codeline, ladders
 from . import expression, reference
 from . import reference_data as refdata
 from .grammar import GANG, HAND, LADDER, POWERED, SELECTOR, depends_on, direction_of, dispatcher_controlled, is_derail, is_powered, regime, regime_word, styles
-from . import sort_key
+from . import bound, route_of, sort_key
 from .report import Report
 
 RULES = "0.1.0"                     # the derivation's version, stamped as provenance.rules (ADR 0011 §3, ADR 0012 §7)
@@ -914,6 +914,7 @@ class _Derivation:
         self.train_orders()
         self.reach()
         self.jmri_masts()
+        self.outputs()
         if "provenance" in self.m:
             self.m["provenance"]["rules"] = RULES
 
@@ -1446,7 +1447,7 @@ class _Derivation:
         name = lad.name.partition(":")[2]
         out: dict[str, Any] = {}
         bindings = dev.get("relations", {}).get("bindings", {})
-        inputs = {"value": bindings.get("VALUE"), "lock": bindings.get("BUTTON")}
+        inputs = {"value": route_of(bindings.get("VALUE")), "lock": route_of(bindings.get("BUTTON"))}
         for pin, key in (("VALUE", "value"), ("BUTTON", "lock")):
             if not inputs[key]:
                 self.r.add("selector.input", f"selector {name}: its {pin} pin is bound to no driver pin; what "
@@ -1490,7 +1491,7 @@ class _Derivation:
             column, c = codes[0]
             out["code"] = column
             cb = c.get("relations", {}).get("bindings", {})
-            inputs["send"] = cb.get("CODE") or (next(iter(cb.values())) if len(cb) == 1 else None)
+            inputs["send"] = route_of(cb.get("CODE") or (next(iter(cb.values())) if len(cb) == 1 else None))
         out["inputs"] = _clean(inputs)
         return out
 
@@ -1828,8 +1829,8 @@ class _Derivation:
                 g, rel = dev.get("given", {}), dev.get("relations", {})
                 if g.get("Appliance") not in ("mast", "train_order_mast", "head"):
                     continue
-                for pin, routes in rel.get("bindings", {}).items():
-                    for route in (routes if isinstance(routes, list) else [routes]):
+                for pin, value in rel.get("bindings", {}).items():
+                    for route in (b["route"] for b in bound(value)):
                         parts = route.split("/")
                         if len(parts) != 3:
                             continue
@@ -1872,6 +1873,42 @@ class _Derivation:
                     derived["aspectNames"] = self.rd.aspect_names(system, kind)     # indication -> the name it publishes
                 _set_derived(d, derived)
 
+    # ------------------------------------------------------------------------------------------- outputs
+
+    def outputs(self) -> None:
+        """Only the vital logic of the interlocking that owns an appliance drives it (ADR 0017 decision 3): a binding of
+        an interlocking's device whose direction is ``output`` (the logic drives the device pin: a switch machine, a
+        lock, a head, a lamp) and whose processor does not run that interlocking (``relations.processor``) is
+        ``device.output`` at error. A binding the logic reads (a demand: a lever, a key, any sensor; an appliance's own
+        point detection or occupancy) is never this error, wherever it is bound, and one that states no direction is
+        not judged. A desk device's outputs are the desk's lamps. A binding through a CMRInet Node reaches the one
+        processor that anchors its line (ADR 0017 §4)."""
+        layout = self.m.get("layout", {})
+        anchors = {t: tr.get("relations", {}).get("anchors") or [] for t, tr in layout.get("transports", {}).items()}
+
+        def processor_of(route: str) -> Optional[str]:
+            owner = route.split("/", 1)[0]
+            if owner in anchors and owner not in layout.get("processors", {}):
+                return anchors[owner][0] if len(anchors[owner]) == 1 else None
+            return owner
+
+        for b, ix in self.m.get("interlockings", {}).items():
+            runs = ix.get("relations", {}).get("processor")
+            if not runs:
+                continue
+            for i, dev in enumerate(ix.get("devices", [])):
+                g, rel = dev.get("given", {}), dev.get("relations", {})
+                wrong: dict[str, list[str]] = defaultdict(list)
+                for pin, value in sorted(rel.get("bindings", {}).items()):
+                    for binding in bound(value):
+                        p = processor_of(binding["route"])
+                        if binding.get("direction") == "output" and p and p != runs:
+                            wrong[p].append(pin)
+                for p, ps in sorted(wrong.items()):
+                    self.r.add("device.output", f"{g.get('Appliance')} device {g.get('Name') or rel.get('mast') or ''}: its output "
+                               f"{', '.join(ps)} is driven by processor {p}, but {b}'s vital logic runs on {runs}; only the logic of the "
+                               "interlocking that owns an appliance drives it", f"interlockings/{b}/devices/{i}",
+                               (f"interlockings/{b}", f"layout/processors/{p}"))
 
 PINS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"                   # the field mast device's position pins, top down (#80)
 

@@ -1,4 +1,4 @@
-"""The seam and trackplan facts as the Layout Data Model File, schema ``layout-model/v3.4.0`` (ADR 0008 rev 4, ADR 0010,
+"""The seam and trackplan facts as the Layout Data Model File, schema ``layout-model/v3.5.0`` (ADR 0008 rev 4, ADR 0010,
 ADR 0011).
 
 The KiCad importer writes two of the three maps (ADR 0011 §2): ``given``, what the person stated as fields, as drawn,
@@ -23,7 +23,7 @@ from .seams import Seams, token_field
 from .source import Symbol
 from .seams import loc as seams_loc
 
-SCHEMA = "layout-model/v3.4.0"                    # 3.3.0 states a mast's atoms; 3.4.0 resolves the reference data per entity (#134)
+SCHEMA = "layout-model/v3.5.0"                    # 3.4.0 resolves the reference data per entity (#134); 3.5.0 states each binding's pin number, direction and sense
 WRITER = {"name": "layout_compiler", "version": "0.4.0"}
 FACING = ("mast", "train_order")                  # the appliances whose glyph turn the file states (the owner, 2026-11-08)
 
@@ -58,12 +58,19 @@ def _source(project: Optional[Path]) -> dict[str, Any]:
     return _clean({"path": path, "describe": _git(["describe", "--always", "--dirty"], project.parent)})
 
 
+def _binding(b) -> dict[str, Any]:
+    """One wire to a driver pin (schema 3.5.0): its route, the driver pin's number (an integer when it is one), the
+    direction when the device pin's type states one, and the sense."""
+    number = int(b.number) if b.number.isdigit() else b.number
+    return {k: v for k, v in (("route", b.route), ("pinNumber", number), ("direction", b.direction), ("sense", b.sense)) if v not in (None, "")}
+
+
 def _bindings(bindings) -> dict[str, Any]:
-    """A device's wires to driver pins, function to route (three-maps D3); a function bound twice keeps both routes."""
-    out: dict[str, list[str]] = {}
+    """A device's wires to driver pins, function to binding (three-maps D3); a function bound twice keeps both, by route."""
+    out: dict[str, list[dict[str, Any]]] = {}
     for b in bindings:
-        out.setdefault(b.function, []).append(b.route)
-    return {f: routes[0] if len(routes) == 1 else sorted(routes) for f, routes in out.items()}
+        out.setdefault(b.function, []).append(_binding(b))
+    return {f: bs[0] if len(bs) == 1 else sorted(bs, key=lambda x: x["route"]) for f, bs in out.items()}
 
 
 def _device(d) -> dict:

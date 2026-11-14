@@ -37,6 +37,22 @@ def drawing(context, name):
         context.symbols.append(Symbol(row["Ref"].strip(), row["Symbol"].strip(), "", fields, sheet))
 
 
+@given('interlocking "{name}" shares the processor of "{other}", in this drawing:')
+def drawing_shared(context, name, other):
+    """A second interlocking whose field unit runs on the processor of the first (a field processor that runs two)."""
+    sheet = f"/{name}/"
+    n = sum(1 for s in context.symbols if s.fields.get("Kind") == "INTERLOCKING") + 1
+    ix = next(s for s in context.symbols if s.fields.get("Kind") == "INTERLOCKING" and s.fields.get("Name") == other)
+    proc = next(p.ref for net in context.nets for p in net.pins if p.pin == "Processor" and p.ref != ix.ref
+                and any(q.ref == ix.ref for q in net.pins))
+    context.symbols.append(Symbol(f"IX{n}", "Railroad-Trackplan:Interlocking", "", {"Role": "STRUCTURE", "Kind": "INTERLOCKING", "Name": name}, sheet))
+    context.nets = [Net(net.name, net.pins + (PinRef(f"IX{n}", "Processor"),)) if any(p.ref == proc and p.pin == "Processor" for p in net.pins) else net
+                    for net in context.nets]
+    for row in context.table:
+        fields = {h: row[h].strip() for h in row.headings if h not in ("Ref", "Symbol") and row[h].strip()}
+        context.symbols.append(Symbol(row["Ref"].strip(), row["Symbol"].strip(), "", fields, sheet))
+
+
 @given("these symbols on the sheet above:")
 def parent_symbols(context):
     """Symbols on the root sheet, above every interlocking's (a NextCP wired to a hierarchical net)."""
@@ -53,9 +69,17 @@ def more_symbols(context):
 
 
 def _pin(text: str) -> PinRef:
-    """``REF.pin``, or ``REF.UNIT.pin`` for a pin of a named unit (a train order device's face)."""
+    """``REF.pin``, or ``REF.UNIT.pin`` for a pin of a named unit (a train order device's face). A pin may carry its
+    library facts as the netlist export does: ``[type]`` its electrical type, ``#n`` its number (``DS.M[input]``,
+    ``X1.A1#1``)."""
+    text, _, number = text.partition("#")
+    pintype = ""
+    if text.endswith("]") and "[" in text:
+        text, _, pintype = text[:-1].rpartition("[")
     parts = text.split(".")
-    return PinRef(parts[0], parts[2], unit=parts[1]) if len(parts) == 3 else PinRef(parts[0], parts[1])
+    if len(parts) == 3:
+        return PinRef(parts[0], parts[2], pintype, parts[1], number)
+    return PinRef(parts[0], parts[1], pintype, number=number)
 
 
 @given("these nets:")
@@ -301,3 +325,47 @@ def no_address(context):
     written = [(p, a) for p, proc in context.model["layout"]["processors"].items() for a, d in proc.get("drivers", {}).items()
                if "Address" in d.get("given", {})]
     assert not written, f"an Address is written on {written}"
+
+
+# ----------------------------------------------------------------------- the side of a device (ADR 0017)
+
+def _filed(context, ref: str) -> list[str]:
+    """Where the importer filed the device ``ref``: ``office unit <name>`` or ``interlocking <name>``, once each."""
+    out = [f"office unit {ou.name}" for ou in context.seams.office_units.values() for d in ou.devices if d.sym.ref == ref]
+    return out + [f"interlocking {ix.name}" for ix in context.seams.interlockings.values() for d in ix.devices if d.sym.ref == ref]
+
+
+@then('the device "{ref}" is a device of {kind} "{name}"')
+def device_of(context, ref, kind, name):
+    got = _filed(context, ref)
+    assert got == [f"{kind} {name}"], f"{ref}: filed under {got}, not {kind} {name}"
+
+
+def _desk_device(context, ref: str):
+    devs = [d for ou in context.seams.office_units.values() for d in ou.devices if d.sym.ref == ref]
+    assert len(devs) == 1, f"{ref}: {len(devs)} desk devices"
+    return devs[0]
+
+
+@then('the device "{ref}" is in column "{column}"')
+def in_column(context, ref, column):
+    got = _desk_device(context, ref).column
+    assert got == column, f"{ref}: its column is {got!r}, not {column!r}"
+
+
+@then('the device "{ref}" is in no column')
+def in_no_column(context, ref):
+    got = _desk_device(context, ref).column
+    assert got is None, f"{ref}: its column is {got!r}"
+
+
+# ----------------------------------------------------------------------- what a binding states (schema 3.5.0)
+
+@then('the device "{ref}" binds "{pin}" to "{route}" on driver pin {number}, {direction}, asserted {sense}')
+def binding_facts(context, ref, pin, route, number, direction, sense):
+    """A binding as the file states it: the route, the driver pin's number, the logic's side and the asserted level."""
+    devs = [d for u in (*context.seams.interlockings.values(), *context.seams.office_units.values()) for d in u.devices if d.sym.ref == ref]
+    assert len(devs) == 1, f"{ref}: {len(devs)} devices"
+    got = emit._device(devs[0])["relations"]["bindings"][pin]
+    want = {"route": route, "pinNumber": int(number), "sense": sense, **({} if direction == "no direction" else {"direction": direction})}
+    assert got == want, f"{ref}.{pin}: {got!r}, not {want!r}"

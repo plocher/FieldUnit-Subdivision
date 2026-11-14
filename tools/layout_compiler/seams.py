@@ -153,8 +153,19 @@ class OfficeUnit:
 
 @dataclass
 class Binding:
+    """A device pin's wire to a driver pin, with the facts the drawing states about it: the driver pin's number on its
+    symbol, the direction from the device pin's electrical type, and the sense, asserted low or high."""
     function: str
     route: str
+    number: str = ""                                                  # the driver pin's number, as its symbol states it
+    direction: Optional[str] = None                                   # "output": the logic drives the device pin; "input": it reads it
+    sense: str = "low"                                                # the asserted level: the pin's drawn mark, flipped by Invert
+
+
+# A device pin's KiCad electrical type, as the direction of its binding from the logic's side (ADR 0017 decision 3):
+# a pin the device takes in is driven by the logic; a pin it puts out is read. Drivers have no direction of their own
+# (the owner, 2026-10-07): only the device pin's type is read. Any other type states none.
+DIRECTION_OF_PINTYPE = {"input": "output", "output": "input", "open_collector": "input", "open_emitter": "input"}
 
 
 @dataclass
@@ -826,58 +837,168 @@ def _driver_route(sm: Seams, p) -> Optional[tuple[Driver, str]]:
     return None
 
 
+def _route_processor(sm: Seams, route: str) -> Optional[str]:
+    """The processor a binding's route reaches: its owner, or for a bit of a CMRInet Node the one processor that anchors
+    the Node's line (ADR 0009 §3: remote I/O is an attachment, not a processor). None when the line has no one anchor."""
+    owner = route.split("/", 1)[0]
+    if owner in sm.processors:
+        return owner
+    t = sm.transports.get(owner)
+    return next(iter(t.anchors)) if t is not None and len(t.anchors) == 1 else None
+
+
+def _sides_reached(sm: Seams, bindings: list[Binding]) -> tuple[set[str], set[str]]:
+    """The office units and the interlockings whose processors a device's bindings reach (ADR 0017 decision 2). A
+    processor that runs an office unit and a field unit names no side (ADR 0017 §6.2): the sheet decides."""
+    ous: set[str] = set()
+    ixs: set[str] = set()
+    for b in bindings:
+        p = _route_processor(sm, b.route)
+        if p is None:
+            continue
+        o = {ou.name for ou in sm.office_units.values() if ou.processor == p}
+        i = {ix.name for ix in sm.interlockings.values() if ix.processor == p}
+        if o and i:
+            continue
+        ous |= o
+        ixs |= i
+    return ous, ixs
+
+
+def _field_unit(sm: Seams, s: Symbol, name: Optional[str], reached: set[str], what: str, at: str) -> Optional[Interlocking]:
+    """The interlocking of a device bound to field units' processors. One reached is it. A processor that runs the
+    field units of several interlockings (GLOSSARY "field processor"; SPCoastApp) names the side, not the interlocking:
+    the interlocking whose trackplan has the appliance the device serves decides, then the sheet (ADR 0017 §4)."""
+    if len(reached) == 1:
+        return sm.interlockings[next(iter(reached))]
+    served = name or (_anonymous_served(sm, s) or "").rsplit(".", 1)[0]
+    owners = {u.name for a in sm.source.where("APPLIANCE") if served and key_of(a).casefold() == served.casefold()
+              and (u := _unit_of_sheet(sm, a.sheet)) is not None and u.name in reached}
+    if len(owners) == 1:
+        return sm.interlockings[next(iter(owners))]
+    sheet = _unit_of_sheet(sm, s.sheet)
+    if sheet is not None and sheet.name in reached:
+        return sheet
+    sm.report.error("device.interlocking", f"{what}: bound to the field units of {', '.join(sorted(reached))}; neither the appliance it "
+                    "serves nor its sheet says which interlocking it is", source=at)
+    return None
+
+
+def _column_of(sm: Seams, s: Symbol, at: str) -> tuple[Optional[Net], Optional[Symbol]]:
+    """A device's wired Column pin and the column on its net (ADR 0017 decision 4: membership is the wire, not Role)."""
+    col_net = sm.source.net_of(s.ref, "Column")
+    cols = [c for c in (sm.source.symbols[p.ref] for p in col_net.others(s.ref)) if c.role == "COLUMN"] if col_net else []
+    return col_net, (one(cols, "columns on one Column net", at, sm.report, "device.columns") if cols else None)
+
+
+def _office_of_sheet(sm: Seams, sheet: str) -> Optional[OfficeUnit]:
+    hits = [ou for ou in sm.office_units.values() if in_scope(ou.sym.sheet, sheet)]
+    return max(hits, key=lambda ou: len(ou.sym.sheet)) if hits else None
+
+
+def _file_office(sm: Seams, s: Symbol, dev: Device, ou: OfficeUnit, col_net: Optional[Net], col: Optional[Symbol], at: str) -> None:
+    """A desk device: its column from its wired Column pin; one in no column, or a lamp, is its panel sheet's
+    interlocking's by hierarchy alone (D6; a lamp is its panel sheet's, never its column's, 2026-10-28). A Role PANEL
+    device with no Column wire and no Style ``board`` is still ``device.column`` at missing until Role PANEL retires
+    (ADR 0017 decision 7)."""
+    placed = False
+    if col is not None:
+        column = ou.columns.get(key_of(col))
+        dev.column = f"{ou.name}:{column.number}" if column else None     # qualified by its OfficeUnit (D19)
+        placed = bool(column is not None and (column.given.get("CP Name") or column.folder))
+    elif s.role == "PANEL" and s.get("Style") != "board" and col_net is None and dev.appliance != "lamp":
+        sm.report.missing("device.column", f"panel {dev.appliance} {s.value!r} is in no column", source=at)
+    if not placed or dev.appliance == "lamp":
+        folder = _unit_of_sheet(sm, s.sheet)
+        dev.interlocking = folder.name if folder else None             # membership by hierarchy alone (D6)
+    ou.devices.append(dev)
+
+
+def _file_field(sm: Seams, s: Symbol, dev: Device, ix: Interlocking, at: str) -> None:
+    """A field device: a head's IND wire reaches a position pin of its mast, or a train order mast's face pin (#80; the
+    owner, 2026-11-03, 2026-11-08); a fascia train order lever serves the face its IND wire reaches."""
+    if dev.appliance == "head":
+        m, pin = _mast_on_ind(sm, s, at)
+        if m is not None:
+            dev.mast = qualify(device_name(m, sm.report) or "", ix.name)
+            if m.get("Appliance") == "train_order_mast":
+                dev.face = pin
+            else:
+                dev.position = pin
+    elif dev.appliance == "lever" and "train_order" in dev.styles:
+        m, dev.face = _mast_on_ind(sm, s, at, lever=True)
+        if m is not None:
+            dev.mast = qualify(device_name(m, sm.report) or "", ix.name)
+    ix.devices.append(dev)
+
+
 def _devices(sm: Seams) -> None:
+    """Each device, filed under the side its bindings reach (ADR 0017 decisions 2 and 4): bound to an office unit's
+    processor, that office unit's; to a field unit's, that field unit's interlocking's (``_field_unit``). A device with
+    no binding is the desk's when its Column pin is wired, else its sheet's: the interlocking whose sheet it is under,
+    else the office unit's. Role is not read for the side or the column. Reported: bindings that reach both sides,
+    ``device.sides`` at error; a side the sheet contradicts (a field device under another interlocking's sheet, or
+    under none; a desk device under none of its office unit's sheets), ``device.side.sheet`` at warning; a wired Column
+    pin on a device bound to a field unit, ``device.column.field`` at error."""
     for s in sm.source.where("DEVICE") + sm.source.where("PANEL"):
         appliance = s.get("Appliance")
         name = None if _anonymous(s) else device_name(s, sm.report)   # a head or a train order lever has no name of its own (the owner, 2026-11-04, 2026-11-08)
         dev = Device(s, appliance, styles_of(s), given=given_of(s, keyed=False))
         at = loc(s)
-        placed = False
-        if s.role == "PANEL":
-            col_net = sm.source.net_of(s.ref, "Column")
-            cols = [sm.source.symbols[p.ref] for p in col_net.others(s.ref)] if col_net else []
-            cols = [c for c in cols if c.role == "COLUMN"]
-            col = one(cols, "columns on one Column net", at, sm.report, "device.columns") if cols else None
-            ou = next(iter(sm.office_units.values()), None) if len(sm.office_units) == 1 else None
-            if col is not None and ou is not None:
-                column = ou.columns.get(key_of(col))
-                dev.column = f"{ou.name}:{column.number}" if column else None     # qualified by its OfficeUnit (D19)
-                placed = column is not None and (column.given.get("CP Name") or column.folder)
-            elif s.get("Style") != "board" and col_net is None and appliance != "lamp":
-                sm.report.missing("device.column", f"panel {appliance} {s.value!r} is in no column", source=at)
-            if not placed or appliance == "lamp":                     # a lamp is its panel sheet's, never its column's (2026-10-28)
-                folder = _unit_of_sheet(sm, s.sheet)
-                dev.interlocking = folder.name if folder else None     # membership by hierarchy alone (D6)
-            if ou is None:
-                sm.report.error("device.office", f"panel device {s.value!r}: no single OfficeUnit", source=at)
-                continue
-            ou.devices.append(dev)
-        else:
-            ix = _unit_of_sheet(sm, s.sheet)
-            if ix is None:
-                sm.report.error("device.interlocking", f"device {appliance} {s.value!r}: no Interlocking on its sheet or above", source=at)
-                continue
-            if appliance == "head":                                    # its IND wire reaches a position pin of its mast, or a train order mast's face pin (#80; the owner, 2026-11-03, 2026-11-08)
-                m, pin = _mast_on_ind(sm, s, at)
-                if m is not None:
-                    dev.mast = qualify(device_name(m, sm.report) or "", ix.name)
-                    if m.get("Appliance") == "train_order_mast":
-                        dev.face = pin
-                    else:
-                        dev.position = pin
-            elif appliance == "lever" and "train_order" in styles_of(s):   # a fascia lever serves the face its IND wire reaches (the owner, 2026-11-08)
-                m, dev.face = _mast_on_ind(sm, s, at, lever=True)
-                if m is not None:
-                    dev.mast = qualify(device_name(m, sm.report) or "", ix.name)
-            ix.devices.append(dev)
         inverted = {x.strip() for x in s.get("Invert").split(",") if x.strip()}
         for pin, net in sorted(sm.source.pins_of(s.ref).items()):
             if pin == "Column" or (pin == "IND" and appliance != "mast"):   # a head's or a train order lever's IND wire reaches its mast device, whose own IND is its binding
                 continue
+            own = next((q for q in net.pins if q.ref == s.ref and q.pin == pin), None)
+            pintype = (own.pintype if own else "").split("+")[0]
+            low = pin != base(pin)                                     # ~{X}: asserted low (ADR 0004 D9); a plain name asserted high
+            sense = "low" if low != (base(pin) in inverted) else "high"   # Invert names a pin whose sense is the other one (ADR 0008 §2)
             for p in net.others(s.ref):
                 hit = _driver_route(sm, p)
                 if hit:
-                    dev.bindings.append(Binding(base(pin), hit[1]))
-        for name in sorted(inverted - {base(pin) for pin in sm.source.pins_of(s.ref)}):
-            sm.report.error("device.invert", f"Invert names {name}, not a wired pin of this device", source=at)
+                    direction = DIRECTION_OF_PINTYPE.get(pintype)
+                    if direction is None:
+                        sm.report.missing("binding.direction", f"device {appliance} {name or s.value!r}: pin {base(pin)} is typed "
+                                          f"{pintype or 'nothing'}, so its binding to {hit[1]} states no direction", source=loc(s, base(pin)))
+                    dev.bindings.append(Binding(base(pin), hit[1], p.number, direction, sense))
+        for n in sorted(inverted - {base(pin) for pin in sm.source.pins_of(s.ref)}):
+            sm.report.error("device.invert", f"Invert names {n}, not a wired pin of this device", source=at)
         dev.bindings.sort(key=lambda b: (b.function, b.route))
+        what = f"device {appliance} {name or s.value!r}"
+        ous, ixs = _sides_reached(sm, dev.bindings)
+        col_net, col = _column_of(sm, s, at)
+        if ous and ixs:
+            sm.report.error("device.sides", f"{what}: its bindings reach the office unit {', '.join(sorted(ous))} and the field unit of "
+                            f"{', '.join(sorted(ixs))}; a device is on one side", source=at)
+            continue
+        if ous:
+            ou = one([sm.office_units[o] for o in sorted(ous)], "office units reached by one device's bindings", at, sm.report, "device.office")
+            if ou is None:
+                continue
+            if not in_scope(ou.sym.sheet, s.sheet):
+                sm.report.warning("device.side.sheet", f"{what}: bound to office unit {ou.name}'s processor but drawn under none of its sheets", source=at)
+            _file_office(sm, s, dev, ou, col_net, col, at)
+        elif ixs:
+            ix = _field_unit(sm, s, name, ixs, what, at)
+            if ix is None:
+                continue
+            if col is not None:
+                sm.report.error("device.column.field", f"{what}: bound to {ix.name}'s field unit, but its Column pin is wired to column "
+                                f"{key_of(col)}; a column is the desk's", source=at)
+            sheet = _unit_of_sheet(sm, s.sheet)
+            if sheet is not ix:
+                sm.report.warning("device.side.sheet", f"{what}: bound to {ix.name}'s field unit but drawn under "
+                                  f"{sheet.name + chr(39) + 's' if sheet else 'no interlocking'} sheet", source=at)
+            _file_field(sm, s, dev, ix, at)
+        elif col is not None:
+            ou = next(iter(sm.office_units.values()), None) if len(sm.office_units) == 1 else None
+            if ou is None:
+                sm.report.error("device.office", f"{what}: in a column but no single OfficeUnit", source=at)
+                continue
+            _file_office(sm, s, dev, ou, col_net, col, at)
+        elif (ix := _unit_of_sheet(sm, s.sheet)) is not None:
+            _file_field(sm, s, dev, ix, at)
+        elif (ou := _office_of_sheet(sm, s.sheet)) is not None:
+            _file_office(sm, s, dev, ou, col_net, col, at)
+        else:
+            sm.report.error("device.interlocking", f"{what}: no binding, no column, and no Interlocking or OfficeUnit on its sheet or above", source=at)
