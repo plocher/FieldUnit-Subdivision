@@ -534,6 +534,13 @@
       "feature": "logical/trackplan/ladder.feature#a station with two CODE buttons",
       "replacedBy": null
     },
+    "selector.controls": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/ladder.feature#a selector that states no choice tokens",
+      "replacedBy": null
+    },
     "selector.input": {
       "level": "missing",
       "lifecycle": "active",
@@ -581,6 +588,13 @@
       "lifecycle": "active",
       "since": "0.1.0",
       "feature": "logical/trackplan/appliance_switch_control.feature#a hand-throw switch with a lever",
+      "replacedBy": null
+    },
+    "switch.lever.selector": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "logical/trackplan/ladder.feature#a ladder switch a desk lever also works",
       "replacedBy": null
     },
     "switch.lock.local": {

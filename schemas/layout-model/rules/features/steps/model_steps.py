@@ -1091,6 +1091,19 @@ def selector_no_code(context, name):
     assert d.get("code") is None and "send" not in d.get("inputs", {}), f"{name}: code {d.get('code')!r}, inputs {d.get('inputs')!r}"
 
 
+@then('choice {detent:d} of selector "{name}" sends "{tokens}"')
+def choice_sends(context, detent, name, tokens):
+    got = _selector(context, name)["derived"]["choices"][detent - 1].get("controls", [])
+    want = [] if tokens == "nothing" else [t.strip() for t in tokens.split(",")]
+    assert got == want, f"{name} choice {detent} sends {got!r}, not {want!r}"
+
+
+@then('choice {detent:d} of selector "{name}" sends nothing')
+def choice_sends_nothing(context, detent, name):
+    got = _selector(context, name)["derived"]["choices"][detent - 1].get("controls")
+    assert got is None, f"{name} choice {detent} sends {got!r}"
+
+
 @then('selector "{name}" shows its choice on "{value}", locks it in on "{lock}" and sends it on "{send}"')
 def selector_inputs(context, name, value, lock, send):
     got = _selector(context, name).get("derived", {}).get("inputs")

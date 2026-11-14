@@ -239,31 +239,44 @@ between are the proxy). The routes library reports a facing switch at a limit wi
 A yard ladder is worked from a rotary knob, NX by track selection (the owner, 2026-11-13; issue #145, a POC). A
 ladder marker (`POLICY`, Kind `LADDER`, with a `Name`) stands on the ladder's start leg.
 
-1. **A ladder is every facing-point switch from its start leg up to a trailing point.** The walk goes from the
-   marker's piece both ways along the track, across every joint: one way meets the start switch trailing, the other
-   meets the first ladder switch at C, so the direction needs no orientation. It continues through each switch entered
-   at C and stops where the next switch on a path is met at N or R, or at an end of track. Watsonville: from 837.R,
-   switches 15 to 25; from 837.N, 3 to 13.
-2. **Choices, in a deterministic order.** At each ladder switch the spine is the leg that leads to the next ladder
+1. **A ladder is every facing-point switch the dispatcher controls, from its start leg up to a trailing point.** The
+   walk goes from the marker's piece both ways along the track, across every joint: one way meets the start switch
+   trailing, the other meets the first ladder switch at C, so the direction needs no orientation. It continues through
+   each switch entered at C and stops where the next switch on a path is met at N or R, or at an end of track.
+   Watsonville: from 837.R, switches 15 to 25; from 837.N, 3 to 13.
+2. **A ladder stops where the dispatcher no longer controls the track** (the owner, 2026-11-14).[^ladder-limit] The
+   test is the one the derivation uses for a dispatcher-controlled switch (`grammar.dispatcher_controlled`): regime
+   `powered` or `dual`, a dependent derail by its switch's. A facing switch of any other regime (`local`, `manual`,
+   `manual_sensed`, `spring`, `lock`, or none stated) ends the ladder there, as a trailing point does. A derail the
+   dispatcher controls is a ladder member: the walk passes it (C to R, R to C), and every choice through it sets it to
+   its clear position, REVERSE, in the alignment. A derail the dispatcher does not control ends the ladder.
+3. **Choices, in a deterministic order.** At each ladder switch the spine is the leg that leads to the next ladder
    switch (N or R: Watsonville's switch 3 reaches 5 through R); the other leg is the next choice; the last switch gives
    R, then N. Where both legs lead to ladder switches, N's sub-ladder comes before R's. Each choice is its leg with its
    alignment (`17R: 15N 17R`). Detent 1 is nearest the start.
-3. **The selector serves the ladder of its Name,** qualified like a lever (`Watsonville:Arrival`). A selector is a
+4. **The selector serves the ladder of its Name,** qualified like a lever (`Watsonville:Arrival`). A selector is a
    device (Role `DEVICE`, Appliance `selector`; the symbol `Railroad-Office:Panel-Selector`, keyed by its fields,
    never by its name) with two pins: `VAL` (kind `value`) shows the choice and `PRESS` (kind `binary`) locks it in.
    Which encoder driver pins feed them comes from the netlist, as for any device's bindings.[^selector-code]
-4. **A selector is in no column.**[^selector-code] Its choice goes to the station that owns its ladder's switches: on
+5. **A selector is in no column.**[^selector-code] Its choice goes to the station that owns its ladder's switches: on
    a US&S 506 line the house that is their control point, else their interlocking. That station's CODE button (the
    code lever on the one desk column whose station it is) sends the locked choice, with the levers of its column, as
    ordinary controls. Watsonville: both selectors go to station Watsonville and are sent by column 14's CODE button.
-5. **Derived, written at save (ADR 0015):** on the selector, `choices` and `range` (1 to the number of choices),
-   `station`, `code` (the column of the CODE button that sends it, qualified by its OfficeUnit) and `inputs` (`value`
+6. **The selector states its choice tokens as a lever states its own,** in the draft kind table (the owner,
+   2026-11-14):[^ladder-limit] fields `Control.NORMAL` and `Control.REVERSE` (`NWS`, `RWS`). Each switch of a chosen
+   alignment gets the token of its position (`15` REVERSE: `15RWS`), and the station receives them (the codeline
+   library). Nothing is filled in from a template: a selector that does not state both fields leaves its tokens
+   unresolved, `selector.controls` at missing.
+7. **One control source works a switch.** A ladder switch a selector serves that a desk switch lever also works is
+   `switch.lever.selector` at error.[^ladder-limit]
+8. **Derived, written at save (ADR 0015):** on the selector, `choices` (each with its `controls`) and `range` (1 to
+   the number of choices), `controls` (every token of its choices), `station`, `code` (the column of the CODE button that sends it, qualified by its OfficeUnit) and `inputs` (`value`
    the route bound to `VAL`, `lock` the route bound to `PRESS`, `send` the CODE button's route), which a desk
    generator reads; on the marker's row, `switches` and `start`; on each ladder switch, `ladder` and its control
    source, `selector`, which the reference derivation reads as it reads a switch lever, so a powered ladder switch a
    selector serves is no `switch.lever`. `wrap` stays stated.
-6. **Vital boundary (§5.2):** the desk turns a choice into ordinary `NWS`/`RWS` controls for the alignment; the field
-   unit lines and locks as for any lever.
+9. **Vital boundary (§5.2):** a choice sends ordinary controls for its alignment; the field unit lines and locks as
+   for any lever.
 
 The walk is the `ladders` library's (`tools/railroad/ladders.py`, over the routes library's track graph); the
 reference derivation calls it and writes its results, since a switch's control source is a derived fact its own
@@ -271,8 +284,8 @@ reference derivation calls it and writes its results, since a switch's control s
 and `ladder.shared` at error; `ladder.selector` at info; `selector.ladder` at error; `selector.station` at error (the
 ladder's switches are in two stations); `selector.code` at missing (the station has no CODE button);
 `selector.codes` at warning (it has more than one, so which one sends is not stated and none is chosen);
-`selector.input` at missing (`VAL` or `PRESS` is bound to nothing)
-(`schemas/layout-model/rules/features/logical/trackplan/ladder.feature`).
+`selector.input` at missing (`VAL` or `PRESS` is bound to nothing); `selector.controls` at missing;
+`switch.lever.selector` at error (`schemas/layout-model/rules/features/logical/trackplan/ladder.feature`).
 
 ## 6. Reference data[^refdata]
 
@@ -433,3 +446,9 @@ All move to FieldUnit with the schema (view O15).
     its station's CODE button sends its choice) is new, rule 5 gains `station`, `code` and `inputs`, and the findings
     gain `selector.station`, `selector.code`, `selector.codes` and `selector.input`. The earlier text is at commit
     `785b056` (`e7c38e3` on the branch of PR #147).
+
+[^ladder-limit]: Amended in place on 2026-11-14 (issue #145, the owner's rulings of that date): rule 2 (the ladder
+    stops where the dispatcher's control ends; a derail the dispatcher controls is a member set to REVERSE) replaces
+    "a derail on the way is passed and is no ladder switch"; rules 6 (the selector's `Control.NORMAL` and
+    `Control.REVERSE`) and 7 (`switch.lever.selector`) are new; rule 9 no longer says the desk turns a choice into
+    controls. The earlier text is at commit `fc9d41b`.

@@ -1,18 +1,21 @@
 Feature: A ladder and the selector that serves it
   A yard ladder is worked from a rotary knob: NX by track selection (the owner, 2026-11-13; issue #145, a POC). A
   ladder marker, a policy sign of Kind LADDER with a Name, stands on the ladder's start leg. A ladder is every
-  facing-point switch from its start leg up to a trailing point: the walk goes from the marker both ways along the
-  track, across every joint; one way meets the start switch trailing, the other meets the first ladder switch at C,
-  so the direction needs no orientation. It continues through each switch entered at C and stops where the next
-  switch on a path is met at N or R, or at an end of track.
+  facing-point switch the dispatcher controls, from its start leg up to a trailing point: the walk goes from the
+  marker both ways along the track, across every joint; one way meets the start switch trailing, the other meets the
+  first ladder switch at C, so the direction needs no orientation. It continues through each switch entered at C and
+  stops where the next switch on a path is met at N or R, at an end of track, or where the dispatcher no longer
+  controls the track (the owner, 2026-11-14): a facing switch or a derail the dispatcher does not control. A derail
+  the dispatcher controls is a ladder member, and every choice through it sets it to REVERSE, its clear position.
   The choices come in a fixed order. At each ladder switch the spine is the leg that leads to the next ladder switch,
   N or R; the other leg is the next choice; the last switch gives R, then N. Where both legs lead to ladder switches,
   N's sub-ladder comes before R's. Each choice is its leg with its alignment, written here `17R: 15N 17R`. Detent 1
   is nearest the start.
   A selector serves the ladder of its Name, qualified like a lever, and derives its choices and its range, 1 to the
-  number of choices. Each ladder switch derives its ladder and its control source, the selector. The desk turns a
-  choice into the NWS and RWS controls of its alignment; the field unit lines and locks as for any lever. Nothing
-  here implements locking (ADR 0012 §5.2).
+  number of choices. Each ladder switch derives its ladder and its control source, the selector. The selector states
+  the control tokens of its choices as a lever does, in Control.NORMAL and Control.REVERSE (NWS, RWS): each switch of
+  a chosen alignment gets the token of its position, and the station receives them. The field unit lines and locks as
+  for any lever. Nothing here implements locking (ADR 0012 §5.2).
 
   Background:
     Given interlocking "X" has house "East"
@@ -369,3 +372,194 @@ Feature: A ladder and the selector that serves it
     When the layout is derived
     Then it is reported as an error on "0"
     And selector "Yard" goes to no station
+
+  # Where the dispatcher's control ends, the ladder ends (the owner, 2026-11-14). The dispatcher controls a switch
+  # whose regime is powered or dual; a local, hand-throw, spring or electrically locked switch is not the dispatcher's.
+
+  Scenario Outline: a facing switch the dispatcher does not control ends the ladder
+    Given interlocking "X" has these appliances:
+      | Name | Appliance | Style    | TC  |
+      | 9    | switch    | powered  | 9T1 |
+      | 1    | switch    | powered  | 1T1 |
+      | 3    | switch    | <regime> | 3T1 |
+    And interlocking "X" has these policies:
+      | Id | Name | Kind   |
+      | M  | Yard | LADDER |
+    And interlocking "X" has these wires:
+      | Pins               |
+      | 9.R Yard.track 1.C |
+      | 1.R E1.EoT         |
+      | 1.N 3.C            |
+      | 3.N E2.EoT         |
+      | 3.R E3.EoT         |
+    And interlocking "X" has these devices:
+      | Name | Appliance |
+      | Yard | selector  |
+    When the layout is derived
+    Then selector "Yard" offers "<choices>"
+
+    Examples: powered and dual are the dispatcher's
+      | regime  | choices                     |
+      | powered | 1R: 1R; 3R: 1N 3R; 3N: 1N 3N |
+      | dual    | 1R: 1R; 3R: 1N 3R; 3N: 1N 3N |
+
+    Examples: every other regime ends the ladder at the switch
+      | regime        | choices        |
+      | local         | 1R: 1R; 1N: 1N |
+      | manual        | 1R: 1R; 1N: 1N |
+      | manual_sensed | 1R: 1R; 1N: 1N |
+      | spring        | 1R: 1R; 1N: 1N |
+      | lock          | 1R: 1R; 1N: 1N |
+
+  @ladder.start
+  Scenario: a ladder whose first facing switch the dispatcher does not control
+    Given interlocking "X" has these appliances:
+      | Name | Appliance | Style   | TC  |
+      | 9    | switch    | powered | 9T1 |
+      | 1    | switch    | manual  | 1T1 |
+    And interlocking "X" has these policies:
+      | Id | Name | Kind   |
+      | M  | Yard | LADDER |
+    And interlocking "X" has these wires:
+      | Pins               |
+      | 9.R Yard.track 1.C |
+      | 1.R E1.EoT         |
+      | 1.N E2.EoT         |
+    When the layout is derived
+    Then it is reported as missing on "M"
+
+  Scenario: a derail the dispatcher controls is a ladder member, set to REVERSE by every choice through it
+    Given interlocking "X" has these appliances:
+      | Name | Appliance | Style          | TC  |
+      | 9    | switch    | powered        | 9T1 |
+      | 1    | switch    | powered        | 1T1 |
+      | 3    | switch    | powered        | 3T1 |
+      | 27   | switch    | derail,powered |     |
+      | 29   | switch    | derail,dual    |     |
+    And interlocking "X" has these policies:
+      | Id | Name | Kind   |
+      | M  | Yard | LADDER |
+    And interlocking "X" has these wires:
+      | Pins               |
+      | 9.R Yard.track 1.C |
+      | 1.R 29.C           |
+      | 29.R E1.EoT        |
+      | 1.N 27.C           |
+      | 27.R 3.C           |
+      | 3.N E2.EoT         |
+      | 3.R E3.EoT         |
+    And interlocking "X" has these devices:
+      | Name | Appliance |
+      | Yard | selector  |
+    When the layout is derived
+    Then selector "Yard" offers "1R: 1R 29R; 3R: 1N 27R 3R; 3N: 1N 27R 3N"
+    And ladder "M" starts at "X:9.R" with switches "X:1, X:29, X:27, X:3"
+    And "27" has derived selector "X:Yard"
+
+  Scenario: a derail the dispatcher does not control ends the ladder
+    Given interlocking "X" has these appliances:
+      | Name | Appliance | Style         | TC  |
+      | 9    | switch    | powered       | 9T1 |
+      | 1    | switch    | powered       | 1T1 |
+      | 3    | switch    | powered       | 3T1 |
+      | 27   | switch    | derail,manual |     |
+    And interlocking "X" has these policies:
+      | Id | Name | Kind   |
+      | M  | Yard | LADDER |
+    And interlocking "X" has these wires:
+      | Pins               |
+      | 9.R Yard.track 1.C |
+      | 1.R E1.EoT         |
+      | 1.N 27.C           |
+      | 27.R 3.C           |
+      | 3.N E2.EoT         |
+      | 3.R E3.EoT         |
+    And interlocking "X" has these devices:
+      | Name | Appliance |
+      | Yard | selector  |
+    When the layout is derived
+    Then selector "Yard" offers "1R: 1R; 1N: 1N"
+    And ladder "M" starts at "X:9.R" with switches "X:1"
+
+  # The choice's control tokens (the owner, 2026-11-14): stated on the selector as a lever states its own.
+
+  @selector.controls
+  Scenario: the selector states its choice tokens, and its station receives them
+    Given interlocking "X" is on an AAR token code line
+    And interlocking "X" has these appliances:
+      | Name | Appliance | Style   | TC  | CP Name |
+      | 9    | switch    | powered | 9T1 | East    |
+      | 1    | switch    | powered | 1T1 | East    |
+      | 3    | switch    | powered | 3T1 | East    |
+    And interlocking "X" has these policies:
+      | Id | Name | Kind   |
+      | M  | Yard | LADDER |
+    And interlocking "X" has these wires:
+      | Pins               |
+      | 9.R Yard.track 1.C |
+      | 1.R E1.EoT         |
+      | 1.N 3.C            |
+      | 3.N E2.EoT         |
+      | 3.R E3.EoT         |
+    And interlocking "X" has these devices:
+      | Name | Appliance | Control.NORMAL | Control.REVERSE |
+      | Yard | selector  | NWS            | RWS             |
+    And selector "Yard" binds VAL to "Desk/0x50/ENC" and PRESS to "Desk/0x50/Press"
+    And the desk has these columns:
+      | Column | CP Name | Interlocking |
+      | 13     | X       | X            |
+    And the desk has a CODE button on column "13" bound to "Desk/0x2D/B5"
+    When the layout is derived
+    Then choice 1 of selector "Yard" sends "X:1RWS"
+    And choice 2 of selector "Yard" sends "X:1NWS, X:3RWS"
+    And choice 3 of selector "Yard" sends "X:1NWS, X:3NWS"
+    And station "X" receives "1NWS, 1RWS, 3NWS, 3RWS"
+    And it is not reported
+
+  @selector.controls
+  Scenario: a selector that states no choice tokens
+    Nothing is filled in from a template the drawing does not state.
+    Given interlocking "X" is on an AAR token code line
+    And interlocking "X" has these appliances:
+      | Name | Appliance | Style   | TC  |
+      | 9    | switch    | powered | 9T1 |
+      | 1    | switch    | powered | 1T1 |
+    And interlocking "X" has these policies:
+      | Id | Name | Kind   |
+      | M  | Yard | LADDER |
+    And interlocking "X" has these wires:
+      | Pins               |
+      | 9.R Yard.track 1.C |
+      | 1.R E1.EoT         |
+      | 1.N E2.EoT         |
+    And interlocking "X" has these devices:
+      | Name | Appliance | Control.REVERSE |
+      | Yard | selector  | RWS             |
+    When the layout is derived
+    Then it is reported as missing on "0"
+    And choice 1 of selector "Yard" sends nothing
+    And station "X" receives nothing
+
+  @switch.lever.selector
+  Scenario: a ladder switch a desk lever also works
+    One control source works a switch.
+    Given interlocking "X" has these appliances:
+      | Name | Appliance | Style   | TC  |
+      | 9    | switch    | powered | 9T1 |
+      | 1    | switch    | powered | 1T1 |
+    And interlocking "X" has these policies:
+      | Id | Name | Kind   |
+      | M  | Yard | LADDER |
+    And interlocking "X" has these wires:
+      | Pins               |
+      | 9.R Yard.track 1.C |
+      | 1.R E1.EoT         |
+      | 1.N E2.EoT         |
+    And interlocking "X" has these devices:
+      | Name | Appliance |
+      | Yard | selector  |
+    And the desk has these levers for interlocking "X":
+      | Name | Style  |
+      | 1    | switch |
+    When the layout is derived
+    Then it is reported as an error on "1"

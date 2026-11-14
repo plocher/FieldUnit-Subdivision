@@ -709,7 +709,7 @@
                   }
                 },
                 "controls": {
-                  "description": "A lever's controls: the Control.<pin> of each bound pin, qualified by its station's interlocking (Luchessa:783NWS); an empty one binds none.",
+                  "description": "A lever's controls: the Control.<pin> of each bound pin, qualified by its station's interlocking (Luchessa:783NWS); an empty one binds none. A selector's: every token its choices send, sorted, from its Control.NORMAL and Control.REVERSE (the owner, 2026-11-14); absent while one is unstated (selector.controls).",
                   "type": "array",
                   "items": {
                     "$ref": "#/$defs/qualifiedName"
@@ -740,7 +740,7 @@
                 },
                 "choices": {
                   "type": "array",
-                  "description": "A selector's choices (Appliance selector; issue #145, the owner, 2026-11-13): the ladder it serves (serves, the LADDER marker its Name names), one per leg, in detent order, from the facing walk of tools/railroad/ladders.py. detent 1 is nearest the start; leg is the switch port; alignment is every ladder switch from the start, in walk order, with its position. The desk turns a choice into the NWS/RWS controls of its alignment. Absent when the selector serves no ladder (selector.ladder).",
+                  "description": "A selector's choices (Appliance selector; issue #145, the owner, 2026-11-13): the ladder it serves (serves, the LADDER marker its Name names), one per leg, in detent order, from the facing walk of tools/railroad/ladders.py. detent 1 is nearest the start; leg is the switch port; alignment is every ladder switch from the start, in walk order, with its position, a derail the dispatcher controls at REVERSE, its clear position (the owner, 2026-11-14). The desk turns a choice into the NWS/RWS controls of its alignment. Absent when the selector serves no ladder (selector.ladder).",
                   "items": {
                     "type": "object",
                     "additionalProperties": false,
@@ -748,6 +748,11 @@
                     "properties": {
                       "detent": {"type": "integer", "minimum": 1},
                       "leg": {"$ref": "#/$defs/portRef"},
+                      "controls": {
+                        "type": "array",
+                        "description": "The control tokens this choice sends, one per alignment entry in its order: the switch's name and the selector's Control.NORMAL or Control.REVERSE for its position (Watsonville:15RWS; the owner, 2026-11-14). Absent while the selector does not state both fields (selector.controls).",
+                        "items": {"$ref": "#/$defs/qualifiedName"}
+                      },
                       "alignment": {
                         "type": "array",
                         "items": {
