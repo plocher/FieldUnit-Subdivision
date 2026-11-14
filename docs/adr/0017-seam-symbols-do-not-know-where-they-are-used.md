@@ -1,6 +1,7 @@
 # 0017. Seam symbols do not know where they are used
 
-- Status: **proposed**. The ask: rule on the eight decisions below.
+- Status: **decisions 1 to 8 ruled by the owner 2026-11-14**; one question is open (the aggregate symbols, under
+  decision 5). The PR stays draft until it is answered.
 - Amends (as follow-up changes; not edited in this ADR's PR): ADR 0009 §3.10 (Role `PANEL` on the office side) and
   the paragraph after the relation table (a lamp's scope); ADR 0008 C11 and its 2026-10-23 ruling (model board
   lamps as PANEL devices); the symbol lint's E72 and its PANEL rules. §5 lists the text.
@@ -8,28 +9,43 @@
   where they are used; the `Local-*` and `Panel*` pairs are a DRY failure); FieldUnit `docs/GLOSSARY.md` "seam";
   ADR 0004 D5 and its lock table; ADR 0009 §3; ADR 0013 §4; ADR 0016 decision 4; `AGENTS.md`, Design rules.
 
-## Decisions requested
+## Decisions requested (ruled 2026-11-14, except the open question)
 
 1. **A seam symbol states what it is, never where it is used.** Its function (`Appliance`, `Style`), its pins and
-   its settings. Not office or field, not desk or fascia. *Default: yes.*
+   its settings. Not office or field, not desk or fascia. *Ratified 2026-11-14.*
 2. **Desk or field comes from the processor the bindings reach.** A device bound to an office unit's processor is
    that office unit's; one bound to a field unit's processor is that field unit's interlocking's. A device with no
    binding falls back to its `Column` pin (a column is the desk's), then to its sheet. A binding that contradicts the
-   sheet is reported; bindings that reach both sides are an error. *Default: yes.*
-3. **A field device serves only its own interlocking.** A control from a desk device crosses the code line; a
-   control from a field device is local and serves an appliance of the interlocking its field unit solves, else it
-   is an error. *Default: yes.*
+   sheet is reported; bindings that reach both sides are an error. *Ratified 2026-11-14.*
+3. **A device's input is a demand on an appliance.** A demand that reaches the field over a code line is a control.
+   A demand that the field unit of the interlocking that owns the appliance reads is a local demand, from a lever, a
+   key or any sensor. A field device whose demand names an appliance of another interlocking is an error.
+   *Ratified 2026-11-14 in this wording.*[^demand]
 4. **Column membership comes from a wired `Column` pin, not from Role.** A desk device with no `Column` pin is in no
-   column. A `Column` pin on a device bound to a field unit is an error. *Default: yes.*
-5. **One symbol per function.** The switch lever is one symbol (`PanelSwitch`, `Local-Switch`, `Local-Derail`
-   today); the lamp is one symbol (`ModelLamp-*` and `Device-Lamp` today), its colour a setting. *Default: yes.*
+   column. A `Column` pin on a device bound to a field unit is an error. *Ratified 2026-11-14.*
+5. **A device symbol can be used with office and field hardware, unchanged.** Where two symbols today state one
+   function only to mark desk or field, they become one: `PanelSwitch`, `Local-Switch` and `Local-Derail`;
+   `ModelLamp-*` and `Device-Lamp` (the colour a setting). *Ratified 2026-11-14 in this wording.*
+   - **Open question (not decided): aggregates.** `PanelSignal` is an aggregate: unit 1 has the `Column` pin and
+     three contacts (`NGS`, `HS`, `SGS`), unit 2 three lamps (pins 5 to 7; Railroad `9905c8e`: `SGK`, `NGK`, `TEK`;
+     the owner's working copy renames pin 7 to `STOP`, uncommitted). `PanelSwitch`, `PanelLock` and `PanelMCall`
+     are aggregates of contacts and lamps in one unit. Do aggregates stay single symbols, or are they composed of
+     primitive device symbols (a contact, a lamp)? *Default: they stay single symbols, location-independent like the
+     rest.*
 6. **The lock plates are not a pair and stay two symbols.** The desk plate sends the release (`WLS`); the fascia
-   plate sends the crew's request (`WLQ`). These are two functions. Each is named for its function. *Default: yes.*
+   plate sends the crew's request (`WLQ`). These are two functions. Each is named for its function.
+   *Ratified 2026-11-14.*
 7. **Role `PANEL` retires; its symbols become `DEVICE`.** It states nothing that a pin, a binding or the function
-   does not state (§3.4). The device symbols move to one library. *Default: yes.*
+   does not state (§3.4). The device symbols move to one library. *Ratified 2026-11-14.*
 8. **Migration in two steps, no bridges.** Decisions 2 to 4 are an importer change and land first; they fix
    Watsonville and change no symbol. Decisions 5 to 7 land after the MVP, by our lock-gated edit tooling, in one pass
-   over libraries, embedded copies and placed instances, with a field diff before the owner commits. *Default: yes.*
+   over libraries, embedded copies and placed instances, with a field diff before the owner commits.
+   *Ratified 2026-11-14.*
+
+[^demand]: Vocabulary note, pending; not a decision of this ADR. FieldUnit `docs/GLOSSARY.md` §11 retires "demand
+    (for a control)" as a synonym of control (line 757; also "Controls-as-Demands", line 750). The owner's ruling
+    uses demand as the parent term: a control is a demand over a code line, and a local demand is one the field unit
+    reads. The glossary needs an entry for demand in that sense. That is a FieldUnit glossary change, for the owner.
 
 ## 1. Problem
 
@@ -85,10 +101,10 @@ restatement can disagree with it (Watsonville). By R2 the binding is the source.
 where no binding is drawn: a device whose hardware is not drawn yet, or a head or mast whose I/O is reached through
 an encoder (the importer writes no binding for those today).
 
-Code line or local (decision 3) needs no new fact. A desk device's controls go to the station of its column, or for
-a selector the station that owns its ladder's switches (`derive.py` lines 150 to 157); a field device's are local
-(R6, R7). The new check is that a local device cannot work another interlocking's appliance, because no code line
-carries the control there.
+Control or local demand (decision 3) needs no new fact. A desk device's demands are controls: they go to the
+station of its column, or for a selector the station that owns its ladder's switches (`derive.py` lines 150 to
+157). A field device's demands are local demands (R6, R7). The new check is that a field device cannot name another
+interlocking's appliance, because no code line carries its demand there.
 
 ## 3. Evidence
 
@@ -161,7 +177,7 @@ Nothing is left that only the Role states.
 | ADR 0004 D5, lock table | names `Local-Lock`, `Local-Switch` | the function names of decisions 5 and 6 |
 | ADR 0011, ADR 0012 | no text on the side of a device (searched for `PANEL`) | no change |
 | ADR 0013 §4 | "a Local-Switch alone" | the switch lever bound to the field unit |
-| FieldUnit `docs/GLOSSARY.md` | "panel column" names KiCad `PanelColumn`; no entry for desk or fascia device | a note under "seam": a seam device's side is its binding |
+| FieldUnit `docs/GLOSSARY.md` | "panel column" names KiCad `PanelColumn`; no entry for desk or fascia device | a note under "seam": a seam device's side is its binding; "demand" as the parent term (decision 3, footnote), which §11 now retires |
 | Code | `seams.py` `_devices` (lines 829 to 883) and line 702; `lint_symbol_fields.py` lines 51, 67 to 72, 114, 310 to 315, 340; `derive.py` and `grammar.py` docstrings and messages that name `Local-Switch`, `Local-Lock`, `Local-Derail` (`derive.py` lines 1508 to 1562, `grammar.py` line 135) | as §4; messages name functions, not symbols |
 | Features and tests | `schemas/layout-model/rules/features/logical/trackplan/appliance_switch_control.feature`, `appliance_derail.feature`, `ladder.feature`, `steps/model_steps.py`; `tools/layout_compiler/features/field/device_train_order.feature`, `driver_encoded.feature`, `trackplan/appliance_derail.feature`; `tests/test_layout_compiler.py`, `test_derive.py`, `test_trackplan.py`, `test_symbol_units.py`, `test_kicad_library_overview.py` | a scenario for a desk selector on an interlocking's sheet; symbol names follow decision 5 |
 | Railroad | `Railroad-Office.kicad_sym`, `Railroad-Field.kicad_sym`, every sheet that places the pairs, `symbols/manual.html` | decisions 5 to 7, after the MVP |
