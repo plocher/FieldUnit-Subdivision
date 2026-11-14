@@ -166,8 +166,8 @@ Nothing is left that only the Role states.
   fallback.
 - New import diagnostics (registered in `tools/layout_compiler/diagnostics.json` with the change): the side by
   binding disagrees with the sheet (warning); bindings reach both sides (error); a `Column` pin on a device bound to a
-  field unit (error). A rule check in `derive.py`: a field device serves an appliance of another interlocking
-  (error). `device.office` retires with Role `PANEL`.
+  field unit (error). A rule check in `derive.py`: an appliance's output bound to a processor that does not run
+  its interlocking (error; decision 3). `device.office` retires with Role `PANEL`.
 - A processor that runs the field units of two interlockings (GLOSSARY "field processor"; `SPCoastApp` runs
   `GCaltrain` today) names the side but not the interlocking; the served appliance's interlocking, then the sheet,
   decides.
