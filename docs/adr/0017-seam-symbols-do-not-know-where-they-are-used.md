@@ -17,9 +17,14 @@
    that office unit's; one bound to a field unit's processor is that field unit's interlocking's. A device with no
    binding falls back to its `Column` pin (a column is the desk's), then to its sheet. A binding that contradicts the
    sheet is reported; bindings that reach both sides are an error. *Ratified 2026-11-14.*
-3. **A device's input is a demand on an appliance.** A demand that reaches the field over a code line is a control.
-   A demand that the field unit of the interlocking that owns the appliance reads is a local demand, from a lever, a
-   key or any sensor. A field device whose demand names an appliance of another interlocking is an error.
+3. **A demand goes through the vital logic of the interlocking that owns its appliance.** A demand over a code line
+   is a control; a demand a field unit reads from any I/O (a lever, a key, any sensor, over any transport) is a local
+   demand, and where its sensor is wired is free. Every demand is an input to the logic of the interlocking that owns
+   the appliance, and only that logic drives the appliance: nothing goes behind the code line's back. The check is on
+   outputs: an appliance's output (a switch machine, a head) bound to a processor that does not run its interlocking
+   is an error; a demand bound anywhere is never an error by itself. The stations of one interlocking (Luchessa's
+   three houses on a 506 line) share demands freely, and what one interlocking learns from another is ADR 0013's
+   seam, not a demand.
    *Ratified 2026-11-14 in this wording.*[^demand]
 4. **Column membership comes from a wired `Column` pin, not from Role.** A desk device with no `Column` pin is in no
    column. A `Column` pin on a device bound to a field unit is an error. *Ratified 2026-11-14.*
@@ -103,8 +108,12 @@ an encoder (the importer writes no binding for those today).
 
 Control or local demand (decision 3) needs no new fact. A desk device's demands are controls: they go to the
 station of its column, or for a selector the station that owns its ladder's switches (`derive.py` lines 150 to
-157). A field device's demands are local demands (R6, R7). The new check is that a field device cannot name another
-interlocking's appliance, because no code line carries its demand there.
+157). A field device's demands are local demands (R6, R7), whichever field unit's I/O reads them. The owner (2026-11-14)
+widened the first wording, which made a field device's demand on another interlocking's appliance an error: a
+designer may wire a sensor on one interlocking's hardware for another's appliance, over CMRInet, JMRI-MQTT or a
+custom transport, and Luchessa's three houses on a 506 line share demands in one processor. What the rule protects
+is the vital logic: "you can't change my vital behavior by going behind the code line's back". So the check moves
+to outputs, where a bypass would show: an appliance driven by a processor that does not run its interlocking.
 
 ## 3. Evidence
 
