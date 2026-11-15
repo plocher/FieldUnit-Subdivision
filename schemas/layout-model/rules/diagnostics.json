@@ -142,6 +142,13 @@
       "feature": null,
       "replacedBy": null
     },
+    "device.output": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.1.0",
+      "feature": "physical/field/device_output.feature#a switch machine driven by another interlocking's processor",
+      "replacedBy": null
+    },
     "device.serves": {
       "level": "missing",
       "lifecycle": "active",

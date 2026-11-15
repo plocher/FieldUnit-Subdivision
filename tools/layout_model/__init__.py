@@ -13,10 +13,10 @@ from typing import Any
 
 import jsonschema
 
-SCHEMA_ID = "layout-model/v3.4.0"            # ADR 0008 rev 4 with ADR 0010's geometry and the trackplan piece: the compiler writes this
+SCHEMA_ID = "layout-model/v3.5.0"            # ADR 0008 rev 4 with ADR 0010's geometry and the trackplan piece: the compiler writes this
 SCHEMA_V3 = "layout-model/v3.0.0"
 SCHEMA_DIR = Path(__file__).resolve().parents[2] / "schemas" / "layout-model"
-SCHEMA_PATH = SCHEMA_DIR / "v3.4.0.json"
+SCHEMA_PATH = SCHEMA_DIR / "v3.5.0.json"
 
 _DIGITS = re.compile(r"(\d+)")
 _SPACES = re.compile(r"\s+")
@@ -42,6 +42,17 @@ def validate(model: Any) -> None:
 def errors(model: Any) -> list[str]:
     v = jsonschema.Draft202012Validator(load_schema(model))
     return sorted(f"{'/'.join(str(p) for p in e.absolute_path) or '<root>'}: {e.message}" for e in v.iter_errors(model))
+
+
+def bound(value: Any) -> list[dict[str, Any]]:
+    """The bindings of one device function (schema 3.5.0): one binding object, or a list of two or more."""
+    return [] if value is None else value if isinstance(value, list) else [value]
+
+
+def route_of(value: Any) -> Any:
+    """The route of one device function's binding, or the sorted routes of a function bound twice; None when unbound."""
+    routes = sorted(b["route"] for b in bound(value))
+    return None if not routes else routes[0] if len(routes) == 1 else routes
 
 
 def sort_key(text: str) -> tuple:

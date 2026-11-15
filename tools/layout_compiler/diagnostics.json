@@ -30,6 +30,13 @@
       "feature": "trackplan/appliance_lamp_contact.feature#a lamp wired to a net that is not track",
       "replacedBy": null
     },
+    "binding.direction": {
+      "level": "missing",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": "io/device_binding.feature#a device pin typed unspecified bound to a driver",
+      "replacedBy": null
+    },
     "bit.direction": {
       "level": "error",
       "lifecycle": "retired",
@@ -114,6 +121,13 @@
       "feature": null,
       "replacedBy": null
     },
+    "device.column.field": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": "io/device_side.feature#a field device wired to a desk column",
+      "replacedBy": null
+    },
     "device.columns": {
       "level": "error",
       "lifecycle": "active",
@@ -135,11 +149,32 @@
       "feature": null,
       "replacedBy": null
     },
+    "device.invert.kind": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": "io/device_binding.feature#an Invert that names a value pin",
+      "replacedBy": null
+    },
     "device.office": {
       "level": "error",
       "lifecycle": "active",
       "since": "0.4.0",
       "feature": null,
+      "replacedBy": null
+    },
+    "device.side.sheet": {
+      "level": "warning",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": "io/device_side.feature#a field device drawn under another interlocking's sheet",
+      "replacedBy": null
+    },
+    "device.sides": {
+      "level": "error",
+      "lifecycle": "active",
+      "since": "0.4.0",
+      "feature": "io/device_side.feature#a device bound to the desk and to a field unit",
       "replacedBy": null
     },
     "driver.address": {
