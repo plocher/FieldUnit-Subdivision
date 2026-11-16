@@ -1,0 +1,18 @@
+(kicad_sch (version 20260306) (generator "eeschema") (generator_version "10.0") (uuid "f441c92d-ff46-4bdc-9bc0-f3e313d0c34a") (paper "A4")
+  (lib_symbols (symbol "Spike:TOFace" (exclude_from_sim no) (in_bom yes) (on_board yes)
+    (property "Reference" "TOF" (at 0 5.08 0)  (show_name yes) (effects (font (size 1.27 1.27)))) (property "Value" "" (at 0 -5.08 0)  (show_name yes) (effects (font (size 1.27 1.27))))
+    (property "Footprint" "" (at 0 0 0) (hide yes) (show_name yes) (effects (font (size 1.27 1.27)))) (property "Datasheet" "" (at 0 0 0) (hide yes) (show_name yes) (effects (font (size 1.27 1.27)))) (property "Description" "spike" (at 0 0 0) (hide yes) (show_name yes) (effects (font (size 1.27 1.27))))
+    (property "Name" "${{Value}}" (at 0 0 0) (hide yes) (show_name yes) (effects (font (size 1.27 1.27)))) (property "Address.MAST" "" (at 0 0 0) (hide yes) (show_name yes) (effects (font (size 1.27 1.27)))) (property "Address.STOP" "" (at 0 0 0) (hide yes) (show_name yes) (effects (font (size 1.27 1.27)))) (property "Address.SLOW" "" (at 0 0 0) (hide yes) (show_name yes) (effects (font (size 1.27 1.27))))
+    (symbol "TOFace_1_1"
+      (rectangle (start -5.08 2.54) (end 5.08 -2.54) (stroke (width 0.254) (type default)) (fill (type none)))
+      (text "TO FACE" (at 0 0 0) (effects (font (size 1.27 1.27))))
+      (pin passive line (at 7.62 0 180) (length 2.54) (name "IOBus" (effects (font (size 1.27 1.27)))) (number "1" (effects (font (size 1.27 1.27))))))
+    
+    ))
+  (label "IOBus" (at 57.62 50 0) (effects (font (size 1.27 1.27))) (uuid "2c79b3a6-14e2-4ace-998c-90866774cab9")) (wire (pts (xy 57.62 50) (xy 62.7 50)) (stroke (width 0) (type default)) (uuid "9f4d107b-78dd-4bc8-a36a-0f3ebc8e677f")) 
+  (symbol (lib_id "Spike:TOFace") (at 50 50 0) (unit 1) (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no) (uuid "25a1b1b0-0541-4a3e-a1a4-c676ea9ff77a")
+    (property "Reference" "TOF1" (at 50 45 0)  (show_name yes) (effects (font (size 1.27 1.27)))) (property "Value" "Gilroy.E" (at 50 55 0)  (show_name yes) (effects (font (size 1.27 1.27)))) (property "Footprint" "" (at 50 50 0) (hide yes) (show_name yes) (effects (font (size 1.27 1.27)))) (property "Datasheet" "" (at 50 50 0) (hide yes) (show_name yes) (effects (font (size 1.27 1.27))))
+    (property "Description" "spike" (at 50 50 0) (hide yes) (show_name yes) (effects (font (size 1.27 1.27)))) (property "Name" "${Value}" (at 50 50 0) (hide yes) (show_name yes) (effects (font (size 1.27 1.27)))) (property "Address.MAST" "101" (at 50 60.0 0)  (show_name yes) (effects (font (size 1.27 1.27))))(property "Address.STOP" "202" (at 50 62.54 0)  (show_name yes) (effects (font (size 1.27 1.27))))(property "Address.SLOW" "303" (at 50 65.08 0)  (show_name yes) (effects (font (size 1.27 1.27))))
+    (pin "1" (uuid "6531f10c-48c7-43d5-a06d-854919ae052c"))
+    (instances (project "spike" (path "/f441c92d-ff46-4bdc-9bc0-f3e313d0c34a" (reference "TOF1") (unit 1)))))
+  (sheet_instances (path "/" (page "1"))))
