@@ -9,7 +9,7 @@ One list of what is decided and what waits for the owner. Each proposed ADR open
 |---|---|---|
 | [0002](0002-symbol-contract.md) | What each KiCad symbol records | Frozen 2026-10-03: too complicated to approve as-is. Rewritten to rules after the cleanup pass (#30), then approved. |
 | [0003](0003-name-grammar.md) | One grammar for the names of appliances, signals and track circuits | Frozen 2026-10-03, same reason; the owner's in-progress edits are committed as they stood. Rewritten to rules after #30. |
-| [0018](0018-train-order-faces-and-named-consumers.md) | Train order faces are named appliances (`<board>.<suffix>`, suffix a required label, direction not a model fact); outputs fan out, inputs have one source, for every appliance; the train order tap retires; a JMRI train order face is one symbol in three units (mast with `IOBus`, `STOP`, `SLOW`); signal masts change only by the fan-out rule; one orchestrated migration in seven steps. | Rule on decisions 1 to 8 (defaults given). |
+| [0018](0018-train-order-faces-and-named-consumers.md) | Devices serve an appliance by Name: the Name for the whole, `<appliance>.<part>` for a part (a signal head `778NAB.A`, a train order face `Gilroy.E`); the appliance says what its parts are; a function's direction sets the sharing rule (outputs fan out, inputs one source per part, function word and origin). The taps retire for signals and train orders alike, heads lose `IND`, a JMRI proxy is a device; one orchestrated migration. | Rule on decisions 1 to 9 and on the alternative in §6.2 (defaults given). |
 
 ## Accepted
 
