@@ -11,7 +11,7 @@ Feature: A joint with a mast on each side, as drawn
       | TC1 | Railroad-Trackplan:Track Circuit                 | APPLIANCE |               | track_circuit |        | 832T  |         |
       | TC2 | Railroad-Trackplan:Track Circuit                 | APPLIANCE |               | track_circuit |        | 834T  |         |
       | J1  | Railroad-Trackplan:IRJ-Signals                   | TRACK     | IRJ_SIGNALS   |               |        |       |         |
-      | M1  | Railroad-Trackplan:Signal Mast Single PERMISSIVE | APPLIANCE | PERMISSIVE    | mast          | single | 832NA |         |
+      | M1  | Railroad-Trackplan:Signal Mast Single PERMISSIVE | APPLIANCE | PERMISSIVE    | mast          | single | 831NA |         |
       | M2  | Railroad-Trackplan:Signal Mast Single PERMISSIVE | APPLIANCE | PERMISSIVE    | mast          | single | 832SA |         |
 
   Scenario: a mast on each SIGNAL pin
@@ -22,7 +22,7 @@ Feature: A joint with a mast on each side, as drawn
       | sa  | J1.SIGNAL_A M1.SIGNAL |
       | sb  | J1.SIGNAL_B M2.SIGNAL |
     When the drawing is imported
-    Then the joint "J1" states the mast "X:832NA" on side A
+    Then the joint "J1" states the mast "X:831NA" on side A
     And the joint "J1" states the mast "X:832SA" on side B
     And the row "J1" names "X:832T.TC" on side A
     And the row "J1" names "X:834T.TC" on side B
@@ -35,7 +35,7 @@ Feature: A joint with a mast on each side, as drawn
       | b   | TC2.TC J1.B           |
       | a   | TC1.TC J1.A           |
     When the drawing is imported
-    Then the joint "J1" states the mast "X:832NA" on side A
+    Then the joint "J1" states the mast "X:831NA" on side A
     And the joint "J1" states the mast "X:832SA" on side B
 
   @joint.masts
@@ -56,5 +56,5 @@ Feature: A joint with a mast on each side, as drawn
       | b   | J1.B TC2.TC           |
       | sa  | J1.SIGNAL_A M1.SIGNAL |
     When the drawing is imported
-    Then the joint "J1" states the mast "X:832NA" on side A
+    Then the joint "J1" states the mast "X:831NA" on side A
     And the joint "J1" states no mast on side B

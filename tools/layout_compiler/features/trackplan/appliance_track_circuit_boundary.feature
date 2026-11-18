@@ -12,7 +12,7 @@ Feature: A boundary track circuit, as drawn
       | TC2 | Railroad-Trackplan:Track Circuit                 | APPLIANCE |               | track_circuit |          | 834T  |         |
       | TC3 | Railroad-Trackplan:Track Circuit IR Boundary     | APPLIANCE |               | track_circuit | boundary | 833T  |         |
       | J1  | Railroad-Trackplan:IRJ-Signals                   | TRACK     | IRJ_SIGNALS   |               |          |       |         |
-      | M1  | Railroad-Trackplan:Signal Mast Single PERMISSIVE | APPLIANCE | PERMISSIVE    | mast          | single   | 832NA |         |
+      | M1  | Railroad-Trackplan:Signal Mast Single PERMISSIVE | APPLIANCE | PERMISSIVE    | mast          | single   | 831NA |         |
       | M2  | Railroad-Trackplan:Signal Mast Single PERMISSIVE | APPLIANCE | PERMISSIVE    | mast          | single   | 832SA |         |
 
   Scenario: a boundary on the two nets at its joint

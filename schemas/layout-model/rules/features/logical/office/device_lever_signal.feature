@@ -58,7 +58,7 @@ Feature: A signal lever works the masts of its signal
   Scenario: an automatic mast has no lever
     Given interlocking "Sargent" has these appliances:
       | Name  | Appliance | Style  | Kind       | signal | heads |
-      | 834NA | mast      | single | PERMISSIVE | 834    | A     |
+      | 833NA | mast      | single | PERMISSIVE | 833    | A     |
       | 832SA | mast      | single | ABSOLUTE   | 832    | A     |
     And the desk has these levers for interlocking "Luchessa":
       | Name | Style  |

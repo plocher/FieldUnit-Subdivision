@@ -15,7 +15,7 @@ Feature: What a mast is, as drawn
       | TC1 | Railroad-Trackplan:Track Circuit              | APPLIANCE |               | track_circuit |        | 832T  |         |
       | TC2 | Railroad-Trackplan:Track Circuit              | APPLIANCE |               | track_circuit |        | 834T  |         |
       | J1  | Railroad-Trackplan:IRJ-Signals                | TRACK     | IRJ_SIGNALS   |               |        |       |         |
-      | M1  | Railroad-Trackplan:Signal Mast Single PERMISSIVE | APPLIANCE | PERMISSIVE | mast          | single | 832NA |         |
+      | M1  | Railroad-Trackplan:Signal Mast Single PERMISSIVE | APPLIANCE | PERMISSIVE | mast          | single | 831NA |         |
       | M2  | Railroad-Trackplan:Signal Mast Single PERMISSIVE | APPLIANCE | PERMISSIVE | mast          | single | 832SA |         |
       | PL1 | Railroad-Trackplan:Signal Mast Plate-G        | POLICY    | RULE_290_G    |               |        |       |         |
 
@@ -27,7 +27,7 @@ Feature: What a mast is, as drawn
       | sa  | J1.SIGNAL_A M1.SIGNAL  |
       | sb  | J1.SIGNAL_B M2.SIGNAL  |
     When the drawing is imported
-    Then "832NA" is written with Kind "PERMISSIVE"
+    Then "831NA" is written with Kind "PERMISSIVE"
 
   Scenario: a plate on a mast's SIGNAL net
     Given these nets:

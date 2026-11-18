@@ -4,22 +4,23 @@ Feature: What a mast is
   with a number plate). A mast with none is missing; nothing is inferred from a CP Name or a plate.
   An automatic mast belongs to no control point and states no CP Name. A grade or restricting
   plate is a policy on the mast's signal wire and requires a PERMISSIVE mast. An automatic mast
-  whose route passes a powered switch or derail is reported; the check sets nothing. An automatic
-  mast is numbered for its signal location, like any mast. Its signal number, the way it faces and its
-  head letters are stated atoms (device_mast_head.feature); the Name is a label nothing reads.
+  whose route passes a powered switch or derail is reported; the check sets nothing. How an automatic
+  mast is numbered is the railroad's practice; nothing pairs or groups automatic masts by number. Its signal
+  number, the way it faces and its head letters are stated atoms (device_mast_head.feature); the Name is a label
+  nothing reads.
   (ADR 0013 §5, §9; the owner 2026-11-12)
 
-  Background: two automatic masts back to back at signal location 832, under house East
+  Background: two automatic masts back to back at signal location 831/832, under house East
     Given interlocking "X" has house "East"
     And interlocking "X" has these appliances:
       | Name  | Appliance     | Style  | Kind       |
       | 832T  | track_circuit |        |            |
       | 834T  | track_circuit |        |            |
-      | 832NA | mast          | single | PERMISSIVE |
+      | 831NA | mast          | single | PERMISSIVE |
       | 832SA | mast          | single | PERMISSIVE |
     And interlocking "X" has these joints:
       | Id | Kind        | relations.masts     |
-      | J1 | IRJ_SIGNALS | A=X:832NA B=X:832SA |
+      | J1 | IRJ_SIGNALS | A=X:831NA B=X:832SA |
     And interlocking "X" has these wires:
       | Wire | Pins         |
       | a    | J1.A 832T.TC |
@@ -49,9 +50,9 @@ Feature: What a mast is
   Scenario: an automatic mast belongs to no control point, a controlled one to its house
     Given interlocking "X" has these appliances:
       | Name  | Appliance | Style  | Kind       |
-      | 832NA | mast      | single | CONTROLLED |
+      | 831NA | mast      | single | CONTROLLED |
     When the layout is derived
-    Then "832NA" belongs to control point "X:East"
+    Then "831NA" belongs to control point "X:East"
     And "832SA" belongs to no control point
 
   @mast.control_point
