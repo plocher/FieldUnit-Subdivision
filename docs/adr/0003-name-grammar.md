@@ -2,6 +2,8 @@
 
 - Status: proposed; frozen 2026-10-03 until the cleanup pass (issue #30) rewrites this ADR to rules. The owner's review: too complicated and unfocused to approve as-is.
 - Date: 2026-10-02 (responses), 2026-10-03 (final form)
+- Erratum 2026-11-18: how signals and the circuits between signal locations are numbered is a railroad's practice,
+  not a model rule (ADR 0013 decision 8, §9). D15 and rule 9 are corrected in place.[^numbering]
 
 Reshaped from spike S5 of `vocabulary-review.md` (F16). Nothing is renamed until the owner accepts this
 ADR. No code, schematic or profile is changed by it.
@@ -90,8 +92,12 @@ others follow the RESPONSE text.
 - D15. AAR naming as the owner reads it (V6, 2026-10-03).
   - Inside interlocking limits a track circuit that encloses switch 11 is `11T`; the OS circuit of
     switch 11 is `11T1`. So `833T` and `833T1` are different circuits (D3).
-  - Outside interlocking limits a track circuit is numbered from the signal that governs over it
-    (`10T`); successive circuits that govern one signal get progressive letters (placement: D6).
+  - Outside interlocking limits, AAR56 numbers a track circuit from the signal that governs over it
+    (`10T`; p. 31); successive circuits that govern one signal get progressive letters (placement: D6).
+    This is a railroad's practice, not a model rule (ADR 0013 §9). The Southern Pacific numbers an
+    automatic mast even for eastbound trains and odd for westbound trains (the owner, 2026-11-18), so the
+    two masts at one signal location carry different numbers and one circuit can have a governing signal
+    of each number. The SPCoast drawing names such circuits by milepost (`832T` is governed by `831NA`).
   - Tracks with no interlocked switches that govern no signal get arbitrary numbers that start with
     zero (D5).
   - The directional coded-track form is track number, direction, T (`1WT`, `1ET`: track 1, west or
@@ -185,8 +191,8 @@ Rules:
    name is generated, it takes the number of a movable-point frog first, then a switch, then a derail;
    among equals, the lowest number (AAR56 p. 31). A `TC` field that lists several circuits names a
    block, not one circuit (ADR 0002 D16).
-9. A track circuit outside the switches keeps its drawn name. A generated name follows the AAR56 rule:
-   the signal that governs over it, a section letter (placement open, O1) and T.
+9. A track circuit outside the switches keeps its drawn name. The model generates no such name and reads
+   nothing from it; how the designer numbers it is the railroad's practice (ADR 0013 §9).
 10. A track circuit with no switch and no governing signal takes a zero prefix, a number unique in the
     interlocking, and T (`01T`). Cut sections of one block add a section letter (`01AT`, `01BT`;
     glossary "cut section").
@@ -1035,3 +1041,8 @@ Outside the plant compiler: the desk `IndicationToken` fields and `configureDesk
     `<n>MCK`). Until commit e5f0c62, D12, the grammar, the regex, the letter table and the compiler row
     spelled the call `MC<n>` (`MC1`, `MC1S`, `MC1K`), FieldUnit's former spelling. Appendices A and B
     keep the names as they were then.
+[^numbering]: Erratum of 2026-11-18. Until commit `262ad30`, D15 read "Outside interlocking limits a track
+    circuit is numbered from the signal that governs over it (`10T`)" as the rule, and rule 9 read "A generated name
+    follows the AAR56 rule: the signal that governs over it, a section letter (placement open, O1) and T". The owner,
+    2026-11-18: SP numbers automatic masts odd and even by direction, so a signal location can carry two numbers.
+    Numbering a circuit from its governing signal is AAR56's habit, not a model rule (ADR 0013 decision 8).

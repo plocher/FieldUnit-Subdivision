@@ -9,12 +9,7 @@
   `docs/review/adr-0013-adversarial-review-2026-10-31.md`. The POC drawing: Railroad
   `2a1696e` (Corporal and Sargent sheets of the SPCoast project).
 
-## Decision requested (2026-11-18)
-
-1. Ratify decision 8 as rewritten (§9): signal numbering is a railroad's practice; a signal location is its joint, not
-   a number; circuit and block names carry no meaning. Default: as rewritten.
-
-## Decisions (ratified 2026-10-30 to 2026-11-02; decision 8 rewritten 2026-11-18, see above)
+## Decisions (ratified 2026-10-30 to 2026-11-02; decision 8 rewritten and ratified 2026-11-18)
 
 1. **Three parts, one ADR, bounded at the interlocking–block seam.** Part 1 states the normative model facts and
    domain-library derivations owned by Subdivision. Part 2 states the between-interlockings prototype behavior, safety
@@ -762,7 +757,7 @@ Each consumer input, the Part 1 section that states it, and its form:
   its `D` to Corporal.
 - **2026-11-18:** Decision 8 and §9 rewritten in place: signal numbering is a railroad's practice (SP: automatic
   masts even eastbound, odd westbound); a signal location is its joint; circuit and block names carry no meaning.
-  POC examples renamed to the drawing's 831NA and 833NA. Awaiting the owner's ratification (Decision requested).[^numbering]
+  POC examples renamed to the drawing's 831NA and 833NA. Ratified by the owner 2026-11-18.[^numbering]
 
 [^powered]: Until commit `d4ffddf` this read "has a machine (`Style` `powered` or `dual`) or a `CP Name`". On SPCoast every
     switch states the control point that senses it, so that wording made a hand-throw switch powered by inference from
