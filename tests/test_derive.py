@@ -109,7 +109,7 @@ def only(diags, *prefixes) -> list[tuple[str, str]]:
 
 # The trackplan fixtures draw no field mast devices, so every mast is mast.device at missing (#80).
 NO_MAST_DEVICES = [("mast.device", m) for m in ("836NAB", "836SA", "836SB")]
-NO_BLOCK_DEVICES = [("mast.device", m) for m in ("832NA", "832SA")]
+NO_BLOCK_DEVICES = [("mast.device", m) for m in ("831NA", "832SA")]
 
 
 def row(ix: dict, rid: str) -> dict:
@@ -357,24 +357,24 @@ class DoubleJoint(unittest.TestCase):
 
     def block(self, masts: dict) -> dict:
         ix = interlocking("832T | appliance | Appliance=track_circuit\n834T | appliance | Appliance=track_circuit\n"
-                          "832NA | appliance | Appliance=mast Style=single Kind=PERMISSIVE\n"
+                          "831NA | appliance | Appliance=mast Style=single Kind=PERMISSIVE\n"
                           "832SA | appliance | Appliance=mast Style=single Kind=PERMISSIVE\n"
                           "J1 | joints | Kind=IRJ_SIGNALS\n", "a | J1.A 832T.TC\nb | J1.B 834T.TC\n", "East")
         row(ix, "J1").setdefault("relations", {})["masts"] = masts
         return layout(X=ix)
 
     def test_a_mast_on_a_double_joint_stands_on_a_joint_and_has_its_sides(self):
-        out, diags = run(self.block({"A": "X:832NA", "B": "X:832SA"}))
+        out, diags = run(self.block({"A": "X:831NA", "B": "X:832SA"}))
         self.assertEqual(only(diags, "mast", "joint"), NO_BLOCK_DEVICES)
         apps = out["interlockings"]["X"]["appliances"]
-        self.assertEqual(apps["832NA"]["derived"]["circuits"], {"governed": "X:832T", "approach": "X:834T"})
+        self.assertEqual(apps["831NA"]["derived"]["circuits"], {"governed": "X:832T", "approach": "X:834T"})
         self.assertEqual(apps["832SA"]["derived"]["circuits"], {"governed": "X:834T", "approach": "X:832T"})
         self.assertEqual(row(out["interlockings"]["X"], "J1")["derived"], {"circuits": {"A": "X:832T", "B": "X:834T"}})
         self.assertEqual(layout_model.errors(out), [])
 
     def test_a_boundary_track_circuit_counts_toward_the_circuit_on_each_pin_and_names_none(self):
         """ADR 0013 §10: derived.circuits on the boundary, A then B; the markers name the circuits, never the boundary."""
-        m = self.block({"A": "X:832NA", "B": "X:832SA"})
+        m = self.block({"A": "X:831NA", "B": "X:832SA"})
         ix = m["interlockings"]["X"]
         ix["appliances"]["833T"] = {"given": {"Appliance": "track_circuit", "Style": "boundary"},
                                     "relations": {"A": ["J1.A", "X:832T.TC"], "B": ["J1.B", "X:834T.TC"]}}
@@ -391,7 +391,7 @@ class DoubleJoint(unittest.TestCase):
     def test_a_plate_requires_a_permissive_mast(self):
         """ADR 0013 §5: a plate on no mast, on a mast the file lacks, or on one that is not PERMISSIVE is an error."""
         def plated(mast: str | None, kind: str = "PERMISSIVE") -> list[tuple[str, str]]:
-            m = self.block({"A": "X:832NA", "B": "X:832SA"})
+            m = self.block({"A": "X:831NA", "B": "X:832SA"})
             ix = m["interlockings"]["X"]
             ix["appliances"]["832SA"]["given"]["Kind"] = kind
             ix["track"]["policies"] = [{"id": "PL1", "given": {"Kind": "RULE_290_G"}, **({"relations": {"mast": mast}} if mast else {})}]
@@ -405,11 +405,11 @@ class DoubleJoint(unittest.TestCase):
     def test_an_automatic_mast_belongs_to_no_control_point(self):
         """ADR 0013 §5 and §4: under one house every appliance is the house's, but an ABSOLUTE or PERMISSIVE mast derives no
         controlPoint (absent, no diagnostic); a CONTROLLED one on the same double joint derives the house."""
-        m = self.block({"A": "X:832NA", "B": "X:832SA"})
-        m["interlockings"]["X"]["appliances"]["832NA"]["given"]["Kind"] = "CONTROLLED"
+        m = self.block({"A": "X:831NA", "B": "X:832SA"})
+        m["interlockings"]["X"]["appliances"]["831NA"]["given"]["Kind"] = "CONTROLLED"
         out, diags = run(m)
         apps = out["interlockings"]["X"]["appliances"]
-        self.assertEqual(apps["832NA"]["derived"]["controlPoint"], "X:East")
+        self.assertEqual(apps["831NA"]["derived"]["controlPoint"], "X:East")
         self.assertNotIn("controlPoint", apps["832SA"]["derived"])
         self.assertEqual(apps["832T"]["derived"]["controlPoint"], "X:East")
         self.assertEqual(only(diags, "control_point"), [])
@@ -419,7 +419,7 @@ class DoubleJoint(unittest.TestCase):
     def test_a_permissive_mast_on_a_double_joint_over_a_powered_derail_is_a_warning(self):
         """ADR 0013 §5 on a double joint: 832SA governs into side B (834T); an independent derail with a CP Name there is
         powered (§4), one that follows a hand-throw lock is not."""
-        m = self.block({"A": "X:832NA", "B": "X:832SA"})
+        m = self.block({"A": "X:831NA", "B": "X:832SA"})
         ix = m["interlockings"]["X"]
         ix["appliances"]["9D"] = {"given": {"Appliance": "switch", "Style": "derail,powered"}, "relations": {"C": ["J1.B", "X:834T.TC"]}}
         row(ix, "J1")["relations"]["B"] = ["X:834T.TC", "X:9D.C"]
@@ -430,11 +430,11 @@ class DoubleJoint(unittest.TestCase):
         self.assertEqual(only(run(m)[1], "mast"), NO_BLOCK_DEVICES)
 
     def test_a_side_with_no_mast_leaves_that_mast_on_no_joint_and_one_mast_on_both_sides_is_on_two(self):
-        out, diags = run(self.block({"A": "X:832NA"}))
+        out, diags = run(self.block({"A": "X:831NA"}))
         self.assertEqual(only(diags, "mast"), [*NO_BLOCK_DEVICES, ("mast.joint", "832SA")])
         self.assertNotIn("circuits", out["interlockings"]["X"]["appliances"]["832SA"].get("derived", {}))
-        _, diags = run(self.block({"A": "X:832NA", "B": "X:832NA"}))
-        self.assertEqual(only(diags, "mast"), [*NO_BLOCK_DEVICES, ("mast.joint", "832SA"), ("mast.joints", "832NA")])
+        _, diags = run(self.block({"A": "X:831NA", "B": "X:831NA"}))
+        self.assertEqual(only(diags, "mast"), [*NO_BLOCK_DEVICES, ("mast.joint", "832SA"), ("mast.joints", "831NA")])
 
 
 # Two houses, the Christopher shape: switches 813 and 815 (with 815A in its gang) on North, 817 on South; siding 01T

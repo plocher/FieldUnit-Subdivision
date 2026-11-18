@@ -8,7 +8,7 @@ Feature: Block track across sheets, as drawn
       | Ref | Symbol                                           | Role      | Kind          | Appliance     | Style  | Name  | CP Name |
       | H1  | Railroad-Trackplan:House                         | STRUCTURE | CONTROL_POINT |               |        |       | East    |
       | J1  | Railroad-Trackplan:IRJ-Signals                   | TRACK     | IRJ_SIGNALS   |               |        |       |         |
-      | M1  | Railroad-Trackplan:Signal Mast Single PERMISSIVE | APPLIANCE | PERMISSIVE    | mast          | single | 834NA |         |
+      | M1  | Railroad-Trackplan:Signal Mast Single PERMISSIVE | APPLIANCE | PERMISSIVE    | mast          | single | 833NA |         |
       | M2  | Railroad-Trackplan:Signal Mast Single PERMISSIVE | APPLIANCE | PERMISSIVE    | mast          | single | 834SA |         |
       | TC1 | Railroad-Trackplan:Track Circuit                 | APPLIANCE |               | track_circuit |        | 836T  |         |
     And this drawing of interlocking "Y":

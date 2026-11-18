@@ -25,7 +25,7 @@ Feature: The routes of a mast
       | 830SAB | mast          | double         | CONTROLLED |       | X       | 830    | A,B   | RIGHT            |                   |                  |
       | 828SA  | mast          | single         | CONTROLLED |       | X       | 828    | A     | RIGHT            |                   |                  |
       | 828NA  | mast          | dwarf          | CONTROLLED |       | X       | 828    | A     | LEFT             |                   |                  |
-      | 832NA  | mast          | single         | PERMISSIVE |       |         | 832    | A     | LEFT             |                   |                  |
+      | 831NA  | mast          | single         | PERMISSIVE |       |         | 831    | A     | LEFT             |                   |                  |
       | 832SA  | mast          | single         | PERMISSIVE |       |         | 832    | A     | RIGHT            |                   |                  |
       | 832T   | track_circuit |                |            |       |         |        |       |                  |                   |                  |
       | 834T   | track_circuit |                |            |       |         |        |       |                  |                   |                  |
@@ -38,7 +38,7 @@ Feature: The routes of a mast
       | J831 | IRJ_SIGNAL  | X       | X:830SAB       |                     |
       | J828 | IRJ_SIGNAL  | X       | X:828SA        |                     |
       | J829 | IRJ_SIGNAL  | X       | X:828NA        |                     |
-      | J832 | IRJ_SIGNALS |         |                | A=X:832NA B=X:832SA |
+      | J832 | IRJ_SIGNALS |         |                | A=X:831NA B=X:832SA |
       | J1   | IRJ         |         |                |                     |
       | J2   | IRJ         |         |                |                     |
     And interlocking "X" has these ends:
@@ -87,7 +87,7 @@ Feature: The routes of a mast
   Scenario: an automatic mast displays no route
     When the routes are found
     Then "832SA" has no routes
-    And "832NA" has no routes
+    And "831NA" has no routes
 
   Scenario: a route states its entering demand, its circuits, its entrance and its approach
     When the routes are found
@@ -109,12 +109,12 @@ Feature: The routes of a mast
     When the routes are found
     Then the route of "830NAB" aligned "829 NORMAL, 827 NORMAL" is opposed by masts "828SA"
     And the route of "830NAB" aligned "829 NORMAL, 827 NORMAL" is opposed by demands "828(RIGHT)"
-    And the route of "830SAB" aligned "829 REVERSE" is opposed by masts "830NAB, 832NA"
+    And the route of "830SAB" aligned "829 REVERSE" is opposed by masts "830NAB, 831NA"
     And the route of "830SAB" aligned "829 REVERSE" is opposed by demands "830(LEFT)"
 
   Scenario: a converging movement is a different route, not an opposing term
     When the routes are found
-    Then the route of "828SA" aligned "827 NORMAL, 829 NORMAL" is opposed by masts "830NAB, 832NA"
+    Then the route of "828SA" aligned "827 NORMAL, 829 NORMAL" is opposed by masts "830NAB, 831NA"
 
   Scenario: a route to a NextCP ends at the limit
     When the routes are found

@@ -9,7 +9,7 @@
   `docs/review/adr-0013-adversarial-review-2026-10-31.md`. The POC drawing: Railroad
   `2a1696e` (Corporal and Sargent sheets of the SPCoast project).
 
-## Decisions (ratified 2026-10-30 to 2026-11-02)
+## Decisions (ratified 2026-10-30 to 2026-11-02; decision 8 rewritten and ratified 2026-11-18)
 
 1. **Three parts, one ADR, bounded at the interlocking–block seam.** Part 1 states the normative model facts and
    domain-library derivations owned by Subdivision. Part 2 states the between-interlockings prototype behavior, safety
@@ -35,8 +35,10 @@
 7. **A `GCOR_RULE_9_14` sign's `LEFT` or `RIGHT`** is the lever direction of the signals that govern with the current of
    traffic. A `GCOR_RULE_9_14` sign inside interlocking limits states the current of traffic on that track, and nothing more
    (§8).
-8. **Names by signal location:** automatic masts and the circuits between them are numbered for their signal
-   location (§9).
+8. **Names are the designer's:** how signals are numbered is a railroad's practice, not a model rule. A signal
+   location is its joint and the masts drawn there, never a number. The model reads a mast's number only for the
+   lever of a `CONTROLLED` mast and the head letters of one signal (ADR 0003 rules 5 and 6). Circuit and block names
+   are unique and carry no meaning (§9).[^numbering]
 9. **A boundary track circuit** (Style `boundary`) is a detector at a joint. The model states which circuits it
    counts toward (§10), and consumers OR its occupancy into them (§19.1).
 10. **Facts the model carries for consumers:** blocks with their ends, signal locations, member circuits, and the
@@ -80,8 +82,8 @@ signal placement:
 | Signal location | Masts | Circuits |
 |---|---|---|
 | Corporal (control point) | 830SAB and 828SA leave toward Sargent; the 830 home faces the block | 832T on the block side |
-| 832 (`IRJ-Signals` B11007) | 832SA toward Sargent, 832NA toward Corporal, both `PERMISSIVE` | 832T, 834T; boundary 833T at the joint |
-| 834 (`IRJ-Signals` B1) | 834SA, 834NA, both `PERMISSIVE` | 834T, 836T |
+| 831/832 (`IRJ-Signals` B11007) | 832SA toward Sargent, 831NA toward Corporal, both `PERMISSIVE` | 832T, 834T; boundary 833T at the joint |
+| 833/834 (`IRJ-Signals` B1) | 834SA toward Sargent, 833NA toward Corporal, both `PERMISSIVE` | 834T, 836T |
 | Sargent (control point) | 836NAB leaves toward Corporal; the 836 home faces the block | 836T |
 
 834T runs from Corporal's sheet to Sargent's through the hierarchical label `ToSargentMT`. The model board shows the
@@ -301,20 +303,29 @@ signalled both ways the direction of traffic is set at run time (§16) and is no
 a sign makes no block, because its piece holds a powered switch (§4), and it marks neither a block limit nor the end
 of CTC. The same agreement check applies: the sign's direction against the signals that govern on that track.
 
-## 9. Names by signal location (decision 8)
+## 9. Names and numbers (decision 8)
 
-- An automatic mast is numbered for its signal location, the milepost in tenths, with its direction letter and head
-  letter as for any mast (`grammar.MAST_NAME`): 832SA and 832NA at location 832. No CP Name.
-- A circuit between two signal locations is named for the location at its higher-milepost end, whose mast governs
-  over it: 832T between 830 and 832. ADR 0003 already numbers a circuit outside interlocking limits for the signal
-  that governs over it. No CP Name: block track belongs to the layout.
-- A virtual circuit for a block (`831T`) takes any number not used by a signal location. It is the block's name in
-  every consumer. A block with no virtual circuit drawn has no name.
-- A controlled mast's lever is the number in its name, and its lever direction comes from its direction letter
-  (ADR 0003 D1).
+- **Numbering is a railroad's practice.** How a railroad numbers its signals is not a model rule. On the Southern
+  Pacific, the number plate of an automatic (ABS or APB) mast is even for eastbound trains and odd for westbound
+  trains (the owner, 2026-11-18). Other railroads are not researched (unverified). This is SP practice, not AAR or
+  AREMA practice.
+- **A signal location is its joint.** A signal location is the joint at a block boundary and the masts drawn there
+  (§6). A number never identifies it. The two masts at one location may carry different numbers. The model pairs
+  opposing automatic masts by their shared joint, never by number.
+- **Where the model reads a number.** A mast name has the grammar of any mast (`grammar.MAST_NAME`): signal number,
+  direction letter and head letters. The importer states these atoms. The model reads the signal number only where
+  ADR 0003 does. A `CONTROLLED` mast's lever is its signal number, and its lever direction comes from its direction
+  letter (ADR 0003 rule 5, D1). Head letters are read within one signal facing one way (ADR 0003 rule 6). Nothing
+  pairs or groups automatic masts by number. An automatic mast has no CP Name.
+- **Circuit and block names are the designer's.** A circuit between signal locations, a boundary circuit and a
+  block's virtual circuit each take the name the designer draws. The model derives nothing from a name. It requires
+  only that each name is unique in its interlocking. Block track belongs to the layout, so its circuits have no CP Name. The virtual
+  circuit is the block's name in every consumer. A block with no virtual circuit drawn has no name.
 
-Milepost numbers are unique on the layout, so none of these names needs an interlocking qualifier. The names do not
-change when the hardware is split differently.
+Example, the SPCoast drawing: at location 831/832, 831NA faces `LEFT` (westbound) and governs into 832T; 832SA faces
+`RIGHT` and governs into 834T. At location 833/834, 833NA governs into 834T and 834SA governs into 836T. The boundary
+circuit at 831/832 is 833T, and the block's virtual circuit is `Corporal:831T`. The control point masts keep their
+desk lever's number (828NA and 828SA, 830NAB and 830SAB, 836NAB, 836SA and 836SB).
 
 ## 10. Boundary track circuits (decision 9)
 
@@ -460,7 +471,7 @@ Two combinations are invalid and will be rejected by the conformance suite once 
 
 Between neighbouring signal locations there is one **HD line** for each direction. **An HD line is named for a mast,
 and goes to the previous signal in that mast's direction of travel.** It tells that previous signal how far it may let
-the next train go, so following traffic does not run into the train ahead. In the picture (§2), `834NA` goes to
+the next train go, so following traffic does not run into the train ahead. In the picture (§2), `833NA` goes to
 Sargent's `836NAB`, and `836SA` (Sargent's home) goes to `834SA`. On the prototype this is a chain of two-wire
 polarized line circuits fed again at each signal location (`[CBQ1946 pp. 613–615]`, opened; `AAR Dwg 8000, 8066` and
 `[RS1947 p. 92]` via `[ABSAPB]`, `[TLRES]`). Logically it carries two values:
@@ -497,12 +508,12 @@ goes back to `U`, where the previous signal in `M`'s direction of travel stands:
   slow-release `HR` drops) and sticks through its own front contact and `M`'s `HR` back contact until `H` from `W` is
   asserted again (`[CBQ1946 pp. 615–616]`, `[RS1927Spray pp. 269–270]`, opened).
 
-The same rule runs symmetrically for the opposing mast at `L`. At location 832, with `M` = `832SA`:
+The same rule runs symmetrically for the opposing mast at `L`. At location 831/832, with `M` = `832SA`:
 
 | Output | `H` asserted when | `D` asserted when |
 |---|---|---|
-| to Corporal (read by `830SAB`, `828SA` as `segment_clear`, `next_proceed`) | `832T` clear AND (`H` from 834 asserted OR `832SA`'s `SR` set) | `832SA` Approach or better |
-| to 834 (read by `834NA`) | `834T` clear AND (`H` from Corporal asserted OR `832NA`'s `SR` set) | `832NA` Approach or better |
+| to Corporal (read by `830SAB`, `828SA` as `segment_clear`, `next_proceed`) | `832T` clear AND (`H` from 833/834 asserted OR `832SA`'s `SR` set) | `832SA` Approach or better |
+| to 833/834 (read by `833NA`) | `834T` clear AND (`H` from Corporal asserted OR `831NA`'s `SR` set) | `831NA` Approach or better |
 
 The first term (`H` from ahead) chains: a break passes from location to location from one end of the block to the
 other. That is the **tumble-down**. The second term (`M`'s `SR`) enables following moves: it masks the break ahead
@@ -514,8 +525,8 @@ At Corporal's seam with the Corporal–Sargent block (§13):
 
 | Seam port | Rule (parameterized by `blockRules`, §14.2) |
 |---|---|
-| **`H` out** (HD line `830NAB`, to `832NA`) | `832T` clear AND `!in_time` AND (`!cleared` under `tumbleDownTrigger: "cleared"`, or `!requested` under `tumbleDownTrigger: "requested"`) |
-| **`D` out** (on `830NAB`, to `832NA`) | `home_proceed` (`830NAB` indicates Approach or better) |
+| **`H` out** (HD line `830NAB`, to `831NA`) | `832T` clear AND `!in_time` AND (`!cleared` under `tumbleDownTrigger: "cleared"`, or `!requested` under `tumbleDownTrigger: "requested"`) |
+| **`D` out** (on `830NAB`, to `831NA`) | `home_proceed` (`830NAB` indicates Approach or better) |
 | **`F` out** (when `trafficMechanism` $\ne$ `"hd_chain"`) | `!requested` AND `!cleared` AND `!in_time`, relayed end-to-end without `SR` ORing (held until `trafficRelease` is satisfied) |
 | **`segment_clear` (`H` in)** (from `832SA`) | Required by leaving signals `830SAB` and `828SA` for Approach or better |
 | **`next_proceed` (`D` in)** (from `832SA`) | Required by leaving signals `830SAB` and `828SA` to upgrade from Approach to Clear |
@@ -537,12 +548,12 @@ to Rule 291.
 
 Southbound train `T1` leaves Corporal for Sargent:
 
-| `T1` position | `832 → 834 H` | `834 → Sargent H` (`segment_clear`) | `832 → Corporal H` (`segment_clear`) | Operational effect |
+| `T1` position | `831/832 → 833/834 H` | `833/834 → Sargent H` (`segment_clear`) | `831/832 → Corporal H` (`segment_clear`) | Operational effect |
 |---|---|---|---|---|
-| At Corporal; `830SAB` cleared (`tumbleDownTrigger` active) | released (`H` from Corporal released; no `832NA` `SR`) | released | asserted | Tumble-down: `832NA`, `834NA` go to Stop; Sargent's `segment_clear` and `traffic_free` are released; `830SAB` clears. |
+| At Corporal; `830SAB` cleared (`tumbleDownTrigger` active) | released (`H` from Corporal released; no `831NA` `SR`) | released | asserted | Tumble-down: `831NA`, `833NA` go to Stop; Sargent's `segment_clear` and `traffic_free` are released; `830SAB` clears. |
 | In `832T` (`830SAB` returns to Stop) | released (`832T` occupied) | released | released (`832T` occupied) | `830SAB` is at Stop; Sargent's `836NAB` stays held at Stop. |
 | In `834T` (`832T` clear) | released (`834T` occupied) | released | asserted (`832SA`'s `SR` picked up), `D` released | Corporal has `segment_clear` and `traffic_free` to clear `830SAB` to Approach for a following move; Sargent stays locked out. |
-| In `836T` (`834T` clear) | asserted once Corporal's outbound `H` condition is restored | released (`836T` occupied) | asserted (`834SA`'s `SR` picked up), `D` asserted | `832SA` clears to Approach (`834SA` is at Stop, so `D` from 834 is released and `832SA`'s own `D` to Corporal is asserted); Sargent stays locked out by `836T` occupancy until `T1` clears `836T`. |
+| In `836T` (`834T` clear) | asserted once Corporal's outbound `H` condition is restored | released (`836T` occupied) | asserted (`834SA`'s `SR` picked up), `D` asserted | `832SA` clears to Approach (`834SA` is at Stop, so `D` from 833/834 is released and `832SA`'s own `D` to Corporal is asserted); Sargent stays locked out by `836T` occupancy until `T1` clears `836T`. |
 | Clear of `836T` (into Sargent; `trafficRelease` satisfied) | asserted | asserted | asserted | Block idle; intermediates return to their `intermediatesAtRest` state, and either CP may clear a leaving signal. |
 
 # Part 3. Deployment variations, carrier vitality, and consumer context (non-normative for `derive.py`)
@@ -560,7 +571,7 @@ deployment variation, and whether each carrier is **vital** or a **non-vital `R1
    - ORing a `boundary` detector (`833T`) into the circuits on both sides of the joint (`832T` and `834T`) guarantees
      that a train passing the masts occupies the governed circuit ahead before it releases the approach circuit behind.
 
-## 18. Four deployment variations, carrier vitality, and the POC 834–836 split
+## 18. Four deployment variations, carrier vitality, and the POC 833/834–836 split
 
 ### 18.1 Four deployment variations, what is drawn, and carrier vitality
 
@@ -580,16 +591,16 @@ is non-vital (`GLOSSARY.md` §5, `R18`), each variation explicitly marks the **v
 | **C. Unified field logic system (CMRInet Host, JMRI, or `spcoast_virtual_plant`)** | **`vital`** | Every interlocking's `Processor` pin connects to the **same** `Processor` entity (e.g., the CMRInet Host), and all field I/O drivers (`Driver-CMRInet-Node` `IB`/`OB`, JMRI drivers) attach to that processor's bus. **No cross-processor wires or extra topics are drawn.** | **In-memory.** The `blocks` library (§11) resolves every circuit and signal location in the block to the same processor, so all `HD` links, `SR` sticks, and virtual circuits (`831T`) are evaluated directly in vital memory. |
 | **D. US&S 506 code line with a 1- or 2-circuit ABS/APB link** | **`non_vital` (`R15` codeline-repeat) for 1–2 circuits; `vital` when wired via B** | Both interlockings connect to a `USS506` (7 indication steps per station) or `USS506C` (35 steps) `Codeline` encoding. Track circuits and head devices connect to their local field `Processor`'s drivers. | **Codeline eavesdropping up to step capacity; wired `HD` beyond it.** A standard 1-switch, 1-signal, 1-OS, 1-MC station uses 6 of its 7 indication steps, leaving 1 free step (`reference.CODE_LINE_CAPACITY`, `CODE_LINE_STEPS`). For a **1-circuit** or **2-circuit** block, each end station sends its side's `TK` in its 1 free step and eavesdrops on the neighbour's 506 indication code (`NGK`, `SGK`, `TEK`, `TK`) with **no extra field wires** (`non_vital` `R15` compression, with the same fail-safe on missing/stale indications as Variation A). When a block has more circuits than free 506 steps, intermediate segments use Variation B (`vital` wired `H`/`D`). |
 
-### 18.2 How codeline indication eavesdropping works on the POC 834–836 split (Variations A and D)
+### 18.2 How codeline indication eavesdropping works on the POC 833/834–836 split (Variations A and D)
 
-In the POC between Corporal and Sargent (`832T`, `834T`, and locations `830`, `832`, `834` on Corporal's processor;
-`836T` and location `836` on Sargent's processor), the boundary between processors falls between location `834` and
+In the POC between Corporal and Sargent (`832T`, `834T`, and locations `830`, `831/832`, `833/834` on Corporal's processor;
+`836T` and location `836` on Sargent's processor), the boundary between processors falls between location `833/834` and
 circuit `836T`:
 
 | Direction | Needed by consumer | Provided by codeline eavesdropping (Variations A & D, `non_vital` R15) | Provided by wired `HD` / topic (Variation B, `vital`) |
 |---|---|---|---|
 | Sargent $\to$ Corporal | `834SA` (needs `836SA`'s `H`, `D`, and `836T` for `834SA`'s `SR`) and `Corporal:831T` (needs `836T`) | Sargent's codeline indications `836NGK` (leaving `836NAB`), `836SGK` (home `836SA`), `836TEK` (time), and `836TK` (circuit `836T`). Corporal computes `836SA` `H` = `!836TK && !836NGK && !836TEK`, `D` = `836SGK`, sets `834SA`'s `SR` directly from `836TK`, and computes `831TK` = `832T \|\| 834T \|\| 836TK`. | `836SA` `H` and `D` on two wires via `Device-HD-Out` / `Device-HD-In` (or `<root>/hdline/836SA`); `834SA`'s `SR` uses local `836T` wiring or the local `834T` approach-circuit guard (§18.3 item 1). |
-| Corporal $\to$ Sargent | Sargent's leaving signal `836NAB` (needs `segment_clear`, `next_proceed`, `traffic_free` from `834NA`) | Corporal's codeline indications `830SGK`, `830TEK`, `828SGK`, `828TEK`, `830NGK`, `832TK`, and `834TK`. Sargent has the complete occupancy progression (`832TK`, `834TK`, `836T`) and Corporal's signal state to evaluate `834NA`'s `H`, `D`, and `F` locally. | `834NA` `H` and `D` (and `F` where used) on wires via `Device-HD-Out` / `Device-HD-In` (or `<root>/hdline/834NA`), with Sargent ANDing its local `836T` into `H`. |
+| Corporal $\to$ Sargent | Sargent's leaving signal `836NAB` (needs `segment_clear`, `next_proceed`, `traffic_free` from `833NA`) | Corporal's codeline indications `830SGK`, `830TEK`, `828SGK`, `828TEK`, `830NGK`, `832TK`, and `834TK`. Sargent has the complete occupancy progression (`832TK`, `834TK`, `836T`) and Corporal's signal state to evaluate `833NA`'s `H`, `D`, and `F` locally. | `833NA` `H` and `D` (and `F` where used) on wires via `Device-HD-Out` / `Device-HD-In` (or `<root>/hdline/833NA`), with Sargent ANDing its local `836T` into `H`. |
 
 ### 18.3 Four implementation notes for consumers
 
@@ -613,7 +624,7 @@ circuit `836T`:
      at +V by a consumer pull-up when released (four wires plus common ground for a bidirectional `HD` segment on I2C
      expander pins).
    - **Dedicated MQTT `HD` topic:** One retained topic per `HD` line, `<root>/hdline/<mast>` (for example
-     `ctc/SPCoast/hdline/834NA`, where `<root>` is the AAR encoding's `Topic`), carrying `H D`, `H (D)`, or `(H)` in a
+     `ctc/SPCoast/hdline/833NA`, where `<root>` is the AAR encoding's `Topic`), carrying `H D`, `H (D)`, or `(H)` in a
      single payload with a last-will message of `(H)`.
 4. **Satisfying Invariant `I3` (receding stick release) in a discrete scan loop:**
    - When a train clears the last circuit of a block (`836T` at Sargent), the receding-direction stick (`834SA`'s `SR`)
@@ -744,6 +755,9 @@ Each consumer input, the Part 1 section that states it, and its form:
   opposing `HR` back) races when paired with `intermediatesAtRest: "clear"`, so `SP_1942` sets
   `sameLocationOpposingCut: false`; (3) in §16 row 4 (`T1` in `836T`), `832SA` clears to Approach (not Clear), asserting
   its `D` to Corporal.
+- **2026-11-18:** Decision 8 and §9 rewritten in place: signal numbering is a railroad's practice (SP: automatic
+  masts even eastbound, odd westbound); a signal location is its joint; circuit and block names carry no meaning.
+  POC examples renamed to the drawing's 831NA and 833NA. Ratified by the owner 2026-11-18.[^numbering]
 
 [^powered]: Until commit `d4ffddf` this read "has a machine (`Style` `powered` or `dual`) or a `CP Name`". On SPCoast every
     switch states the control point that senses it, so that wording made a hand-throw switch powered by inference from
@@ -793,5 +807,12 @@ Each consumer input, the Part 1 section that states it, and its form:
 
 [^routeregime]: Until commit `0cb1aac` this read "Routes carry no regime." Amended in place on 2026-11-13 (the owner,
     PR #140): a regime marker is never a route limit; the route passes it, and the regime may contribute to its ceiling.
+
+[^numbering]: Rewritten in place on 2026-11-18 (the owner: SP numbers automatic masts even eastbound and odd
+    westbound, so the two masts at one location can carry different numbers; the SPCoast drawing now has 831NA and
+    833NA where it had 832NA and 834NA). Until commit `7de2390` decision 8 read "automatic masts and the circuits
+    between them are numbered for their signal location", and §9 numbered a location by its milepost in tenths
+    ("832SA and 832NA at location 832"), named a circuit for the location at its higher-milepost end, and gave a
+    virtual block circuit "any number not used by a signal location".
 
 [^rev]: See §24 (Record) for the revision history from commit `96d3765` through rev 4.

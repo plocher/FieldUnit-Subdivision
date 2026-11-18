@@ -6,25 +6,25 @@ Feature: A joint with a mast on each side
   its masts, and the track circuits on each side; a control point is a signal location with
   one side toward the block. (ADR 0013 §6)
 
-  Background: signal location 832, two masts back to back
+  Background: signal location 831/832, two masts back to back
     Given interlocking "X" has house "East"
     And interlocking "X" has these appliances:
       | Name  | Appliance     | Style  | Kind       |
       | 832T  | track_circuit |        |            |
       | 834T  | track_circuit |        |            |
-      | 832NA | mast          | single | PERMISSIVE |
+      | 831NA | mast          | single | PERMISSIVE |
       | 832SA | mast          | single | PERMISSIVE |
 
   Scenario: a mast on each side of the joint
     Given interlocking "X" has these joints:
       | Id | Kind        | relations.masts     |
-      | J1 | IRJ_SIGNALS | A=X:832NA B=X:832SA |
+      | J1 | IRJ_SIGNALS | A=X:831NA B=X:832SA |
     And interlocking "X" has these wires:
       | Wire | Pins         |
       | a    | J1.A 832T.TC |
       | b    | J1.B 834T.TC |
     When the layout is derived
-    Then "832NA" governs into "X:832T" and approaches over "X:834T"
+    Then "831NA" governs into "X:832T" and approaches over "X:834T"
     And "832SA" governs into "X:834T" and approaches over "X:832T"
     And joint "J1" has circuit "X:832T" on side A and "X:834T" on side B
     And joint "J1" belongs to no control point
@@ -33,24 +33,24 @@ Feature: A joint with a mast on each side
   Scenario: a side with no mast leaves that mast on no joint
     Given interlocking "X" has these joints:
       | Id | Kind        | relations.masts |
-      | J1 | IRJ_SIGNALS | A=X:832NA       |
+      | J1 | IRJ_SIGNALS | A=X:831NA       |
     And interlocking "X" has these wires:
       | Wire | Pins         |
       | a    | J1.A 832T.TC |
       | b    | J1.B 834T.TC |
     When the layout is derived
     Then it is reported as missing on "832SA"
-    And "832NA" governs into "X:832T" and approaches over "X:834T"
+    And "831NA" governs into "X:832T" and approaches over "X:834T"
     And "832SA" has no derived circuits
 
   @mast.joints
   Scenario: one mast on both sides of the joint
     Given interlocking "X" has these joints:
       | Id | Kind        | relations.masts     |
-      | J1 | IRJ_SIGNALS | A=X:832NA B=X:832NA |
+      | J1 | IRJ_SIGNALS | A=X:831NA B=X:831NA |
     And interlocking "X" has these wires:
       | Wire | Pins         |
       | a    | J1.A 832T.TC |
       | b    | J1.B 834T.TC |
     When the layout is derived
-    Then it is reported as an error on "832NA"
+    Then it is reported as an error on "831NA"

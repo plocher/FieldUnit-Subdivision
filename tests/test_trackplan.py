@@ -541,7 +541,7 @@ H1   | House                         | STRUCTURE | Kind=CONTROL_POINT CP_Name=Ea
 TC1  | Track Circuit                 | APPLIANCE | Appliance=track_circuit Name=832T
 TC2  | Track Circuit                 | APPLIANCE | Appliance=track_circuit Name=834T
 J1   | IRJ-Signals                   | TRACK     | Kind=IRJ_SIGNALS
-M1   | Signal Mast Single PERMISSIVE | APPLIANCE | Appliance=mast Style=single Kind=PERMISSIVE Name=832NA
+M1   | Signal Mast Single PERMISSIVE | APPLIANCE | Appliance=mast Style=single Kind=PERMISSIVE Name=831NA
 M2   | Signal Mast Single PERMISSIVE | APPLIANCE | Appliance=mast Style=single Kind=PERMISSIVE Name=832SA
 """
 DOUBLE_JOINT_NETS = """
@@ -560,14 +560,14 @@ class DoubleJoint(unittest.TestCase):
         sm, ix = compile_(DOUBLE_JOINT, DOUBLE_JOINT_NETS)
         self.assertEqual(sm.report.errors, [])
         self.assertEqual(rows(ix, "joints"), [{"given": {"Kind": "IRJ_SIGNALS"},
-                                               "relations": {"A": ["X:832T.TC"], "B": ["X:834T.TC"], "masts": {"A": "X:832NA", "B": "X:832SA"}},
+                                               "relations": {"A": ["X:832T.TC"], "B": ["X:834T.TC"], "masts": {"A": "X:831NA", "B": "X:832SA"}},
                                                "derived": {"circuits": {"A": "X:832T", "B": "X:834T"}}}])
-        self.assertEqual(diags(sm, "joint", "track.kind", "mast"), [("mast.device", "832NA"), ("mast.device", "832SA")])   # no field devices drawn (#80)
+        self.assertEqual(diags(sm, "joint", "track.kind", "mast"), [("mast.device", "831NA"), ("mast.device", "832SA")])   # no field devices drawn (#80)
         self.assertEqual(layout_model.errors(emit.emit(sm)), [])
 
     def test_each_mast_derives_its_governed_side_from_its_pin_and_its_approach_from_the_other(self):
         _, ix = compile_(DOUBLE_JOINT, DOUBLE_JOINT_NETS)
-        self.assertEqual(ix["appliances"]["832NA"]["derived"]["circuits"], {"governed": "X:832T", "approach": "X:834T"})
+        self.assertEqual(ix["appliances"]["831NA"]["derived"]["circuits"], {"governed": "X:832T", "approach": "X:834T"})
         self.assertEqual(ix["appliances"]["832SA"]["derived"]["circuits"], {"governed": "X:834T", "approach": "X:832T"})
 
     def test_two_masts_on_one_signal_pin_are_an_error_and_a_side_with_none_is_absent(self):
@@ -577,7 +577,7 @@ class DoubleJoint(unittest.TestCase):
         self.assertNotIn("masts", rows(ix, "joints")[0]["relations"])
         sm, ix = compile_(DOUBLE_JOINT, DOUBLE_JOINT_NETS.replace("sb   | J1.SIGNAL_B M2.SIGNAL\n", ""))
         self.assertEqual(diags(sm, "joint"), [])
-        self.assertEqual(rows(ix, "joints")[0]["relations"]["masts"], {"A": "X:832NA"})
+        self.assertEqual(rows(ix, "joints")[0]["relations"]["masts"], {"A": "X:831NA"})
 
 
 class AcrossSheets(unittest.TestCase):
@@ -589,7 +589,7 @@ class AcrossSheets(unittest.TestCase):
     X = """
 H1   | House            | STRUCTURE | Kind=CONTROL_POINT CP_Name=East
 J1   | IRJ-Signals      | TRACK     | Kind=IRJ_SIGNALS
-M1   | Mast_Single      | APPLIANCE | Appliance=mast Style=single Kind=PERMISSIVE Name=834NA
+M1   | Mast_Single      | APPLIANCE | Appliance=mast Style=single Kind=PERMISSIVE Name=833NA
 M2   | Mast_Single      | APPLIANCE | Appliance=mast Style=single Kind=PERMISSIVE Name=834SA
 TC1  | Track Circuit    | APPLIANCE | Appliance=track_circuit Name=836T
 """
@@ -621,15 +621,15 @@ n1   | IX2.Processor P2.Processor
         self.assertEqual(j1["relations"]["B"], ["X:836T.TC"])
         self.assertEqual(self.y["appliances"]["834T"]["relations"]["TC"], sorted([at(self.sm, "J1", "A"), at(self.sm, "J2", "B")]))
         self.assertEqual(j2["relations"]["B"], sorted([at(self.sm, "J1", "A"), "Y:834T.TC"]))
-        self.assertEqual(j1["relations"]["masts"], {"A": "X:834NA", "B": "X:834SA"})
+        self.assertEqual(j1["relations"]["masts"], {"A": "X:833NA", "B": "X:834SA"})
         self.assertEqual(diags(self.sm, "track", "joint", "appliance"), [])
 
     def test_the_other_sheets_marker_names_the_circuit_on_this_side_and_no_reference_is_raised(self):
         """The reference derivation's part (ADR 0013 §7.1): plain track across sheets is block track, Y's 834T names X's
-        side A, and 834NA governs over it."""
+        side A, and 833NA governs over it."""
         (j1,) = self.x["track"]["joints"]
         self.assertEqual(j1["derived"]["circuits"], {"A": "Y:834T", "B": "X:836T"})
-        self.assertEqual(self.x["appliances"]["834NA"]["derived"]["circuits"], {"governed": "Y:834T", "approach": "X:836T"})
+        self.assertEqual(self.x["appliances"]["833NA"]["derived"]["circuits"], {"governed": "Y:834T", "approach": "X:836T"})
         self.assertEqual(self.x["appliances"]["834SA"]["derived"]["circuits"], {"governed": "X:836T", "approach": "Y:834T"})
         self.assertEqual(self.y["track"]["joints"][0]["derived"]["circuits"], {"B": "Y:834T"})
         self.assertEqual(diags(self.sm, "reference", "circuit"), [])

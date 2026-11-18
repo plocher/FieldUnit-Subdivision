@@ -28,8 +28,8 @@
   <text x="363" y="178" text-anchor="middle" fill="#b05">833T boundary</text>
 
   <!-- signal location labels -->
-  <text x="363" y="104" text-anchor="middle" font-weight="bold">signal location 832</text>
-  <text x="597" y="104" text-anchor="middle" font-weight="bold">signal location 834</text>
+  <text x="363" y="104" text-anchor="middle" font-weight="bold">signal location 831/832</text>
+  <text x="597" y="104" text-anchor="middle" font-weight="bold">signal location 833/834</text>
 
   <!-- masts: N above (pointing left), S below (pointing right) -->
   <g fill="#2a7">
@@ -42,8 +42,8 @@
     <polygon points="830,118 818,124 830,130" transform="translate(12,0)"/>
     <polygon points="130,170 142,176 130,182" transform="translate(-12,22)"/>
   </g>
-  <text x="370" y="128" fill="#2a7">832NA</text>
-  <text x="604" y="128" fill="#2a7">834NA</text>
+  <text x="370" y="128" fill="#2a7">831NA</text>
+  <text x="604" y="128" fill="#2a7">833NA</text>
   <text x="304" y="204" fill="#2a7">832SA</text>
   <text x="538" y="204" fill="#2a7">834SA</text>
   <text x="138" y="128" fill="#2a7">830NAB home</text>
@@ -73,17 +73,17 @@
     <line x1="605" y1="76" x2="822" y2="76"/>
   </g>
   <g fill="#06c" text-anchor="middle">
-    <text x="246" y="68">830NAB → 832NA</text>
-    <text x="480" y="68">832NA → 834NA</text>
-    <text x="713" y="68">834NA → 836NAB</text>
+    <text x="246" y="68">830NAB → 831NA</text>
+    <text x="480" y="68">831NA → 833NA</text>
+    <text x="713" y="68">833NA → 836NAB</text>
   </g>
 
   <!-- legend -->
   <g font-size="12" fill="#333">
     <text x="20" y="318">One arrow = one HD line, named for a mast, sent to the previous signal in that mast's direction: H feeds its HR, D feeds its DR.</text>
     <text x="20" y="336">A mast reads the HD line from the location it governs toward: H released = stop; H without D = approach; H and D = clear.</text>
-    <text x="20" y="354">POC wiring: 832T, 834T and locations 830, 832, 834 on Corporal's processor; 836T and 836 on Sargent's.</text>
-    <text x="20" y="372">So only the 834-836 segment crosses processors: one HD line each way: four wires plus ground, or one topic each.</text>
+    <text x="20" y="354">POC wiring: 832T, 834T and locations 830, 831/832, 833/834 on Corporal's processor; 836T and 836 on Sargent's.</text>
+    <text x="20" y="372">So only the 833/834-836 segment crosses processors: one HD line each way: four wires plus ground, or one topic each.</text>
   </g>
   <!-- block-level traffic: one note -->
   <rect x="20" y="390" width="920" height="54" fill="#fff6e0" stroke="#a70"/>
